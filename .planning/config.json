@@ -1,0 +1,16 @@
+{
+  "project_name": "Vehicle E-commerce",
+  "version": "1.0.0",
+  "workflow": {
+    "mode": "interactive",
+    "gates": {
+      "researcher": true,
+      "plan_checker": true,
+      "verifier": true
+    }
+  },
+  "planning": {
+    "commit_docs": true,
+    "search_gitignored": false
+  }
+}
