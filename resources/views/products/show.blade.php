@@ -4,15 +4,7 @@
     <div class="bg-zinc-950 pb-20">
         <!-- Hero Section: Premium Image Showcase -->
         <div class="relative h-[70vh] w-full overflow-hidden">
-            @if($vehicle->primaryImage)
-                @if(Str::startsWith($vehicle->primaryImage->path, 'http'))
-                    <img src="{{ $vehicle->primaryImage->path }}" class="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
-                @else
-                    <img src="{{ Storage::url($vehicle->primaryImage->path) }}" class="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
-                @endif
-            @else
-                <img src="https://placehold.co/1920x1080/111111/ffffff?text=No+Image" class="w-full h-full object-cover" alt="No Image">
-            @endif
+            <img src="{{ $vehicle->primaryImage ? (Str::startsWith($vehicle->primaryImage->path, 'http') ? $vehicle->primaryImage->path : Storage::url($vehicle->primaryImage->path)) : 'https://placehold.co/1920x1080/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
             
             <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
             
@@ -51,11 +43,7 @@
                     <section class="grid grid-cols-2 gap-4">
                         @foreach($vehicle->images->where('is_primary', false) as $image)
                             <div class="aspect-[4/3] bg-zinc-900 border border-zinc-800 overflow-hidden cursor-pointer group/thumb">
-                                @if(Str::startsWith($image->path, 'http'))
-                                    <img src="{{ $image->path }}" class="w-full h-full object-cover grayscale opacity-50 group-hover/thumb:grayscale-0 group-hover/thumb:opacity-100 transition-all duration-500">
-                                @else
-                                    <img src="{{ Storage::url($image->path) }}" class="w-full h-full object-cover grayscale opacity-50 group-hover/thumb:grayscale-0 group-hover/thumb:opacity-100 transition-all duration-500">
-                                @endif
+                                <img src="{{ $image ? (Str::startsWith($image->path, 'http') ? $image->path : Storage::url($image->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover grayscale opacity-50 group-hover/thumb:grayscale-0 group-hover/thumb:opacity-100 transition-all duration-500">
                             </div>
                         @endforeach
                     </section>
@@ -69,11 +57,11 @@
                             Specs <span class="ml-4 flex-grow h-px bg-zinc-900"></span>
                         </h3>
                         <div class="space-y-8">
-                            @foreach($vehicle->specifications as $key => $value)
+                            @foreach($vehicle->translated_specs as $key => $value)
                                 <div class="group">
                                     <div class="flex justify-between items-baseline mb-2">
                                         <span class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 group-hover:text-zinc-400 transition-colors">
-                                            {{ \App\Models\Product::SPEC_TRANSLATIONS[$key] ?? $key }}
+                                            {{ $key }}
                                         </span>
                                         <span class="text-right text-sm font-black text-white uppercase tracking-wider">{{ is_array($value) ? implode(', ', $value) : $value }}</span>
                                     </div>

@@ -31,19 +31,8 @@
                                 <div class="px-8 py-10 flex flex-col md:flex-row gap-10 items-center group">
                                     <!-- Snapshot Product UI -->
                                     <div class="w-full md:w-48 aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden relative flex-shrink-0">
-                                        @if($item->product && $item->product->images->where('is_primary', true)->first())
-                                            @php $orderImgModel = $item->product->images->where('is_primary', true)->first(); @endphp
-                                            @if(Str::startsWith($orderImgModel->path, 'http'))
-                                                <img src="{{ $orderImgModel->path }}" class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
-                                            @else
-                                                <img src="{{ Storage::url($orderImgModel->path) }}" class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
-                                            @endif
-                                        @else
-                                            <div class="w-full h-full flex flex-col items-center justify-center bg-zinc-950 p-4">
-                                                <svg class="w-8 h-8 text-zinc-800 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                                <span class="text-[8px] font-black uppercase text-zinc-700 tracking-[0.2em] text-center italic">Image Unavailable (Snapshot context)</span>
-                                            </div>
-                                        @endif
+                                        @php $orderImgModel = ($item->product && $item->product->images) ? $item->product->images->where('is_primary', true)->first() : null; @endphp
+                                        <img src="{{ $orderImgModel ? (Str::startsWith($orderImgModel->path, 'http') ? $orderImgModel->path : Storage::url($orderImgModel->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
                                     </div>
 
                                     <div class="flex-1">

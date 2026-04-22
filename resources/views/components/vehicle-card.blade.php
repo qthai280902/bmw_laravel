@@ -32,15 +32,10 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
 
     <!-- Image Container -->
     <div class="aspect-[16/10] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700">
-        @if($vehicle->primaryImage)
-            @if(Str::startsWith($vehicle->primaryImage->path, 'http'))
-                <img loading="lazy" src="{{ $vehicle->primaryImage->path }}" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
-            @else
-                <img loading="lazy" src="{{ Storage::url($vehicle->primaryImage->path) }}" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
-            @endif
-        @else
-            <img src="https://placehold.co/800x600/111111/ffffff?text=No+Image" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
-        @endif
+        <img loading="lazy" 
+             src="{{ $vehicle->primaryImage ? (Str::startsWith($vehicle->primaryImage->path, 'http') ? $vehicle->primaryImage->path : Storage::url($vehicle->primaryImage->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" 
+             alt="{{ $vehicle->name }}" 
+             class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
     </div>
 
     <!-- Content -->

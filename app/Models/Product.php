@@ -115,4 +115,22 @@ class Product extends Model
 
         return $slug;
     }
+
+    /**
+     * Get the translated specifications.
+     *
+     * @return array<string, string|array<int, string>>
+     */
+    public function getTranslatedSpecsAttribute(): array
+    {
+        $translated = [];
+        $specs = $this->specifications ?? [];
+
+        foreach ($specs as $key => $value) {
+            $translatedKey = self::SPEC_TRANSLATIONS[$key] ?? $key;
+            $translated[$translatedKey] = $value;
+        }
+
+        return $translated;
+    }
 }

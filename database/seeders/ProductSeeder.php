@@ -41,7 +41,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '0.0 L/100km (Electric)',
                 ],
                 'description' => 'Mẫu Gran Coupe thuần điện đầu tiên của BMW với tinh thần thể thao nguyên bản, kết hợp sự sang trọng bậc nhất và công nghệ tương lai.',
-                'image' => 'https://placehold.co/800x600/1c69d4/ffffff?text=BMW+i4',
+                'image' => 'https://images.unsplash.com/photo-1617469767053-d3b508a042a2?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-x5-xdrive40i',
@@ -61,7 +61,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '8.5 L/100km',
                 ],
                 'description' => 'Mẫu SUV sang trọng biểu tượng, dẫn đầu mọi hành trình với sự linh hoạt tối đa và khả năng vận hành mạnh mẽ trên mọi địa hình.',
-                'image' => 'https://placehold.co/800x600/1c69d4/ffffff?text=BMW+X5',
+                'image' => 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-7-series-735i',
@@ -81,7 +81,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '7.9 L/100km',
                 ],
                 'description' => 'Đỉnh cao của sự sang trọng và công nghệ tương lai. Một chuẩn mực mới cho dòng sedan dành cho doanh nhân.',
-                'image' => 'https://placehold.co/800x600/1c69d4/ffffff?text=BMW+7+Series',
+                'image' => 'https://images.unsplash.com/photo-1621359982464-329b35fc2580?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-m4-competition',
@@ -101,7 +101,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '10.2 L/100km',
                 ],
                 'description' => 'Sức mạnh thuần túy từ đường đua kết hợp phong cách Coupé thời thượng. Cỗ máy dành cho những người khao khát tốc độ.',
-                'image' => 'https://placehold.co/800x600/1c69d4/ffffff?text=BMW+M4',
+                'image' => 'https://images.unsplash.com/photo-1619362224246-0879103606af?auto=format&fit=crop&q=80&w=1600',
             ],
             // MOTORBIKES
             [
@@ -122,7 +122,7 @@ class ProductSeeder extends Seeder
                     'Top Speed' => '> 200 km/h',
                 ],
                 'description' => 'Nữ hoàng của dòng địa hình đường trường, chinh phục mọi ngõ ngách thế giới với động cơ ShiftCam mạnh mẽ.',
-                'image' => 'https://placehold.co/800x600/1c69d4/ffffff?text=BMW+R1250GS',
+                'image' => 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-m1000rr-racing',
@@ -142,7 +142,7 @@ class ProductSeeder extends Seeder
                     'Top Speed' => '306 km/h',
                 ],
                 'description' => 'Cỗ máy đua thuần chủng dành cho những tín đồ của tốc độ tối thượng. Sản phẩm đầu tiên từ phân nhánh M cho dòng Motorrad.',
-                'image' => 'https://placehold.co/800x600/1c69d4/ffffff?text=BMW+M1000RR',
+                'image' => 'https://images.unsplash.com/photo-1614165939020-f71f0CC8e411?auto=format&fit=crop&q=80&w=1600',
             ],
         ];
 

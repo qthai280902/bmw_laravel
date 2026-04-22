@@ -33,15 +33,7 @@
                                 @foreach($products as $product)
                                     <th class="p-8 border-b border-zinc-900 bg-zinc-950 min-w-[300px]">
                                         <div class="space-y-6">
-                                            @if($product->primaryImage)
-                                                @if(Str::startsWith($product->primaryImage->path, 'http'))
-                                                    <img src="{{ $product->primaryImage->path }}" class="w-full h-40 object-cover grayscale hover:grayscale-0 transition-all duration-700">
-                                                @else
-                                                    <img src="{{ Storage::url($product->primaryImage->path) }}" class="w-full h-40 object-cover grayscale hover:grayscale-0 transition-all duration-700">
-                                                @endif
-                                            @else
-                                                <div class="w-full h-40 bg-zinc-900"></div>
-                                            @endif
+                                            <img src="{{ $product->primaryImage ? (Str::startsWith($product->primaryImage->path, 'http') ? $product->primaryImage->path : Storage::url($product->primaryImage->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-full h-40 object-cover grayscale hover:grayscale-0 transition-all duration-700">
                                             <div class="text-center">
                                                 <p class="text-[10px] font-black text-accent uppercase tracking-widest">{{ $product->brand->name }}</p>
                                                 <h3 class="text-xl font-black text-white uppercase tracking-tighter">{{ $product->name }}</h3>
