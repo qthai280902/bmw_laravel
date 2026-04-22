@@ -63,18 +63,13 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
             </div>
             
             <div class="flex items-center gap-3">
-                {{-- Add to Cart --}}
-                <form action="{{ route('cart.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $vehicle->id }}">
-                    <input type="hidden" name="quantity" value="1">
-                    <button type="submit" title="Thêm vào giỏ hàng"
-                        class="w-10 h-10 flex items-center justify-center bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-accent hover:text-accent transition-all duration-300">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-4H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                    </button>
-                </form>
+                {{-- Test Drive --}}
+                <a href="{{ route('appointments.create', ['product_id' => $vehicle->id]) }}" title="Đăng ký lái thử"
+                    class="w-10 h-10 flex items-center justify-center bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-accent hover:text-accent transition-all duration-300">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </a>
 
                 {{-- Explore Link --}}
                 <a href="{{ route('products.show', $vehicle->slug) }}" class="inline-flex items-center gap-2 group/btn">

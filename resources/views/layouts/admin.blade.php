@@ -29,14 +29,11 @@
                     <x-admin.sidebar-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
                         Quản lý Xe
                     </x-admin.sidebar-link>
-                    <x-admin.sidebar-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">
-                        Đơn đặt cọc
-                    </x-admin.sidebar-link>
                     <x-admin.sidebar-link :href="route('admin.appointments.index')" :active="request()->routeIs('admin.appointments.*')">
-                        Lịch hẹn dịch vụ
+                        Quản lý Lead / Đặt lịch
                     </x-admin.sidebar-link>
                     <x-admin.sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
-                        Khách hàng & VIP
+                        Khách hàng
                     </x-admin.sidebar-link>
                 </nav>
 

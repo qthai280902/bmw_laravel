@@ -31,13 +31,6 @@
 
             <!-- Right Side Links -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-8">
-                <!-- Cart Icon -->
-                <a href="{{ route('cart.index') }}" class="text-zinc-400 hover:text-white transition-colors relative">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                </a>
-
                 @auth
                     <x-dropdown align="right" width="48">
                         <x-slot name="trigger">
@@ -54,7 +47,7 @@
 
                         <x-slot name="content">
                             @if(auth()->user()->email === 'admin@bmw.com')
-                                <x-dropdown-link :href="route('admin.orders.index')">
+                                <x-dropdown-link :href="route('admin.products.index')">
                                     {{ __('Admin Panel') }}
                                 </x-dropdown-link>
                             @endif
