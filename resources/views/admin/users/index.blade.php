@@ -13,8 +13,6 @@
                                 <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">ID</th>
                                 <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Họ tên</th>
                                 <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Email</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic text-center">Đơn hàng (Paid)</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic text-center">Hạng VIP</th>
                                 <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic text-right">Ngày tham gia</th>
                             </tr>
                         </thead>
@@ -28,22 +26,6 @@
                                         </div>
                                     </td>
                                     <td class="px-8 py-8 text-xs font-medium text-zinc-400">{{ $user->email }}</td>
-                                    <td class="px-8 py-8 text-center text-sm font-black text-white tabular-nums">
-                                        {{ $user->orders_count }}
-                                    </td>
-                                    <td class="px-8 py-8 text-center">
-                                        @php
-                                            $vipColor = match($user->vip_tier) {
-                                                'Gold' => 'text-yellow-500 border-yellow-500/20 bg-yellow-500/5',
-                                                'Silver' => 'text-zinc-300 border-zinc-300/20 bg-zinc-300/5',
-                                                'Bronze' => 'text-amber-700 border-amber-700/20 bg-amber-700/5',
-                                                default => 'text-zinc-600 border-zinc-800 bg-transparent',
-                                            };
-                                        @endphp
-                                        <span class="px-4 py-1.5 border {{ $vipColor }} text-[9px] font-black uppercase tracking-[0.2em] shadow-inner">
-                                            {{ $user->vip_tier }}
-                                        </span>
-                                    </td>
                                     <td class="px-8 py-8 text-right text-[10px] font-bold text-zinc-500 uppercase">
                                         {{ $user->created_at->format('d/m/Y') }}
                                     </td>

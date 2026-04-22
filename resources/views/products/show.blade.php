@@ -73,26 +73,15 @@
 
                     <!-- Call to Action -->
                     <div class="space-y-4">
-                        @auth
-                            <button 
-                                x-data=""
-                                x-on:click.prevent="$dispatch('open-modal', 'book-appointment')"
-                                class="w-full bg-white text-black py-6 font-black uppercase tracking-[0.2em] text-xs hover:bg-[#1C69D4] hover:text-white transition-all shadow-xl">
-                                Đặt lịch ngay
-                            </button>
-                        @else
-                            <a href="{{ route('login') }}" class="block w-full bg-zinc-800 text-white py-6 font-black uppercase tracking-[0.2em] text-xs text-center hover:bg-[#1C69D4] transition-all">
-                                Đăng nhập để đặt lịch
-                            </a>
-                        @endauth
+                        <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'test_drive']) }}" 
+                            class="block w-full bg-accent text-white py-6 font-black uppercase tracking-[0.2em] text-xs text-center hover:bg-white hover:text-black transition-all shadow-xl">
+                            Đăng ký lái thử
+                        </a>
 
-                        <form action="{{ route('cart.store') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $vehicle->id }}">
-                            <button type="submit" class="w-full border border-zinc-800 text-white py-6 font-black uppercase tracking-[0.2em] text-xs hover:border-white transition-all">
-                                Đặt cọc cấu hình này
-                            </button>
-                        </form>
+                        <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'quote']) }}" 
+                            class="block w-full border border-zinc-800 text-white py-6 font-black uppercase tracking-[0.2em] text-xs text-center hover:border-white transition-all">
+                            Nhận Báo Giá
+                        </a>
                     </div>
 
                     <!-- Comparison Link -->
@@ -107,45 +96,4 @@
         </div>
     </div>
 
-    <!-- Appointment Modal -->
-    <x-modal name="book-appointment" focusable>
-        <div class="p-10 bg-zinc-950 border border-zinc-800">
-            <h2 class="text-3xl font-black uppercase tracking-tighter text-white mb-6">
-                Book an <span class="text-[#1C69D4]">Appointment</span>
-            </h2>
-            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-10 italic">Yêu cầu lái thử, xem xe hoặc bảo dưỡng định kỳ cho dòng {{ $vehicle->name }}.</p>
-
-            <form action="{{ route('appointments.store') }}" method="POST" class="space-y-8">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $vehicle->id }}">
-
-                <div>
-                    <x-input-label for="type" value="Loại hình dịch vụ" />
-                    <select id="type" name="type" class="w-full bg-zinc-900 border-zinc-800 text-white font-black uppercase text-xs tracking-widest px-6 py-4 focus:border-[#1C69D4] focus:ring-0 rounded-none">
-                        @foreach(\App\Enums\AppointmentType::cases() as $type)
-                            <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                        @endforeach
-                    </select>
-                    <x-input-error :messages="$errors->get('type')" class="mt-2" />
-                </div>
-
-                <div>
-                    <x-input-label for="appointment_date" value="Thời gian mong muốn" />
-                    <x-text-input id="appointment_date" name="appointment_date" type="datetime-local" class="block w-full" required />
-                    <x-input-error :messages="$errors->get('appointment_date')" class="mt-2" />
-                </div>
-
-                <div>
-                    <x-input-label for="notes" value="Ghi chú thêm" />
-                    <textarea id="notes" name="notes" rows="4" class="w-full bg-zinc-900 border-zinc-800 text-white font-medium text-sm px-6 py-4 focus:border-[#1C69D4] focus:ring-0 rounded-none placeholder-zinc-700" placeholder="Yêu cầu cụ thể của bạn..."></textarea>
-                    <x-input-error :messages="$errors->get('notes')" class="mt-2" />
-                </div>
-
-                <div class="pt-4 flex justify-end gap-4">
-                    <x-secondary-button x-on:click="$dispatch('close')">Hủy bỏ</x-secondary-button>
-                    <x-primary-button>Xác nhận yêu cầu</x-primary-button>
-                </div>
-            </form>
-        </div>
-    </x-modal>
 </x-app-layout>

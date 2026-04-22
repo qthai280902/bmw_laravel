@@ -41,7 +41,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '0.0 L/100km (Electric)',
                 ],
                 'description' => 'Mẫu Gran Coupe thuần điện đầu tiên của BMW với tinh thần thể thao nguyên bản, kết hợp sự sang trọng bậc nhất và công nghệ tương lai.',
-                'image' => 'https://images.unsplash.com/photo-1617469767053-d3b508a042a2?auto=format&fit=crop&q=80&w=1600',
+                'image' => 'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-x5-xdrive40i',
@@ -81,7 +81,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '7.9 L/100km',
                 ],
                 'description' => 'Đỉnh cao của sự sang trọng và công nghệ tương lai. Một chuẩn mực mới cho dòng sedan dành cho doanh nhân.',
-                'image' => 'https://images.unsplash.com/photo-1621359982464-329b35fc2580?auto=format&fit=crop&q=80&w=1600',
+                'image' => 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-m4-competition',
@@ -101,7 +101,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '10.2 L/100km',
                 ],
                 'description' => 'Sức mạnh thuần túy từ đường đua kết hợp phong cách Coupé thời thượng. Cỗ máy dành cho những người khao khát tốc độ.',
-                'image' => 'https://images.unsplash.com/photo-1619362224246-0879103606af?auto=format&fit=crop&q=80&w=1600',
+                'image' => 'https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?auto=format&fit=crop&q=80&w=1600',
             ],
             // MOTORBIKES
             [
@@ -122,7 +122,7 @@ class ProductSeeder extends Seeder
                     'Top Speed' => '> 200 km/h',
                 ],
                 'description' => 'Nữ hoàng của dòng địa hình đường trường, chinh phục mọi ngõ ngách thế giới với động cơ ShiftCam mạnh mẽ.',
-                'image' => 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?auto=format&fit=crop&q=80&w=1600',
+                'image' => 'https://images.unsplash.com/photo-1596700072970-13655517173e?auto=format&fit=crop&q=80&w=1600',
             ],
             [
                 'slug' => 'bmw-m1000rr-racing',
@@ -142,7 +142,7 @@ class ProductSeeder extends Seeder
                     'Top Speed' => '306 km/h',
                 ],
                 'description' => 'Cỗ máy đua thuần chủng dành cho những tín đồ của tốc độ tối thượng. Sản phẩm đầu tiên từ phân nhánh M cho dòng Motorrad.',
-                'image' => 'https://images.unsplash.com/photo-1614165939020-f71f0CC8e411?auto=format&fit=crop&q=80&w=1600',
+                'image' => 'https://images.unsplash.com/photo-1621359900280-4c644ef19854?auto=format&fit=crop&q=80&w=1600',
             ],
         ];
 

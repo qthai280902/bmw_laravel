@@ -15,9 +15,12 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $header) {
             $header->id();
-            $header->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $header->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+            $header->string('guest_name')->nullable();
+            $header->string('guest_email')->nullable();
+            $header->string('guest_phone')->nullable();
             $header->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
-            $header->string('type')->default(AppointmentType::Viewing->value);
+            $header->string('type')->default(AppointmentType::TestDrive->value);
             $header->dateTime('appointment_date');
             $header->string('status')->default(AppointmentStatus::Pending->value);
             $header->text('notes')->nullable();
