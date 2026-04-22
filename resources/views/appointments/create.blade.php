@@ -22,7 +22,19 @@
                 <form action="{{ route('appointments.store') }}" method="POST" class="space-y-8">
                     @csrf
                     
-                    <input type="hidden" name="type" value="{{ request('type') === 'quote' ? 'quote' : 'test_drive' }}">
+                    <!-- Loại yêu cầu -->
+                    <div class="space-y-6">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Bạn cần hỗ trợ gì?</h3>
+                        <div>
+                            <select name="type" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-xs font-black tracking-widest">
+                                @foreach(\App\Enums\AppointmentType::cases() as $type)
+                                    <option value="{{ $type->value }}" {{ request('type') == $type->value || old('type') == $type->value ? 'selected' : '' }}>
+                                        {{ $type->label() }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
                     <!-- Thông tin khách hàng -->
                     <div class="space-y-6">

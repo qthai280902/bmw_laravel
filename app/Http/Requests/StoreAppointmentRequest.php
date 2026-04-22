@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\AppointmentType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,7 +27,7 @@ class StoreAppointmentRequest extends FormRequest
             'guest_phone' => [$isGuest ? 'required' : 'nullable', 'string', 'max:20'],
             'guest_email' => ['nullable', 'email', 'max:255'],
             'product_id' => ['required', 'exists:products,id'],
-            'type' => ['required', Rule::enum(AppointmentType::class)],
+            'type' => ['required', Rule::in(['test_drive', 'viewing', 'quote', 'maintenance'])],
             'appointment_date' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
