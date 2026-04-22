@@ -7,7 +7,7 @@
 
     <!-- Services Hero Secion -->
     <div class="relative h-[60vh] overflow-hidden bg-black">
-        <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=2000" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-1000 scale-105" alt="BMW Service">
+        <img src="{{ asset('images/cars/hero.png') }}" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-1000 scale-105" alt="BMW Service">
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent"></div>
         <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center max-w-3xl px-6">
@@ -38,7 +38,7 @@
                 </div>
                 <div class="order-1 lg:order-2">
                     <div class="aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Detailing">
+                        <img src="{{ asset('images/cars/sedan.png') }}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Detailing">
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div>
                     <div class="aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Premium Wash">
+                        <img src="{{ asset('images/cars/suv.png') }}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Premium Wash">
                     </div>
                 </div>
                 <div>
@@ -80,7 +80,7 @@
                 </div>
                 <div class="order-1 lg:order-2">
                     <div class="aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Maintenance">
+                        <img src="{{ asset('images/cars/superbike.png') }}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Maintenance">
                     </div>
                 </div>
             </div>

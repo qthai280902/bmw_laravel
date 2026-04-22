@@ -4,7 +4,7 @@
         <div class="absolute inset-0 z-0">
             <!-- Simulated High-End Photography Background -->
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
-            <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=2070"
+            <img src="{{ asset('images/cars/hero.png') }}"
                 class="w-full h-full object-cover object-center scale-105 animate-pulse-slow" alt="BMW M Vision">
         </div>
 
@@ -67,7 +67,7 @@
                 <!-- Vehicle Card 1 -->
                 <div class="group border border-zinc-100 hover:border-black transition-all duration-500">
                     <div class="aspect-[16/10] overflow-hidden bg-zinc-100">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/ea/2021_BMW_M5_Competition_-_Front.jpg"
+                        <img src="{{ asset('images/cars/sedan.png') }}"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt="BMW M5">
                     </div>
@@ -105,7 +105,7 @@
                 <!-- Vehicle Card 2 -->
                 <div class="group border border-zinc-100 hover:border-black transition-all duration-500">
                     <div class="aspect-[16/10] overflow-hidden bg-zinc-100">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/BMW_S1000_RR_01.jpg"
+                        <img src="{{ asset('images/cars/superbike.png') }}"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt="BMW S1000RR">
                     </div>
@@ -142,7 +142,7 @@
                 <!-- Vehicle Card 3 -->
                 <div class="group border border-zinc-100 hover:border-black transition-all duration-500">
                     <div class="aspect-[16/10] overflow-hidden bg-zinc-100">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/BMW_i7_xDrive60_1X7A6841.jpg"
+                        <img src="{{ asset('images/cars/suv.png') }}"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt="BMW i7">
                     </div>
