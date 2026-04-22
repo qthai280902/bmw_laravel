@@ -41,7 +41,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '0.0 L/100km (Electric)',
                 ],
                 'description' => 'Mẫu Gran Coupe thuần điện đầu tiên của BMW với tinh thần thể thao nguyên bản, kết hợp sự sang trọng bậc nhất và công nghệ tương lai.',
-                'image' => '/images/cars/suv.png',
+                'image' => 'cars/suv.png',
             ],
             [
                 'slug' => 'bmw-x5-xdrive40i',
@@ -61,7 +61,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '8.5 L/100km',
                 ],
                 'description' => 'Mẫu SUV sang trọng biểu tượng, dẫn đầu mọi hành trình với sự linh hoạt tối đa và khả năng vận hành mạnh mẽ trên mọi địa hình.',
-                'image' => '/images/cars/suv.png',
+                'image' => 'cars/suv.png',
             ],
             [
                 'slug' => 'bmw-7-series-735i',
@@ -81,7 +81,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '7.9 L/100km',
                 ],
                 'description' => 'Đỉnh cao của sự sang trọng và công nghệ tương lai. Một chuẩn mực mới cho dòng sedan dành cho doanh nhân.',
-                'image' => '/images/cars/sedan.png',
+                'image' => 'cars/sedan.png',
             ],
             [
                 'slug' => 'bmw-m4-competition',
@@ -101,7 +101,7 @@ class ProductSeeder extends Seeder
                     'Fuel Consumption' => '10.2 L/100km',
                 ],
                 'description' => 'Sức mạnh thuần túy từ đường đua kết hợp phong cách Coupé thời thượng. Cỗ máy dành cho những người khao khát tốc độ.',
-                'image' => '/images/cars/sedan.png',
+                'image' => 'cars/sedan.png',
             ],
             // MOTORBIKES
             [
@@ -122,7 +122,7 @@ class ProductSeeder extends Seeder
                     'Top Speed' => '> 200 km/h',
                 ],
                 'description' => 'Nữ hoàng của dòng địa hình đường trường, chinh phục mọi ngõ ngách thế giới với động cơ ShiftCam mạnh mẽ.',
-                'image' => '/images/cars/superbike.png',
+                'image' => 'cars/superbike.png',
             ],
             [
                 'slug' => 'bmw-m1000rr-racing',
@@ -142,7 +142,7 @@ class ProductSeeder extends Seeder
                     'Top Speed' => '306 km/h',
                 ],
                 'description' => 'Cỗ máy đua thuần chủng dành cho những tín đồ của tốc độ tối thượng. Sản phẩm đầu tiên từ phân nhánh M cho dòng Motorrad.',
-                'image' => '/images/cars/superbike.png',
+                'image' => 'cars/superbike.png',
             ],
         ];
 
