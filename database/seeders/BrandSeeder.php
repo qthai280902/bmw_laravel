@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Brand;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class BrandSeeder extends Seeder
 {
@@ -18,7 +17,7 @@ class BrandSeeder extends Seeder
             [
                 'name' => 'BMW',
                 'description' => 'The Ultimate Driving Machine. Thương hiệu hạng sang đỉnh cao từ Đức.',
-                'logo' => 'brands/bmw-logo.png'
+                'logo' => 'brands/bmw-logo.png',
             ]
         );
     }

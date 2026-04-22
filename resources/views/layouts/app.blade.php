@@ -14,6 +14,36 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <script>
+            // Global Comparison State Management (BMW Senior Architect Standard)
+            window.getComparisonIds = () => {
+                try {
+                    return JSON.parse(localStorage.getItem('bmw_comparison_ids') || '[]');
+                } catch (e) {
+                    return [];
+                }
+            };
+
+            window.isVehicleSelected = (id) => {
+                return getComparisonIds().includes(id);
+            };
+
+            window.toggleComparison = (id) => {
+                let ids = getComparisonIds();
+                if (ids.includes(id)) {
+                    ids = ids.filter(i => i !== id);
+                } else {
+                    if (ids.length >= 4) {
+                        alert('Bạn chỉ có thể so sánh tối đa 4 xe cùng lúc.');
+                        return;
+                    }
+                    ids.push(id);
+                }
+                localStorage.setItem('bmw_comparison_ids', JSON.stringify(ids));
+                window.dispatchEvent(new CustomEvent('comparison-updated', { detail: ids }));
+            };
+        </script>
     </head>
     <body class="font-sans antialiased bg-zinc-950 text-white min-h-screen">
         <div class="flex flex-col min-h-screen">

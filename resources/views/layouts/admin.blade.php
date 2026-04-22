@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>Admin - {{ config('app.name', 'Laravel') }}</title>
+        <title>Admin - {{ config('app.name', 'BMW Admin') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,11 +29,14 @@
                     <x-admin.sidebar-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
                         Quản lý Xe
                     </x-admin.sidebar-link>
-                    <x-admin.sidebar-link href="#" :active="false">
-                        Thương hiệu
-                    </x-admin.sidebar-link>
-                    <x-admin.sidebar-link href="#" :active="false">
+                    <x-admin.sidebar-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">
                         Đơn đặt cọc
+                    </x-admin.sidebar-link>
+                    <x-admin.sidebar-link :href="route('admin.appointments.index')" :active="request()->routeIs('admin.appointments.*')">
+                        Lịch hẹn dịch vụ
+                    </x-admin.sidebar-link>
+                    <x-admin.sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                        Khách hàng & VIP
                     </x-admin.sidebar-link>
                 </nav>
 
@@ -48,9 +51,9 @@
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 p-12 overflow-y-auto">
+            <main class="flex-1 p-12 overflow-y-auto bg-[radial-gradient(circle_at_top_right,#1c69d405,transparent_50%)]">
                 @if (session('success'))
-                    <div class="mb-8 p-4 bg-emerald-500/10 border-l-2 border-emerald-500 text-emerald-500 text-sm font-bold uppercase tracking-wider">
+                    <div class="mb-8 p-6 bg-emerald-500/10 border-l-4 border-emerald-500 text-emerald-500 text-[10px] font-black uppercase tracking-widest shadow-2xl">
                         {{ session('success') }}
                     </div>
                 @endif

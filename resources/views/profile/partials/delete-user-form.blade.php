@@ -1,53 +1,49 @@
 <section class="space-y-6">
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Delete Account') }}
-        </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+    <div class="space-y-4">
+        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">
+            Hành động này sẽ xóa vĩnh viễn tài khoản của bạn. Mọi dữ liệu đặt lịch, lịch sử cọc xe và cấu hình cá nhân sẽ không thể khôi phục.
         </p>
-    </header>
+    </div>
 
     <x-danger-button
         x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    >{{ __('Initialize Termination') }}</x-danger-button>
 
     <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
-        <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
+        <form method="post" action="{{ route('profile.destroy') }}" class="p-12 bg-zinc-950 border-2 border-rose-900/50 shadow-[0_0_100px_rgba(225,29,72,0.1)]">
             @csrf
             @method('delete')
 
-            <h2 class="text-lg font-medium text-gray-900">
-                {{ __('Are you sure you want to delete your account?') }}
+            <h2 class="text-3xl font-black uppercase tracking-tighter text-white mb-4">
+                Confirm <span class="text-rose-600">Termination</span>
             </h2>
 
-            <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
+            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] italic mb-8">
+                Vui lòng nhập mật khẩu xác nhận bạn muốn xóa định danh khỏi hệ thống BMW Showroom.
             </p>
 
             <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
+                <x-input-label for="password" value="{{ __('Current Access Key') }}" class="sr-only" />
 
                 <x-text-input
                     id="password"
                     name="password"
                     type="password"
-                    class="mt-1 block w-3/4"
+                    class="mt-1 block w-full"
                     placeholder="{{ __('Password') }}"
                 />
 
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
             </div>
 
-            <div class="mt-6 flex justify-end">
+            <div class="mt-10 flex justify-end gap-4">
                 <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
+                    {{ __('Abort') }}
                 </x-secondary-button>
 
-                <x-danger-button class="ms-3">
-                    {{ __('Delete Account') }}
+                <x-danger-button>
+                    {{ __('Confirm Termination') }}
                 </x-danger-button>
             </div>
         </form>

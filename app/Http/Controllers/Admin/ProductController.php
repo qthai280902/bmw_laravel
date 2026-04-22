@@ -29,7 +29,7 @@ class ProductController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $products = $query->paginate(10)->withQueryString();
@@ -44,6 +44,7 @@ class ProductController extends Controller
     public function create()
     {
         $brands = Brand::orderBy('name')->get();
+
         return view('admin.products.create', compact('brands'));
     }
 
@@ -69,6 +70,7 @@ class ProductController extends Controller
     {
         $brands = Brand::orderBy('name')->get();
         $product->load('images');
+
         return view('admin.products.edit', compact('product', 'brands'));
     }
 
@@ -94,6 +96,7 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $product->delete();
+
         return back()->with('success', 'Đã xóa xe thành công.');
     }
 }

@@ -5,7 +5,8 @@
             <div class="flex items-center">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}" class="group">
+                    <a href="{{ route('home') }}" class="group">
+<<<
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 border-2 border-white flex items-center justify-center font-black text-xl tracking-tighter group-hover:bg-white group-hover:text-black transition-all duration-300">
                                 B
@@ -17,10 +18,10 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-10 sm:-my-px sm:ms-16 sm:flex items-center h-full">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
+                    <x-nav-link :href="route('products.index', ['type' => 'car'])" :active="request('type') == 'car'" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Ô tô
                     </x-nav-link>
-                    <x-nav-link href="#" :active="false" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
+                    <x-nav-link :href="route('products.index', ['type' => 'motorbike'])" :active="request('type') == 'motorbike'" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Xe máy
                     </x-nav-link>
                     <x-nav-link href="#" :active="false" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
@@ -31,12 +32,16 @@
 
             <!-- Right Side Links -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-8">
-                <!-- Cart Icon (Placeholder) -->
-                <a href="#" class="text-zinc-400 hover:text-white transition-colors relative">
+                <!-- Cart Icon -->
+                <a href="{{ route('cart.index') }}" class="text-zinc-400 hover:text-white transition-colors relative">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
-                    <span class="absolute -top-2 -right-2 bg-accent text-[8px] text-white font-bold px-1.5 py-0.5 min-w-[18px] text-center">0</span>
+                    @if(($cartCount ?? 0) > 0)
+                        <span class="absolute -top-2 -right-2 bg-accent text-[8px] text-white font-bold px-1.5 py-0.5 min-w-[18px] text-center">
+                            {{ $cartCount }}
+                        </span>
+                    @endif
                 </a>
 
                 @auth
@@ -90,10 +95,10 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-zinc-900 border-b border-zinc-800">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link :href="route('products.index', ['type' => 'car'])" :active="request('type') == 'car'">
                 Ô tô
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="#">
+            <x-responsive-nav-link :href="route('products.index', ['type' => 'motorbike'])" :active="request('type') == 'motorbike'">
                 Xe máy
             </x-responsive-nav-link>
         </div>
