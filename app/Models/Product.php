@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\VehicleType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+
+class Product extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'brand_id',
+        'name',
+        'slug',
+        'type',
+        'price',
+        'deposit_amount',
+        'stock',
+        'specifications',
+        'description',
+        'is_featured',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'type' => VehicleType::class,
+            'specifications' => 'array',
+            'is_featured' => 'boolean',
+            'price' => 'integer',
+            'deposit_amount' => 'integer',
+        ];
+    }
+
+    /**
+     * Get the brand that owns the product.
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * Get the images for the product.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class);
+    }
+
+    /**
+     * Generate a unique slug based on the product name.
+     */
+    public static function generateUniqueSlug(string $name): string
+    {
+        $slug = Str::slug($name);
+        $originalSlug = $slug;
+        $count = 1;
+
+        while (static::where('slug', $slug)->exists()) {
+            $slug = "{$originalSlug}-{$count}";
+            $count++;
+        }
+
+        return $slug;
+    }
+}
