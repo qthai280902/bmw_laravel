@@ -70,15 +70,6 @@
                             </form>
                         </x-slot>
                     </x-dropdown>
-                @else
-                    <div class="flex items-center space-x-6">
-                        <a href="{{ route('login') }}" class="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
-                            Đăng nhập
-                        </a>
-                        <a href="{{ route('register') }}" class="px-6 py-2 bg-[#1C69D4] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#165bb0] transition-all shadow-lg shadow-[#1C69D4]/20">
-                            Đăng ký
-                        </a>
-                    </div>
                 @endauth
             </div>
 
@@ -133,21 +124,6 @@
                         </x-responsive-nav-link>
                     </form>
                 </div>
-            </div>
-        @else
-            <div class="pt-4 pb-1 border-t border-zinc-800 px-4 mb-4 space-y-4">
-                @guest
-                    <div class="pt-4 pb-1 border-t border-zinc-800">
-                        <div class="space-y-1">
-                            <x-responsive-nav-link :href="route('login')">
-                                {{ __('Đăng nhập') }}
-                            </x-responsive-nav-link>
-                            <x-responsive-nav-link :href="route('register')" class="text-[#1C69D4] font-black italic">
-                                {{ __('Đăng ký / Create Account') }}
-                            </x-responsive-nav-link>
-                        </div>
-                    </div>
-                @endguest
             </div>
         @endauth
     </div>
