@@ -7,7 +7,7 @@
 
     <!-- Services Hero Secion -->
     <div class="relative h-[60vh] overflow-hidden bg-black">
-        <img src="https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?auto=format&fit=crop&q=80&w=2000" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-1000 scale-105" alt="BMW Service">
+        <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=2000" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-1000 scale-105" alt="BMW Service">
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent"></div>
         <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center max-w-3xl px-6">
@@ -32,13 +32,13 @@
                     <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
                         Dịch vụ Detailing và Ceramic cao cấp giúp bảo vệ lớp sơn nguyên bản và tạo độ bóng gương hoàn hảo. Chúng tôi sử dụng các sản phẩm chăm sóc từ những thương hiệu hàng đầu thế giới được BMW khuyên dùng.
                     </p>
-                    <a href="{{ route('dashboard', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
+                    <a href="{{ route('appointments.create', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
                         Đặt lịch Detailing
                     </a>
                 </div>
                 <div class="order-1 lg:order-2">
                     <div class="aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1552933529-e359b2477252?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Detailing">
+                        <img src="https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Detailing">
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div>
                     <div class="aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Premium Wash">
+                        <img src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Premium Wash">
                     </div>
                 </div>
                 <div>
@@ -58,7 +58,7 @@
                     <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
                         Không chỉ là làm sạch, quy trình rửa xe 24 bước của chúng tôi loại bỏ hoàn toàn các tác nhân gây hại từ môi trường, bảo vệ từng chi tiết ngoại thất và nội thất bằng các dụng cụ chuyên dụng không gây trầy xước.
                     </p>
-                    <a href="{{ route('dashboard', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
+                    <a href="{{ route('appointments.create', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
                         Đặt lịch Rửa xe
                     </a>
                 </div>
@@ -74,13 +74,13 @@
                     <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
                         Hệ thống nhắc hẹn bảo dưỡng thông minh giúp xe của bạn luôn ở trạng thái vận hành tối ưu. Đội ngũ kỹ thuật viên được đào tạo theo tiêu chuẩn BMW toàn cầu sử dụng phụ tùng chính hãng 100%.
                     </p>
-                    <a href="{{ route('dashboard', ['type' => 'maintenance']) }}" class="inline-block px-12 py-5 bg-[#1C69D4] text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#165bb0] transition-all duration-300 shadow-xl shadow-[#1C69D4]/20">
+                    <a href="{{ route('appointments.create', ['type' => 'maintenance']) }}" class="inline-block px-12 py-5 bg-[#1C69D4] text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#165bb0] transition-all duration-300 shadow-xl shadow-[#1C69D4]/20">
                         Đặt lịch Bảo dưỡng
                     </a>
                 </div>
                 <div class="order-1 lg:order-2">
                     <div class="aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1632733711679-5292d7700e77?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Maintenance">
+                        <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Maintenance">
                     </div>
                 </div>
             </div>

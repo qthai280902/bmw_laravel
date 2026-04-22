@@ -67,7 +67,7 @@
                 <!-- Vehicle Card 1 -->
                 <div class="group border border-zinc-100 hover:border-black transition-all duration-500">
                     <div class="aspect-[16/10] overflow-hidden bg-zinc-100">
-                        <img src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=1000"
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/ea/2021_BMW_M5_Competition_-_Front.jpg"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt="BMW M5">
                     </div>
@@ -105,7 +105,7 @@
                 <!-- Vehicle Card 2 -->
                 <div class="group border border-zinc-100 hover:border-black transition-all duration-500">
                     <div class="aspect-[16/10] overflow-hidden bg-zinc-100">
-                        <img src="https://images.unsplash.com/photo-1635073908681-b4dfbd6015e8?auto=format&fit=crop&q=80&w=1000"
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/BMW_S1000_RR_01.jpg"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt="BMW S1000RR">
                     </div>
@@ -142,7 +142,7 @@
                 <!-- Vehicle Card 3 -->
                 <div class="group border border-zinc-100 hover:border-black transition-all duration-500">
                     <div class="aspect-[16/10] overflow-hidden bg-zinc-100">
-                        <img src="https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&q=80&w=1000"
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/BMW_i7_xDrive60_1X7A6841.jpg"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt="BMW i7">
                     </div>
