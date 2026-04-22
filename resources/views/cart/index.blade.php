@@ -57,9 +57,11 @@
                                 {{-- Vehicle Image --}}
                                 <div class="w-40 h-28 flex-shrink-0 overflow-hidden bg-zinc-950">
                                     @if(isset($item->product->primaryImage) && $item->product->primaryImage)
-                                        <img src="{{ asset('storage/' . $item->product->primaryImage->path) }}"
-                                             class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
-                                             alt="{{ $item->product->name }}">
+                                        @if(Str::startsWith($item->product->primaryImage->path, 'http'))
+                                            <img src="{{ $item->product->primaryImage->path }}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" alt="{{ $item->product->name }}">
+                                        @else
+                                            <img src="{{ Storage::url($item->product->primaryImage->path) }}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" alt="{{ $item->product->name }}">
+                                        @endif
                                     @else
                                         <div class="w-full h-full flex items-center justify-center text-zinc-800 font-black text-xs uppercase">No Image</div>
                                     @endif

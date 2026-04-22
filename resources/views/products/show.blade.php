@@ -5,13 +5,13 @@
         <!-- Hero Section: Premium Image Showcase -->
         <div class="relative h-[70vh] w-full overflow-hidden">
             @if($vehicle->primaryImage)
-                <img src="{{ asset('storage/' . $vehicle->primaryImage->path) }}" 
-                    class="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000 transform scale-105 hover:scale-100" 
-                    alt="{{ $vehicle->name }}">
+                @if(Str::startsWith($vehicle->primaryImage->path, 'http'))
+                    <img src="{{ $vehicle->primaryImage->path }}" class="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
+                @else
+                    <img src="{{ Storage::url($vehicle->primaryImage->path) }}" class="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
+                @endif
             @else
-                <div class="w-full h-full bg-zinc-900 flex items-center justify-center">
-                    <span class="text-zinc-800 font-black text-9xl uppercase italic tracking-tighter">BMW Performance</span>
-                </div>
+                <img src="https://placehold.co/1920x1080/111111/ffffff?text=No+Image" class="w-full h-full object-cover" alt="No Image">
             @endif
             
             <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
@@ -42,18 +42,20 @@
                     <!-- Description -->
                     <section>
                         <h2 class="text-xs font-black uppercase tracking-[0.5em] text-[#1C69D4] mb-8">Trải nghiệm & Triết lý</h2>
-                        <div class="prose prose-invert max-w-none text-zinc-400 leading-relaxed text-lg italic">
+                        <div class="prose prose-invert max-w-none text-zinc-400 leading-relaxed text-lg italic font-light">
                             {!! nl2br(e($vehicle->description)) !!}
                         </div>
                     </section>
 
                     <!-- Large Gallery Grid -->
                     <section class="grid grid-cols-2 gap-4">
-                        @foreach($vehicle->images as $image)
-                            <div class="group overflow-hidden bg-zinc-900">
-                                <img src="{{ asset('storage/' . $image->path) }}" 
-                                    class="w-full h-72 object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" 
-                                    alt="{{ $vehicle->name }}">
+                        @foreach($vehicle->images->where('is_primary', false) as $image)
+                            <div class="aspect-[4/3] bg-zinc-900 border border-zinc-800 overflow-hidden cursor-pointer group/thumb">
+                                @if(Str::startsWith($image->path, 'http'))
+                                    <img src="{{ $image->path }}" class="w-full h-full object-cover grayscale opacity-50 group-hover/thumb:grayscale-0 group-hover/thumb:opacity-100 transition-all duration-500">
+                                @else
+                                    <img src="{{ Storage::url($image->path) }}" class="w-full h-full object-cover grayscale opacity-50 group-hover/thumb:grayscale-0 group-hover/thumb:opacity-100 transition-all duration-500">
+                                @endif
                             </div>
                         @endforeach
                     </section>
@@ -62,15 +64,20 @@
                 <!-- Right: Specs & Action -->
                 <div class="space-y-12">
                     <!-- Specifications Card -->
-                    <div class="bg-zinc-900/50 p-10 border border-zinc-900">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-white mb-10 border-b border-zinc-800 pb-4">
-                            Thông số kỹ thuật
+                    <div class="bg-zinc-950 p-10 border border-zinc-800">
+                        <h3 class="text-xs font-black uppercase tracking-[0.4em] text-[#1C69D4] mb-12 flex items-center">
+                            Specs <span class="ml-4 flex-grow h-px bg-zinc-900"></span>
                         </h3>
-                        <div class="space-y-6">
+                        <div class="space-y-8">
                             @foreach($vehicle->specifications as $key => $value)
-                                <div class="flex justify-between items-center border-b border-zinc-800/50 pb-4">
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ Str::headline($key) }}</span>
-                                    <span class="text-sm font-bold text-white uppercase">{{ is_array($value) ? implode(', ', $value) : $value }}</span>
+                                <div class="group">
+                                    <div class="flex justify-between items-baseline mb-2">
+                                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                                            {{ \App\Models\Product::SPEC_TRANSLATIONS[$key] ?? $key }}
+                                        </span>
+                                        <span class="text-right text-sm font-black text-white uppercase tracking-wider">{{ is_array($value) ? implode(', ', $value) : $value }}</span>
+                                    </div>
+                                    <div class="h-px bg-zinc-900 group-hover:bg-[#1C69D4] transition-all duration-500"></div>
                                 </div>
                             @endforeach
                         </div>

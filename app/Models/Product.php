@@ -30,6 +30,27 @@ class Product extends Model
     ];
 
     /**
+     * Thông số kỹ thuật dịch sang Tiếng Việt.
+     */
+    public const SPEC_TRANSLATIONS = [
+        'Engine' => 'Động cơ',
+        'Horsepower' => 'Công suất tối đa',
+        'Torque' => 'Mô-men xoắn',
+        '0-100km/h' => 'Tăng tốc 0-100km/h',
+        'Top Speed' => 'Tốc độ tối đa',
+        'Drivetrain' => 'Hệ dẫn động',
+        'Transmission' => 'Hộp số',
+        'Fuel Consumption' => 'Tiêu thụ nhiên liệu',
+        'Range' => 'Quãng đường di chuyển',
+        'Battery Capacity' => 'Dung lượng pin',
+        'Seat Height' => 'Chiều cao yên',
+        'Dry Weight' => 'Trọng lượng khô',
+        'Fuel Tank' => 'Dung tích bình xăng',
+        'Displacement' => 'Dung tích xy-lanh',
+        'Luxury Features' => 'Tiện nghi cao cấp',
+    ];
+
+    /**
      * The attributes that should be cast.
      *
      * @return array<string, string>

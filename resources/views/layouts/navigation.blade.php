@@ -6,12 +6,11 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('home') }}" class="group">
-<<<
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 border-2 border-white flex items-center justify-center font-black text-xl tracking-tighter group-hover:bg-white group-hover:text-black transition-all duration-300">
                                 B
                             </div>
-                            <span class="text-lg font-black uppercase tracking-[0.2em] hidden sm:block">BMW <span class="text-zinc-500">Motors</span></span>
+                            <span class="text-lg font-black uppercase tracking-[0.2em] hidden sm:block">BMW <span class="text-zinc-500">Showroom</span></span>
                         </div>
                     </a>
                 </div>
@@ -24,7 +23,7 @@
                     <x-nav-link :href="route('products.index', ['type' => 'motorbike'])" :active="request('type') == 'motorbike'" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Xe máy
                     </x-nav-link>
-                    <x-nav-link href="#" :active="false" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
+                    <x-nav-link :href="route('services.index')" :active="request()->is('services*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Dịch vụ
                     </x-nav-link>
                 </div>
@@ -37,11 +36,6 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
-                    @if(($cartCount ?? 0) > 0)
-                        <span class="absolute -top-2 -right-2 bg-accent text-[8px] text-white font-bold px-1.5 py-0.5 min-w-[18px] text-center">
-                            {{ $cartCount }}
-                        </span>
-                    @endif
                 </a>
 
                 @auth
@@ -59,8 +53,18 @@
                         </x-slot>
 
                         <x-slot name="content">
+                            @if(auth()->user()->email === 'admin@bmw.com')
+                                <x-dropdown-link :href="route('admin.orders.index')">
+                                    {{ __('Admin Panel') }}
+                                </x-dropdown-link>
+                            @endif
+
+                            <x-dropdown-link :href="route('dashboard')">
+                                {{ __('My Garage') }}
+                            </x-dropdown-link>
+
                             <x-dropdown-link :href="route('profile.edit')">
-                                {{ __('Profile') }}
+                                {{ __('Settings') }}
                             </x-dropdown-link>
 
                             <form method="POST" action="{{ route('logout') }}">
@@ -74,9 +78,14 @@
                         </x-slot>
                     </x-dropdown>
                 @else
-                    <a href="{{ route('login') }}" class="text-xs font-black uppercase tracking-widest text-zinc-100 hover:text-accent transition-colors">
-                        Đăng nhập
-                    </a>
+                    <div class="flex items-center space-x-6">
+                        <a href="{{ route('login') }}" class="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
+                            Đăng nhập
+                        </a>
+                        <a href="{{ route('register') }}" class="px-6 py-2 bg-[#1C69D4] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#165bb0] transition-all shadow-lg shadow-[#1C69D4]/20">
+                            Đăng ký
+                        </a>
+                    </div>
                 @endauth
             </div>
 
@@ -101,6 +110,9 @@
             <x-responsive-nav-link :href="route('products.index', ['type' => 'motorbike'])" :active="request('type') == 'motorbike'">
                 Xe máy
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('services.index')" :active="request()->is('services*')">
+                Dịch vụ
+            </x-responsive-nav-link>
         </div>
 
         @auth
@@ -112,8 +124,11 @@
                 </div>
 
                 <div class="mt-3 space-y-1">
+                    <x-responsive-nav-link :href="route('dashboard')">
+                        {{ __('My Garage') }}
+                    </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('profile.edit')">
-                        {{ __('Profile') }}
+                        {{ __('Settings') }}
                     </x-responsive-nav-link>
 
                     <form method="POST" action="{{ route('logout') }}">
@@ -127,10 +142,19 @@
                 </div>
             </div>
         @else
-            <div class="pt-4 pb-1 border-t border-zinc-800 px-4 mb-4">
-                <a href="{{ route('login') }}" class="block text-xs font-black uppercase tracking-widest text-white py-2">
-                    Đăng nhập
-                </a>
+            <div class="pt-4 pb-1 border-t border-zinc-800 px-4 mb-4 space-y-4">
+                @guest
+                    <div class="pt-4 pb-1 border-t border-zinc-800">
+                        <div class="space-y-1">
+                            <x-responsive-nav-link :href="route('login')">
+                                {{ __('Đăng nhập') }}
+                            </x-responsive-nav-link>
+                            <x-responsive-nav-link :href="route('register')" class="text-[#1C69D4] font-black italic">
+                                {{ __('Đăng ký / Create Account') }}
+                            </x-responsive-nav-link>
+                        </div>
+                    </div>
+                @endguest
             </div>
         @endauth
     </div>

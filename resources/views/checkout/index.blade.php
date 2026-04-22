@@ -18,8 +18,11 @@
                         <div class="flex gap-4 bg-zinc-900 border border-zinc-800 p-4">
                             <div class="w-24 h-16 flex-shrink-0 overflow-hidden bg-zinc-950">
                                 @if(isset($item->product->primaryImage) && $item->product->primaryImage)
-                                    <img src="{{ asset('storage/' . $item->product->primaryImage->path) }}"
-                                         class="w-full h-full object-cover grayscale" alt="{{ $item->product->name }}">
+                                    @if(Str::startsWith($item->product->primaryImage->path, 'http'))
+                                        <img src="{{ $item->product->primaryImage->path }}" class="w-full h-full object-cover grayscale" alt="{{ $item->product->name }}">
+                                    @else
+                                        <img src="{{ Storage::url($item->product->primaryImage->path) }}" class="w-full h-full object-cover grayscale" alt="{{ $item->product->name }}">
+                                    @endif
                                 @else
                                     <div class="w-full h-full bg-zinc-900"></div>
                                 @endif

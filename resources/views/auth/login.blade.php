@@ -36,10 +36,14 @@
             @endif
         </div>
 
-        <div class="pt-4">
+        <div class="pt-4 space-y-4">
             <x-primary-button class="w-full justify-center">
                 {{ __('Initiate Login') }}
             </x-primary-button>
+            
+            <a href="{{ route('register') }}" class="block w-full text-center px-12 py-4 border border-zinc-800 font-black uppercase text-[10px] text-zinc-400 tracking-[0.2em] hover:text-white hover:border-zinc-600 transition-all duration-300">
+                {{ __('Create New Account') }}
+            </a>
         </div>
 
         <div class="text-center mt-6">

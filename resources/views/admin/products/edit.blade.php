@@ -78,7 +78,11 @@
                     <div class="grid grid-cols-2 gap-4 mb-8">
                         @foreach($product->images as $image)
                             <div class="relative group aspect-video bg-black border border-zinc-900 overflow-hidden">
-                                <img src="{{ asset('storage/' . $image->path) }}" class="w-full h-full object-cover {{ $image->is_primary ? '' : 'opacity-40' }}">
+                                @if(Str::startsWith($image->path, 'http'))
+                                    <img src="{{ $image->path }}" class="w-full h-full object-cover {{ $image->is_primary ? '' : 'opacity-40' }}">
+                                @else
+                                    <img src="{{ Storage::url($image->path) }}" class="w-full h-full object-cover {{ $image->is_primary ? '' : 'opacity-40' }}">
+                                @endif
                                 @if($image->is_primary)
                                     <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#1C69D4] text-[8px] font-black uppercase">Chính</span>
                                 @endif

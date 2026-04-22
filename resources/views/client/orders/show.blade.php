@@ -32,8 +32,12 @@
                                     <!-- Snapshot Product UI -->
                                     <div class="w-full md:w-48 aspect-video bg-zinc-900 border border-zinc-800 overflow-hidden relative flex-shrink-0">
                                         @if($item->product && $item->product->images->where('is_primary', true)->first())
-                                            <img src="{{ asset('storage/' . $item->product->images->where('is_primary', true)->first()->path) }}" 
-                                                 class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
+                                            @php $orderImgModel = $item->product->images->where('is_primary', true)->first(); @endphp
+                                            @if(Str::startsWith($orderImgModel->path, 'http'))
+                                                <img src="{{ $orderImgModel->path }}" class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
+                                            @else
+                                                <img src="{{ Storage::url($orderImgModel->path) }}" class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
+                                            @endif
                                         @else
                                             <div class="w-full h-full flex flex-col items-center justify-center bg-zinc-950 p-4">
                                                 <svg class="w-8 h-8 text-zinc-800 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>

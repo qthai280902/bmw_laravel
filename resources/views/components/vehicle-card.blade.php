@@ -33,13 +33,13 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
     <!-- Image Container -->
     <div class="aspect-[16/10] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700">
         @if($vehicle->primaryImage)
-            <img loading="lazy" src="{{ asset('storage/' . $vehicle->primaryImage->path) }}" 
-                 alt="{{ $vehicle->name }}" 
-                 class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000">
+            @if(Str::startsWith($vehicle->primaryImage->path, 'http'))
+                <img loading="lazy" src="{{ $vehicle->primaryImage->path }}" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
+            @else
+                <img loading="lazy" src="{{ Storage::url($vehicle->primaryImage->path) }}" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
+            @endif
         @else
-            <div class="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-800 font-black text-4xl uppercase italic">
-                No Image
-            </div>
+            <img src="https://placehold.co/800x600/111111/ffffff?text=No+Image" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
         @endif
     </div>
 

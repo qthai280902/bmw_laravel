@@ -63,7 +63,12 @@
                         <td class="px-8 py-6">
                             <div class="flex items-center gap-4">
                                 @if($product->images->where('is_primary', true)->first())
-                                    <img src="{{ asset('storage/' . $product->images->where('is_primary', true)->first()->path) }}" class="w-16 h-10 object-cover grayscale group-hover:grayscale-0 transition-all duration-500">
+                                    @php $adminImgModel = $product->images->where('is_primary', true)->first(); @endphp
+                                    @if(Str::startsWith($adminImgModel->path, 'http'))
+                                        <img src="{{ $adminImgModel->path }}" class="w-16 h-10 object-cover grayscale group-hover:grayscale-0 transition-all duration-500">
+                                    @else
+                                        <img src="{{ Storage::url($adminImgModel->path) }}" class="w-16 h-10 object-cover grayscale group-hover:grayscale-0 transition-all duration-500">
+                                    @endif
                                 @else
                                     <div class="w-16 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[8px] uppercase font-black text-zinc-700 italic">No Image</div>
                                 @endif
