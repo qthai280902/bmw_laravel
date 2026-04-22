@@ -41,16 +41,9 @@
                 {{ __('Initiate Login') }}
             </x-primary-button>
             
-            <a href="{{ route('register') }}" class="block w-full text-center px-12 py-4 border border-zinc-800 font-black uppercase text-[10px] text-zinc-400 tracking-[0.2em] hover:text-white hover:border-zinc-600 transition-all duration-300">
-                {{ __('Create New Account') }}
-            </a>
+
         </div>
 
-        <div class="text-center mt-6">
-            <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                New to the showroom? 
-                <a href="{{ route('register') }}" class="text-[#1C69D4] hover:text-white transition-colors ml-2">Request Access</a>
-            </p>
-        </div>
+
     </form>
 </x-guest-layout>
