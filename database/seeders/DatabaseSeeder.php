@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
         // Đảm bảo luôn có tài khoản Admin để đăng nhập sau khi migrate:fresh,
         // Vì tính năng đăng ký (Registration) đã bị vô hiệu hóa.
         User::firstOrCreate(
-            ['email' => 'admin@gmail.com'],
+            ['email' => 'admin@bmw.com'],
             [
                 'name' => 'Admin BMW Showroom',
                 'password' => Hash::make('12345678'),
