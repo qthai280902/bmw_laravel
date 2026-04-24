@@ -24,8 +24,16 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::firstOrCreate(
+            ['email' => 'quanly1@bmw.com'],
+            [
+                'name' => 'Nguyễn Quốc Thái',
+                'password' => Hash::make('12345678'),
+            ]
+        );
+
         $this->call([
-            BrandSeeder::class,
+            CategorySeeder::class,
             ProductSeeder::class,
         ]);
     }

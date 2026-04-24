@@ -29,8 +29,8 @@
                     <x-admin.sidebar-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
                         Quản lý Xe
                     </x-admin.sidebar-link>
-                    <x-admin.sidebar-link href="#" :active="false">
-                        Thương hiệu
+                    <x-admin.sidebar-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
+                        Dòng xe
                     </x-admin.sidebar-link>
                     <x-admin.sidebar-link href="#" :active="false">
                         Đơn đặt cọc

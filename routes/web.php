@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Client\AppointmentController;
@@ -38,6 +39,7 @@ Route::middleware('auth')->group(function () {
     // Admin Routes
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('products', AdminProductController::class);
+        Route::resource('categories', CategoryController::class);
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
         Route::resource('users', UserController::class)->only(['index']);

@@ -20,11 +20,11 @@
 
                         <div class="grid grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-zinc-500 mb-2">Hãng xe</label>
-                                <select name="brand_id" required class="w-full bg-black border-zinc-800 text-white text-sm focus:border-[#1C69D4] focus:ring-0">
-                                    <option value="">Chọn hãng...</option>
-                                    @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}" {{ old('brand_id') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                                <label class="block text-[10px] font-black uppercase text-zinc-500 mb-2">Dòng xe</label>
+                                <select name="category_id" required class="w-full bg-black border-zinc-800 text-white text-sm focus:border-[#1C69D4] focus:ring-0">
+                                    <option value="">Chọn dòng xe...</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                     @endforeach
                                 </select>
                             </div>

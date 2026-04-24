@@ -11,7 +11,7 @@
             <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex items-end justify-between">
                     <div>
-                        <p class="text-[#1C69D4] text-sm font-black uppercase tracking-[0.3em] mb-4">{{ $vehicle->brand->name }}</p>
+                        <p class="text-[#1C69D4] text-sm font-black uppercase tracking-[0.3em] mb-4">{{ $vehicle->category->name }}</p>
                         <h1 class="text-7xl md:text-9xl font-black text-white uppercase tracking-tighter leading-none italic">
                             {{ $vehicle->name }}
                         </h1>

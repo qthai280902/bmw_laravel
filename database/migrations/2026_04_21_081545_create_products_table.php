@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->cascadeOnDelete()->index();
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete()->index();
             $table->string('name');
             $table->string('slug')->unique()->index();
             $table->string('type')->index(); // car, motorbike (VehicleType Enum)

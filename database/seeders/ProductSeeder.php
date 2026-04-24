@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\VehicleType;
-use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
@@ -14,17 +14,14 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        $bmw = Brand::where('slug', 'bmw')->first();
-
-        if (! $bmw) {
-            return;
-        }
+        $categories = Category::all()->keyBy('slug');
 
         $vehicles = [
             // CARS
             [
                 'slug' => 'bmw-i4-edrive40',
                 'name' => 'BMW i4 eDrive40',
+                'category_slug' => 'bmw-i',
                 'type' => VehicleType::CAR,
                 'price' => 3759000000,
                 'deposit_amount' => 50000000,
@@ -46,6 +43,7 @@ class ProductSeeder extends Seeder
             [
                 'slug' => 'bmw-x5-xdrive40i',
                 'name' => 'BMW X5 xDrive40i MSport',
+                'category_slug' => 'sav',
                 'type' => VehicleType::CAR,
                 'price' => 4169000000,
                 'deposit_amount' => 50000000,
@@ -66,6 +64,7 @@ class ProductSeeder extends Seeder
             [
                 'slug' => 'bmw-7-series-735i',
                 'name' => 'BMW 7 Series 735i Pure Excellence',
+                'category_slug' => 'sedan',
                 'type' => VehicleType::CAR,
                 'price' => 4499000000,
                 'deposit_amount' => 100000000,
@@ -86,6 +85,7 @@ class ProductSeeder extends Seeder
             [
                 'slug' => 'bmw-m4-competition',
                 'name' => 'BMW M4 Competition Coupé',
+                'category_slug' => 'm-performance',
                 'type' => VehicleType::CAR,
                 'price' => 5599000000,
                 'deposit_amount' => 100000000,
@@ -107,6 +107,7 @@ class ProductSeeder extends Seeder
             [
                 'slug' => 'bmw-r1250gs-adventure',
                 'name' => 'BMW R 1250 GS Adventure',
+                'category_slug' => 'motorrad',
                 'type' => VehicleType::MOTORBIKE,
                 'price' => 709000000,
                 'deposit_amount' => 20000000,
@@ -127,6 +128,7 @@ class ProductSeeder extends Seeder
             [
                 'slug' => 'bmw-m1000rr-racing',
                 'name' => 'BMW M 1000 RR',
+                'category_slug' => 'motorrad',
                 'type' => VehicleType::MOTORBIKE,
                 'price' => 1599000000,
                 'deposit_amount' => 50000000,
@@ -147,10 +149,12 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($vehicles as $v) {
+            $category = $categories->get($v['category_slug']);
+
             $product = Product::updateOrCreate(
                 ['slug' => $v['slug']],
                 [
-                    'brand_id' => $bmw->id,
+                    'category_id' => $category?->id,
                     'name' => $v['name'],
                     'type' => $v['type'],
                     'price' => $v['price'],
@@ -159,6 +163,7 @@ class ProductSeeder extends Seeder
                     'specifications' => $v['specifications'],
                     'description' => $v['description'],
                     'is_featured' => true,
+                    'is_active' => true,
                 ]
             );
 

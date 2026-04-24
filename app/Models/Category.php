@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Brand extends Model
+class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -19,7 +19,7 @@ class Brand extends Model
     ];
 
     /**
-     * Get the products for the brand.
+     * Get the products for the category.
      */
     public function products(): HasMany
     {

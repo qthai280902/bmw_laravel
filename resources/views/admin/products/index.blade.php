@@ -27,11 +27,11 @@
             </div>
 
             <div class="w-48">
-                <label class="block text-[10px] font-black uppercase text-zinc-500 mb-2">Hãng xe</label>
-                <select name="brand_id" class="w-full bg-black border-zinc-800 text-white text-sm focus:border-[#1C69D4] focus:ring-0">
+                <label class="block text-[10px] font-black uppercase text-zinc-500 mb-2">Dòng xe</label>
+                <select name="category_id" class="w-full bg-black border-zinc-800 text-white text-sm focus:border-[#1C69D4] focus:ring-0">
                     <option value="">Tất cả</option>
-                    @foreach($brands as $brand)
-                        <option value="{{ $brand->id }}" {{ request('brand_id') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -66,7 +66,7 @@
                                 <img src="{{ $adminImgModel ? (Str::startsWith($adminImgModel->path, 'http') ? $adminImgModel->path : Storage::url($adminImgModel->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-16 h-10 object-cover grayscale group-hover:grayscale-0 transition-all duration-500">
                                 <div>
                                     <div class="text-sm font-black uppercase tracking-wider group-hover:text-[#1C69D4] transition-colors">{{ $product->name }}</div>
-                                    <div class="text-[10px] text-zinc-600 font-bold uppercase">{{ $product->brand->name }}</div>
+                                    <div class="text-[10px] text-zinc-600 font-bold uppercase">{{ $product->category->name }}</div>
                                 </div>
                             </div>
                         </td>

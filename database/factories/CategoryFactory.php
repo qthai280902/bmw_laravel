@@ -2,16 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\Brand;
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<Brand>
+ * @extends Factory<Category>
  */
-class BrandFactory extends Factory
+class CategoryFactory extends Factory
 {
-    protected $model = Brand::class;
+    protected $model = Category::class;
 
     /**
      * Define the model's default state.
@@ -20,10 +20,10 @@ class BrandFactory extends Factory
      */
     public function definition(): array
     {
-        $name = $this->faker->unique()->company();
+        $name = $this->faker->unique()->word();
 
         return [
-            'name' => $name,
+            'name' => ucfirst($name),
             'slug' => Str::slug($name),
             'description' => $this->faker->sentence(),
         ];

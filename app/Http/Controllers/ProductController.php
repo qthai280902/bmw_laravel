@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\VehicleType;
-use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Services\VehicleSearchService;
 use Illuminate\Http\Request;
@@ -21,12 +21,12 @@ class ProductController extends Controller
     public function index(Request $request): View
     {
         $vehicles = $this->searchService->search($request->all());
-        $brands = Brand::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
         $types = VehicleType::cases();
 
         return view('products.index', [
             'vehicles' => $vehicles,
-            'brands' => $brands,
+            'categories' => $categories,
             'types' => $types,
             'filters' => $request->all(),
         ]);
@@ -39,7 +39,7 @@ class ProductController extends Controller
     {
         $vehicle = Product::where('slug', $slug)
             ->active()
-            ->with(['brand', 'images']) // Detail page needs all images
+            ->with(['category', 'images']) // Detail page needs all images
             ->firstOrFail();
 
         return view('products.show', compact('vehicle'));

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\VehicleType;
-use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -26,7 +26,7 @@ class ProductFactory extends Factory
         $price = $this->faker->numberBetween(1000000000, 5000000000); // 1B - 5B VNĐ
 
         return [
-            'brand_id' => Brand::factory(),
+            'category_id' => Category::factory(),
             'name' => $name,
             'slug' => Str::slug($name),
             'type' => $this->faker->randomElement(VehicleType::cases()),

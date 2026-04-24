@@ -6,7 +6,7 @@ use App\Actions\Products\CreateProductAction;
 use App\Actions\Products\UpdateProductAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductRequest;
-use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -17,15 +17,15 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with('brand')->latest();
+        $query = Product::with('category')->latest();
 
         // 1. Filtering
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
-        if ($request->filled('brand_id')) {
-            $query->where('brand_id', $request->brand_id);
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
         }
 
         if ($request->filled('search')) {
@@ -33,9 +33,9 @@ class ProductController extends Controller
         }
 
         $products = $query->paginate(10)->withQueryString();
-        $brands = Brand::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'brands'));
+        return view('admin.products.index', compact('products', 'categories'));
     }
 
     /**
@@ -43,9 +43,9 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $brands = Brand::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
 
-        return view('admin.products.create', compact('brands'));
+        return view('admin.products.create', compact('categories'));
     }
 
     /**
@@ -68,10 +68,10 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $brands = Brand::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
         $product->load('images');
 
-        return view('admin.products.edit', compact('product', 'brands'));
+        return view('admin.products.edit', compact('product', 'categories'));
     }
 
     /**

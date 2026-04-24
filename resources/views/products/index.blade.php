@@ -45,15 +45,15 @@
                             </div>
                         </div>
 
-                        <!-- Brand Filter -->
+                        <!-- Category Filter -->
                         <div class="border-t border-zinc-900 pt-6">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Thương hiệu</h3>
-                            <select name="brand_id" onchange="this.form.submit()" 
+                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Dòng xe</h3>
+                            <select name="category_id" onchange="this.form.submit()" 
                                 class="w-full bg-zinc-900 border-none text-zinc-400 text-xs font-bold uppercase tracking-widest p-4 focus:ring-1 focus:ring-accent">
-                                <option value="">Tất cả hãng</option>
-                                @foreach($brands as $brand)
-                                    <option value="{{ $brand->id }}" {{ request('brand_id') == $brand->id ? 'selected' : '' }}>
-                                        {{ $brand->name }}
+                                <option value="">Tất cả</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
                                     </option>
                                 @endforeach
                             </select>

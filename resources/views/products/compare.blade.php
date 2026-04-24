@@ -35,7 +35,7 @@
                                         <div class="space-y-6">
                                             <img src="{{ $product->primaryImage ? (Str::startsWith($product->primaryImage->path, 'http') ? $product->primaryImage->path : Storage::url($product->primaryImage->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-full h-40 object-cover grayscale hover:grayscale-0 transition-all duration-700">
                                             <div class="text-center">
-                                                <p class="text-[10px] font-black text-accent uppercase tracking-widest">{{ $product->brand->name }}</p>
+                                                <p class="text-[10px] font-black text-accent uppercase tracking-widest">{{ $product->category->name }}</p>
                                                 <h3 class="text-xl font-black text-white uppercase tracking-tighter">{{ $product->name }}</h3>
                                                 <p class="text-lg font-black text-white mt-2">{{ number_format($product->price) }} <span class="text-xs text-zinc-500">VNĐ</span></p>
                                             </div>

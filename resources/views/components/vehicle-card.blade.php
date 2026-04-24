@@ -42,7 +42,7 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
     <div class="p-8">
         <div class="flex justify-between items-start mb-4">
             <div>
-                <p class="text-xs font-black text-accent uppercase tracking-widest mb-1">{{ $vehicle->brand->name }}</p>
+                <p class="text-xs font-black text-accent uppercase tracking-widest mb-1">{{ $vehicle->category->name }}</p>
                 <h3 class="text-2xl font-black text-white uppercase tracking-tighter leading-none group-hover:text-accent transition-colors">
                     {{ $vehicle->name }}
                 </h3>

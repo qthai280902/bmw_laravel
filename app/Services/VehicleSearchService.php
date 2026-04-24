@@ -14,16 +14,16 @@ class VehicleSearchService
     {
         $query = Product::query()
             ->active()
-            ->with(['brand', 'primaryImage']); // Senior Architect: Optimized memory loading
+            ->with(['category', 'primaryImage']); // Senior Architect: Optimized memory loading
 
         // Filter by Vehicle Type (Enum)
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        // Filter by Brand
-        if (! empty($filters['brand_id'])) {
-            $query->where('brand_id', $filters['brand_id']);
+        // Filter by Category
+        if (! empty($filters['category_id'])) {
+            $query->where('category_id', $filters['category_id']);
         }
 
         // Filter by Price Range
@@ -53,7 +53,7 @@ class VehicleSearchService
     {
         $products = Product::whereIn('id', $productIds)
             ->active()
-            ->with(['brand', 'primaryImage'])
+            ->with(['category', 'primaryImage'])
             ->get();
 
         if ($products->isEmpty()) {
