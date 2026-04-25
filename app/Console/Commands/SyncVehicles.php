@@ -420,7 +420,7 @@ class SyncVehicles extends Command
                     'is_active' => true, // Ensure active
                     'stock' => 10,
                     'specifications' => $data['specifications'],
-                    'description' => $this->generateDescription($data['name'], $data['type']),
+                    'description' => $this->generateDescription($data['name'], $data['type']->value),
                 ]
             );
 
