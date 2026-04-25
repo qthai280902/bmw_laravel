@@ -1,7 +1,7 @@
-# Sử dụng FrankenPHP làm nền tảng (Cực nhanh và nhẹ cho Laravel)
-FROM dunglas/frankenphp:1-php8.2-bookworm
+# Sử dụng Apache làm máy chủ (Cực kỳ ổn định trên Render)
+FROM php:8.2-apache
 
-# Cài đặt các thư viện cần thiết cho Laravel
+# Cài đặt các thư viện cần thiết cho Laravel & PostgreSQL
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
@@ -14,15 +14,19 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install zip pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd intl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Cấu hình FrankenPHP
-ENV SERVER_NAME=:80
-ENV FRANKENPHP_CONFIG="worker ./public/index.php"
+# Bật mod_rewrite của Apache (Bắt buộc cho Laravel)
+RUN a2enmod rewrite
+
+# Cấu hình lại DocumentRoot của Apache trỏ vào thư mục public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Cài đặt Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Chép toàn bộ mã nguồn vào container
-WORKDIR /app
+# Chép mã nguồn vào container
+WORKDIR /var/www/html
 COPY . .
 
 # Cài đặt PHP dependencies
@@ -35,10 +39,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && npm run build
 
 # Phân quyền cho storage và bootstrap/cache
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose cổng của Render (Render dùng biến $PORT, mặc định FrankenPHP lắng nghe trên 80)
+# Render sử dụng cổng 80 mặc định cho Apache
 EXPOSE 80
-
-# Chạy server
-CMD ["frankenphp", "php-server", "--root", "./public"]
