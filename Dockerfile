@@ -43,3 +43,6 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 # Render sử dụng cổng 80 mặc định cho Apache
 EXPOSE 80
+
+# Tự động chạy migrate và nạp dữ liệu xe khi khởi động container
+CMD ["sh", "-c", "php artisan migrate --force && php artisan vehicle:sync && apache2-foreground"]
