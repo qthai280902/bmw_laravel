@@ -42,7 +42,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '5,9 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/BMW_330i_M_Sport_Sedan_%28G20%29_IMG_3155.jpg/800px-BMW_330i_M_Sport_Sedan_%28G20%29_IMG_3155.jpg'
+                'image' => 'https://www.hdcarwallpapers.com/download/bmw_330i_m_sport_2022_5k-2560x1440.jpg'
             ],
             [
                 'name' => 'BMW 530i M Sport',
@@ -67,7 +67,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '6,2 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/BMW_G60_M_Sport_IMG_7034.jpg/800px-BMW_G60_M_Sport_IMG_7034.jpg'
+                'image' => 'https://s3.paultan.org/tk/2025/01/2025-BMW-530i-M-Sport-Preview_Ext-1.jpg'
             ],
             [
                 'name' => 'BMW X3 xDrive20i',
@@ -92,7 +92,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '8,4 giây',
                     'Top_Speed_KMH' => '215 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/BMW_X3_xDrive20i_IMG_5017.jpg/800px-BMW_X3_xDrive20i_IMG_5017.jpg'
+                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/21177/bmw-x3-g45-20-xdrive-2025-767849.jpg'
             ],
             [
                 'name' => 'BMW X5 xDrive40i LCI',
@@ -117,7 +117,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '5,4 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/BMW_X5_LCI_IMG_7038.jpg/800px-BMW_X5_LCI_IMG_7038.jpg'
+                'image' => 'https://hips.hearstapps.com/hmg-prod/images/2025-bmw-x5-xdrive40i-test-101-6679759711677.jpg'
             ],
             [
                 'name' => 'BMW i4 eDrive40',
@@ -142,7 +142,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '5,7 giây',
                     'Top_Speed_KMH' => '190 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/BMW_i4_eDrive40_Sanremo_Green_Metallic_M_Sport_IMG_5245.jpg/800px-BMW_i4_eDrive40_Sanremo_Green_Metallic_M_Sport_IMG_5245.jpg'
+                'image' => 'https://img.netcarshow.com/BMW-i4_2022_1600x1200_wallpaper_01.jpg'
             ],
             [
                 'name' => 'BMW XM Plug-in Hybrid',
@@ -167,7 +167,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '4,3 giây',
                     'Top_Speed_KMH' => '250 km/h (270 km/h with M Driver Package)',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/BMW_XM_G09_Cape_York_Green_Metallic_IMG_5694.jpg/800px-BMW_XM_G09_Cape_York_Green_Metallic_IMG_5694.jpg'
+                'image' => 'https://www.hdcarwallpapers.com/download/g_power_bmw_xm_label_2025_8k-1920x1080.jpg'
             ],
             [
                 'name' => 'BMW M3 Competition M xDrive',
@@ -192,7 +192,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3,5 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/BMW_M3_%28G80%29_Competition_IMG_4031.jpg/800px-BMW_M3_%28G80%29_Competition_IMG_4031.jpg'
+                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/20915/bmw-m3-g80-sedan-2025-753896.jpg'
             ],
             [
                 'name' => 'BMW M4 Competition Coupe',
@@ -217,7 +217,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3,9 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/BMW_M4_Competition_%28G82%29_IMG_4070.jpg/800px-BMW_M4_Competition_%28G82%29_IMG_4070.jpg'
+                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/21035/bmw-m4-g82-cs-2025-760773.jpg'
             ],
             [
                 'name' => 'BMW M5 Touring (G99)',
@@ -242,7 +242,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3,6 giây',
                     'Top_Speed_KMH' => '305 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/BMW_M5_Touring_%28G99%29_IMG_7040.jpg/800px-BMW_M5_Touring_%28G99%29_IMG_7040.jpg'
+                'image' => 'https://s3.paultan.org/tk/2024/08/2025-BMW-M5-Touring-1.jpg'
             ],
             [
                 'name' => 'BMW 550e xDrive',
@@ -267,7 +267,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '4,3 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/BMW_550e_xDrive_%28G60%29_IMG_7035.jpg/800px-BMW_550e_xDrive_%28G60%29_IMG_7035.jpg'
+                'image' => 'https://www.bmwblog.com/wp-content/uploads/2024/02/2025-BMW-550e-xDrive-01.jpg'
             ],
 
             // --- MOTORCYCLES ---
@@ -294,7 +294,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '7.0 giây',
                     'Top_Speed_KMH' => '143 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/BMW_G_310_R.jpg/800px-BMW_G_310_R.jpg'
+                'image' => 'https://images.4kwallpapers.com/bikes/bmw-g310r-roadster-11983.jpg'
             ],
             [
                 'name' => 'BMW S1000RR',
@@ -319,7 +319,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '2.8 giây',
                     'Top_Speed_KMH' => '299 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/BMW_S1000_RR_Studio.JPG/800px-BMW_S1000_RR_Studio.JPG'
+                'image' => 'https://www.mcnews.com.au/wp-content/uploads/2024/10/2025-BMW-S-1000-RR-10.jpg'
             ],
             [
                 'name' => 'BMW R1250GS',
@@ -344,7 +344,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3.5 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/BMW_R1250GS_Paris.jpg/800px-BMW_R1250GS_Paris.jpg'
+                'image' => 'https://images.4kwallpapers.com/bikes/bmw-r-1250-gs-spirit-of-gs-edition-6120x3442-9112.jpg'
             ],
             [
                 'name' => 'BMW F900R',
@@ -369,7 +369,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3.8 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/BMW_F900R_%281crop%29.jpg/800px-BMW_F900R_%281crop%29.jpg'
+                'image' => 'https://amcn.com.au/wp-content/uploads/2021/01/P90579128_highRes_the-new-bmw-f-900-r.jpg'
             ],
             [
                 'name' => 'BMW K1600GT',
@@ -394,7 +394,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3.4 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/BMW_K_1600_GT_Right.JPG/800px-BMW_K_1600_GT_Right.JPG'
+                'image' => 'https://www.webbikeworld.com/wp-content/uploads/2021/10/2022-BMW-K-1600-GT-7.jpg'
             ],
         ];
 
