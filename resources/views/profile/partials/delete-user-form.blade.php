@@ -19,7 +19,7 @@
                 Confirm <span class="text-rose-600">Termination</span>
             </h2>
 
-            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] italic mb-8">
+            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]  mb-8">
                 Vui lòng nhập mật khẩu xác nhận bạn muốn xóa định danh khỏi hệ thống BMW Showroom.
             </p>
 

@@ -20,7 +20,7 @@
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
                 <div class="mt-4">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 ">
                         {{ __('Your email address is unverified.') }}
 
                         <button form="send-verification" class="text-[#1C69D4] hover:text-white transition-colors ml-2 underline underline-offset-4">
@@ -29,7 +29,7 @@
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 italic">
+                        <p class="mt-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 ">
                             {{ __('A new verification link has been sent to your email address.') }}
                         </p>
                     @endif
@@ -46,7 +46,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-[10px] font-black uppercase tracking-widest text-emerald-500 italic"
+                    class="text-[10px] font-black uppercase tracking-widest text-emerald-500 "
                 >{{ __('Confirmed.') }}</p>
             @endif
         </div>

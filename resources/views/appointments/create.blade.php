@@ -2,10 +2,21 @@
     <div class="py-24 bg-zinc-950 min-h-screen border-t border-zinc-900">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-black border border-zinc-800 p-8 md:p-12 shadow-2xl">
+                @php
+                    $currentTypeStr = old('type', request('type'));
+                    $requestedType = \App\Enums\AppointmentType::tryFrom($currentTypeStr);
+                    $serviceTypes = [
+                        \App\Enums\AppointmentType::Maintenance->value,
+                        \App\Enums\AppointmentType::Detailing->value,
+                        \App\Enums\AppointmentType::CarWash->value
+                    ];
+                    $isService = in_array($currentTypeStr, $serviceTypes);
+                @endphp
+
                 <div class="text-center mb-12">
-                    <h2 class="text-xs font-black uppercase tracking-[0.4em] text-accent mb-4">Trải nghiệm khác biệt</h2>
-                    <h1 class="text-3xl md:text-4xl font-light uppercase tracking-tighter text-white">
-                        {{ request('type') === 'quote' ? 'Yêu cầu báo giá' : 'Đăng ký lái thử' }}
+                    <h2 id="form-subtitle" class="text-xs font-black uppercase tracking-[0.4em] text-accent mb-4">Trải nghiệm khác biệt</h2>
+                    <h1 id="form-title" class="text-3xl md:text-4xl font-light uppercase tracking-tighter text-white">
+                        Đăng ký dịch vụ
                     </h1>
                 </div>
 
@@ -26,15 +37,53 @@
                     <div class="space-y-6">
                         <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Bạn cần hỗ trợ gì?</h3>
                         <div>
-                            <select name="type" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-xs font-black tracking-widest">
-                                @foreach(\App\Enums\AppointmentType::cases() as $type)
-                                    <option value="{{ $type->value }}" {{ request('type') == $type->value || old('type') == $type->value ? 'selected' : '' }}>
-                                        {{ $type->label() }}
-                                    </option>
-                                @endforeach
+                            <select id="type-select" name="type" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-xs font-black tracking-widest" onchange="updateFormHeader(this.value)">
+                                @if($isService)
+                                    @foreach([\App\Enums\AppointmentType::Maintenance, \App\Enums\AppointmentType::Detailing, \App\Enums\AppointmentType::CarWash] as $type)
+                                        <option value="{{ $type->value }}" {{ $currentTypeStr == $type->value ? 'selected' : '' }}>
+                                            {{ $type->label() }}
+                                        </option>
+                                    @endforeach
+                                @else
+                                    @foreach([\App\Enums\AppointmentType::TestDrive, \App\Enums\AppointmentType::Viewing, \App\Enums\AppointmentType::Quote, \App\Enums\AppointmentType::Consult] as $type)
+                                        <option value="{{ $type->value }}" {{ $currentTypeStr == $type->value ? 'selected' : '' }}>
+                                            {{ $type->label() }}
+                                        </option>
+                                    @endforeach
+                                @endif
                             </select>
                         </div>
                     </div>
+
+                    <script>
+                        function updateFormHeader(value) {
+                            const title = document.getElementById('form-title');
+                            const subtitle = document.getElementById('form-subtitle');
+                            
+                            const serviceTypes = ['maintenance', 'detailing', 'car_wash'];
+                            const isService = serviceTypes.includes(value);
+
+                            subtitle.innerText = isService ? 'Chăm sóc chuyên nghiệp' : 'Trải nghiệm khác biệt';
+                            
+                            const labels = {
+                                'test_drive': 'Lái thử xe',
+                                'viewing': 'Xem xe trực tiếp',
+                                'maintenance': 'Bảo dưỡng định kỳ',
+                                'detailing': 'Chăm sóc xe chuyên sâu',
+                                'car_wash': 'Rửa xe Premium',
+                                'quote': 'Yêu cầu báo giá',
+                                'consult': 'Tư vấn trực tiếp'
+                            };
+
+                            title.innerText = labels[value] || 'Đăng ký dịch vụ';
+                        }
+
+                        // Initialize on load
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const select = document.getElementById('type-select');
+                            if(select) updateFormHeader(select.value);
+                        });
+                    </script>
 
                     <!-- Thông tin khách hàng -->
                     <div class="space-y-6">

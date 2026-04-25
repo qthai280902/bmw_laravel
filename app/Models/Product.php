@@ -37,6 +37,7 @@ class Product extends Model
         'Horsepower' => 'Công suất tối đa',
         'Torque' => 'Mô-men xoắn',
         '0-100km/h' => 'Tăng tốc 0-100km/h',
+        '0-60mph' => 'Tăng tốc 0-60mph',
         'Top Speed' => 'Tốc độ tối đa',
         'Drivetrain' => 'Hệ dẫn động',
         'Transmission' => 'Hộp số',

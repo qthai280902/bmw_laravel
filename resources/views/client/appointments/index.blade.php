@@ -3,7 +3,7 @@
         <h2 class="text-5xl font-black uppercase tracking-tighter text-white">
             Access <span class="text-[#1C69D4]">Appointments</span>
         </h2>
-        <p class="text-zinc-500 mt-2 font-medium uppercase text-xs tracking-widest italic">Theo dõi lịch lái thử và bảo dưỡng xe của bạn.</p>
+        <p class="text-zinc-500 mt-2 font-medium uppercase text-xs tracking-widest ">Theo dõi lịch lái thử và bảo dưỡng xe của bạn.</p>
     </x-slot>
 
     <div class="py-12">
@@ -18,11 +18,11 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="border-b border-zinc-800 bg-zinc-950/50">
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Thời gian</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Dòng xe</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Loại dịch vụ</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic text-center">Trạng thái</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Ghi chú</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Thời gian</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Dòng xe</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Loại dịch vụ</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest  text-center">Trạng thái</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Ghi chú</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-900">
@@ -32,15 +32,15 @@
                                         <div class="text-xs font-black text-white tabular-nums tracking-widest leading-none">
                                             {{ $appointment->appointment_date->format('d/M/Y') }}
                                         </div>
-                                        <div class="text-[10px] font-bold text-zinc-600 uppercase mt-2 italic leading-none">
+                                        <div class="text-[10px] font-bold text-zinc-600 uppercase mt-2  leading-none">
                                             Lúc: {{ $appointment->appointment_date->format('H:i') }}
                                         </div>
                                     </td>
                                     <td class="px-8 py-8 uppercase text-xs font-black tracking-tighter text-zinc-200 group-hover:text-[#1C69D4] transition-colors">
-                                        {{ $appointment->product->name }}
+                                        {{ $appointment->product?->name ?? 'Dòng xe không xác định' }}
                                     </td>
                                     <td class="px-8 py-8">
-                                        <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-3 py-1 bg-zinc-950 border border-zinc-800 italic">
+                                        <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-3 py-1 bg-zinc-950 border border-zinc-800 ">
                                             {{ $appointment->type->label() }}
                                         </span>
                                     </td>
@@ -49,14 +49,14 @@
                                             {{ $appointment->status->label() }}
                                         </span>
                                     </td>
-                                    <td class="px-8 py-8 text-xs text-zinc-500 italic font-medium max-w-xs truncate">
+                                    <td class="px-8 py-8 text-xs text-zinc-500  font-medium max-w-xs truncate">
                                         {{ $appointment->notes ?? '-' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-8 py-32 text-center">
-                                        <div class="text-zinc-600 font-black uppercase text-sm tracking-[0.2em] italic mb-4">Bạn chưa có lịch hẹn nào.</div>
+                                        <div class="text-zinc-600 font-black uppercase text-sm tracking-[0.2em]  mb-4">Bạn chưa có lịch hẹn nào.</div>
                                         <a href="{{ route('products.index') }}" class="text-[#1C69D4] font-black uppercase text-xs tracking-widest hover:underline decoration-2 underline-offset-8">Khám phá Showroom ngay &rarr;</a>
                                     </td>
                                 </tr>
@@ -73,14 +73,14 @@
             </div>
             
             <div class="mt-12 p-8 border border-zinc-900 bg-zinc-950/50 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="text-[10px] font-black uppercase tracking-widest text-zinc-600 max-w-xl italic leading-relaxed">
+                <div class="text-[10px] font-black uppercase tracking-widest text-zinc-600 max-w-xl  leading-relaxed">
                     * Lưu ý: Lịch hẹn của bạn cần được chuyên viên BMW xác nhận qua điện thoại hoặc email. 
                     Vui lòng có mặt trước 15 phút tại Showroom đã chọn để chúng tôi chuẩn bị xe tốt nhất.
                 </div>
                 <div class="flex gap-8">
                     <div class="text-center">
                         <div class="text-xs font-black text-white">1800-BMW-CARE</div>
-                        <div class="text-[8px] font-bold text-zinc-700 uppercase tracking-widest mt-1 italic">Hotline Chăm sóc khách hàng</div>
+                        <div class="text-[8px] font-bold text-zinc-700 uppercase tracking-widest mt-1 ">Hotline Chăm sóc khách hàng</div>
                     </div>
                 </div>
             </div>

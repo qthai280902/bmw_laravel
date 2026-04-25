@@ -7,10 +7,10 @@
 
         <title>{{ config('app.name', 'BMW Showroom') }}</title>
 
-        <!-- Fonts: Outfit for premium modern feel -->
+        <!-- Fonts: Inter for better Vietnamese support -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -64,37 +64,40 @@
             </main>
 
             <!-- Showroom Footer -->
-            <footer class="bg-zinc-950 border-t border-zinc-900 py-16">
+            <footer class="bg-white border-t border-zinc-200 py-16 text-black">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                         <div class="col-span-1 md:col-span-2">
-                            <h2 class="text-2xl font-black uppercase tracking-tighter mb-4">
-                                BMW <span class="text-accent underline decoration-2">SHOWROOM</span>
-                            </h2>
-                            <p class="text-zinc-500 max-w-sm leading-relaxed">
+                            <div class="flex items-center gap-4 mb-6">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg" class="h-10 w-10" alt="BMW Logo">
+                                <h2 class="text-2xl font-black uppercase tracking-tighter text-black">
+                                    BMW <span class="text-zinc-400">SHOWROOM</span>
+                                </h2>
+                            </div>
+                            <p class="text-zinc-600 max-w-sm leading-relaxed">
                                 Trải nghiệm sự kết hợp hoàn mỹ giữa kỹ thuật cơ khí Đức và ngôn ngữ thiết kế tương lai. Tầm nhìn của chúng tôi là định nghĩa lại sự sang trọng trong kỷ nguyên số.
                             </p>
                         </div>
                         <div>
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6">Sản phẩm</h3>
-                            <ul class="space-y-4 text-sm text-zinc-500">
-                                <li><a href="#" class="hover:text-white transition-colors">Ô tô (Cars)</a></li>
-                                <li><a href="#" class="hover:text-white transition-colors">Xe máy (Motorcycles)</a></li>
-                                <li><a href="#" class="hover:text-white transition-colors">Phụ kiện chính hãng</a></li>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-black mb-6">Sản phẩm</h3>
+                            <ul class="space-y-4 text-sm text-zinc-600 font-medium">
+                                <li><a href="#" class="hover:text-black transition-colors">Ô tô (Cars)</a></li>
+                                <li><a href="#" class="hover:text-black transition-colors">Xe máy (Motorcycles)</a></li>
+                                <li><a href="#" class="hover:text-black transition-colors">Phụ kiện chính hãng</a></li>
                             </ul>
                         </div>
                         <div>
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6">Liên hệ</h3>
-                            <ul class="space-y-4 text-sm text-zinc-500">
-                                <li><a href="#" class="hover:text-white transition-colors">Showroom Hà Nội</a></li>
-                                <li><a href="#" class="hover:text-white transition-colors">Showroom TP. HCM</a></li>
-                                <li><a href="#" class="hover:text-white transition-colors">Hotline: 1800-BMW-SERIES</a></li>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-black mb-6">Liên hệ</h3>
+                            <ul class="space-y-4 text-sm text-zinc-600 font-medium">
+                                <li><a href="#" class="hover:text-black transition-colors">Showroom Hà Nội</a></li>
+                                <li><a href="#" class="hover:text-black transition-colors">Showroom TP. HCM</a></li>
+                                <li><a href="#" class="hover:text-black transition-colors">Hotline: 1800-BMW-SERIES</a></li>
                             </ul>
                         </div>
                     </div>
-                    <div class="mt-16 pt-8 border-t border-zinc-900 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-600">
-                        <p>© {{ date('Y') }} BMW Group Vietnam. All rights reserved.</p>
-                        <p>Privacy Policy | Contact Us</p>
+                    <div class="mt-16 pt-8 border-t border-zinc-200 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
+                        <p>© {{ date('Y') }} BMW Group Vietnam. Bảo lưu mọi quyền.</p>
+                        <p>Chính sách bảo mật | Liên hệ chúng tôi</p>
                     </div>
                 </div>
             </footer>

@@ -30,7 +30,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-[10px] font-black uppercase tracking-widest text-emerald-500 italic"
+                    class="text-[10px] font-black uppercase tracking-widest text-emerald-500 "
                 >{{ __('Credentials Synchronized.') }}</p>
             @endif
         </div>

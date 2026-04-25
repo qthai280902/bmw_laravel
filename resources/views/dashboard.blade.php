@@ -3,7 +3,7 @@
         <h2 class="text-5xl font-black uppercase tracking-tighter text-white">
             My <span class="text-[#1C69D4]">Garage</span>
         </h2>
-        <p class="text-zinc-500 mt-2 font-medium uppercase text-xs tracking-widest italic">Quản lý lịch hẹn lái thử và yêu cầu báo giá.</p>
+        <p class="text-zinc-500 mt-2 font-medium uppercase text-xs tracking-widest ">Quản lý lịch hẹn lái thử và yêu cầu báo giá.</p>
     </x-slot>
 
     <div class="py-12">
@@ -35,11 +35,11 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="border-b border-zinc-800 bg-zinc-950/50">
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Mã</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Dòng xe</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic">Loại</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic text-center">Trạng thái</th>
-                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest italic text-right">Ngày hẹn</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Mã</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Dòng xe</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest ">Loại</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest  text-center">Trạng thái</th>
+                                <th class="px-8 py-6 text-[10px] font-black uppercase text-zinc-500 tracking-widest  text-right">Ngày hẹn</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-900">
@@ -73,7 +73,7 @@
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-8 py-32 text-center">
-                                        <div class="text-zinc-600 font-black uppercase text-sm tracking-[0.2em] italic mb-4">Bạn chưa có yêu cầu nào.</div>
+                                        <div class="text-zinc-600 font-black uppercase text-sm tracking-[0.2em]  mb-4">Bạn chưa có yêu cầu nào.</div>
                                         <a href="{{ route('appointments.create') }}" class="text-[#1C69D4] font-black uppercase text-xs tracking-widest hover:underline decoration-2 underline-offset-8">Đăng ký lái thử ngay &rarr;</a>
                                     </td>
                                 </tr>

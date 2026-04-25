@@ -7,10 +7,8 @@
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('home') }}" class="group">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 border-2 border-white flex items-center justify-center font-black text-xl tracking-tighter group-hover:bg-white group-hover:text-black transition-all duration-300">
-                                B
-                            </div>
-                            <span class="text-lg font-black uppercase tracking-[0.2em] hidden sm:block">BMW <span class="text-zinc-500">Showroom</span></span>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg" class="h-12 w-12" alt="BMW Logo">
+                            <span class="text-lg font-black uppercase tracking-[0.2em] hidden sm:block">BMW <span class="text-zinc-500 ">Showroom</span></span>
                         </div>
                     </a>
                 </div>
@@ -25,6 +23,9 @@
                     </x-nav-link>
                     <x-nav-link :href="route('services.index')" :active="request()->is('services*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Dịch vụ
+                    </x-nav-link>
+                    <x-nav-link :href="route('experiences.index')" :active="request()->is('experiences*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
+                        Trải nghiệm
                     </x-nav-link>
                 </div>
             </div>
@@ -46,18 +47,18 @@
                         </x-slot>
 
                         <x-slot name="content">
-                            @if(auth()->user()->email === 'admin@bmw.com')
+                            @if(auth()->user()->email === 'admin@bmw.com' || auth()->user()->email === 'quanly1@bmw.com')
                                 <x-dropdown-link :href="route('admin.products.index')">
-                                    {{ __('Admin Panel') }}
+                                    {{ __('Trang Quản trị') }}
                                 </x-dropdown-link>
                             @endif
 
                             <x-dropdown-link :href="route('dashboard')">
-                                {{ __('My Garage') }}
+                                {{ __('Garage của tôi') }}
                             </x-dropdown-link>
 
                             <x-dropdown-link :href="route('profile.edit')">
-                                {{ __('Settings') }}
+                                {{ __('Cài đặt tài khoản') }}
                             </x-dropdown-link>
 
                             <form method="POST" action="{{ route('logout') }}">
@@ -65,7 +66,7 @@
                                 <x-dropdown-link :href="route('logout')"
                                         onclick="event.preventDefault();
                                                     this.closest('form').submit();">
-                                    {{ __('Log Out') }}
+                                    {{ __('Đăng xuất') }}
                                 </x-dropdown-link>
                             </form>
                         </x-slot>
@@ -96,6 +97,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('services.index')" :active="request()->is('services*')">
                 Dịch vụ
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('experiences.index')" :active="request()->is('experiences*')">
+                Trải nghiệm
             </x-responsive-nav-link>
         </div>
 

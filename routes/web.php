@@ -11,7 +11,14 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::get('/', function () {
-    return view('welcome');
+    $featuredProducts = \App\Models\Product::active()
+        ->where('is_featured', true)
+        ->with(['category', 'primaryImage'])
+        ->latest()
+        ->take(3)
+        ->get();
+
+    return view('welcome', compact('featuredProducts'));
 })->name('home');
 
 Route::get('/catalog', [ProductController::class, 'index'])->name('products.index');
@@ -43,9 +50,11 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
         Route::resource('users', UserController::class)->only(['index']);
+        Route::get('customers', [App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');
     });
 });
 
 require __DIR__.'/auth.php';
-// Services Route
+// Services & Experiences Routes
 Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+Route::get('/experiences', [ServiceController::class, 'experiences'])->name('experiences.index');

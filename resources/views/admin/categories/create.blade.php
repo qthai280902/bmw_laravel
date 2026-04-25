@@ -1,33 +1,38 @@
 <x-admin-layout>
     <div class="mb-12">
-        <h1 class="text-6xl font-light uppercase tracking-tighter mb-2">New <span class="font-black text-[#1C69D4]">Line</span></h1>
-        <p class="text-zinc-500 font-medium font-outfit">Thêm dòng xe mới cho Showroom BMW.</p>
+        <h1 class="text-6xl font-light uppercase tracking-tighter mb-2 text-white">New <span class="font-black text-[#1C69D4]">Line</span></h1>
+        <p class="text-zinc-500 font-medium font-outfit">Định nghĩa phân khúc và dòng xe mới cho hệ thống BMW Showroom.</p>
     </div>
 
     <form action="{{ route('admin.categories.store') }}" method="POST">
         @csrf
-        <div class="max-w-2xl space-y-12">
-            <x-admin.card>
-                <h3 class="text-xs font-black uppercase tracking-widest text-[#1C69D4] mb-8">Thông tin dòng xe</h3>
+        <div class="max-w-3xl space-y-8">
+            <x-admin.card class="!p-10">
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-10 pb-4 border-b border-zinc-800">Cấu hình dòng xe</h3>
                 
-                <div class="space-y-6">
+                <div class="space-y-8">
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-zinc-500 mb-2">Tên dòng xe</label>
-                        <input type="text" name="name" value="{{ old('name') }}" required placeholder="Ví dụ: Sedan, SAV, BMW i..." class="w-full bg-black border-zinc-800 text-white text-sm focus:border-[#1C69D4] focus:ring-0">
+                        <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Tên định danh dòng xe</label>
+                        <input type="text" name="name" value="{{ old('name') }}" required 
+                               class="w-full bg-zinc-950 border-zinc-800 text-white text-base font-black px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all placeholder-zinc-800"
+                               placeholder="Ví dụ: BMW M Performance">
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-zinc-500 mb-2">Mô tả</label>
-                        <textarea name="description" rows="4" class="w-full bg-black border-zinc-800 text-white text-sm focus:border-[#1C69D4] focus:ring-0">{{ old('description') }}</textarea>
+                        <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Mô tả đặc điểm phân khúc</label>
+                        <textarea name="description" rows="5" 
+                                  class="w-full bg-zinc-950 border-zinc-800 text-zinc-300 text-sm px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all placeholder-zinc-800"
+                                  placeholder="Mô tả tóm tắt về đặc điểm kỹ thuật hoặc phong cách của dòng xe này...">{{ old('description') }}</textarea>
                     </div>
                 </div>
             </x-admin.card>
 
-            <div class="flex gap-4">
-                <button type="submit" class="flex-1 py-4 bg-[#1C69D4] text-white font-black uppercase text-sm tracking-widest hover:bg-blue-600 transition-colors shadow-2xl">
-                    Lưu dòng xe
+            <div class="grid grid-cols-2 gap-4">
+                <button type="submit" class="group relative py-5 bg-white text-black font-black uppercase text-sm tracking-widest shadow-2xl overflow-hidden text-center">
+                    <span class="relative z-10">Khởi tạo dòng xe</span>
+                    <div class="absolute inset-0 bg-zinc-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                 </button>
-                <a href="{{ route('admin.categories.index') }}" class="flex-1 py-4 bg-zinc-900 text-zinc-500 font-black uppercase text-sm tracking-widest text-center hover:text-white transition-colors">
+                <a href="{{ route('admin.categories.index') }}" class="py-5 bg-zinc-900 border border-zinc-800 text-zinc-500 font-black uppercase text-sm tracking-widest text-center hover:text-white hover:bg-zinc-800 transition-all">
                     Hủy bỏ
                 </a>
             </div>

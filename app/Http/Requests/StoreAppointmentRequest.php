@@ -27,7 +27,7 @@ class StoreAppointmentRequest extends FormRequest
             'guest_phone' => [$isGuest ? 'required' : 'nullable', 'string', 'max:20'],
             'guest_email' => ['nullable', 'email', 'max:255'],
             'product_id' => ['required', 'exists:products,id'],
-            'type' => ['required', Rule::in(['test_drive', 'viewing', 'quote', 'maintenance'])],
+            'type' => ['required', Rule::in(['test_drive', 'viewing', 'quote', 'maintenance', 'detailing', 'car_wash', 'consult'])],
             'appointment_date' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];

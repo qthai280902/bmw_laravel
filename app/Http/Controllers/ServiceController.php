@@ -8,4 +8,9 @@ class ServiceController extends Controller
     {
         return view('services');
     }
+
+    public function experiences()
+    {
+        return view('experiences');
+    }
 }

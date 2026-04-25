@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-4xl font-black text-white uppercase tracking-tighter italic">
+                <h2 class="text-4xl font-black text-white uppercase tracking-tighter ">
                     Bản đối chiếu <span class="text-accent underline decoration-4">Thông số</span>
                 </h2>
                 <p class="text-zinc-500 mt-2 uppercase text-xs tracking-widest font-bold">So sánh hiệu năng & tiện nghi</p>

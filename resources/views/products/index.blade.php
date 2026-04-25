@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-4xl font-black text-white uppercase tracking-tighter italic">
+        <h2 class="text-4xl font-black text-white uppercase tracking-tighter ">
             BMW <span class="text-accent underline decoration-4">Showroom</span>
         </h2>
         <p class="text-zinc-500 mt-2 uppercase text-xs tracking-widest font-bold">Khám phá tuyệt tác cơ khí Đức</p>
@@ -94,7 +94,7 @@
 
                     @if($vehicles->isEmpty())
                         <div class="py-20 text-center">
-                            <h3 class="text-4xl font-black text-zinc-900 uppercase italic mb-4">Không tìm thấy xe</h3>
+                            <h3 class="text-4xl font-black text-zinc-900 uppercase  mb-4">Không tìm thấy xe</h3>
                             <a href="{{ route('products.index') }}" class="text-accent uppercase text-xs font-black tracking-widest border-b-2 border-accent pb-1">Xem tất cả dòng xe</a>
                         </div>
                     @else

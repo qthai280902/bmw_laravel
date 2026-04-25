@@ -32,7 +32,7 @@
                     <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
                         Dịch vụ Detailing và Ceramic cao cấp giúp bảo vệ lớp sơn nguyên bản và tạo độ bóng gương hoàn hảo. Chúng tôi sử dụng các sản phẩm chăm sóc từ những thương hiệu hàng đầu thế giới được BMW khuyên dùng.
                     </p>
-                    <a href="{{ route('appointments.create', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
+                    <a href="{{ route('appointments.create', ['type' => 'detailing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
                         Đặt lịch Detailing
                     </a>
                 </div>
@@ -58,7 +58,7 @@
                     <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
                         Không chỉ là làm sạch, quy trình rửa xe 24 bước của chúng tôi loại bỏ hoàn toàn các tác nhân gây hại từ môi trường, bảo vệ từng chi tiết ngoại thất và nội thất bằng các dụng cụ chuyên dụng không gây trầy xước.
                     </p>
-                    <a href="{{ route('appointments.create', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
+                    <a href="{{ route('appointments.create', ['type' => 'car_wash']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
                         Đặt lịch Rửa xe
                     </a>
                 </div>
