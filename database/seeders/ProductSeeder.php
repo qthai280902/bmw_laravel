@@ -395,12 +395,16 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($vehicles as $vehicleData) {
+            // Robust category matching
             $category = Category::where('slug', $vehicleData['category_slug'])->first();
             
+            // If category doesn't exist yet, fallback to the first available category or a default
+            $categoryId = $category ? $category->id : (Category::first()->id ?? 1);
+
             $product = Product::updateOrCreate(
                 ['slug' => Str::slug($vehicleData['name'])],
                 [
-                    'category_id' => $category->id ?? 1,
+                    'category_id' => $categoryId,
                     'name' => $vehicleData['name'],
                     'type' => $vehicleData['type'],
                     'price' => $vehicleData['price'],
