@@ -4,7 +4,7 @@
     <div class="bg-zinc-950 pb-20">
         <!-- Hero Section: Premium Image Showcase -->
         <div class="relative h-[70vh] w-full overflow-hidden">
-            <img src="{{ $vehicle->primaryImage ? (Str::startsWith($vehicle->primaryImage->path, 'http') ? $vehicle->primaryImage->path : Storage::url($vehicle->primaryImage->path)) : 'https://placehold.co/1920x1080/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
+            <img src="{{ $vehicle->primaryImage ? (str($vehicle->primaryImage->path)->startsWith('http') ? $vehicle->primaryImage->path : Storage::url($vehicle->primaryImage->path)) : 'https://placehold.co/1920x1080/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover transition-all duration-1000 transform scale-105 hover:scale-100" alt="{{ $vehicle->name }}">
             
             <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
             
@@ -43,7 +43,7 @@
                     <section class="grid grid-cols-2 gap-4">
                         @foreach($vehicle->images->where('is_primary', false) as $image)
                             <div class="aspect-[4/3] bg-zinc-900 border border-zinc-800 overflow-hidden cursor-pointer group/thumb">
-                                <img src="{{ $image ? (Str::startsWith($image->path, 'http') ? $image->path : Storage::url($image->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover transition-all duration-500">
+                                <img src="{{ $image ? (str($image->path)->startsWith('http') ? $image->path : Storage::url($image->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" class="w-full h-full object-cover transition-all duration-500">
                             </div>
                         @endforeach
                     </section>
