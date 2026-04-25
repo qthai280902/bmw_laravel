@@ -1,0 +1,5 @@
+{
+    "application_id": "YOUR_APPLICATION_ID_HERE",
+    "organization_id": "YOUR_ORGANIZATION_ID_HERE",
+    "environment": "production"
+}
