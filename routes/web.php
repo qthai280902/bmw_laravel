@@ -69,3 +69,6 @@ require __DIR__.'/auth.php';
 // Services & Experiences Routes
 Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/experiences', [ServiceController::class, 'experiences'])->name('experiences.index');
+
+// API for cascading dropdowns
+Route::get('/api/products-by-category', [ProductController::class, 'getProductsByCategory'])->name('api.products.category');

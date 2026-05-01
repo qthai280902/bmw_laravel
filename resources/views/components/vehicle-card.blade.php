@@ -19,7 +19,7 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
     @endif
 
     <!-- Selection Overlay for Comparison -->
-    @if($showCompare)
+    @if($showCompare && !Str::contains(strtolower($vehicle->category?->name ?? ''), 'phụ kiện'))
     <div class="absolute top-4 right-4 z-10">
         <button @click.prevent="toggle()" 
             :class="isSelected ? 'bg-accent text-white' : 'bg-zinc-900/50 text-zinc-400 hover:text-white'"

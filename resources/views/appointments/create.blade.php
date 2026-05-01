@@ -115,20 +115,28 @@
                         @endguest
                     </div>
 
-                    <!-- Thông tin xe -->
+                    <!-- Thông tin sản phẩm -->
                     <div class="space-y-6 pt-4">
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Dòng xe quan tâm</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Sản phẩm quan tâm</h3>
                         
-                        <div>
-                            <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Chọn mẫu xe *</label>
-                            <select name="product_id" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
-                                <option value="">-- Vui lòng chọn xe --</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->id }}" {{ request('product_id') == $product->id || old('product_id') == $product->id ? 'selected' : '' }}>
-                                        {{ $product->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Danh mục *</label>
+                                <select id="category_selector" class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-[10px] font-black tracking-widest">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    <option value="oto">BMW Ô tô</option>
+                                    <option value="xe_may">BMW Motorrad</option>
+                                    <option value="phu_kien">Phụ kiện chính hãng</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Chọn sản phẩm *</label>
+                                <select id="product_selector" name="product_id" required disabled
+                                    class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <option value="">-- Vui lòng chọn danh mục trước --</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div>
@@ -144,6 +152,51 @@
                                 class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors">{{ old('notes') }}</textarea>
                         </div>
                     </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const categorySelector = document.getElementById('category_selector');
+                            const productSelector = document.getElementById('product_selector');
+
+                            categorySelector.addEventListener('change', async function() {
+                                const type = this.value;
+                                if (!type) {
+                                    productSelector.innerHTML = '<option value="">-- Vui lòng chọn danh mục trước --</option>';
+                                    productSelector.disabled = true;
+                                    return;
+                                }
+
+                                // UI State: Loading
+                                productSelector.innerHTML = '<option value="">Đang tải sản phẩm...</option>';
+                                productSelector.disabled = true;
+
+                                try {
+                                    const response = await fetch(`{{ route('api.products.category') }}?category_type=${type}`);
+                                    const data = await response.json();
+
+                                    productSelector.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+                                    data.products.forEach(product => {
+                                        const option = document.createElement('option');
+                                        option.value = product.id;
+                                        option.textContent = product.name;
+                                        productSelector.appendChild(option);
+                                    });
+                                    
+                                    productSelector.disabled = false;
+                                } catch (error) {
+                                    console.error('Error fetching products:', error);
+                                    productSelector.innerHTML = '<option value="">Lỗi khi tải dữ liệu</option>';
+                                }
+                            });
+
+                            // Pre-fill if product_id is in URL (Legacy support)
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const prefillId = urlParams.get('product_id');
+                            if (prefillId) {
+                                // Logic này phức tạp hơn nếu muốn auto-select category, tạm thời để user chọn manual hoặc fix sau
+                            }
+                        });
+                    </script>
 
                     <div class="pt-8">
                         <button type="submit" class="w-full bg-accent text-white py-5 text-sm font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all">

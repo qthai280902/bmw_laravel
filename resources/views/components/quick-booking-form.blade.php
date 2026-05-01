@@ -73,11 +73,11 @@
                         </div>
                     @endguest
 
-                    {{-- Chọn xe --}}
+                    {{-- Chọn sản phẩm --}}
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Dòng xe quan tâm *</label>
+                        <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Sản phẩm quan tâm *</label>
                         <select name="product_id" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
-                            <option value="">-- Chọn xe --</option>
+                            <option value="">-- Chọn sản phẩm --</option>
                             @foreach(\App\Models\Product::where('is_active', true)->get() as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }}</option>
                             @endforeach

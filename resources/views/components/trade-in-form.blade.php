@@ -84,11 +84,11 @@
                         </div>
                     </div>
 
-                    {{-- Mẫu BMW mong muốn --}}
+                    {{-- Sản phẩm BMW mong muốn --}}
                     <div class="space-y-6">
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Mẫu BMW muốn đổi</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Sản phẩm BMW muốn đổi</h3>
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Chọn mẫu xe BMW *</label>
+                            <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Chọn sản phẩm BMW *</label>
                             <input type="text" name="meta_data[desired_bmw]" value="{{ old('meta_data.desired_bmw') }}" required placeholder="Ví dụ: BMW 530i, BMW X5..."
                                 class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors placeholder:text-zinc-700">
                         </div>

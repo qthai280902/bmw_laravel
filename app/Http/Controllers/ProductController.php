@@ -6,6 +6,7 @@ use App\Enums\VehicleType;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\VehicleSearchService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -69,5 +70,29 @@ class ProductController extends Controller
             'products' => $data['products'] ?? collect(),
             'matrix' => $data['matrix'] ?? [],
         ]);
+    }
+
+    /**
+     * Get products by category branch for AJAX cascading dropdowns.
+     */
+    public function getProductsByCategory(Request $request): JsonResponse
+    {
+        $type = $request->query('category_type');
+
+        $query = Product::active()->select('id', 'name');
+
+        if ($type === 'oto') {
+            $query->where('type', VehicleType::Car->value);
+        } elseif ($type === 'xe_may') {
+            $query->where('type', VehicleType::Motorbike->value);
+        } elseif ($type === 'phu_kien') {
+            $query->whereHas('category', function ($q) {
+                $q->where('name', 'like', '%Phụ kiện%');
+            });
+        }
+
+        $products = $query->orderBy('name')->get();
+
+        return response()->json(['products' => $products]);
     }
 }

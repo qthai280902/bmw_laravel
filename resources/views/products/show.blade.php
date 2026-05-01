@@ -169,12 +169,14 @@
                     </div>
 
                     <!-- Comparison Link -->
+                    @unless(Str::contains(strtolower($vehicle->category?->name ?? ''), 'phụ kiện'))
                     <div class="p-6 border-t border-zinc-900 flex items-center justify-between">
-                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Muốn so sánh xe này?</span>
+                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Muốn so sánh sản phẩm này?</span>
                         <button onclick="toggleComparison({{ $vehicle->id }})" class="text-[#1C69D4] text-[10px] font-black uppercase tracking-widest hover:underline">
                             + Thêm vào danh sách
                         </button>
                     </div>
+                    @endunless
                 </div>
             </div>
         </div>
