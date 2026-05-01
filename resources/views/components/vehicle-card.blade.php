@@ -1,4 +1,4 @@
-@props(['vehicle'])
+@props(['vehicle', 'showCompare' => true])
 
 <div x-data="{ 
     isSelected: isVehicleSelected({{ $vehicle->id }}),
@@ -19,6 +19,7 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
     @endif
 
     <!-- Selection Overlay for Comparison -->
+    @if($showCompare)
     <div class="absolute top-4 right-4 z-10">
         <button @click.prevent="toggle()" 
             :class="isSelected ? 'bg-accent text-white' : 'bg-zinc-900/50 text-zinc-400 hover:text-white'"
@@ -29,6 +30,7 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
             </svg>
         </button>
     </div>
+    @endif
 
     <!-- Image Container -->
     <div class="aspect-[16/10] overflow-hidden group-hover:shadow-2xl transition-all duration-700">
