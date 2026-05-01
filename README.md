@@ -1,32 +1,33 @@
-# BMW Showroom E-commerce Platform
+# BMW Showroom & CRM Lead-Gen Platform
 
-Hệ thống thương mại điện tử cao cấp chuyên biệt cho dòng sản phẩm BMW (Ô tô & Xe máy), được xây dựng trên nền tảng Laravel 12 với ngôn ngữ thiết kế **BMW Modern High-Fidelity Dark Theme**.
+Hệ thống Showroom Kỹ thuật số và Quản lý Khách hàng Tiềm năng (CRM Lead-Gen) cao cấp, thiết kế độc quyền cho các dòng xe BMW (Ô tô & Motorrad). Được xây dựng với kiến trúc tối ưu hiệu suất và ngôn ngữ thiết kế **Modern High-Fidelity Dark Theme (Zinc-950)**.
 
-![BMW Showcase](https://images.unsplash.com/photo-1617469767053-d3b508a042a2?auto=format&fit=crop&q=80&w=1200)
+![BMW Showcase](https://images.unsplash.com/photo-1555096462-c1c5eb4e4d64?q=80&w=1200&auto=format&fit=crop)
+> *Lưu ý: Thay thế ảnh trên bằng screenshot thực tế của dự án (`docs/hero.png`) trước khi gửi cho nhà tuyển dụng.*
 
-## 💎 Điểm nổi bật (Highlights)
+## 💎 Điểm nổi bật (Core Features)
 
-- **BMW Signature Design**: Giao diện tối giản, sang trọng với 0px border-radius, font chữ Outfit và bảng màu đặc trưng của BMW.
-- **Hệ thống đặt cọc (Stock Locking)**: Quy trình thanh toán đặt cọc an toàn với cơ chế khóa tồn kho thời thực (`lockForUpdate`), đảm bảo tính chính xác tuyệt đối của giao dịch.
-- **After-sales Appointment**: Hệ thống đặt lịch lái thử, xem xe và bảo hành/bảo trì được tối ưu hóa cho từng dòng xe.
-- **VIP Tier Optimization**: Tự động phân hạng khách hàng (Gold, Silver, Bronze) dựa trên lịch sử mua hàng, xử lý hiệu năng cao ngăn chặn N+1 queries.
+- **Premium UI/UX**: Giao diện Flat & Floating Component tối giản, bảng màu Zinc Dark Theme, typography sắc nét với font **Inter**.
+- **Dynamic CRM Architecture**: Hệ thống đặt lịch thông minh xử lý đa nghiệp vụ (Trải nghiệm xe mới, Trade-in Đổi xe cũ, Dịch vụ Hậu mãi) sử dụng cấu trúc `JSON meta_data` linh hoạt.
+- **Concurrency Stock Locking**: Xử lý an toàn các giao dịch đặt cọc giá trị cao với cơ chế Khóa bi quan (`pessimistic locking - lockForUpdate`), triệt tiêu hoàn toàn nguy cơ Overselling và Deadlock.
+- **Admin Analytics & Performance**: Bảng điều khiển quản trị tối ưu, giải quyết triệt để N+1 Queries bằng Eager Loading diện rộng và bảo vệ bằng bọc lót Null-safe.
 
 ## 🛠️ Công nghệ cốt lõi (Tech Stack)
 
 - **Backend**: Laravel 12.x (PHP 8.2+)
-- **Frontend**: Blade Templates + Alpine.js
-- **Styling**: Tailwind CSS v4 (Dùng @theme directive)
-- **Database**: MySQL với JSON specifications cho thông số xe.
-- **Code Style**: Laravel Pint (PSR-12 Compliance)
+- **Frontend**: Blade Templates + Alpine.js / Vanilla JS (No-reload cascading dropdowns)
+- **Styling**: Tailwind CSS v4 (Cấu hình biến cục bộ, loại bỏ inline-styles)
+- **Database**: PostgreSQL (Tối ưu cho môi trường Render.com Cloud)
+- **Code Quality**: Laravel Pint (PSR-12 Compliance)
 
 ## 🚀 Cấu trúc dự án (Architecture)
 
-Dự án tuân thủ nghiêm ngặt mô hình **Service/Action Pattern**:
-- **Controllers**: Giữ mỏng (Thin), chỉ điều phối các request.
-- **Actions/Services**: Chứa logic nghiệp vụ cốt lõi (ví dụ: `ProcessDepositAction`, `ConfirmOrderPaymentAction`).
-- **Policy/Requests**: Quản lý quyền truy cập và xác thực dữ liệu chặt chẽ.
+Dự án loại bỏ sự cồng kềnh của E-commerce truyền thống để tập trung vào luồng Lead-Gen:
+- **Null-Safe Views**: View layer được thiết kế để không bao giờ Crash kể cả khi Orphan Data xuất hiện.
+- **Context-Aware Components**: Các Blade Component (Form, Card) có khả năng tự thay đổi trạng thái (Dynamic State) dựa trên URL query hoặc tương tác JS của người dùng.
+- **Strict Authorization**: Middleware bảo vệ Admin panel chặt chẽ, chống mass-assignment và cô lập hoàn toàn Guest users.
 
-## 📦 Hướng dẫn cài đặt (Installation)
+## 📦 Hướng dẫn cài đặt (Local Environment)
 
 1. **Clone repository**:
    ```bash
@@ -45,35 +46,33 @@ Dự án tuân thủ nghiêm ngặt mô hình **Service/Action Pattern**:
    cp .env.example .env
    php artisan key:generate
    ```
-   > Cấu hình database trong `.env` (ví dụ: DB_DATABASE=bmw_showroom, DB_USERNAME=root, DB_PASSWORD=)
+   > Cấu hình database kết nối tới PostgreSQL hoặc MySQL của bạn trong file `.env`.
 
-4. **Khởi tạo dữ liệu và Storage**:
+4. **Khởi tạo dữ liệu & File System**:
    ```bash
    php artisan storage:link
    php artisan migrate:fresh --seed
    ```
+   *(Lưu ý: Seeder tự động nạp hình ảnh qua Unsplash CDN để tránh lỗi chặn Hotlink).*
 
-5. **Biên dịch Frontend và chạy ứng dụng**:
+5. **Biên dịch Assets và chạy Server**:
    Mở terminal 1:
    ```bash
-   npm run dev
+   npm run build
    ```
    Mở terminal 2:
    ```bash
    php artisan serve
    ```
-   Ứng dụng sẽ chạy tại: `http://127.0.0.1:8000`
+   Truy cập: `http://127.0.0.1:8000`
 
-## 🧪 Kiểm thử (Testing)
+## ☁️ Deployment (Render.com/Docker)
 
-Dự án được bảo vệ bởi bộ Feature Tests toàn diện:
-```bash
-php artisan test --filter=Phase6AfterSalesTest
-php artisan test --filter=Phase4OrderingSystemTest
-```
+Dự án đã được thiết lập sẵn `Dockerfile` chuẩn Production (Apache + PHP 8.2). 
+- Đảm bảo thiết lập biến môi trường `APP_ENV=production` và `APP_DEBUG=false`.
+- **Lưu ý Cloud:** Mọi lệnh di chuyển dữ liệu (`migrate --force`, `vehicle:sync`) phải được cấu hình trong **Release Command** của Render, tuyệt đối không chạy ở Startup Script (CMD) để tránh khóa Database.
 
 ## 📜 Giấy phép (License)
 
-Dự án này được phát triển cho mục đích học tập và trình diễn công nghệ. Mọi quyền liên quan đến thương hiệu BMW thuộc về BMW Group.
-
----
+Dự án này được phát triển cho mục đích học tập kiến trúc phần mềm và trình diễn công nghệ. Hình ảnh và thương hiệu BMW thuộc bản quyền của BMW Group.
+```
