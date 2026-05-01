@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bmw_app
+    ports:
+      - "8000:80"
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=bmw_showroom
+      - DB_USERNAME=sail
+      - DB_PASSWORD=password
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - sail
+
+  db:
+    image: mysql:8.0
+    container_name: bmw_db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: bmw_showroom
+      MYSQL_USER: sail
+      MYSQL_PASSWORD: password
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - sail-mysql:/var/lib/mysql
+    networks:
+      - sail
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - "-p${MYSQL_ROOT_PASSWORD}"
+      retries: 3
+      timeout: 5s
+
+networks:
+  sail:
+    driver: bridge
+
+volumes:
+  sail-mysql:
+    driver: local
