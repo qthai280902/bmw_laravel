@@ -11,6 +11,8 @@ enum AppointmentType: string
     case CarWash = 'car_wash';
     case Quote = 'quote';
     case Consult = 'consult';
+    case AdvisorMeeting = 'advisor_meeting';
+    case TradeIn = 'trade_in';
 
     public function label(): string
     {
@@ -22,6 +24,8 @@ enum AppointmentType: string
             self::CarWash => 'Rửa xe Premium',
             self::Quote => 'Yêu cầu báo giá',
             self::Consult => 'Tư vấn trực tiếp',
+            self::AdvisorMeeting => 'Gặp gỡ cố vấn',
+            self::TradeIn => 'Đổi xe cũ',
         };
     }
 }

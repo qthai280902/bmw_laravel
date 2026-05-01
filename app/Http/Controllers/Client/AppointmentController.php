@@ -45,6 +45,13 @@ class AppointmentController extends Controller
             $data['user_id'] = Auth::id();
         }
 
+        // Merge showroom vào meta_data nếu có
+        if (! empty($data['showroom'])) {
+            $meta = $data['meta_data'] ?? [];
+            $meta['showroom'] = $data['showroom'];
+            $data['meta_data'] = $meta;
+        }
+
         Appointment::create($data);
 
         return redirect()->route('appointments.success')->with('success', 'Bạn đã đặt lịch hẹn thành công. Chúng tôi sẽ sớm liên hệ xác nhận.');

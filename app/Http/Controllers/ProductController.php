@@ -20,15 +20,27 @@ class ProductController extends Controller
      */
     public function index(Request $request): View
     {
-        $vehicles = $this->searchService->search($request->all());
-        $categories = Category::orderBy('name')->get();
+        // Merge route defaults (e.g., type=accessory from accessories.index) into filters
+        $filters = $request->all();
+        if (! isset($filters['type']) && $request->route('type')) {
+            $filters['type'] = $request->route('type');
+        }
+
+        $vehicles = $this->searchService->search($filters);
+
+        // Filter categories contextually for accessories vs vehicles
+        $isAccessory = ($filters['type'] ?? null) === 'accessory';
+        $categories = $isAccessory
+            ? Category::where('name', 'like', '%Phụ kiện%')->orderBy('name')->get()
+            : Category::where('name', 'not like', '%Phụ kiện%')->orderBy('name')->get();
+
         $types = VehicleType::cases();
 
         return view('products.index', [
             'vehicles' => $vehicles,
             'categories' => $categories,
             'types' => $types,
-            'filters' => $request->all(),
+            'filters' => $filters,
         ]);
     }
 

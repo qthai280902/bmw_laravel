@@ -54,9 +54,7 @@
                 <p class="text-zinc-400 text-sm leading-8 tracking-widest mb-8">
                     Chương trình Thu mua xe cũ định giá minh bạch. Giá trị xe cũ được quy đổi trực tiếp vào hợp đồng mua xe BMW mới, kết hợp với các gói tài chính ưu đãi lãi suất 0% trong 12 tháng đầu.
                 </p>
-                <a href="{{ route('appointments.create', ['type' => 'consult']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
-                    Liên hệ định giá
-                </a>
+                <x-trade-in-form />
             </div>
 
             <!-- Offer 3 -->

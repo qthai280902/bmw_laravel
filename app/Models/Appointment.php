@@ -22,6 +22,8 @@ class Appointment extends Model
         'appointment_date',
         'status',
         'notes',
+        'meta_data',
+        'showroom',
     ];
 
     protected function casts(): array
@@ -30,6 +32,7 @@ class Appointment extends Model
             'type' => AppointmentType::class,
             'status' => AppointmentStatus::class,
             'appointment_date' => 'datetime',
+            'meta_data' => 'array',
         ];
     }
 

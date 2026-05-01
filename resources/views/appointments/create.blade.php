@@ -45,7 +45,7 @@
                                         </option>
                                     @endforeach
                                 @else
-                                    @foreach([\App\Enums\AppointmentType::TestDrive, \App\Enums\AppointmentType::Viewing, \App\Enums\AppointmentType::Quote, \App\Enums\AppointmentType::Consult] as $type)
+                                    @foreach([\App\Enums\AppointmentType::TestDrive, \App\Enums\AppointmentType::Viewing, \App\Enums\AppointmentType::Quote, \App\Enums\AppointmentType::Consult, \App\Enums\AppointmentType::AdvisorMeeting] as $type)
                                         <option value="{{ $type->value }}" {{ $currentTypeStr == $type->value ? 'selected' : '' }}>
                                             {{ $type->label() }}
                                         </option>
@@ -72,7 +72,8 @@
                                 'detailing': 'Chăm sóc xe chuyên sâu',
                                 'car_wash': 'Rửa xe Premium',
                                 'quote': 'Yêu cầu báo giá',
-                                'consult': 'Tư vấn trực tiếp'
+                                'consult': 'Tư vấn trực tiếp',
+                                'advisor_meeting': 'Gặp gỡ cố vấn'
                             };
 
                             title.innerText = labels[value] || 'Đăng ký dịch vụ';

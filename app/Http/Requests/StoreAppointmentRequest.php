@@ -26,10 +26,13 @@ class StoreAppointmentRequest extends FormRequest
             'guest_name' => [$isGuest ? 'required' : 'nullable', 'string', 'max:255'],
             'guest_phone' => [$isGuest ? 'required' : 'nullable', 'string', 'max:20'],
             'guest_email' => ['nullable', 'email', 'max:255'],
-            'product_id' => ['required', 'exists:products,id'],
-            'type' => ['required', Rule::in(['test_drive', 'viewing', 'quote', 'maintenance', 'detailing', 'car_wash', 'consult', 'advisor_meeting'])],
+            'product_id' => [$this->input('type') === 'trade_in' ? 'nullable' : 'required', 'nullable', 'exists:products,id'],
+            'type' => ['required', Rule::in(['test_drive', 'viewing', 'quote', 'maintenance', 'detailing', 'car_wash', 'consult', 'advisor_meeting', 'trade_in'])],
             'appointment_date' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'meta_data' => ['nullable', 'array'],
+            'meta_data.*' => ['nullable', 'string', 'max:500'],
+            'showroom' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

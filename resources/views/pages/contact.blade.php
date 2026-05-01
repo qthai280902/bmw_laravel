@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                <!-- Contact Info -->
+                <!-- Contact Info + Quick Booking -->
                 <div class="space-y-12">
                     <div>
                         <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-8">
@@ -21,16 +21,23 @@
                     </div>
 
                     <div class="space-y-8">
+                        <!-- Showroom Hà Nội -->
                         <div class="border border-zinc-800 p-8">
                             <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2">Showroom Hà Nội</p>
                             <p class="text-white font-black uppercase tracking-widest text-sm">268 Đội Cấn, Ba Đình, Hà Nội</p>
-                            <p class="text-zinc-500 text-xs mt-2">Tel: (024) 3771 8888</p>
+                            <p class="text-zinc-500 text-xs mt-2 mb-6">Tel: (024) 3771 8888</p>
+                            <x-quick-booking-form showroom="Showroom Hà Nội" />
                         </div>
+
+                        <!-- Showroom TP. HCM -->
                         <div class="border border-zinc-800 p-8">
                             <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2">Showroom TP. HCM</p>
                             <p class="text-white font-black uppercase tracking-widest text-sm">800 BMW Way, Quận 7, TP. HCM</p>
-                            <p class="text-zinc-500 text-xs mt-2">Tel: (028) 3773 8888</p>
+                            <p class="text-zinc-500 text-xs mt-2 mb-6">Tel: (028) 3773 8888</p>
+                            <x-quick-booking-form showroom="Showroom TP. HCM" />
                         </div>
+
+                        <!-- Hotline -->
                         <div class="border border-zinc-800 p-8">
                             <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2">Hotline 24/7</p>
                             <p class="text-white font-black uppercase tracking-widest text-sm">1800-BMW-SERIES</p>
@@ -39,10 +46,10 @@
                     </div>
                 </div>
 
-                <!-- CTA Section -->
+                <!-- Working Hours + General CTA -->
                 <div class="space-y-8">
                     <div class="bg-zinc-900/50 border border-zinc-800 p-12">
-                        <h3 class="text-xl font-black text-white uppercase tracking-widest mb-6">Đặt lịch hẹn nhanh</h3>
+                        <h3 class="text-xl font-black text-white uppercase tracking-widest mb-6">Đặt lịch chung</h3>
                         <p class="text-zinc-400 text-sm leading-8 tracking-widest mb-8">
                             Đăng ký lái thử, tư vấn trực tiếp hoặc nhận báo giá chỉ trong vài bước đơn giản.
                         </p>
