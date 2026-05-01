@@ -1,17 +1,20 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Client\AppointmentController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceController;
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::get('/', function () {
-    $featuredProducts = \App\Models\Product::active()
+    $featuredProducts = Product::active()
         ->where('is_featured', true)
         ->with(['category', 'primaryImage'])
         ->latest()
@@ -24,6 +27,14 @@ Route::get('/', function () {
 Route::get('/catalog', [ProductController::class, 'index'])->name('products.index');
 Route::get('/catalog/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/compare', [ProductController::class, 'compare'])->name('products.compare');
+
+// Accessories (reuse ProductController with accessory type filter)
+Route::get('/accessories', [ProductController::class, 'index'])->defaults('type', 'accessory')->name('accessories.index');
+
+// Static Pages
+Route::get('/offers', [PageController::class, 'exclusiveOffers'])->name('offers.exclusive');
+Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('policy.privacy');
+Route::get('/contact', [PageController::class, 'contact'])->name('contact.index');
 
 // Public Booking Routes
 Route::get('/booking', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -50,7 +61,7 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
         Route::resource('users', UserController::class)->only(['index']);
-        Route::get('customers', [App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
     });
 });
 

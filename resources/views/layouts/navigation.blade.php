@@ -7,7 +7,7 @@
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('home') }}" class="group">
                         <div class="flex items-center gap-3">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg" class="h-12 w-12" alt="BMW Logo">
+                            <img src="{{ asset('images/bmw-logo.svg') }}" class="h-12 w-12 shrink-0 object-contain" style="width: 48px; height: 48px;" alt="BMW Logo">
                             <span class="text-lg font-black uppercase tracking-[0.2em] hidden sm:block">BMW <span class="text-zinc-500 ">Showroom</span></span>
                         </div>
                     </a>
@@ -20,6 +20,9 @@
                     </x-nav-link>
                     <x-nav-link :href="route('products.index', ['type' => 'motorbike'])" :active="request('type') == 'motorbike'" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Xe máy
+                    </x-nav-link>
+                    <x-nav-link :href="route('accessories.index')" :active="request()->is('accessories*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
+                        Phụ kiện
                     </x-nav-link>
                     <x-nav-link :href="route('services.index')" :active="request()->is('services*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Dịch vụ

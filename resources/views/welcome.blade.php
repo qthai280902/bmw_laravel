@@ -83,16 +83,16 @@
                 thực hiện thanh toán cọc trực tuyến chỉ trong vài phút.
             </p>
             <div class="inline-grid grid-cols-1 sm:grid-cols-2 gap-px bg-zinc-900 border border-zinc-900">
-                <div class="bg-zinc-950 p-12 text-center group cursor-pointer hover:bg-zinc-900 transition-all">
+                <a href="{{ route('appointments.create', ['type' => 'advisor_meeting']) }}" class="bg-zinc-950 p-12 text-center group cursor-pointer hover:bg-zinc-900 transition-all">
                     <h4 class="font-black uppercase tracking-widest mb-4">Gặp gỡ cố vấn</h4>
                     <span class="text-xs text-accent uppercase font-bold group-hover:underline">Đặt lịch hẹn
                         &rarr;</span>
-                </div>
-                <div class="bg-zinc-950 p-12 text-center group cursor-pointer hover:bg-zinc-900 transition-all">
+                </a>
+                <a href="{{ route('offers.exclusive') }}" class="bg-zinc-950 p-12 text-center group cursor-pointer hover:bg-zinc-900 transition-all">
                     <h4 class="font-black uppercase tracking-widest mb-4">Ưu đãi độc quyền</h4>
                     <span class="text-xs text-accent uppercase font-bold group-hover:underline">Xem chính sách
                         &rarr;</span>
-                </div>
+                </a>
             </div>
         </div>
     </section>

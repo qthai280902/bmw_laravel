@@ -69,7 +69,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                         <div class="col-span-1 md:col-span-2">
                             <div class="flex items-center gap-4 mb-6">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg" class="h-10 w-10" alt="BMW Logo">
+                                <img src="{{ asset('images/bmw-logo.svg') }}" class="h-10 w-10 shrink-0 object-contain" style="width: 40px; height: 40px;" alt="BMW Logo">
                                 <h2 class="text-2xl font-black uppercase tracking-tighter text-black">
                                     BMW <span class="text-zinc-400">SHOWROOM</span>
                                 </h2>
@@ -81,23 +81,23 @@
                         <div>
                             <h3 class="text-xs font-black uppercase tracking-widest text-black mb-6">Sản phẩm</h3>
                             <ul class="space-y-4 text-sm text-zinc-600 font-medium">
-                                <li><a href="#" class="hover:text-black transition-colors">Ô tô (Cars)</a></li>
-                                <li><a href="#" class="hover:text-black transition-colors">Xe máy (Motorcycles)</a></li>
-                                <li><a href="#" class="hover:text-black transition-colors">Phụ kiện chính hãng</a></li>
+                                <li><a href="{{ route('products.index', ['type' => 'car']) }}" class="hover:text-black transition-colors">Ô tô (Cars)</a></li>
+                                <li><a href="{{ route('products.index', ['type' => 'motorbike']) }}" class="hover:text-black transition-colors">Xe máy (Motorcycles)</a></li>
+                                <li><a href="{{ route('accessories.index') }}" class="hover:text-black transition-colors">Phụ kiện chính hãng</a></li>
                             </ul>
                         </div>
                         <div>
                             <h3 class="text-xs font-black uppercase tracking-widest text-black mb-6">Liên hệ</h3>
                             <ul class="space-y-4 text-sm text-zinc-600 font-medium">
-                                <li><a href="#" class="hover:text-black transition-colors">Showroom Hà Nội</a></li>
-                                <li><a href="#" class="hover:text-black transition-colors">Showroom TP. HCM</a></li>
-                                <li><a href="#" class="hover:text-black transition-colors">Hotline: 1800-BMW-SERIES</a></li>
+                                <li><a href="{{ route('contact.index') }}" class="hover:text-black transition-colors">Showroom Hà Nội</a></li>
+                                <li><a href="{{ route('contact.index') }}" class="hover:text-black transition-colors">Showroom TP. HCM</a></li>
+                                <li><a href="{{ route('contact.index') }}" class="hover:text-black transition-colors">Hotline: 1800-BMW-SERIES</a></li>
                             </ul>
                         </div>
                     </div>
                     <div class="mt-16 pt-8 border-t border-zinc-200 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
                         <p>© {{ date('Y') }} BMW Group Vietnam. Bảo lưu mọi quyền.</p>
-                        <p>Chính sách bảo mật | Liên hệ chúng tôi</p>
+                        <p><a href="{{ route('policy.privacy') }}" class="hover:text-black transition-colors">Chính sách bảo mật</a> | <a href="{{ route('contact.index') }}" class="hover:text-black transition-colors">Liên hệ chúng tôi</a></p>
                     </div>
                 </div>
             </footer>

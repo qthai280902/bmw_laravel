@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\VehicleType;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -40,7 +39,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '5.8 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'images/cars/330i.png'
+                'image' => 'images/cars/330i.png',
             ],
             [
                 'name' => 'BMW 530i Sedan',
@@ -65,7 +64,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '6.2 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'images/cars/530i.png'
+                'image' => 'images/cars/530i.png',
             ],
             [
                 'name' => 'BMW 550e xDrive Sedan',
@@ -90,7 +89,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.3 giây',
                     'Top_Speed_KMH' => '250 km/h (E-mode: 140 km/h)',
                 ],
-                'image' => 'images/cars/550e.png'
+                'image' => 'images/cars/550e.png',
             ],
             [
                 'name' => 'BMW i4 M60 Gran Coupe',
@@ -115,7 +114,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.9 giây',
                     'Top_Speed_KMH' => '225 km/h',
                 ],
-                'image' => 'images/cars/i4.png'
+                'image' => 'images/cars/i4.png',
             ],
             [
                 'name' => 'BMW X3 M50 xDrive',
@@ -140,7 +139,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.6 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'images/cars/x3m50.png'
+                'image' => 'images/cars/x3m50.png',
             ],
             [
                 'name' => 'BMW M3 Sedan',
@@ -165,7 +164,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.2 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/m3.png'
+                'image' => 'images/cars/m3.png',
             ],
             [
                 'name' => 'BMW M4 Coupe',
@@ -190,7 +189,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.2 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/m4.png'
+                'image' => 'images/cars/m4.png',
             ],
             [
                 'name' => 'BMW X5 M Competition',
@@ -215,7 +214,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.9 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/x5m.png'
+                'image' => 'images/cars/x5m.png',
             ],
             [
                 'name' => 'BMW XM Label',
@@ -240,7 +239,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.8 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/xm.png'
+                'image' => 'images/cars/xm.png',
             ],
             [
                 'name' => 'BMW M5 Touring',
@@ -265,7 +264,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.6 giây',
                     'Top_Speed_KMH' => '305 km/h',
                 ],
-                'image' => 'images/cars/m5t.png'
+                'image' => 'images/cars/m5t.png',
             ],
             [
                 'name' => 'BMW G310R',
@@ -290,7 +289,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '7.0 giây',
                     'Top_Speed_KMH' => '143 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/5/58/BMW_G_310_R.jpg'
+                'image' => 'https://upload.wikimedia.org/wikipedia/commons/5/58/BMW_G_310_R.jpg',
             ],
             [
                 'name' => 'BMW S1000RR',
@@ -315,7 +314,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '2.8 giây',
                     'Top_Speed_KMH' => '299 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/7/79/BMW_S1000_RR_Studio.JPG'
+                'image' => 'https://upload.wikimedia.org/wikipedia/commons/7/79/BMW_S1000_RR_Studio.JPG',
             ],
             [
                 'name' => 'BMW R1250GS',
@@ -340,7 +339,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.5 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/9/9d/BMW_R_1250_GS_%282024-04-29_Sp%29.JPG'
+                'image' => 'https://upload.wikimedia.org/wikipedia/commons/9/9d/BMW_R_1250_GS_%282024-04-29_Sp%29.JPG',
             ],
             [
                 'name' => 'BMW F900R',
@@ -365,7 +364,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.8 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/f/fb/BMW_F900R_%281crop%29.jpg'
+                'image' => 'https://upload.wikimedia.org/wikipedia/commons/f/fb/BMW_F900R_%281crop%29.jpg',
             ],
             [
                 'name' => 'BMW K1600GT',
@@ -390,14 +389,180 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.4 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/7/7f/BMW_K_1600_GT_Right.JPG'
+                'image' => 'https://upload.wikimedia.org/wikipedia/commons/7/7f/BMW_K_1600_GT_Right.JPG',
+            ],
+
+            // --- PHỤ KIỆN Ô TÔ ---
+            [
+                'name' => 'Thảm lót sàn M Performance',
+                'category_slug' => 'phu-kien-o-to',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 3500000,
+                'deposit_amount' => 0,
+                'is_featured' => true,
+                'specifications' => [
+                    'Material' => 'Cao su nguyên khối chống trơn',
+                    'Compatibility' => 'BMW 3 Series / 5 Series / X3 / X5',
+                    'Weight' => '2.5 kg/bộ',
+                    'Warranty' => '12 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Camera hành trình BMW Advanced Eye 3.0',
+                'category_slug' => 'phu-kien-o-to',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 12500000,
+                'deposit_amount' => 0,
+                'is_featured' => true,
+                'specifications' => [
+                    'Resolution' => '4K Ultra HD',
+                    'Field_of_View' => '170° góc rộng',
+                    'Storage' => '64GB MicroSD (included)',
+                    'Features' => 'GPS, G-Sensor, Night Vision, Parking Mode',
+                    'Warranty' => '24 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Bọc vô lăng M Performance Carbon',
+                'category_slug' => 'phu-kien-o-to',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 8900000,
+                'deposit_amount' => 0,
+                'is_featured' => false,
+                'specifications' => [
+                    'Material' => 'Alcantara + Carbon Fiber',
+                    'Compatibility' => 'BMW M3 / M4 / M5 / M8',
+                    'Weight' => '0.8 kg',
+                    'Color' => 'Black / Red Stitching',
+                    'Warranty' => '12 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Bộ vành BMW M Performance Y-Spoke 20"',
+                'category_slug' => 'phu-kien-o-to',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 45000000,
+                'deposit_amount' => 5000000,
+                'is_featured' => true,
+                'specifications' => [
+                    'Size' => '20 x 8.5J (Front) / 20 x 9.5J (Rear)',
+                    'Material' => 'Forged Aluminum Alloy',
+                    'Finish' => 'Jet Black / Polished',
+                    'Compatibility' => 'BMW 3 Series (G20) / 4 Series (G22)',
+                    'Weight' => '9.2 kg/vành',
+                    'Warranty' => '24 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0b?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Bộ đèn LED nội thất Ambient Light Pro',
+                'category_slug' => 'phu-kien-o-to',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 6200000,
+                'deposit_amount' => 0,
+                'is_featured' => false,
+                'specifications' => [
+                    'Colors' => '64 màu tùy chỉnh',
+                    'Zones' => '11 vùng chiếu sáng',
+                    'Compatibility' => 'BMW 5 Series / X5 / 7 Series',
+                    'Control' => 'BMW iDrive / BMW Connected App',
+                    'Warranty' => '12 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=800&h=600&fit=crop',
+            ],
+
+            // --- PHỤ KIỆN XE MÁY ---
+            [
+                'name' => 'Thùng nhôm BMW Motorrad Vario 35L',
+                'category_slug' => 'phu-kien-xe-may',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 15800000,
+                'deposit_amount' => 0,
+                'is_featured' => true,
+                'specifications' => [
+                    'Capacity' => '35 Lít (mỗi bên)',
+                    'Material' => 'Nhôm nguyên khối',
+                    'Compatibility' => 'BMW R1250GS / R1300GS / F850GS',
+                    'Lock' => 'Khóa thống nhất BMW (One-key system)',
+                    'Weight' => '4.8 kg/thùng',
+                    'Warranty' => '24 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Mũ bảo hiểm BMW System 7 Carbon',
+                'category_slug' => 'phu-kien-xe-may',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 22500000,
+                'deposit_amount' => 0,
+                'is_featured' => true,
+                'specifications' => [
+                    'Shell' => 'Carbon Fiber',
+                    'Weight' => '1.590 kg (size M)',
+                    'Certification' => 'ECE 22.06',
+                    'Features' => 'Lật hàm, kính chống sương, Bluetooth-ready',
+                    'Sizes' => 'XS - XXL',
+                    'Warranty' => '24 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Ốp Carbon bảo vệ động cơ S1000RR',
+                'category_slug' => 'phu-kien-xe-may',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 7800000,
+                'deposit_amount' => 0,
+                'is_featured' => false,
+                'specifications' => [
+                    'Material' => 'Carbon Fiber 3K Twill Weave',
+                    'Compatibility' => 'BMW S1000RR (2023+)',
+                    'Parts' => 'Nắp đậy bình xăng, ốp hông, chắn gió',
+                    'Weight' => '0.4 kg/bộ',
+                    'Warranty' => '12 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Áo giáp BMW Motorrad StreetGuard',
+                'category_slug' => 'phu-kien-xe-may',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 18900000,
+                'deposit_amount' => 0,
+                'is_featured' => true,
+                'specifications' => [
+                    'Material' => 'GORE-TEX® Pro',
+                    'Protection' => 'CE Level 2 (Vai, Khuỷu tay, Lưng)',
+                    'Features' => 'Chống nước, chống gió, thoáng khí 4 mùa',
+                    'Sizes' => 'S - 3XL',
+                    'Warranty' => '24 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=800&h=600&fit=crop',
+            ],
+            [
+                'name' => 'Bộ bảo vệ gầm BMW Motorrad Enduro',
+                'category_slug' => 'phu-kien-xe-may',
+                'type' => VehicleType::ACCESSORY,
+                'price' => 5600000,
+                'deposit_amount' => 0,
+                'is_featured' => false,
+                'specifications' => [
+                    'Material' => 'Nhôm CNC 4mm',
+                    'Compatibility' => 'BMW R1250GS Adventure / R1300GS',
+                    'Weight' => '3.2 kg',
+                    'Protection' => 'Carter dầu, ống xả, hộp số',
+                    'Warranty' => '24 tháng',
+                ],
+                'image' => 'https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800&h=600&fit=crop',
             ],
         ];
 
         foreach ($vehicles as $vehicleData) {
             // Robust category matching
             $category = Category::where('slug', $vehicleData['category_slug'])->first();
-            
+
             // If category doesn't exist yet, fallback to the first available category or a default
             $categoryId = $category ? $category->id : (Category::first()->id ?? 1);
 

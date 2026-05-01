@@ -33,7 +33,7 @@ class="group relative bg-zinc-950 border border-zinc-900 overflow-hidden hover:b
     <!-- Image Container -->
     <div class="aspect-[16/10] overflow-hidden group-hover:shadow-2xl transition-all duration-700">
         <img loading="lazy" 
-             src="{{ $vehicle->primaryImage ? (str($vehicle->primaryImage->path)->startsWith('http') ? $vehicle->primaryImage->path : Storage::url($vehicle->primaryImage->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" 
+             src="{{ $vehicle->primaryImage ? (str($vehicle->primaryImage->path)->startsWith('http') ? $vehicle->primaryImage->path : asset($vehicle->primaryImage->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW+Premium' }}" 
              alt="{{ $vehicle->name }}" 
              class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000" />
     </div>

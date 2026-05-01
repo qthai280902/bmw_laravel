@@ -41,6 +41,16 @@ class CategorySeeder extends Seeder
                 'slug' => Str::slug('Motorrad'),
                 'description' => 'Phân khúc xe mô tô BMW Motorrad (S1000RR, GS, v.v.).',
             ],
+            [
+                'name' => 'Phụ kiện Ô tô',
+                'slug' => Str::slug('Phụ kiện Ô tô'),
+                'description' => 'Phụ kiện chính hãng BMW dành cho ô tô: thảm lót, camera hành trình, bọc vô lăng, v.v.',
+            ],
+            [
+                'name' => 'Phụ kiện Xe máy',
+                'slug' => Str::slug('Phụ kiện Xe máy'),
+                'description' => 'Phụ kiện chính hãng BMW Motorrad: thùng nhôm, mũ bảo hiểm, ốp carbon, v.v.',
+            ],
         ];
 
         foreach ($categories as $cat) {

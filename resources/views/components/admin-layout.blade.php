@@ -35,7 +35,7 @@
                 
                 <div class="p-8 flex items-center justify-between">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg" class="h-10 w-10" alt="BMW Logo">
+                        <img src="{{ asset('images/bmw-logo.svg') }}" class="h-10 w-10 shrink-0 object-contain" style="width: 40px; height: 40px;" alt="BMW Logo">
                         <span class="font-black text-xl tracking-tighter uppercase text-white md:hidden lg:block">Quản trị</span>
                     </a>
                     <button @click="sidebarOpen = false" class="md:hidden text-zinc-500 hover:text-white">
@@ -92,7 +92,7 @@
                     <div class="p-4 bg-zinc-950/50 rounded-xl border border-zinc-800/50">
                         <div class="flex items-center gap-3 mb-4">
                             <div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg" class="w-8 h-8" alt="B">
+                                <img src="{{ asset('images/bmw-logo.svg') }}" class="w-8 h-8 shrink-0 object-contain" style="width: 32px; height: 32px;" alt="B">
                             </div>
                             <div class="truncate">
                                 <p class="text-[10px] font-black text-white truncate uppercase tracking-wider">{{ Auth::user()->name }}</p>

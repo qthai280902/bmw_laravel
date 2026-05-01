@@ -45,12 +45,12 @@
                             </div>
                         </div>
 
-                        <!-- Category Filter -->
+                        <!-- Phân khúc Filter -->
                         <div class="border-t border-zinc-900 pt-6">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Dòng xe</h3>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Phân khúc xe</h3>
                             <select name="category_id" onchange="this.form.submit()" 
                                 class="w-full bg-zinc-900 border-none text-zinc-400 text-xs font-bold uppercase tracking-widest p-4 focus:ring-1 focus:ring-accent">
-                                <option value="">Tất cả</option>
+                                <option value="">Tất cả phân khúc</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
                                         {{ $category->name }}
