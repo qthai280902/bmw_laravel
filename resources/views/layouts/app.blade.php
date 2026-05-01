@@ -12,6 +12,11 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+        <!-- Flatpickr -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -101,6 +106,67 @@
                     </div>
                 </div>
             </footer>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize Flatpickr
+                flatpickr(".flatpickr-input", {
+                    enableTime: true,
+                    dateFormat: "Y-m-d H:i",
+                    altInput: true,
+                    altFormat: "d/m/Y H:i",
+                    allowInput: true,
+                    minDate: "today",
+                    time_24hr: true
+                });
+            });
+        </script>
+
+        {{-- Floating Comparison Bar --}}
+        <div id="comparison-bar" x-data="{ 
+            ids: getComparisonIds(),
+            update() { this.ids = getComparisonIds() },
+            compare() {
+                if(this.ids.length < 1) return;
+                window.location.href = '{{ route('products.compare') }}?ids=' + this.ids.join(',');
+            }
+        }" 
+        x-show="ids.length > 0"
+        @comparison-updated.window="update()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="translate-y-full"
+        x-transition:enter-end="translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="translate-y-0"
+        x-transition:leave-end="translate-y-full"
+        class="fixed bottom-0 left-0 right-0 z-[60] bg-zinc-950 border-t border-zinc-800 py-6 px-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+        style="display: none;">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-6">
+                    <div class="flex -space-x-3 overflow-hidden">
+                        <template x-for="id in ids" :key="id">
+                            <div class="inline-block h-10 w-10 rounded-full border-2 border-zinc-950 bg-zinc-900 flex items-center justify-center text-[10px] font-black text-white uppercase tracking-tighter">
+                                BMW
+                            </div>
+                        </template>
+                    </div>
+                    <div class="text-left">
+                        <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em]">Comparison</p>
+                        <p class="text-sm font-black text-white uppercase tracking-widest">
+                            Đã chọn <span x-text="ids.length" class="text-accent"></span> mẫu xe
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <button @click="localStorage.removeItem('bmw_comparison_ids'); update();" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
+                        Xóa tất cả
+                    </button>
+                    <button @click="compare()" class="px-10 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all flex-grow md:flex-grow-0">
+                        So sánh ngay
+                    </button>
+                </div>
+            </div>
         </div>
     </body>
 </html>

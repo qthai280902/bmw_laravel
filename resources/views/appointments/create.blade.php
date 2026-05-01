@@ -133,8 +133,9 @@
 
                         <div>
                             <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Ngày dự kiến *</label>
-                            <input type="datetime-local" name="appointment_date" value="{{ old('appointment_date') }}" required 
-                                class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors [color-scheme:dark]">
+                            <input type="text" name="appointment_date" value="{{ old('appointment_date') }}" required 
+                                class="flatpickr-input w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                                placeholder="Chọn ngày và giờ">
                         </div>
 
                         <div>
