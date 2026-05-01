@@ -17,7 +17,7 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with('category')->latest();
+        $query = Product::with(['category', 'images'])->latest();
 
         // 1. Filtering
         if ($request->filled('type')) {

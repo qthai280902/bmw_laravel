@@ -14,9 +14,11 @@
                 @endphp
 
                 <div class="text-center mb-12">
-                    <h2 id="form-subtitle" class="text-xs font-black uppercase tracking-[0.4em] text-accent mb-4">Trải nghiệm khác biệt</h2>
+                    <h2 id="form-subtitle" class="text-xs font-black uppercase tracking-[0.4em] text-accent mb-4">
+                        {{ $isService ? 'Chăm sóc chuyên nghiệp' : 'Trải nghiệm khác biệt' }}
+                    </h2>
                     <h1 id="form-title" class="text-3xl md:text-4xl font-light uppercase tracking-tighter text-white">
-                        Đăng ký dịch vụ
+                        {{ $requestedType?->label() ?? 'Đăng ký dịch vụ' }}
                     </h1>
                 </div>
 
@@ -115,30 +117,94 @@
                         @endguest
                     </div>
 
-                    <!-- Thông tin sản phẩm -->
-                    <div class="space-y-6 pt-4">
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Sản phẩm quan tâm</h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Danh mục *</label>
-                                <select id="category_selector" class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-[10px] font-black tracking-widest">
-                                    <option value="">-- Chọn danh mục --</option>
-                                    <option value="oto">BMW Ô tô</option>
-                                    <option value="xe_may">BMW Motorrad</option>
-                                    <option value="phu_kien">Phụ kiện chính hãng</option>
-                                </select>
-                            </div>
+                    @if($isService)
+                        <!-- FORM 1: Aftersales — Xe của bạn -->
+                        <div class="space-y-6 pt-4">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Xe của bạn</h3>
 
-                            <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Chọn sản phẩm *</label>
-                                <select id="product_selector" name="product_id" required disabled
-                                    class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <option value="">-- Vui lòng chọn danh mục trước --</option>
-                                </select>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Tên xe của bạn *</label>
+                                    <input type="text" name="customer_car_model" value="{{ old('customer_car_model') }}" required
+                                        placeholder="Ví dụ: BMW 320i 2020"
+                                        class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors placeholder:text-zinc-700">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Biển số / Tình trạng</label>
+                                    <input type="text" name="customer_car_condition" value="{{ old('customer_car_condition') }}"
+                                        placeholder="Ví dụ: 30A-12345, đã đi 50.000km"
+                                        class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors placeholder:text-zinc-700">
+                                </div>
                             </div>
                         </div>
+                    @else
+                        <!-- FORM 2: Sales/Showroom — Sản phẩm quan tâm -->
+                        <div class="space-y-6 pt-4">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Sản phẩm quan tâm</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Danh mục *</label>
+                                    <select id="category_selector" class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-[10px] font-black tracking-widest">
+                                        <option value="">-- Chọn danh mục --</option>
+                                        <option value="oto">BMW Ô tô</option>
+                                        <option value="xe_may">BMW Motorrad</option>
+                                        <option value="phu_kien">Phụ kiện chính hãng</option>
+                                    </select>
+                                </div>
 
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Chọn sản phẩm *</label>
+                                    <select id="product_selector" name="product_id" required disabled
+                                        class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <option value="">-- Vui lòng chọn danh mục trước --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const categorySelector = document.getElementById('category_selector');
+                                    const productSelector = document.getElementById('product_selector');
+                                    if (!categorySelector || !productSelector) return;
+
+                                    categorySelector.addEventListener('change', async function() {
+                                        const type = this.value;
+                                        if (!type) {
+                                            productSelector.innerHTML = '<option value="">-- Vui lòng chọn danh mục trước --</option>';
+                                            productSelector.disabled = true;
+                                            return;
+                                        }
+
+                                        productSelector.innerHTML = '<option value="">Đang tải sản phẩm...</option>';
+                                        productSelector.disabled = true;
+
+                                        try {
+                                            const response = await fetch(`{{ route('api.products.category') }}?category_type=${encodeURIComponent(type)}`);
+                                            const data = await response.json();
+
+                                            productSelector.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+                                            data.products.forEach(product => {
+                                                const option = document.createElement('option');
+                                                option.value = product.id;
+                                                option.textContent = product.name;
+                                                productSelector.appendChild(option);
+                                            });
+                                            
+                                            productSelector.disabled = false;
+                                        } catch (error) {
+                                            console.error('Error fetching products:', error);
+                                            productSelector.innerHTML = '<option value="">Lỗi khi tải dữ liệu</option>';
+                                        }
+                                    });
+                                });
+                            </script>
+                        </div>
+                    @endif
+
+                    <!-- Ngày & Ghi chú (chung cho cả 2 form) -->
+                    <div class="space-y-6 pt-4">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 pb-2">Thời gian & Ghi chú</h3>
                         <div>
                             <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Ngày dự kiến *</label>
                             <input type="text" name="appointment_date" value="{{ old('appointment_date') }}" required 
@@ -152,51 +218,6 @@
                                 class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors">{{ old('notes') }}</textarea>
                         </div>
                     </div>
-
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const categorySelector = document.getElementById('category_selector');
-                            const productSelector = document.getElementById('product_selector');
-
-                            categorySelector.addEventListener('change', async function() {
-                                const type = this.value;
-                                if (!type) {
-                                    productSelector.innerHTML = '<option value="">-- Vui lòng chọn danh mục trước --</option>';
-                                    productSelector.disabled = true;
-                                    return;
-                                }
-
-                                // UI State: Loading
-                                productSelector.innerHTML = '<option value="">Đang tải sản phẩm...</option>';
-                                productSelector.disabled = true;
-
-                                try {
-                                    const response = await fetch(`{{ route('api.products.category') }}?category_type=${type}`);
-                                    const data = await response.json();
-
-                                    productSelector.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
-                                    data.products.forEach(product => {
-                                        const option = document.createElement('option');
-                                        option.value = product.id;
-                                        option.textContent = product.name;
-                                        productSelector.appendChild(option);
-                                    });
-                                    
-                                    productSelector.disabled = false;
-                                } catch (error) {
-                                    console.error('Error fetching products:', error);
-                                    productSelector.innerHTML = '<option value="">Lỗi khi tải dữ liệu</option>';
-                                }
-                            });
-
-                            // Pre-fill if product_id is in URL (Legacy support)
-                            const urlParams = new URLSearchParams(window.location.search);
-                            const prefillId = urlParams.get('product_id');
-                            if (prefillId) {
-                                // Logic này phức tạp hơn nếu muốn auto-select category, tạm thời để user chọn manual hoặc fix sau
-                            }
-                        });
-                    </script>
 
                     <div class="pt-8">
                         <button type="submit" class="w-full bg-accent text-white py-5 text-sm font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all">

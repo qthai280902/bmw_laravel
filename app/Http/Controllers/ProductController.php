@@ -82,9 +82,9 @@ class ProductController extends Controller
         $query = Product::active()->select('id', 'name');
 
         if ($type === 'oto') {
-            $query->where('type', VehicleType::Car->value);
+            $query->where('type', VehicleType::CAR->value);
         } elseif ($type === 'xe_may') {
-            $query->where('type', VehicleType::Motorbike->value);
+            $query->where('type', VehicleType::MOTORBIKE->value);
         } elseif ($type === 'phu_kien') {
             $query->whereHas('category', function ($q) {
                 $q->where('name', 'like', '%Phụ kiện%');

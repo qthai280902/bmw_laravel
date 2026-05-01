@@ -46,11 +46,26 @@ class AppointmentController extends Controller
         }
 
         // Merge showroom vào meta_data nếu có
+        $meta = $data['meta_data'] ?? [];
+
         if (! empty($data['showroom'])) {
-            $meta = $data['meta_data'] ?? [];
             $meta['showroom'] = $data['showroom'];
-            $data['meta_data'] = $meta;
         }
+
+        // Merge Aftersales service fields vào meta_data
+        if (in_array($data['type'], ['maintenance', 'detailing', 'car_wash'])) {
+            if (! empty($data['customer_car_model'])) {
+                $meta['customer_car_model'] = $data['customer_car_model'];
+            }
+            if (! empty($data['customer_car_condition'])) {
+                $meta['customer_car_condition'] = $data['customer_car_condition'];
+            }
+        }
+
+        $data['meta_data'] = ! empty($meta) ? $meta : null;
+
+        // Xóa các trường không thuộc bảng appointments
+        unset($data['showroom'], $data['customer_car_model'], $data['customer_car_condition']);
 
         Appointment::create($data);
 

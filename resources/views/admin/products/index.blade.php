@@ -76,7 +76,7 @@
                                             {{ $product->name }}
                                         </div>
                                         <div class="text-[9px] text-zinc-600 font-black uppercase tracking-widest ">
-                                            {{ $product->category->name }}
+                                            {{ $product->category?->name ?? 'Không phân loại' }}
                                         </div>
                                     </div>
                                 </div>

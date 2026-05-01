@@ -71,6 +71,29 @@
                                 <div class="text-xs font-black text-zinc-400 uppercase tracking-tighter">
                                     {{ $appointment->product?->name ?? 'Dòng xe không xác định' }}
                                 </div>
+                                
+                                @if($appointment->meta_data)
+                                    <div class="mt-2 p-2 bg-zinc-900 border border-zinc-800 rounded">
+                                        <div class="text-[9px] font-bold text-accent uppercase tracking-widest mb-1">Dữ liệu CRM:</div>
+                                        <div class="space-y-1">
+                                            @if($appointment->type->value === 'trade_in' && isset($appointment->meta_data['desired_bmw']))
+                                                <div class="text-[10px] text-zinc-400 font-medium">Sản phẩm muốn đổi: <span class="text-white">{{ $appointment->meta_data['desired_bmw'] }}</span></div>
+                                            @endif
+                                            
+                                            @if(isset($appointment->meta_data['customer_car_model']))
+                                                <div class="text-[10px] text-zinc-400 font-medium">Xe khách đang đi: <span class="text-white">{{ $appointment->meta_data['customer_car_model'] }}</span></div>
+                                            @endif
+                                            
+                                            @if(isset($appointment->meta_data['customer_car_condition']))
+                                                <div class="text-[10px] text-zinc-500 italic">{{ $appointment->meta_data['customer_car_condition'] }}</div>
+                                            @endif
+
+                                            @if(isset($appointment->meta_data['showroom']))
+                                                <div class="text-[10px] text-zinc-400 font-medium">Showroom: <span class="text-white">{{ $appointment->meta_data['showroom'] }}</span></div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-8 py-8 text-center">
                                 <span class="px-4 py-1.5 border {{ $appointment->status->color() }} text-[9px] font-black uppercase tracking-[0.2em]">
