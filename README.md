@@ -26,7 +26,7 @@ Dự án tuân thủ nghiêm ngặt mô hình **Service/Action Pattern**:
 - **Actions/Services**: Chứa logic nghiệp vụ cốt lõi (ví dụ: `ProcessDepositAction`, `ConfirmOrderPaymentAction`).
 - **Policy/Requests**: Quản lý quyền truy cập và xác thực dữ liệu chặt chẽ.
 
-## 📦 Cài đặt (Installation)
+## 📦 Hướng dẫn cài đặt (Installation)
 
 1. **Clone repository**:
    ```bash
@@ -45,17 +45,24 @@ Dự án tuân thủ nghiêm ngặt mô hình **Service/Action Pattern**:
    cp .env.example .env
    php artisan key:generate
    ```
+   > Cấu hình database trong `.env` (ví dụ: DB_DATABASE=bmw_showroom, DB_USERNAME=root, DB_PASSWORD=)
 
-4. **Khởi tạo dữ liệu**:
+4. **Khởi tạo dữ liệu và Storage**:
    ```bash
-   php artisan migrate --seed
+   php artisan storage:link
+   php artisan migrate:fresh --seed
    ```
 
-5. **Chạy ứng dụng**:
+5. **Biên dịch Frontend và chạy ứng dụng**:
+   Mở terminal 1:
    ```bash
    npm run dev
+   ```
+   Mở terminal 2:
+   ```bash
    php artisan serve
    ```
+   Ứng dụng sẽ chạy tại: `http://127.0.0.1:8000`
 
 ## 🧪 Kiểm thử (Testing)
 
