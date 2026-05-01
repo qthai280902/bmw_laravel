@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-5xl font-black uppercase tracking-tighter text-white">
-            Access <span class="text-[#1C69D4]">Appointments</span>
+            Lịch hẹn <span class="text-[#1C69D4]">Của bạn</span>
         </h2>
         <p class="text-zinc-500 mt-2 font-medium uppercase text-xs tracking-widest ">Theo dõi lịch lái thử và bảo dưỡng xe của bạn.</p>
     </x-slot>

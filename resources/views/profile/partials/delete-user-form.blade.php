@@ -8,7 +8,7 @@
     <x-danger-button
         x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Initialize Termination') }}</x-danger-button>
+    >{{ __('Bắt đầu xóa tài khoản') }}</x-danger-button>
 
     <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
         <form method="post" action="{{ route('profile.destroy') }}" class="p-12 bg-zinc-950 border-2 border-rose-900/50 shadow-[0_0_100px_rgba(225,29,72,0.1)]">
@@ -16,7 +16,7 @@
             @method('delete')
 
             <h2 class="text-3xl font-black uppercase tracking-tighter text-white mb-4">
-                Confirm <span class="text-rose-600">Termination</span>
+                Xác nhận <span class="text-rose-600">xóa</span>
             </h2>
 
             <p class="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]  mb-8">
@@ -24,14 +24,14 @@
             </p>
 
             <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Current Access Key') }}" class="sr-only" />
+                <x-input-label for="password" value="{{ __('Mật khẩu hiện tại') }}" class="sr-only" />
 
                 <x-text-input
                     id="password"
                     name="password"
                     type="password"
                     class="mt-1 block w-full"
-                    placeholder="{{ __('Password') }}"
+                    placeholder="{{ __('Mật khẩu') }}"
                 />
 
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
@@ -39,11 +39,11 @@
 
             <div class="mt-10 flex justify-end gap-4">
                 <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Abort') }}
+                    {{ __('Hủy bỏ') }}
                 </x-secondary-button>
 
                 <x-danger-button>
-                    {{ __('Confirm Termination') }}
+                    {{ __('Xác nhận xóa tài khoản') }}
                 </x-danger-button>
             </div>
         </form>

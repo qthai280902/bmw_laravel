@@ -107,7 +107,7 @@
                                     <select name="status" onchange="this.form.submit()" class="bg-zinc-950 border-zinc-800 text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white focus:border-zinc-500 focus:ring-0 px-3 py-1.5 cursor-pointer transition-all">
                                         @foreach(\App\Enums\AppointmentStatus::cases() as $status)
                                             <option value="{{ $status->value }}" {{ $appointment->status === $status ? 'selected' : '' }}>
-                                                Move to: {{ $status->label() }}
+                                                Chuyển sang: {{ $status->label() }}
                                             </option>
                                         @endforeach
                                     </select>
