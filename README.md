@@ -77,4 +77,3 @@ php artisan test --filter=Phase4OrderingSystemTest
 Dự án này được phát triển cho mục đích học tập và trình diễn công nghệ. Mọi quyền liên quan đến thương hiệu BMW thuộc về BMW Group.
 
 ---
-*Built with ❤️ by Antigravity AI for a Premium Automotive Experience.*
