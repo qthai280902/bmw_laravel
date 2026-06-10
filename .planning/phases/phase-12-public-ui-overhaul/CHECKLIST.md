@@ -1,0 +1,27 @@
+# Phase 12 Checklist
+
+- [x] Audit routes and public UI files before editing.
+- [x] Confirm product type logic uses `Product::type` / `VehicleType`.
+- [x] Confirm accessories exist as `type=accessory`.
+- [x] Confirm product relations `category`, `images`, `primaryImage`.
+- [x] Fix compare image resolver.
+- [x] Prefer `primaryImage`, then first `images`, then internal fallback.
+- [x] Avoid external placeholder image fallback in public compare/card/detail.
+- [x] Eager load image relations for public listing/detail/compare/homepage.
+- [x] Remove accessory test-drive CTA from detail UI.
+- [x] Add accessory order/quote/consult/contact CTAs using existing booking/contact routes.
+- [x] Preserve car/motorbike test-drive, quote, compare and specs modal.
+- [x] Overhaul homepage.
+- [x] Overhaul public navigation and footer.
+- [x] Overhaul catalog/listing UI.
+- [x] Overhaul compare UI.
+- [x] Extend product detail and accessory detail sections.
+- [x] Add Phase 12 PHPUnit feature tests.
+- [x] Run view clear/cache.
+- [x] Run route list.
+- [x] Run Pint.
+- [x] Run Vite build.
+- [x] Run focused Phase 12 tests.
+- [x] Run full suite and record existing failures.
+- [x] Run browser smoke QA for desktop/mobile public pages.
+- [x] Update planning docs.

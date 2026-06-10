@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     $featuredProducts = Product::active()
         ->where('is_featured', true)
-        ->with(['category', 'primaryImage'])
+        ->with(['category', 'primaryImage', 'images'])
         ->latest()
         ->take(3)
         ->get();

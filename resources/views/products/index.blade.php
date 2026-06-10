@@ -1,56 +1,100 @@
 <x-app-layout>
+    @php
+        $isAccessoryCatalog = ($filters['type'] ?? null) === 'accessory' && request()->routeIs('accessories.index');
+        $filterAction = $isAccessoryCatalog ? route('accessories.index') : route('products.index');
+        $catalogTitle = $isAccessoryCatalog ? 'Phụ kiện chính hãng' : 'BMW Showroom';
+        $catalogEyebrow = $isAccessoryCatalog ? 'Accessories studio' : 'Model range';
+        $catalogIntro = $isAccessoryCatalog
+            ? 'Khám phá phụ kiện chính hãng, tư vấn tương thích và lắp đặt cho từng dòng BMW.'
+            : 'Khám phá danh mục ô tô và Motorrad với bộ lọc giữ nguyên logic sản phẩm hiện có.';
+    @endphp
+
     <x-slot name="header">
-        <h2 class="text-4xl font-black text-white uppercase tracking-tighter ">
-            BMW <span class="text-accent underline decoration-4">Showroom</span>
-        </h2>
-        <p class="text-zinc-500 mt-2 uppercase text-xs tracking-widest font-bold">Khám phá tuyệt tác cơ khí Đức</p>
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $catalogEyebrow }}</p>
+                <h1 class="mt-3 text-5xl font-black uppercase leading-none tracking-normal text-white md:text-7xl">
+                    {{ $catalogTitle }}
+                </h1>
+                <p class="mt-5 max-w-2xl text-sm font-medium leading-6 text-zinc-500">{{ $catalogIntro }}</p>
+            </div>
+            <div
+                x-data="{
+                    comparisonIds: getComparisonIds(),
+                    updateComparison() {
+                        this.comparisonIds = getComparisonIds();
+                    },
+                    goToCompare() {
+                        if (this.comparisonIds.length < 2) {
+                            alert('Vui lòng chọn ít nhất 2 xe để so sánh.');
+                            return;
+                        }
+                        window.location.href = '{{ route('products.compare') }}?ids=' + this.comparisonIds.join(',');
+                    }
+                }"
+                @comparison-updated.window="updateComparison()"
+                class="{{ $isAccessoryCatalog ? 'hidden' : 'flex' }} flex-col gap-3 border border-zinc-800 bg-zinc-950 px-5 py-4 sm:min-w-72"
+            >
+                <p class="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500">Comparison</p>
+                <div class="flex items-center justify-between gap-4">
+                    <span class="text-sm font-black uppercase tracking-widest text-white">
+                        <span x-text="comparisonIds.length"></span>/4 mẫu xe
+                    </span>
+                    <button type="button" @click="goToCompare()" class="bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:bg-[#1C69D4] hover:text-white">
+                        So sánh
+                    </button>
+                </div>
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ 
-        comparisonIds: getComparisonIds(),
-        updateComparison() {
-            this.comparisonIds = getComparisonIds();
-        },
-        goToCompare() {
-            if (this.comparisonIds.length < 2) {
-                alert('Vui lòng chọn ít nhất 2 xe để so sánh.');
-                return;
-            }
-            window.location.href = '{{ route('products.compare') }}?ids=' + this.comparisonIds.join(',');
-        }
-    }" @comparison-updated.window="updateComparison()">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row gap-12">
-                
-                <!-- Sidebar Filters -->
-                <aside class="w-full md:w-64 flex-shrink-0">
-                    <form action="{{ route('products.index') }}" method="GET" class="space-y-10">
-                        <!-- Category Filter -->
-                        <div class="border-t border-zinc-900 pt-6">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Dòng xe</h3>
-                            <div class="space-y-4">
-                                @foreach($types as $type)
-                                    <label class="flex items-center group cursor-pointer">
-                                        <input type="radio" name="type" value="{{ $type->value }}" 
-                                            class="hidden peer"
-                                            {{ request('type') == $type->value ? 'checked' : '' }}
-                                            onchange="this.form.submit()">
-                                        <span class="w-2 h-2 bg-zinc-800 group-hover:bg-accent peer-checked:bg-accent transition-all mr-3"></span>
-                                        <span class="text-sm uppercase font-bold text-zinc-500 group-hover:text-white peer-checked:text-white transition-all">
-                                            {{ $type->name }}
-                                        </span>
-                                    </label>
-                                @endforeach
-                                <a href="{{ route('products.index') }}" class="text-[10px] uppercase font-black text-zinc-600 hover:text-accent block mt-4">Xóa lọc</a>
-                            </div>
+    <div class="bg-zinc-950 py-14 text-white sm:py-16">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 gap-10 lg:grid-cols-[280px_1fr] xl:gap-14">
+                <aside class="lg:sticky lg:top-28 lg:self-start">
+                    <form id="filterForm" action="{{ $filterAction }}" method="GET" class="border border-zinc-800 bg-zinc-950">
+                        @if($isAccessoryCatalog)
+                            <input type="hidden" name="type" value="accessory">
+                        @endif
+
+                        <div class="border-b border-zinc-800 p-6">
+                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Bộ lọc</p>
+                            <h2 class="mt-3 text-2xl font-black uppercase tracking-normal text-white">
+                                {{ $isAccessoryCatalog ? 'Tìm phụ kiện' : 'Tìm mẫu xe' }}
+                            </h2>
                         </div>
 
-                        <!-- Phân khúc Filter -->
-                        <div class="border-t border-zinc-900 pt-6">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Phân khúc xe</h3>
-                            <select name="category_id" onchange="this.form.submit()" 
-                                class="w-full bg-zinc-900 border-none text-zinc-400 text-xs font-bold uppercase tracking-widest p-4 focus:ring-1 focus:ring-accent">
-                                <option value="">Tất cả phân khúc</option>
+                        @unless($isAccessoryCatalog)
+                            <div class="border-b border-zinc-800 p-6">
+                                <h3 class="mb-5 text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">Loại sản phẩm</h3>
+                                <div class="space-y-4">
+                                    @foreach($types as $type)
+                                        <label class="group flex cursor-pointer items-center">
+                                            <input
+                                                type="radio"
+                                                name="type"
+                                                value="{{ $type->value }}"
+                                                class="peer hidden"
+                                                {{ request('type') == $type->value ? 'checked' : '' }}
+                                                onchange="this.form.submit()"
+                                            >
+                                            <span class="mr-3 h-2 w-2 bg-zinc-800 transition-all group-hover:bg-[#1C69D4] peer-checked:bg-[#1C69D4]"></span>
+                                            <span class="text-xs font-black uppercase tracking-widest text-zinc-500 transition-all group-hover:text-white peer-checked:text-white">
+                                                {{ $type->label() }}
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                    <a href="{{ route('products.index') }}" class="mt-4 block text-[10px] font-black uppercase tracking-widest text-zinc-600 transition-colors hover:text-[#1C69D4]">Xóa lọc loại</a>
+                                </div>
+                            </div>
+                        @endunless
+
+                        <div class="border-b border-zinc-800 p-6">
+                            <h3 class="mb-5 text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
+                                {{ $isAccessoryCatalog ? 'Nhóm phụ kiện' : 'Phân khúc' }}
+                            </h3>
+                            <select name="category_id" onchange="this.form.submit()" class="w-full border border-zinc-800 bg-zinc-900 p-4 text-xs font-black uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                                <option value="">Tất cả</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
                                         {{ $category->name }}
@@ -59,89 +103,69 @@
                             </select>
                         </div>
 
-                        <!-- Price Filter -->
-                        <div class="border-t border-zinc-900 pt-6">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-white mb-6">Khoảng giá</h3>
-                            <div class="space-y-4">
-                                <input type="number" name="min_price" placeholder="Từ (VNĐ)" value="{{ request('min_price') }}"
-                                    class="w-full bg-zinc-900 border-none text-white text-sm p-4 focus:ring-1 focus:ring-accent placeholder-zinc-700">
-                                <input type="number" name="max_price" placeholder="Đến (VNĐ)" value="{{ request('max_price') }}"
-                                    class="w-full bg-zinc-900 border-none text-white text-sm p-4 focus:ring-1 focus:ring-accent placeholder-zinc-700">
-                                <button type="submit" class="w-full bg-white text-black text-[10px] font-black uppercase tracking-widest py-4 hover:bg-accent hover:text-white transition-all">
-                                    Áp dụng
-                                </button>
-                            </div>
+                        <div class="space-y-4 p-6">
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">Khoảng giá</h3>
+                            <input
+                                type="number"
+                                name="min_price"
+                                placeholder="Từ (VNĐ)"
+                                value="{{ request('min_price') }}"
+                                class="w-full border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            >
+                            <input
+                                type="number"
+                                name="max_price"
+                                placeholder="Đến (VNĐ)"
+                                value="{{ request('max_price') }}"
+                                class="w-full border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            >
+                            <button type="submit" class="w-full bg-white py-4 text-[10px] font-black uppercase tracking-[0.25em] text-black transition-all hover:bg-[#1C69D4] hover:text-white">
+                                Áp dụng
+                            </button>
                         </div>
                     </form>
                 </aside>
 
-                <!-- Product Grid -->
-                <div class="flex-grow">
-                    <div class="flex justify-between items-center mb-10 border-b border-zinc-900 pb-6">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                <section>
+                    <div class="mb-8 flex flex-col gap-5 border-b border-zinc-900 pb-6 sm:flex-row sm:items-center sm:justify-between">
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500">
                             Hiển thị {{ $vehicles->count() }} / {{ $vehicles->total() }} kết quả
                         </p>
-                        
-                        <div class="flex items-center gap-4">
-                            <select name="sort" form="filterForm" onchange="this.form.submit()"
-                                class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white focus:ring-0">
-                                <option value="latest" class="bg-zinc-950">Mới nhất</option>
-                                <option value="price_low" class="bg-zinc-950">Giá thấp dần</option>
-                                <option value="price_high" class="bg-zinc-950">Giá cao dần</option>
-                            </select>
-                        </div>
+                        <select
+                            name="sort"
+                            form="filterForm"
+                            onchange="document.getElementById('filterForm').submit()"
+                            class="border border-zinc-800 bg-zinc-950 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        >
+                            <option value="latest" class="bg-zinc-950" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Mới nhất</option>
+                            <option value="price_low" class="bg-zinc-950" {{ request('sort') === 'price_low' ? 'selected' : '' }}>Giá thấp đến cao</option>
+                            <option value="price_high" class="bg-zinc-950" {{ request('sort') === 'price_high' ? 'selected' : '' }}>Giá cao đến thấp</option>
+                        </select>
                     </div>
 
                     @if($vehicles->isEmpty())
-                        <div class="py-20 text-center">
-                            <h3 class="text-4xl font-black text-zinc-900 uppercase  mb-4">Không tìm thấy xe</h3>
-                            <a href="{{ route('products.index') }}" class="text-accent uppercase text-xs font-black tracking-widest border-b-2 border-accent pb-1">Xem tất cả dòng xe</a>
+                        <div class="border border-zinc-800 bg-zinc-900/30 px-6 py-20 text-center">
+                            <p class="text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Không có kết quả</p>
+                            <h3 class="mt-4 text-4xl font-black uppercase tracking-normal text-white">
+                                {{ $isAccessoryCatalog ? 'Chưa tìm thấy phụ kiện phù hợp' : 'Chưa tìm thấy mẫu xe phù hợp' }}
+                            </h3>
+                            <a href="{{ $isAccessoryCatalog ? route('accessories.index') : route('products.index') }}" class="mt-8 inline-flex border border-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+                                Xem tất cả
+                            </a>
                         </div>
                     @else
-                        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                             @foreach($vehicles as $vehicle)
                                 <x-vehicle-card :vehicle="$vehicle" />
                             @endforeach
                         </div>
 
-                        <div class="mt-16">
+                        <div class="mt-14">
                             {{ $vehicles->links() }}
                         </div>
                     @endif
-                </div>
+                </section>
             </div>
         </div>
-
-        <!-- Floating Comparison Bar (CTO Standard) -->
-        <template x-if="comparisonIds.length > 0">
-            <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-2xl">
-                <div class="bg-white p-4 flex items-center justify-between shadow-2xl skew-x-[-10deg]">
-                    <div class="flex items-center gap-4 skew-x-[10deg] px-4">
-                        <div class="flex -space-x-2">
-                            <template x-for="i in comparisonIds.length">
-                                <div class="w-8 h-8 bg-accent border-2 border-white flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                            </template>
-                        </div>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-black">
-                            Đã chọn <span x-text="comparisonIds.length"></span>/4 xe để so sánh
-                        </p>
-                    </div>
-                    <div class="flex gap-2 skew-x-[10deg]">
-                        <button @click="localStorage.removeItem('bmw_comparison_ids'); updateComparison()" 
-                            class="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black px-4 py-2">
-                            Xóa hết
-                        </button>
-                        <button @click="goToCompare()" 
-                            class="bg-accent text-white text-[10px] font-black uppercase tracking-widest px-8 py-3 hover:bg-black transition-all">
-                            So sánh ngay
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </template>
     </div>
 </x-app-layout>

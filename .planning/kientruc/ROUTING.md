@@ -26,6 +26,21 @@
 - View: `resources/views/products/show.blade.php`
 - Layout: `<x-app-layout>`
 - Phase 11 khong doi URL, route name hay booking/compare flow.
+- Phase 12 tiep tuc giu route, route name va controller flow.
+- Phase 12 chi branch CTA trong UI theo `Product::type`.
+
+## Phase 12 public routing notes
+
+- `/accessories` van reuse `ProductController@index` voi route default `type=accessory`.
+- Accessory CTA dung route hien co:
+  - `appointments.create` voi `type=quote`
+  - `appointments.create` voi `type=consult`
+  - `contact.index`
+- Car/motorbike CTA van dung:
+  - `appointments.create` voi `type=test_drive`
+  - `appointments.create` voi `type=quote`
+  - `products.compare`
+- Compare route van la `/compare?ids=...`.
 
 ## Auth routes
 

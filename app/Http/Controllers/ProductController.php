@@ -52,7 +52,7 @@ class ProductController extends Controller
     {
         $vehicle = Product::where('slug', $slug)
             ->active()
-            ->with(['category', 'images']) // Detail page needs all images
+            ->with(['category', 'primaryImage', 'images'])
             ->firstOrFail();
 
         $relatedVehicles = $vehicle->category_id
@@ -60,7 +60,7 @@ class ProductController extends Controller
                 ->active()
                 ->where('category_id', $vehicle->category_id)
                 ->whereKeyNot($vehicle->id)
-                ->with(['category', 'primaryImage'])
+                ->with(['category', 'primaryImage', 'images'])
                 ->latest()
                 ->limit(3)
                 ->get()

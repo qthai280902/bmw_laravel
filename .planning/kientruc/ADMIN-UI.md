@@ -32,3 +32,16 @@
 
 - Phase 11 khong sua Admin UI.
 - Phase 11 chi redesign public product detail page.
+
+## Phase 12 note
+
+- Phase 12 khong sua Admin UI/controller/dashboard.
+- Admin dashboard Phase 10 duoc giu nguyen.
+- Admin product image fallback/URL cu van nam ngoai scope Phase 12.
+- Public layout/navigation/footer da duoc dai tu, nhung `<x-admin-layout>` khong doi.
+
+## Phase 12.2 note
+
+- Phase 12.2 khong sua Admin UI/controller/dashboard.
+- Phase 12.2 chi them public product assets, seeder va detail page image mapping cho BMW 330i Sedan.
+- Admin upload/product image UI khong doi.

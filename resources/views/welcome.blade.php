@@ -1,134 +1,143 @@
 <x-app-layout>
-    <!-- Hero Section: Cinematic Showroom -->
-    <section class="relative h-[90vh] flex items-center overflow-hidden bg-black">
-        <div class="absolute inset-0 z-0">
-            <!-- Simulated High-End Photography Background -->
-            <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
-            <img src="{{ asset('images/cars/hero.png') }}"
-                class="w-full h-full object-cover object-center scale-105 animate-pulse-slow" alt="BMW M Vision">
-        </div>
+    <section class="relative min-h-[calc(100vh-5rem)] overflow-hidden bg-black">
+        <img
+            src="{{ asset('images/cars/hero.png') }}"
+            class="absolute inset-0 h-full w-full object-cover"
+            alt="BMW showroom hero"
+        >
+        <div class="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-black/10"></div>
+        <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-zinc-950 to-transparent"></div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-            <div class="max-w-2xl">
-                <h2 class="text-xs font-bold uppercase tracking-[0.4em] text-accent mb-6 animate-fade-in-up">
-                    The Ultimate Driving Machine
-                </h2>
-                <h1
-                    class="text-5xl md:text-7xl font-light uppercase leading-[1.1] tracking-tight mb-8 animate-fade-in-up transition-all duration-700">
-                    SỰ KIÊU HÃNH <br />
-                    <span class="font-black ">DẪN ĐẦU</span>
+        <div class="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-7xl items-end px-4 pb-20 sm:px-6 lg:px-8">
+            <div class="max-w-4xl">
+                <p class="mb-5 text-[10px] font-black uppercase tracking-[0.4em] text-[#1C69D4]">BMW showroom Vietnam</p>
+                <h1 class="text-5xl font-black uppercase leading-none tracking-normal text-white sm:text-7xl lg:text-8xl">
+                    Không gian khám phá BMW trực tuyến.
                 </h1>
-                <p class="text-zinc-400 text-lg mb-10 max-w-lg leading-relaxed animate-fade-in-up">
-                    Khám phá thế hệ xe hiệu năng cao mới nhất từ BMW M. Nơi công nghệ cơ khí đỉnh cao gặp gỡ ngôn ngữ
-                    thiết kế của tương lai.
+                <p class="mt-8 max-w-2xl text-lg font-medium leading-8 text-zinc-300">
+                    Từ ô tô, Motorrad đến phụ kiện chính hãng, toàn bộ trải nghiệm public được tổ chức lại theo nhịp showroom: xem nhanh, so sánh, nhận tư vấn và đặt lịch.
                 </p>
-                <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up">
-                    <a href="{{ route('appointments.create', ['type' => 'test_drive']) }}"
-                        class="inline-flex items-center justify-center px-10 py-5 bg-accent text-white text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all group">
-                        Đăng ký lái thử
-                        <svg class="w-4 h-4 ms-2 group-hover:translate-x-1 transition-transform" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
+                <div class="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <a href="{{ route('products.index', ['type' => 'car']) }}" class="bg-[#1C69D4] px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+                        Khám phá ô tô
                     </a>
-                    <a href="{{ route('appointments.create', ['type' => 'consult']) }}"
-                        class="inline-flex items-center justify-center px-10 py-5 border border-white text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">
-                        Tư vấn trực tiếp
+                    <a href="{{ route('accessories.index') }}" class="border border-white/70 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+                        Phụ kiện
+                    </a>
+                    <a href="{{ route('appointments.create', ['type' => 'consult']) }}" class="border border-zinc-700 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.24em] text-zinc-200 transition-all hover:border-[#1C69D4] hover:text-[#1C69D4]">
+                        Tư vấn
                     </a>
                 </div>
             </div>
         </div>
-
-        <!-- Vertical Text Decorative -->
-        <div class="absolute right-12 bottom-12 hidden lg:block rotate-90 origin-right">
-            <span class="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-700 select-none">
-                BMW VISION NEXT 100 // 2026 EDITION
-            </span>
-        </div>
     </section>
 
-    <!-- Featured Section: Performance Grid -->
-    <section class="py-24 bg-white text-black">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-end mb-16">
+    <section class="bg-zinc-950 py-24 text-white">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mb-14 grid grid-cols-1 gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
                 <div>
-                    <h2 class="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Danh mục tiêu điểm</h2>
-                    <h3 class="text-4xl font-black uppercase tracking-tighter">Mẫu Xe <span
-                            class="text-accent underline">Nổi Bật</span></h3>
+                    <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Explore</p>
+                    <h2 class="text-4xl font-black uppercase tracking-normal md:text-6xl">Dòng sản phẩm</h2>
                 </div>
-                <a href="{{ route('products.index') }}"
-                    class="text-xs font-black uppercase tracking-widest border-b-2 border-black pb-1 hover:text-accent hover:border-accent transition-all">
-                    Xem tất cả mẫu xe
-                </a>
+                <p class="max-w-2xl text-sm font-medium leading-6 text-zinc-500">
+                    Các lối vào chính giữ nguyên route hiện có, nhưng được trình bày như những khu vực showroom riêng cho xe, mô tô, phụ kiện và dịch vụ.
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                @foreach($featuredProducts as $vehicle)
-                    <x-vehicle-card :vehicle="$vehicle" :showCompare="false" />
-                @endforeach
+            <div class="grid grid-cols-1 gap-px bg-zinc-800 lg:grid-cols-4">
+                <a href="{{ route('products.index', ['type' => 'car']) }}" class="group bg-zinc-950">
+                    <div class="aspect-[4/3] overflow-hidden bg-zinc-900">
+                        <img src="{{ asset('images/cars/sedan.png') }}" alt="BMW ô tô" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    </div>
+                    <div class="p-7">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Cars</p>
+                        <h3 class="mt-4 text-2xl font-black uppercase tracking-normal text-white">Ô tô BMW</h3>
+                    </div>
+                </a>
+                <a href="{{ route('products.index', ['type' => 'motorbike']) }}" class="group bg-zinc-950">
+                    <div class="aspect-[4/3] overflow-hidden bg-zinc-900">
+                        <img src="{{ asset('images/cars/superbike.png') }}" alt="BMW Motorrad" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    </div>
+                    <div class="p-7">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Motorrad</p>
+                        <h3 class="mt-4 text-2xl font-black uppercase tracking-normal text-white">Xe máy</h3>
+                    </div>
+                </a>
+                <a href="{{ route('accessories.index') }}" class="group bg-zinc-950">
+                    <div class="aspect-[4/3] overflow-hidden bg-zinc-900">
+                        <img src="{{ asset('images/cars/x3m50.png') }}" alt="BMW phụ kiện" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    </div>
+                    <div class="p-7">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Accessories</p>
+                        <h3 class="mt-4 text-2xl font-black uppercase tracking-normal text-white">Phụ kiện</h3>
+                    </div>
+                </a>
+                <a href="{{ route('services.index') }}" class="group bg-zinc-950">
+                    <div class="aspect-[4/3] overflow-hidden bg-zinc-900">
+                        <img src="{{ asset('images/cars/suv.png') }}" alt="BMW dịch vụ" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    </div>
+                    <div class="p-7">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Services</p>
+                        <h3 class="mt-4 text-2xl font-black uppercase tracking-normal text-white">Dịch vụ</h3>
+                    </div>
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- Call to Action: Showroom Contact -->
-    <section class="py-24 bg-zinc-950 text-white border-t border-zinc-900">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-xs font-bold uppercase tracking-[0.4em] text-accent mb-8">Trải nghiệm trực tiếp</h2>
-            <h3 class="text-5xl md:text-6xl font-light uppercase tracking-tighter mb-12 leading-none">
-                SHOWROOM <span class="font-black  text-zinc-800">KỸ THUẬT SỐ</span>
-            </h3>
-            <p class="text-zinc-500 max-w-2xl mx-auto mb-16 leading-relaxed">
-                BMW giới thiệu không gian trải nghiệm mua sắm hoàn toàn mới. Nơi bạn có thể tùy biến mẫu xe mơ ước và
-                thực hiện thanh toán cọc trực tuyến chỉ trong vài phút.
-            </p>
-            <div class="inline-grid grid-cols-1 sm:grid-cols-2 gap-px bg-zinc-900 border border-zinc-900">
-                <a href="{{ route('appointments.create', ['type' => 'advisor_meeting']) }}" class="bg-zinc-950 p-12 text-center group cursor-pointer hover:bg-zinc-900 transition-all">
-                    <h4 class="font-black uppercase tracking-widest mb-4">Gặp gỡ cố vấn</h4>
-                    <span class="text-xs text-accent uppercase font-bold group-hover:underline">Đặt lịch hẹn
-                        &rarr;</span>
+    <section class="bg-white py-24 text-black">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Featured</p>
+                    <h2 class="text-4xl font-black uppercase tracking-normal md:text-6xl">Mẫu nổi bật</h2>
+                </div>
+                <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center border border-black px-8 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black transition-all hover:bg-black hover:text-white">
+                    Xem catalog
                 </a>
-                <a href="{{ route('offers.exclusive') }}" class="bg-zinc-950 p-12 text-center group cursor-pointer hover:bg-zinc-900 transition-all">
-                    <h4 class="font-black uppercase tracking-widest mb-4">Ưu đãi độc quyền</h4>
-                    <span class="text-xs text-accent uppercase font-bold group-hover:underline">Xem chính sách
-                        &rarr;</span>
+            </div>
+
+            @if($featuredProducts->isNotEmpty())
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    @foreach($featuredProducts as $vehicle)
+                        <x-vehicle-card :vehicle="$vehicle" :showCompare="false" />
+                    @endforeach
+                </div>
+            @else
+                <div class="border border-zinc-200 px-8 py-14 text-center">
+                    <p class="text-sm font-medium text-zinc-600">Showroom đang cập nhật danh sách sản phẩm nổi bật.</p>
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <section class="bg-zinc-950 py-24 text-white">
+        <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8">
+            <div>
+                <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Showroom flow</p>
+                <h2 class="text-4xl font-black uppercase leading-tight tracking-normal md:text-6xl">Từ khám phá đến tư vấn trong cùng một trải nghiệm.</h2>
+                <p class="mt-6 max-w-2xl text-base font-medium leading-7 text-zinc-500">
+                    Người dùng có thể xem chi tiết, thêm xe vào so sánh, yêu cầu báo giá hoặc đặt lịch gặp cố vấn mà không thay đổi luồng CRM hiện tại.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 gap-px bg-zinc-800 sm:grid-cols-2">
+                <a href="{{ route('appointments.create', ['type' => 'advisor_meeting']) }}" class="bg-zinc-950 p-8 transition-colors hover:bg-zinc-900">
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Advisor</p>
+                    <h3 class="mt-4 text-2xl font-black uppercase tracking-normal">Gặp cố vấn</h3>
+                </a>
+                <a href="{{ route('appointments.create', ['type' => 'quote']) }}" class="bg-zinc-950 p-8 transition-colors hover:bg-zinc-900">
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Quote</p>
+                    <h3 class="mt-4 text-2xl font-black uppercase tracking-normal">Nhận báo giá</h3>
+                </a>
+                <a href="{{ route('products.compare') }}" class="bg-zinc-950 p-8 transition-colors hover:bg-zinc-900">
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Compare</p>
+                    <h3 class="mt-4 text-2xl font-black uppercase tracking-normal">So sánh xe</h3>
+                </a>
+                <a href="{{ route('offers.exclusive') }}" class="bg-zinc-950 p-8 transition-colors hover:bg-zinc-900">
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Offers</p>
+                    <h3 class="mt-4 text-2xl font-black uppercase tracking-normal">Ưu đãi</h3>
                 </a>
             </div>
         </div>
     </section>
-
-    <!-- Custom Animations Layer -->
-    <style>
-        @keyframes fade-in-up {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-fade-in-up {
-            animation: fade-in-up 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-        }
-
-        .animate-pulse-slow {
-            animation: pulse-slow 10s infinite;
-        }
-
-        @keyframes pulse-slow {
-
-            0%,
-            100% {
-                transform: scale(1.05);
-            }
-
-            50% {
-                transform: scale(1.1);
-            }
-        }
-    </style>
 </x-app-layout>

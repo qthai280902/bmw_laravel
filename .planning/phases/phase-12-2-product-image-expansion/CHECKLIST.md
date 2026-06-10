@@ -1,0 +1,26 @@
+# Phase 12.2 Checklist
+
+- [x] Audit product image model.
+- [x] Audit BMW 330i current image count.
+- [x] Audit detail page image usage.
+- [x] Confirm `public/storage` still points to the old `tmdt_laravel` location.
+- [x] Add organized BMW 330i image assets under `public/images/cars/330i/`.
+- [x] Add idempotent `Bmw330iImageSeeder`.
+- [x] Attach image records to `bmw-330i-sedan`.
+- [x] Keep existing original `images/cars/330i.png`.
+- [x] Set new primary hero image.
+- [x] Add context-aware detail image helper.
+- [x] Update detail page image mapping.
+- [x] Render multiple gallery images.
+- [x] Preserve booking and quote CTAs.
+- [x] Preserve compare behavior.
+- [x] Add Phase 12.2 feature test.
+- [x] Run view clear/cache.
+- [x] Run Pint.
+- [x] Run Vite build.
+- [x] Run catalog route list.
+- [x] Run focused Phase 12.2 test.
+- [x] Run previous Phase 12 public UI test.
+- [x] Run browser smoke QA.
+- [x] Run full suite and record old failures.
+- [x] Update planning docs.

@@ -14,7 +14,7 @@ class VehicleSearchService
     {
         $query = Product::query()
             ->active()
-            ->with(['category', 'primaryImage']); // Senior Architect: Optimized memory loading
+            ->with(['category', 'primaryImage', 'images']);
 
         // Filter by Vehicle Type (Enum)
         if (! empty($filters['type'])) {
@@ -53,7 +53,7 @@ class VehicleSearchService
     {
         $products = Product::whereIn('id', $productIds)
             ->active()
-            ->with(['category', 'primaryImage'])
+            ->with(['category', 'primaryImage', 'images'])
             ->get();
 
         if ($products->isEmpty()) {

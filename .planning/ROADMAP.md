@@ -2,6 +2,15 @@
 
 ## Current documented status
 
+- [x] Phase 12.2 completed with notes: BMW 330i product image expansion.
+- [x] BMW 330i Sedan now has 9 ProductImage records after seeding.
+- [x] Product detail renders up to 8 distinct BMW 330i images.
+- [x] `PublicUiPhase12_2Test` pass: 3 tests / 26 assertions.
+- [x] Phase 12 completed with notes: Public UI overhaul + product flow normalization.
+- [x] Compare page image bug fixed with safe product image resolver.
+- [x] Accessories no longer show test-drive CTA on detail pages.
+- [x] Public UI updated for homepage, nav, footer, catalog, compare and detail pages.
+- [x] `PublicUiPhase12Test` pass: 3 tests / 19 assertions.
 - [x] Phase 11 completed with notes: Product detail BMW-inspired redesign.
 - [x] `/catalog/{product}` keeps route name `products.show`.
 - [x] Product detail preserves booking, quote, compare, specs modal and gallery.
@@ -17,7 +26,9 @@
 - Hoac khoi phuc route register/settings neu do la yeu cau nghiep vu.
 - Kiem tra runtime dashboard tren trinh duyet.
 - Kiem tra delete modal bang thao tac thuc te.
-- Kiem tra them product detail tren browser that neu co cong cu Browser/Playwright.
+- Dong bo lai public storage link neu can hien thi upload moi tu `storage/app/public`.
+- Kiem tra them admin product images vi admin van con fallback/URL cu ngoai scope Phase 12.
+- Ap dung cau truc image set tu BMW 330i cho cac model uu tien tiep theo neu can.
 
 Lộ trình phát triển hệ thống chuyên biệt cho xe hơi và xe máy, tập trung vào trải nghiệm đặt cọc và quản lý cấu hình xe linh hoạt với ngôn ngữ thiết kế BMW Modern.
 
