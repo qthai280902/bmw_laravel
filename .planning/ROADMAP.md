@@ -1,5 +1,24 @@
 # Project Roadmap - Vehicle E-commerce v1.0
 
+## Current documented status
+
+- [x] Phase 11 completed with notes: Product detail BMW-inspired redesign.
+- [x] `/catalog/{product}` keeps route name `products.show`.
+- [x] Product detail preserves booking, quote, compare, specs modal and gallery.
+- [x] Phase 10 completed with notes: Admin Dashboard Analytics + Custom Delete Modal.
+- [x] `/dashboard` now uses `Admin\DashboardController@index`.
+- [x] `/dashboard` has middleware `web`, `auth`, `verified`, `admin`.
+- [x] `DashboardTest` pass: 4 tests / 10 assertions.
+- [ ] Full `php artisan test` pass toan bo.
+
+## Next maintenance tasks
+
+- Dong bo lai auth/register/settings tests voi route that.
+- Hoac khoi phuc route register/settings neu do la yeu cau nghiep vu.
+- Kiem tra runtime dashboard tren trinh duyet.
+- Kiem tra delete modal bang thao tac thuc te.
+- Kiem tra them product detail tren browser that neu co cong cu Browser/Playwright.
+
 Lộ trình phát triển hệ thống chuyên biệt cho xe hơi và xe máy, tập trung vào trải nghiệm đặt cọc và quản lý cấu hình xe linh hoạt với ngôn ngữ thiết kế BMW Modern.
 
 ## Phase 1: Foundation, Auth & BMW Showroom UI

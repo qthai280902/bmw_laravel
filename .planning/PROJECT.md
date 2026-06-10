@@ -1,5 +1,7 @@
 # Vehicle E-commerce Project (Cars & Motorbikes)
 
+> Current note: tai lieu goc nay co boi canh e-commerce cu. Theo cac report moi, du an hien la BMW Showroom & CRM Lead-Gen / Aftersales Platform. Khong xoa noi dung cu de giu lich su.
+
 Hệ thống thương mại điện tử chuyên biệt cho kinh doanh Ô tô và Xe máy, tập trung vào trải nghiệm đặt cọc và quản lý cấu hình xe linh hoạt với ngôn ngữ thiết kế BMW Modern.
 
 ## 🎯 Tầm nhìn & Mục tiêu

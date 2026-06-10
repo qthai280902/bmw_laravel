@@ -1,23 +1,39 @@
 # Project State
 
-## Current Position
-- **Status:** In Progress (Phase 5) 🛠️
-- **Current Phase:** 5. Management & Final Polish
-- **Next Task:** Implement Admin Order Management & Client History
+Current phase: Phase 11 completed with notes.
 
-## Recent Activity (Phase 4 Highlights)
-- Triển khai **CartService** đa chế độ (Session cho khách, DB cho thành viên) với logic Merge tự động.
-- Phát triển **ProcessDepositAction** tích hợp **Stock Locking** và **Pessimistic Locking** (`lockForUpdate`).
-- Vá lỗ hổng bảo mật **Deadlock** bằng kỹ thuật sắp xếp sản phẩm theo ID trước khi khóa.
-- Implement **Snapshot Integrity** cho đơn hàng (lưu giá và tên xe tại thời điểm đặt).
-- Cấu hình **Task Scheduler** tự động hủy đơn quá hạn và hoàn tồn kho.
-- Hoàn tất bộ **Feature Tests** cho toàn bộ luồng Ordering & Stock.
+## Phase 11
 
-## Key Decisions
-- **Deadlock Prevention:** Luôn sắp xếp items theo `product_id` trước khi acquire locks.
-- **Data Integrity:** Sử dụng snapshots trong `order_items` thay vì join động để bảo toàn lịch sử.
-- **Stock Restoration:** Tự động hoàn stock sau 24h nếu chưa thanh toán (tối ưu hóa tỉ lệ chuyển đổi).
+- Public product detail page da duoc redesign theo phong cach showroom BMW-inspired.
+- Route chi tiet xe giu nguyen: `/catalog/{product}`, name `products.show`.
+- Controller chi tiet xe giu `ProductController@show`.
+- View chi tiet xe: `resources/views/products/show.blade.php`.
+- Booking, quote, compare, specs modal va gallery da duoc giu.
+- HTTP smoke `/catalog/bmw-330i-sedan` pass voi status 200.
+- `view:cache` pass.
+- Pint pass.
+- `npm.cmd run build` pass.
 
-## Open Issues / Tech Debt
-- Cần thêm UI quản lý đơn hàng cho Admin để xác nhận thanh toán thủ công.
-- Tích hợp QR thanh toán thật (hiện đang dùng placeholder).
+## Phase 10
+
+- Admin Dashboard Analytics da trien khai.
+- Custom Delete Modal da thay `confirm()` mac dinh trong Admin.
+- `/dashboard` hien dung `Admin\DashboardController@index`.
+- `/dashboard` co middleware `web`, `auth`, `verified`, `admin`.
+- `DashboardTest` pass 4 tests / 10 assertions.
+- `view:cache` pass.
+- Pint pass.
+- `npm.cmd run build` pass.
+
+## Known issues
+
+- Full `php artisan test` chua pass toan bo.
+- Hien con 10 failed, 25 passed, 79 assertions trong lan chay Phase 11.
+- Nhom loi con lai thuoc auth/register/settings cu, khong thuoc Phase 10/11 theo hau kiem.
+- Chi tiet xem `.planning/bug/build/php-artisan-test.md`.
+
+## Notes
+
+- Khong ghi `All tests passed`.
+- Khong ghi `Full suite pass`.
+- Khong ghi `No known issues`.

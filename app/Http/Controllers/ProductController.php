@@ -55,7 +55,18 @@ class ProductController extends Controller
             ->with(['category', 'images']) // Detail page needs all images
             ->firstOrFail();
 
-        return view('products.show', compact('vehicle'));
+        $relatedVehicles = $vehicle->category_id
+            ? Product::query()
+                ->active()
+                ->where('category_id', $vehicle->category_id)
+                ->whereKeyNot($vehicle->id)
+                ->with(['category', 'primaryImage'])
+                ->latest()
+                ->limit(3)
+                ->get()
+            : collect();
+
+        return view('products.show', compact('relatedVehicles', 'vehicle'));
     }
 
     /**

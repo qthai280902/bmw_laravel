@@ -38,7 +38,7 @@
                             <td class="px-8 py-6 text-right">
                                 <div class="flex justify-end items-center gap-6">
                                     <a href="{{ route('admin.categories.edit', $category) }}" class="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all">Hiệu chỉnh</a>
-                                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('Cảnh báo: Xóa dòng xe này có thể ảnh hưởng đến các sản phẩm liên quan. Tiếp tục?');" class="inline">
+                                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" class="admin-delete-form" data-confirm-message="Cảnh báo: Xóa dòng xe này có thể ảnh hưởng đến các sản phẩm liên quan. Tiếp tục?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-[10px] font-black uppercase tracking-widest text-zinc-700 hover:text-rose-500 transition-all">Gỡ bỏ</button>

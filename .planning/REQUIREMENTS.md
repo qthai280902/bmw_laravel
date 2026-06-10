@@ -1,5 +1,12 @@
 # Software Requirements Specification (SRS) - Version 1
 
+## Current Addendum - CRM/Admin Dashboard
+
+- **[REQ-04-01] Admin Dashboard Analytics:** Dashboard admin hien thi tong lead, lich hen hom nay, lead pending, xu huong 7 ngay, phan bo theo type, top xe duoc quan tam va lich hen moi nhat.
+- **[REQ-04-02] Dashboard Security:** `/dashboard` phai co middleware `web`, `auth`, `verified`, `admin`.
+- **[REQ-04-03] Custom Delete Modal:** Admin delete forms khong dung `confirm()` mac dinh; dung component modal va class `admin-delete-form`.
+- **[REQ-04-04] Test Honesty:** Khong ghi full suite pass khi `php artisan test` con fail.
+
 Dưới đây là danh sách các yêu cầu chi tiết cho v1.0 của hệ thống bán xe.
 
 ## 1. Module Người dùng (Customer)

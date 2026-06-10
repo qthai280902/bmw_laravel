@@ -100,7 +100,7 @@
                             <td class="px-8 py-6 text-right">
                                 <div class="flex justify-end items-center gap-6">
                                     <a href="{{ route('admin.products.edit', $product) }}" class="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all">Sửa</a>
-                                    <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Xác nhận xóa xe này khỏi kho lưu trữ?');" class="inline">
+                                    <form method="POST" action="{{ route('admin.products.destroy', $product) }}" class="admin-delete-form" data-confirm-message="Xác nhận xóa xe này khỏi kho lưu trữ?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-[10px] font-black uppercase tracking-widest text-zinc-700 hover:text-rose-500 transition-all">Xóa</button>

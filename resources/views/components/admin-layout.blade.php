@@ -47,6 +47,13 @@
                     <div class="px-4 mb-4">
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Hệ thống cốt lõi</p>
                     </div>
+
+                    <x-admin.sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 15l4-4 3 3 5-7"></path></svg>
+                            Tổng quan CRM
+                        </span>
+                    </x-admin.sidebar-link>
                     
                     <x-admin.sidebar-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
                         <span class="flex items-center gap-3">
@@ -190,5 +197,6 @@
                 </main>
             </div>
         </div>
+        <x-admin.delete-confirm-modal />
     </body>
 </html>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Client\AppointmentController;
@@ -43,8 +44,9 @@ Route::get('/booking/success', [AppointmentController::class, 'success'])->name(
 
 // Auth Dashboard & Appointments Mng
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard redirect to appointments
-    Route::redirect('/dashboard', '/appointments')->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('admin')
+        ->name('dashboard');
     // Appointments list
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
 });
