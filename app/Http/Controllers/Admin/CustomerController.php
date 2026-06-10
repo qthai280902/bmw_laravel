@@ -20,21 +20,21 @@ class CustomerController extends Controller
             DB::raw('COUNT(*) as interactions_count'),
             DB::raw('MAX(appointment_date) as last_interaction')
         )
-        ->leftJoin('users', 'appointments.user_id', '=', 'users.id')
-        ->when($search, function ($query, $search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('guest_name', 'like', "%{$search}%")
-                  ->orWhere('guest_email', 'like', "%{$search}%")
-                  ->orWhere('guest_phone', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($u) use ($search) {
-                      $u->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                  });
-            });
-        })
-        ->groupBy(DB::raw('COALESCE(guest_email, users.email)'))
-        ->orderBy('last_interaction', 'desc')
-        ->paginate(15);
+            ->leftJoin('users', 'appointments.user_id', '=', 'users.id')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('guest_name', 'like', "%{$search}%")
+                        ->orWhere('guest_email', 'like', "%{$search}%")
+                        ->orWhere('guest_phone', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->groupBy(DB::raw('COALESCE(guest_email, users.email)'))
+            ->orderBy('last_interaction', 'desc')
+            ->paginate(15);
 
         return view('admin.customers.index', compact('customers'));
     }

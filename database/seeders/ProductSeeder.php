@@ -39,7 +39,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '5.8 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'images/cars/330i.png',
+                'image' => 'images/cars/330i/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW 530i Sedan',
@@ -64,7 +64,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '6.2 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'images/cars/530i.png',
+                'image' => 'images/cars/bmw-530i-sedan/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW 550e xDrive Sedan',
@@ -89,7 +89,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.3 giây',
                     'Top_Speed_KMH' => '250 km/h (E-mode: 140 km/h)',
                 ],
-                'image' => 'images/cars/550e.png',
+                'image' => 'images/cars/bmw-550e-xdrive-sedan/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW i4 M60 Gran Coupe',
@@ -114,7 +114,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.9 giây',
                     'Top_Speed_KMH' => '225 km/h',
                 ],
-                'image' => 'images/cars/i4.png',
+                'image' => 'images/cars/bmw-i4-m60-gran-coupe/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW X3 M50 xDrive',
@@ -139,7 +139,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.6 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'images/cars/x3m50.png',
+                'image' => 'images/cars/bmw-x3-m50-xdrive/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW M3 Sedan',
@@ -164,7 +164,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.2 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/m3.png',
+                'image' => 'images/cars/bmw-m3-sedan/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW M4 Coupe',
@@ -189,7 +189,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '4.2 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/m4.png',
+                'image' => 'images/cars/bmw-m4-coupe/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW X5 M Competition',
@@ -214,7 +214,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.9 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/x5m.png',
+                'image' => 'images/cars/bmw-x5-m-competition/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW XM Label',
@@ -239,7 +239,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.8 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'images/cars/xm.png',
+                'image' => 'images/cars/bmw-xm-label/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW M5 Touring',
@@ -264,7 +264,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.6 giây',
                     'Top_Speed_KMH' => '305 km/h',
                 ],
-                'image' => 'images/cars/m5t.png',
+                'image' => 'images/cars/bmw-m5-touring/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW G310R',
@@ -289,7 +289,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '7.0 giây',
                     'Top_Speed_KMH' => '143 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/5/58/BMW_G_310_R.jpg',
+                'image' => 'images/motorbikes/bmw-g310r/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW S1000RR',
@@ -314,7 +314,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '2.8 giây',
                     'Top_Speed_KMH' => '299 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/7/79/BMW_S1000_RR_Studio.JPG',
+                'image' => 'images/motorbikes/bmw-s1000rr/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW R1250GS',
@@ -339,7 +339,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.5 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/9/9d/BMW_R_1250_GS_%282024-04-29_Sp%29.JPG',
+                'image' => 'images/motorbikes/bmw-r1250gs/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW F900R',
@@ -364,7 +364,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.8 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/f/fb/BMW_F900R_%281crop%29.jpg',
+                'image' => 'images/motorbikes/bmw-f900r/hero-front-three-quarter.png',
             ],
             [
                 'name' => 'BMW K1600GT',
@@ -389,7 +389,7 @@ class ProductSeeder extends Seeder
                     'Zero_To_Hundred' => '3.4 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://upload.wikimedia.org/wikipedia/commons/7/7f/BMW_K_1600_GT_Right.JPG',
+                'image' => 'images/motorbikes/bmw-k1600gt/hero-front-three-quarter.png',
             ],
 
             // --- PHỤ KIỆN Ô TÔ ---
@@ -406,7 +406,7 @@ class ProductSeeder extends Seeder
                     'Weight' => '2.5 kg/bộ',
                     'Warranty' => '12 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/tham-lot-san-m-performance/hero-product.png',
             ],
             [
                 'name' => 'Camera hành trình BMW Advanced Eye 3.0',
@@ -422,7 +422,7 @@ class ProductSeeder extends Seeder
                     'Features' => 'GPS, G-Sensor, Night Vision, Parking Mode',
                     'Warranty' => '24 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/camera-hanh-trinh-bmw-advanced-eye-30/hero-product.png',
             ],
             [
                 'name' => 'Bọc vô lăng M Performance Carbon',
@@ -438,7 +438,7 @@ class ProductSeeder extends Seeder
                     'Color' => 'Black / Red Stitching',
                     'Warranty' => '12 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/boc-vo-lang-m-performance-carbon/hero-product.png',
             ],
             [
                 'name' => 'Bộ vành BMW M Performance Y-Spoke 20"',
@@ -455,7 +455,7 @@ class ProductSeeder extends Seeder
                     'Weight' => '9.2 kg/vành',
                     'Warranty' => '24 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0b?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/bo-vanh-bmw-m-performance-y-spoke-20/hero-product.png',
             ],
             [
                 'name' => 'Bộ đèn LED nội thất Ambient Light Pro',
@@ -471,7 +471,7 @@ class ProductSeeder extends Seeder
                     'Control' => 'BMW iDrive / BMW Connected App',
                     'Warranty' => '12 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/bo-den-led-noi-that-ambient-light-pro/hero-product.png',
             ],
 
             // --- PHỤ KIỆN XE MÁY ---
@@ -490,7 +490,7 @@ class ProductSeeder extends Seeder
                     'Weight' => '4.8 kg/thùng',
                     'Warranty' => '24 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/thung-nhom-bmw-motorrad-vario-35l/hero-product.png',
             ],
             [
                 'name' => 'Mũ bảo hiểm BMW System 7 Carbon',
@@ -507,7 +507,7 @@ class ProductSeeder extends Seeder
                     'Sizes' => 'XS - XXL',
                     'Warranty' => '24 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/mu-bao-hiem-bmw-system-7-carbon/hero-product.png',
             ],
             [
                 'name' => 'Ốp Carbon bảo vệ động cơ S1000RR',
@@ -523,7 +523,7 @@ class ProductSeeder extends Seeder
                     'Weight' => '0.4 kg/bộ',
                     'Warranty' => '12 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/op-carbon-bao-ve-dong-co-s1000rr/hero-product.png',
             ],
             [
                 'name' => 'Áo giáp BMW Motorrad StreetGuard',
@@ -539,7 +539,7 @@ class ProductSeeder extends Seeder
                     'Sizes' => 'S - 3XL',
                     'Warranty' => '24 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/ao-giap-bmw-motorrad-streetguard/hero-product.png',
             ],
             [
                 'name' => 'Bộ bảo vệ gầm BMW Motorrad Enduro',
@@ -555,7 +555,7 @@ class ProductSeeder extends Seeder
                     'Protection' => 'Carter dầu, ống xả, hộp số',
                     'Warranty' => '24 tháng',
                 ],
-                'image' => 'https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800&h=600&fit=crop',
+                'image' => 'images/accessories/bo-bao-ve-gam-bmw-motorrad-enduro/hero-product.png',
             ],
         ];
 
@@ -582,9 +582,14 @@ class ProductSeeder extends Seeder
                 ]
             );
 
+            $product->images()
+                ->where('is_primary', true)
+                ->where('path', '!=', $vehicleData['image'])
+                ->update(['is_primary' => false]);
+
             $product->images()->updateOrCreate(
-                ['is_primary' => true],
-                ['path' => $vehicleData['image'], 'sort_order' => 0]
+                ['path' => $vehicleData['image']],
+                ['is_primary' => true, 'sort_order' => 0]
             );
         }
     }

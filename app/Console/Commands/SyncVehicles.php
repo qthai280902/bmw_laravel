@@ -2,15 +2,16 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\VehicleType;
 use App\Models\Category;
 use App\Models\Product;
-use App\Enums\VehicleType;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
 class SyncVehicles extends Command
 {
     protected $signature = 'vehicle:sync';
+
     protected $description = 'Sync BMW car and motorcycle data without deleting existing records';
 
     public function handle()
@@ -42,7 +43,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '5,9 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://www.hdcarwallpapers.com/download/bmw_330i_m_sport_2022_5k-2560x1440.jpg'
+                'image' => 'https://www.hdcarwallpapers.com/download/bmw_330i_m_sport_2022_5k-2560x1440.jpg',
             ],
             [
                 'name' => 'BMW 530i M Sport',
@@ -67,7 +68,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '6,2 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://s3.paultan.org/tk/2025/01/2025-BMW-530i-M-Sport-Preview_Ext-1.jpg'
+                'image' => 'https://s3.paultan.org/tk/2025/01/2025-BMW-530i-M-Sport-Preview_Ext-1.jpg',
             ],
             [
                 'name' => 'BMW X3 xDrive20i',
@@ -92,7 +93,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '8,4 giây',
                     'Top_Speed_KMH' => '215 km/h',
                 ],
-                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/21177/bmw-x3-g45-20-xdrive-2025-767849.jpg'
+                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/21177/bmw-x3-g45-20-xdrive-2025-767849.jpg',
             ],
             [
                 'name' => 'BMW X5 xDrive40i LCI',
@@ -117,7 +118,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '5,4 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://hips.hearstapps.com/hmg-prod/images/2025-bmw-x5-xdrive40i-test-101-6679759711677.jpg'
+                'image' => 'https://hips.hearstapps.com/hmg-prod/images/2025-bmw-x5-xdrive40i-test-101-6679759711677.jpg',
             ],
             [
                 'name' => 'BMW i4 eDrive40',
@@ -142,7 +143,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '5,7 giây',
                     'Top_Speed_KMH' => '190 km/h',
                 ],
-                'image' => 'https://img.netcarshow.com/BMW-i4_2022_1600x1200_wallpaper_01.jpg'
+                'image' => 'https://img.netcarshow.com/BMW-i4_2022_1600x1200_wallpaper_01.jpg',
             ],
             [
                 'name' => 'BMW XM Plug-in Hybrid',
@@ -167,7 +168,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '4,3 giây',
                     'Top_Speed_KMH' => '250 km/h (270 km/h with M Driver Package)',
                 ],
-                'image' => 'https://www.hdcarwallpapers.com/download/g_power_bmw_xm_label_2025_8k-1920x1080.jpg'
+                'image' => 'https://www.hdcarwallpapers.com/download/g_power_bmw_xm_label_2025_8k-1920x1080.jpg',
             ],
             [
                 'name' => 'BMW M3 Competition M xDrive',
@@ -192,7 +193,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3,5 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/20915/bmw-m3-g80-sedan-2025-753896.jpg'
+                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/20915/bmw-m3-g80-sedan-2025-753896.jpg',
             ],
             [
                 'name' => 'BMW M4 Competition Coupe',
@@ -217,7 +218,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3,9 giây',
                     'Top_Speed_KMH' => '290 km/h',
                 ],
-                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/21035/bmw-m4-g82-cs-2025-760773.jpg'
+                'image' => 'https://www.mad4wheels.com/img/free-car-images/mobile/21035/bmw-m4-g82-cs-2025-760773.jpg',
             ],
             [
                 'name' => 'BMW M5 Touring (G99)',
@@ -242,7 +243,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3,6 giây',
                     'Top_Speed_KMH' => '305 km/h',
                 ],
-                'image' => 'https://s3.paultan.org/tk/2024/08/2025-BMW-M5-Touring-1.jpg'
+                'image' => 'https://s3.paultan.org/tk/2024/08/2025-BMW-M5-Touring-1.jpg',
             ],
             [
                 'name' => 'BMW 550e xDrive',
@@ -267,7 +268,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '4,3 giây',
                     'Top_Speed_KMH' => '250 km/h',
                 ],
-                'image' => 'https://www.bmwblog.com/wp-content/uploads/2024/02/2025-BMW-550e-xDrive-01.jpg'
+                'image' => 'https://www.bmwblog.com/wp-content/uploads/2024/02/2025-BMW-550e-xDrive-01.jpg',
             ],
 
             // --- MOTORCYCLES ---
@@ -294,7 +295,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '7.0 giây',
                     'Top_Speed_KMH' => '143 km/h',
                 ],
-                'image' => 'https://images.4kwallpapers.com/bikes/bmw-g310r-roadster-11983.jpg'
+                'image' => 'https://images.4kwallpapers.com/bikes/bmw-g310r-roadster-11983.jpg',
             ],
             [
                 'name' => 'BMW S1000RR',
@@ -319,7 +320,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '2.8 giây',
                     'Top_Speed_KMH' => '299 km/h',
                 ],
-                'image' => 'https://www.mcnews.com.au/wp-content/uploads/2024/10/2025-BMW-S-1000-RR-10.jpg'
+                'image' => 'https://www.mcnews.com.au/wp-content/uploads/2024/10/2025-BMW-S-1000-RR-10.jpg',
             ],
             [
                 'name' => 'BMW R1250GS',
@@ -344,7 +345,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3.5 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://images.4kwallpapers.com/bikes/bmw-r-1250-gs-spirit-of-gs-edition-6120x3442-9112.jpg'
+                'image' => 'https://images.4kwallpapers.com/bikes/bmw-r-1250-gs-spirit-of-gs-edition-6120x3442-9112.jpg',
             ],
             [
                 'name' => 'BMW F900R',
@@ -369,7 +370,7 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3.8 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://amcn.com.au/wp-content/uploads/2021/01/P90579128_highRes_the-new-bmw-f-900-r.jpg'
+                'image' => 'https://amcn.com.au/wp-content/uploads/2021/01/P90579128_highRes_the-new-bmw-f-900-r.jpg',
             ],
             [
                 'name' => 'BMW K1600GT',
@@ -394,13 +395,13 @@ class SyncVehicles extends Command
                     'Zero_To_Hundred' => '3.4 giây',
                     'Top_Speed_KMH' => '200 km/h',
                 ],
-                'image' => 'https://www.webbikeworld.com/wp-content/uploads/2021/10/2022-BMW-K-1600-GT-7.jpg'
+                'image' => 'https://www.webbikeworld.com/wp-content/uploads/2021/10/2022-BMW-K-1600-GT-7.jpg',
             ],
         ];
 
         foreach ($vehicles as $data) {
             $category = Category::where('slug', $data['category_slug'])->first();
-            if (!$category) {
+            if (! $category) {
                 // If category missing, create it as a safety measure
                 $category = Category::create([
                     'name' => ucfirst($data['category_slug']),
@@ -441,6 +442,7 @@ class SyncVehicles extends Command
         if ($type === VehicleType::MOTORBIKE->value) {
             return "Chuẩn mực cơ khí Đức trên hai bánh xe. {$name} mang lại cảm giác lái thuần khiết, linh hoạt và công nghệ hàng đầu phân khúc.";
         }
+
         return "Tuyệt tác thiết kế và công nghệ của tập đoàn BMW. {$name} là sự kết hợp hoàn hảo giữa sang trọng, tiện nghi và hiệu năng vận hành đỉnh cao.";
     }
 }

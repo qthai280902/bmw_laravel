@@ -1,0 +1,37 @@
+# Phase 12.3 Checklist
+
+- [x] Audit product models and ProductImage schema.
+- [x] Audit product count by type.
+- [x] Audit current ProductImage records.
+- [x] Audit seeder idempotency risk.
+- [x] Confirm `public/storage` still points to the old `tmdt_laravel` location.
+- [x] Generate local assets for all non-330i products that needed images.
+- [x] Crop generated contact sheets into stable role-based PNG files.
+- [x] Create organized car image folders.
+- [x] Create organized motorbike image folders.
+- [x] Create organized accessory image folders.
+- [x] Add `ProductImageExpansionSeeder`.
+- [x] Ensure image seeder uses `updateOrCreate()` by path.
+- [x] Ensure each product has exactly one primary image.
+- [x] Ensure seeder rerun does not increase image count.
+- [x] Remove external ProductImage URL records for expanded seeded products.
+- [x] Update `DatabaseSeeder`.
+- [x] Update `ProductSeeder` primary image paths.
+- [x] Update `ProductSeeder` primary image upsert safety.
+- [x] Add Phase 12.3 feature test.
+- [x] Run standalone image seeder.
+- [x] Run standalone image seeder again.
+- [x] Run view clear/cache.
+- [x] Run Pint.
+- [x] Run Vite build.
+- [x] Run catalog route list.
+- [x] Run focused Phase 12.2 test.
+- [x] Run focused Phase 12.3 test.
+- [x] Run previous Phase 12 public UI test.
+- [x] Run full suite and record old failures.
+- [x] Run Browser QA for car products.
+- [x] Run Browser QA for accessories.
+- [x] Run Browser QA for catalog filters.
+- [x] Run Browser QA for compare.
+- [x] Run Browser QA at mobile/tablet/desktop viewport widths.
+- [x] Update planning docs.

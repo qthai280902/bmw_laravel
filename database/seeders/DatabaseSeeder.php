@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategorySeeder::class,
             ProductSeeder::class,
-            Bmw330iImageSeeder::class,
+            ProductImageExpansionSeeder::class,
         ]);
     }
 }

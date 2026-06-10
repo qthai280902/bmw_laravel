@@ -56,8 +56,8 @@ Dự án tuân thủ nghiêm ngặt mô hình **Service/Action Pattern**:
 
 1. **Clone repository về máy:**
    ```bash
-   git clone https://github.com/your-username/tmdt_laravel.git
-   cd tmdt_laravel
+   git clone https://github.com/qthai280902/bmw_laravel.git
+   cd bmw_laravel
    ```
 
 2. **Cài đặt thư viện (Dependencies):**
