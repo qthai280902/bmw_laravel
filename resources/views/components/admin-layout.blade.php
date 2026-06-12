@@ -39,7 +39,7 @@
                         <span class="font-black text-xl tracking-tighter uppercase text-white md:hidden lg:block">Quản trị</span>
                     </a>
                     <button @click="sidebarOpen = false" class="md:hidden text-zinc-500 hover:text-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="6 18L18 6M6 6l12 12"></path></svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -77,6 +77,13 @@
                         <span class="flex items-center gap-3">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             Lịch hẹn & Lái thử
+                        </span>
+                    </x-admin.sidebar-link>
+
+                    <x-admin.sidebar-link :href="route('admin.accessory-orders.index')" :active="request()->routeIs('admin.accessory-orders.*')">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M6 7l1 13h10l1-13M9 7V5a3 3 0 016 0v2"></path></svg>
+                            Đơn phụ kiện
                         </span>
                     </x-admin.sidebar-link>
 

@@ -96,10 +96,8 @@ class ProductController extends Controller
             $query->where('type', VehicleType::CAR->value);
         } elseif ($type === 'xe_may') {
             $query->where('type', VehicleType::MOTORBIKE->value);
-        } elseif ($type === 'phu_kien') {
-            $query->whereHas('category', function ($q) {
-                $q->where('name', 'like', '%Phụ kiện%');
-            });
+        } else {
+            $query->whereRaw('1 = 0');
         }
 
         $products = $query->orderBy('name')->get();

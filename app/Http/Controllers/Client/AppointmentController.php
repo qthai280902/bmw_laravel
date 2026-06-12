@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Client;
 
+use App\Enums\VehicleType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
@@ -29,7 +30,11 @@ class AppointmentController extends Controller
      */
     public function create()
     {
-        $products = Product::where('is_active', true)->get();
+        $products = Product::query()
+            ->active()
+            ->whereIn('type', [VehicleType::CAR->value, VehicleType::MOTORBIKE->value])
+            ->orderBy('name')
+            ->get();
 
         return view('appointments.create', compact('products'));
     }

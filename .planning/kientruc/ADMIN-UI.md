@@ -5,6 +5,7 @@
 - Admin layout dung Blade component `<x-admin-layout>`.
 - File layout: `resources/views/components/admin-layout.blade.php`.
 - Sidebar co link products, categories, appointments, users, customers va dashboard CRM.
+- Phase 13 them sidebar link `Don phu kien` cho `admin.accessory-orders.index`.
 
 ## Dashboard
 
@@ -45,3 +46,13 @@
 - Phase 12.2 khong sua Admin UI/controller/dashboard.
 - Phase 12.2 chi them public product assets, seeder va detail page image mapping cho BMW 330i Sedan.
 - Admin upload/product image UI khong doi.
+
+## Phase 13 note
+
+- Them admin accessory order module:
+  - `resources/views/admin/accessory-orders/index.blade.php`.
+  - `resources/views/admin/accessory-orders/show.blade.php`.
+  - `App\Http\Controllers\Admin\AccessoryOrderController`.
+- Admin co the list/filter/detail/update status/internal notes cho accessory orders.
+- `confirmed_at` duoc set khi status chuyen sang `confirmed` hoac `completed`.
+- Admin product index/edit da doi image rendering sang `Product::displayImageUrl()` de dung fallback public asset va tranh storage URL hong.

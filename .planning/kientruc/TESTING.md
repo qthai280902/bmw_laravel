@@ -7,12 +7,45 @@
 - `php artisan test --compact tests/Feature/PublicUiPhase12Test.php`
 - `php artisan test --compact tests/Feature/PublicUiPhase12_2Test.php`
 - `php artisan test --compact tests/Feature/PublicUiPhase12_3Test.php`
+- `php artisan test --compact tests/Feature/AccessoryOrderTest.php`
+- `php artisan test --compact tests/Feature/AdminAccessoryOrderTest.php`
 - `vendor/bin/pint --dirty --format agent`
 - `npm.cmd run build`
 - `php artisan view:cache`
 
 ## Trang thai hien tai
 
+- Post-phase regression QA on 2026-06-12 23:11:30 +07:00:
+  - Phase 12 / 12.2 / 12.3 / 13 regression completed.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor/bin/pint --test`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 54 tests / 669 assertions.
+  - public HTTP routes checked: `/`, `/catalog`, `/catalog?type=car`, `/catalog?type=motorbike`, `/accessories`, `/compare?ids=1,2`, `/compare?ids=1,16`, selected product detail pages and accessory order form.
+  - browser desktop QA: homepage/catalog/accessories/compare/detail/admin/order form pass.
+  - browser mobile 390x900 QA: horizontal overflow 0, visible broken images 0.
+  - product image data QA: 25 products, 25/25 with at least 6 images, BMW 330i has 9 images, duplicate paths 0, duplicate sort_order 0, remote URLs 0, bad primary count 0.
+  - accessory order QA created dev order `#3`, then admin updated it to `completed`.
+  - result: PASS CO GHI CHU because dev QA order data remains and working tree is dirty.
+- Phase 13:
+  - `php artisan migrate`: pass.
+  - `php artisan route:list --path=accessories -v`: pass.
+  - `php artisan route:list --path=admin/accessory -v`: pass.
+  - `php artisan test --compact tests/Feature/AccessoryOrderTest.php`: pass, 6 tests / 27 assertions.
+  - `php artisan test --compact tests/Feature/AdminAccessoryOrderTest.php`: pass, 4 tests / 14 assertions.
+  - `vendor/bin/pint --dirty --format agent`: pass.
+  - `php artisan view:cache`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 54 tests / 669 assertions.
+- Phase 13 browser QA:
+  - catalog/accessories desktop card row diff 0px.
+  - mobile accessories horizontal overflow 0.
+  - accessory detail has order CTA and no test-drive/quote/compare.
+  - order form renders and valid submit succeeds.
+  - admin accessory order detail/update succeeds.
+  - admin product image storage 403 requests: 0 after helper patch.
 - GitHub Actions Verify & Test local reproduce/fix:
   - `composer install --no-interaction --prefer-dist --optimize-autoloader`: pass.
   - `php artisan config:clear`: pass.
@@ -65,7 +98,7 @@
 - Phase 12 Vite build: `npm.cmd run build` pass.
 - Phase 12.2 view compile: `view:cache` pass.
 - Phase 12.2 Vite build: `npm.cmd run build` pass.
-- Full suite: pass 44 tests / 628 assertions sau GitHub Actions fix.
+- Full suite: pass 54 tests / 669 assertions sau Phase 13.
 
 ## Loi full suite cu
 

@@ -149,7 +149,6 @@
                                         <option value="">-- Chọn danh mục --</option>
                                         <option value="oto">BMW Ô tô</option>
                                         <option value="xe_may">BMW Motorrad</option>
-                                        <option value="phu_kien">Phụ kiện chính hãng</option>
                                     </select>
                                 </div>
 

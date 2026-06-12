@@ -37,6 +37,7 @@
                                         class="w-full bg-zinc-950 border-zinc-800 text-white text-sm px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all">
                                     <option value="car" {{ old('type') == 'car' ? 'selected' : '' }}>Ô tô (Automobile)</option>
                                     <option value="motorbike" {{ old('type') == 'motorbike' ? 'selected' : '' }}>Xe máy (Motorrad)</option>
+                                    <option value="accessory" {{ old('type') == 'accessory' ? 'selected' : '' }}>Phụ kiện chính hãng</option>
                                 </select>
                             </div>
                         </div>

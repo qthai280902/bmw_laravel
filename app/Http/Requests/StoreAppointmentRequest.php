@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,5 +39,29 @@ class StoreAppointmentRequest extends FormRequest
             'customer_car_model' => [$isServiceType ? 'required' : 'nullable', 'string', 'max:255'],
             'customer_car_condition' => ['nullable', 'string', 'max:500'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (! $this->filled('product_id')) {
+                return;
+            }
+
+            $product = Product::query()
+                ->select(['id', 'type'])
+                ->find($this->input('product_id'));
+
+            if (! $product) {
+                return;
+            }
+
+            if (
+                ! $product->canTestDrive()
+                && in_array($this->input('type'), ['test_drive', 'viewing'], true)
+            ) {
+                $validator->errors()->add('product_id', 'Phụ kiện không dùng luồng lái thử hoặc xem xe.');
+            }
+        });
     }
 }

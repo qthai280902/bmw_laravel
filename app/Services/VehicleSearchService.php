@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\VehicleType;
 use App\Models\Product;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -53,6 +54,7 @@ class VehicleSearchService
     {
         $products = Product::whereIn('id', $productIds)
             ->active()
+            ->whereIn('type', [VehicleType::CAR->value, VehicleType::MOTORBIKE->value])
             ->with(['category', 'primaryImage', 'images'])
             ->get();
 

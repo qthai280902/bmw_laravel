@@ -36,6 +36,7 @@
                                         class="w-full bg-zinc-950 border-zinc-800 text-white text-sm px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all">
                                     <option value="car" {{ old('type', $product->type->value) == 'car' ? 'selected' : '' }}>Ô tô (Automobile)</option>
                                     <option value="motorbike" {{ old('type', $product->type->value) == 'motorbike' ? 'selected' : '' }}>Xe máy (Motorrad)</option>
+                                    <option value="accessory" {{ old('type', $product->type->value) == 'accessory' ? 'selected' : '' }}>Phụ kiện chính hãng</option>
                                 </select>
                             </div>
                         </div>
@@ -108,7 +109,7 @@
                     <div class="grid grid-cols-2 gap-3 mb-8">
                         @foreach($product->images as $image)
                             <div class="relative group aspect-video bg-black border border-zinc-800 overflow-hidden">
-                                <img src="{{ $image ? (Str::startsWith($image->path, 'http') ? $image->path : Storage::url($image->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW' }}" 
+                                <img src="{{ $product->displayImageUrl($image) }}"
                                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 {{ $image->is_primary ? '' : 'grayscale opacity-30 hover:opacity-100 hover:grayscale-0' }}">
                                 @if($image->is_primary)
                                     <span class="absolute top-0 left-0 px-2 py-0.5 bg-[#1C69D4] text-[8px] font-black uppercase tracking-widest text-white ">Primary Visual</span>

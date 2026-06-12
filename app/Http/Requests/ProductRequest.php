@@ -25,7 +25,7 @@ class ProductRequest extends FormRequest
         return [
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|string|in:car,motorbike',
+            'type' => 'required|string|in:car,motorbike,accessory',
             'price' => 'required|numeric|min:0',
             'deposit_amount' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',

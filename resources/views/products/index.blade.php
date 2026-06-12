@@ -1,6 +1,6 @@
 <x-app-layout>
     @php
-        $isAccessoryCatalog = ($filters['type'] ?? null) === 'accessory' && request()->routeIs('accessories.index');
+        $isAccessoryCatalog = ($filters['type'] ?? null) === 'accessory';
         $filterAction = $isAccessoryCatalog ? route('accessories.index') : route('products.index');
         $catalogTitle = $isAccessoryCatalog ? 'Phụ kiện chính hãng' : 'BMW Showroom';
         $catalogEyebrow = $isAccessoryCatalog ? 'Accessories studio' : 'Model range';

@@ -4,9 +4,16 @@
 
 - [x] Phase 12.2 completed with notes: BMW 330i product image expansion.
 - [x] Phase 12.3 completed with notes: all product image expansion.
+- [x] Phase 13 completed with notes: product flow normalization + accessory order module.
+- [x] Accessory order public/admin flow added with dedicated `accessory_orders` table.
+- [x] Car/motorbike keep test-drive, quote, compare and specs; accessories use order/contact only.
+- [x] Catalog/accessories cards now align height and CTA footer.
+- [x] Admin product images use `Product::displayImageUrl()` instead of raw storage URLs.
+- [x] Local `public/storage` junction recreated for `bmw_laravel`.
+- [x] Full `php artisan test` pass: 54 tests / 669 assertions.
 - [x] All 25 seeded products now have at least 6 usable local ProductImage records.
 - [x] `ProductImageExpansionSeeder` is idempotent: 162 records after rerun.
-- [x] `PublicUiPhase12_3Test` pass: 3 tests / 481 assertions.
+- [x] `PublicUiPhase12_3Test` pass: 3 tests / 484 assertions.
 - [x] BMW 330i Sedan now has 9 ProductImage records after seeding.
 - [x] Product detail renders up to 8 distinct BMW 330i images.
 - [x] `PublicUiPhase12_2Test` pass: 3 tests / 26 assertions.
@@ -22,16 +29,15 @@
 - [x] `/dashboard` now uses `Admin\DashboardController@index`.
 - [x] `/dashboard` has middleware `web`, `auth`, `verified`, `admin`.
 - [x] `DashboardTest` pass: 4 tests / 10 assertions.
-- [ ] Full `php artisan test` pass toan bo.
+- [x] Full `php artisan test` pass toan bo.
 
 ## Next maintenance tasks
 
-- Dong bo lai auth/register/settings tests voi route that.
-- Hoac khoi phuc route register/settings neu do la yeu cau nghiep vu.
+- Auth/register/settings tests da duoc dong bo voi route that.
 - Kiem tra runtime dashboard tren trinh duyet.
 - Kiem tra delete modal bang thao tac thuc te.
-- Dong bo lai public storage link neu can hien thi upload moi tu `storage/app/public`.
-- Kiem tra them admin product images vi admin van con fallback/URL cu ngoai scope Phase 12.
+- Public storage link local da duoc dong bo lai trong Phase 13.
+- Admin product images da dung helper `displayImageUrl()` trong Phase 13.
 - Bao tri/lam sach cac asset generated neu can toi uu dung luong repository.
 
 Lộ trình phát triển hệ thống chuyên biệt cho xe hơi và xe máy, tập trung vào trải nghiệm đặt cọc và quản lý cấu hình xe linh hoạt với ngôn ngữ thiết kế BMW Modern.

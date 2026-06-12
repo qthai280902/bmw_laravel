@@ -1,10 +1,10 @@
 @props(['vehicle', 'showCompare' => true])
 
 @php
-    $isAccessory = $vehicle->isAccessory();
+    $isAccessory = $vehicle->canOrderAccessory();
     $categoryName = $vehicle->category?->name ?? 'BMW Showroom';
     $primaryAction = $isAccessory
-        ? route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'quote'])
+        ? route('accessory-orders.create', $vehicle->slug)
         : route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'test_drive']);
     $primaryActionLabel = $isAccessory ? 'Đặt hàng' : 'Lái thử';
 @endphp
@@ -17,7 +17,7 @@
             this.isSelected = isVehicleSelected({{ $vehicle->id }});
         }
     }"
-    class="group relative overflow-hidden border border-zinc-900 bg-zinc-950 transition-all duration-500 hover:border-[#1C69D4]"
+    class="group relative flex h-full flex-col overflow-hidden border border-zinc-900 bg-zinc-950 transition-all duration-500 hover:border-[#1C69D4]"
 >
     @if($vehicle->is_featured)
         <div class="absolute left-4 top-4 z-10">
@@ -27,7 +27,7 @@
         </div>
     @endif
 
-    @if($showCompare && ! $isAccessory)
+    @if($showCompare && $vehicle->canCompare())
         <div class="absolute right-4 top-4 z-10">
             <button
                 type="button"
@@ -44,8 +44,8 @@
         </div>
     @endif
 
-    <a href="{{ route('products.show', $vehicle->slug) }}" class="block">
-        <div class="aspect-[16/10] overflow-hidden bg-zinc-900">
+    <a href="{{ route('products.show', $vehicle->slug) }}" class="block shrink-0">
+        <div class="h-64 overflow-hidden bg-zinc-900 sm:h-72 lg:h-64">
             <img
                 loading="lazy"
                 src="{{ $vehicle->displayImageUrl() }}"
@@ -55,32 +55,34 @@
         </div>
     </a>
 
-    <div class="space-y-8 p-6 sm:p-8">
-        <div class="space-y-3">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">{{ $categoryName }}</p>
-            <a href="{{ route('products.show', $vehicle->slug) }}" class="block">
-                <h3 class="text-2xl font-black uppercase leading-none tracking-normal text-white transition-colors group-hover:text-[#1C69D4]">
-                    {{ $vehicle->name }}
-                </h3>
-            </a>
-            <p class="text-sm font-medium leading-6 text-zinc-500">
-                {{ $isAccessory ? 'Phụ kiện chính hãng, tư vấn tương thích và lắp đặt tại showroom.' : 'Cấu hình showroom, tư vấn trải nghiệm và báo giá theo nhu cầu.' }}
-            </p>
-        </div>
-
-        <div class="border-t border-zinc-900 pt-6">
-            <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Giá niêm yết</p>
-            <p class="mt-2 text-2xl font-black tracking-normal text-white">
-                {{ number_format($vehicle->price) }} <span class="text-xs text-zinc-500">VNĐ</span>
-            </p>
-            @if($vehicle->deposit_amount)
-                <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-                    Cọc tham khảo: <span class="text-zinc-400">{{ number_format($vehicle->deposit_amount) }} VNĐ</span>
+    <div class="flex flex-1 flex-col p-6 sm:p-8">
+        <div class="flex-1 space-y-8">
+            <div class="space-y-3">
+                <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">{{ $categoryName }}</p>
+                <a href="{{ route('products.show', $vehicle->slug) }}" class="block">
+                    <h3 class="min-h-16 text-2xl font-black uppercase leading-none tracking-normal text-white transition-colors group-hover:text-[#1C69D4]">
+                        {{ $vehicle->name }}
+                    </h3>
+                </a>
+                <p class="min-h-12 text-sm font-medium leading-6 text-zinc-500">
+                    {{ $isAccessory ? 'Phụ kiện chính hãng, tư vấn tương thích và lắp đặt tại showroom.' : 'Cấu hình showroom, tư vấn trải nghiệm và báo giá theo nhu cầu.' }}
                 </p>
-            @endif
+            </div>
+
+            <div class="border-t border-zinc-900 pt-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Giá niêm yết</p>
+                <p class="mt-2 text-2xl font-black tracking-normal text-white">
+                    {{ number_format($vehicle->price) }} <span class="text-xs text-zinc-500">VNĐ</span>
+                </p>
+                @if($vehicle->deposit_amount)
+                    <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+                        Cọc tham khảo: <span class="text-zinc-400">{{ number_format($vehicle->deposit_amount) }} VNĐ</span>
+                    </p>
+                @endif
+            </div>
         </div>
 
-        <div class="grid grid-cols-[auto_1fr] gap-3">
+        <div class="mt-8 grid grid-cols-[auto_1fr] gap-3">
             <a
                 href="{{ $primaryAction }}"
                 title="{{ $primaryActionLabel }}"

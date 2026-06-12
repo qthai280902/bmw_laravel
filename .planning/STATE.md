@@ -1,6 +1,76 @@
 # Project State
 
-Current phase: GitHub Actions Verify & Test fix completed with notes after Phase 12.3.
+Current phase: Phase 12 + Phase 13 post-phase regression QA completed with notes.
+
+## Post-phase regression QA - Phase 12 + Phase 13
+
+- Test time: 2026-06-12 23:11:30 +07:00.
+- Scope:
+  - Phase 12 public UI/product flow.
+  - Phase 12.2 BMW 330i images.
+  - Phase 12.3 all product images.
+  - Phase 13 accessory order/admin/product CTA logic.
+- Required commands:
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor/bin/pint --test`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 54 tests / 669 assertions.
+- Browser QA:
+  - homepage/catalog/accessories/compare/detail/admin/order form checked.
+  - desktop card/action row diff: 0px for catalog/accessories grids.
+  - mobile 390x900 horizontal overflow: 0.
+  - visible broken images after lazy-load settle: 0.
+  - console errors: 0.
+- Data QA:
+  - total products: 25.
+  - cars: 10.
+  - motorbikes: 5.
+  - accessories: 10.
+  - products with at least 6 images: 25 / 25.
+  - BMW 330i images: 9.
+  - duplicate paths: 0.
+  - duplicate sort_order: 0.
+  - remote image URLs: 0.
+  - bad primary image products: 0.
+- Accessory order QA:
+  - created dev QA order `#3`.
+  - product: `Tham lot san M Performance`.
+  - customer: `QA Regression 1781280571180`.
+  - admin status workflow `pending -> confirmed -> completed`: pass.
+- Security QA:
+  - guest admin access redirects to login.
+  - non-admin admin access returns 403.
+  - car slug accessory order route returns 404.
+  - invalid admin status does not change persisted order status.
+- Reports:
+  - `.planning/baocao/phase-reports/phase-12-regression-test-report.md`.
+  - `.planning/baocao/phase-reports/phase-13-regression-test-report.md`.
+- Result: PASS CO GHI CHU.
+
+## Phase 13
+
+- Product flow da duoc chuan hoa:
+  - car/motorbike giu test drive, quote, compare va specs modal.
+  - accessory dung order CTA rieng va contact CTA.
+  - accessory khong con test-drive/vehicle-compare/appointment quote CTA.
+- Them module accessory order:
+  - `accessory_orders` table.
+  - `App\Models\AccessoryOrder`.
+  - public route `GET|POST /accessories/{product:slug}/order`.
+  - admin routes `GET /admin/accessory-orders`, `GET /admin/accessory-orders/{accessoryOrder}`, `PATCH /admin/accessory-orders/{accessoryOrder}/status`.
+- Them admin UI `Don phu kien` de list/detail/update status/internal notes.
+- Catalog/accessories cards da can equal-height va CTA aligned.
+- Compare flow bo qua accessory IDs.
+- Appointment flow chan accessory cho test-drive/viewing.
+- Admin product index/edit dung `Product::displayImageUrl()` thay vi `Storage::url()` truc tiep.
+- Local `public/storage` junction da duoc recreate ve workspace `bmw_laravel`.
+- Browser smoke pass cho catalog/accessories/detail/order form/admin update.
+- `php artisan test` pass: 54 tests / 669 assertions.
+- `vendor/bin/pint --dirty --format agent` pass.
+- `php artisan view:cache` pass.
+- `npm.cmd run build` pass.
 
 ## GitHub Actions Verify & Test fix
 
@@ -17,7 +87,7 @@ Current phase: GitHub Actions Verify & Test fix completed with notes after Phase
 - `vendor/bin/pint --test` pass.
 - `npm.cmd run build` pass.
 - `php artisan view:cache` pass.
-- Known local issue: `public/storage` van la junction tro `C:\Users\thaib\Downloads\tmdt_laravel\storage\app\public`.
+- Storage junction issue ghi nhan o lan fix CI da duoc xu ly trong Phase 13.
 - Known repository artifact: `files.txt` la path dump cu con nhieu path `tmdt_laravel`, khong duoc workflow su dung.
 
 ## Phase 12.3
@@ -99,10 +169,9 @@ Current phase: GitHub Actions Verify & Test fix completed with notes after Phase
 
 ## Known issues
 
-- `public/storage` van la junction local tro `C:\Users\thaib\Downloads\tmdt_laravel\storage\app\public`; can tao lai storage link local neu can dung uploaded files.
 - `files.txt` la tracked path dump cu con nhieu path `tmdt_laravel`, khong duoc CI workflow su dung.
+- Browser smoke Phase 13 da tao local QA accessory order `#2` trong database dev.
 
 ## Notes
 
-- Full `php artisan test --compact` da pass sau GitHub Actions fix: 44 tests / 628 assertions.
-- Van khong ghi `No known issues` vi con storage junction/path dump local issue.
+- Full `php artisan test` da pass sau Phase 13: 54 tests / 669 assertions.

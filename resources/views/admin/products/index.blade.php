@@ -24,6 +24,7 @@
                     <option value="">Tất cả</option>
                     <option value="car" {{ request('type') == 'car' ? 'selected' : '' }}>Ô tô</option>
                     <option value="motorbike" {{ request('type') == 'motorbike' ? 'selected' : '' }}>Xe máy</option>
+                    <option value="accessory" {{ request('type') == 'accessory' ? 'selected' : '' }}>Phụ kiện</option>
                 </select>
             </div>
 
@@ -68,7 +69,7 @@
                                 <div class="flex items-center gap-5">
                                     @php $primaryImg = $product->images->where('is_primary', true)->first(); @endphp
                                     <div class="relative w-20 h-12 bg-black border border-zinc-800 overflow-hidden shrink-0">
-                                        <img src="{{ $primaryImg ? (Str::startsWith($primaryImg->path, 'http') ? $primaryImg->path : Storage::url($primaryImg->path)) : 'https://placehold.co/800x600/111111/ffffff?text=BMW' }}" 
+                                        <img src="{{ $product->displayImageUrl($primaryImg) }}"
                                              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 {{ $primaryImg ? 'grayscale group-hover:grayscale-0' : 'opacity-20' }}">
                                     </div>
                                     <div>

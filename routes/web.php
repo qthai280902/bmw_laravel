@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AccessoryOrderController;
+use App\Http\Controllers\Admin\AccessoryOrderController as AdminAccessoryOrderController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -31,6 +33,8 @@ Route::get('/compare', [ProductController::class, 'compare'])->name('products.co
 
 // Accessories (reuse ProductController with accessory type filter)
 Route::get('/accessories', [ProductController::class, 'index'])->defaults('type', 'accessory')->name('accessories.index');
+Route::get('/accessories/{product:slug}/order', [AccessoryOrderController::class, 'create'])->name('accessory-orders.create');
+Route::post('/accessories/{product:slug}/order', [AccessoryOrderController::class, 'store'])->name('accessory-orders.store');
 
 // Static Pages
 Route::get('/offers', [PageController::class, 'exclusiveOffers'])->name('offers.exclusive');
@@ -62,6 +66,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('categories', CategoryController::class);
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
+        Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
+        Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
+        Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');
         Route::resource('users', UserController::class)->only(['index']);
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
     });

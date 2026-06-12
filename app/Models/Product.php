@@ -85,6 +85,11 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
+    public function accessoryOrders(): HasMany
+    {
+        return $this->hasMany(AccessoryOrder::class);
+    }
+
     /**
      * Get the primary image for the product.
      * OPTIMIZED: Loaded as hasOne to save memory in lists.
@@ -108,6 +113,26 @@ class Product extends Model
 
         return Str::contains($categoryName, ['phụ kiện', 'phu kien'])
             || Str::contains($categorySlug, ['phu-kien', 'accessory']);
+    }
+
+    public function isVehicle(): bool
+    {
+        return in_array($this->type, [VehicleType::CAR, VehicleType::MOTORBIKE], true);
+    }
+
+    public function canTestDrive(): bool
+    {
+        return $this->isVehicle();
+    }
+
+    public function canCompare(): bool
+    {
+        return $this->isVehicle();
+    }
+
+    public function canOrderAccessory(): bool
+    {
+        return $this->isAccessory();
     }
 
     /**

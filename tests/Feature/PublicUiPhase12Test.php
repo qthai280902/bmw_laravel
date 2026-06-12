@@ -120,9 +120,9 @@ class PublicUiPhase12Test extends TestCase
         $this->get(route('products.show', $accessory->slug))
             ->assertOk()
             ->assertSee('Đặt hàng ngay')
-            ->assertSee('Liên hệ mua hàng')
-            ->assertSee('type=quote', false)
-            ->assertSee('type=consult', false)
+            ->assertSee(route('accessory-orders.create', $accessory->slug, absolute: false), false)
+            ->assertSee('Liên hệ tư vấn')
+            ->assertDontSee('product_id='.$accessory->id, false)
             ->assertDontSee('Đăng ký lái thử')
             ->assertDontSee('type=test_drive', false)
             ->assertDontSee('Thêm so sánh');

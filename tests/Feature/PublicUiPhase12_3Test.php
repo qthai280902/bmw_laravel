@@ -99,12 +99,14 @@ class PublicUiPhase12_3Test extends TestCase
             ->assertSee('images/motorbikes/bmw-s1000rr/side-profile.png', false)
             ->assertDontSee('images/cars/330i/', false);
 
+        $helmet = Product::where('slug', 'mu-bao-hiem-bmw-system-7-carbon')->firstOrFail();
+
         $this->get(route('products.show', 'mu-bao-hiem-bmw-system-7-carbon'))
             ->assertOk()
             ->assertSee('images/accessories/mu-bao-hiem-bmw-system-7-carbon/hero-product.png', false)
             ->assertSee('images/accessories/mu-bao-hiem-bmw-system-7-carbon/detail-material.png', false)
-            ->assertSee('type=quote', false)
-            ->assertSee('type=consult', false)
+            ->assertSee('/accessories/mu-bao-hiem-bmw-system-7-carbon/order', false)
+            ->assertDontSee('product_id='.$helmet->id, false)
             ->assertDontSee('type=test_drive', false);
 
         $this->get(route('products.index'))

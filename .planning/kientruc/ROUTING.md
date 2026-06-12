@@ -7,6 +7,7 @@
 - `/catalog/{product:slug}`
 - `/compare`
 - `/accessories`
+- `/accessories/{product:slug}/order`
 - `/offers`
 - `/privacy-policy`
 - `/contact`
@@ -32,15 +33,21 @@
 ## Phase 12 public routing notes
 
 - `/accessories` van reuse `ProductController@index` voi route default `type=accessory`.
-- Accessory CTA dung route hien co:
-  - `appointments.create` voi `type=quote`
-  - `appointments.create` voi `type=consult`
-  - `contact.index`
 - Car/motorbike CTA van dung:
   - `appointments.create` voi `type=test_drive`
   - `appointments.create` voi `type=quote`
   - `products.compare`
 - Compare route van la `/compare?ids=...`.
+
+## Phase 13 public routing notes
+
+- Accessory order dung route rieng:
+  - `accessory-orders.create`: `GET /accessories/{product:slug}/order`.
+  - `accessory-orders.store`: `POST /accessories/{product:slug}/order`.
+- Accessory detail/card CTA khong dung appointment quote de dat hang nua.
+- Accessory detail khong hien test-drive route va khong hien compare button.
+- Vehicle compare bo qua accessory IDs.
+- Public booking category flow khong dua `phu_kien` vao `api/products-by-category`.
 
 ## Auth routes
 
@@ -70,6 +77,7 @@ Admin routes dung prefix `/admin`, middleware `auth` va `admin`.
 - `admin/products`
 - `admin/categories`
 - `admin/appointments`
+- `admin/accessory-orders`
 - `admin/users`
 - `admin/customers`
 

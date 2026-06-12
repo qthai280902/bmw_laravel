@@ -34,12 +34,19 @@
             ])
             ->values();
 
-        $isAccessory = $vehicle->isAccessory();
+        $isAccessory = $vehicle->canOrderAccessory();
         $categoryName = $vehicle->category?->name ?? 'BMW Showroom';
         $primaryCtaLabel = $isAccessory ? 'Đặt hàng ngay' : 'Đăng ký lái thử';
-        $primaryCtaType = $isAccessory ? 'quote' : 'test_drive';
         $secondaryCtaLabel = $isAccessory ? 'Liên hệ tư vấn' : 'Nhận báo giá';
-        $secondaryCtaType = $isAccessory ? 'consult' : 'quote';
+        $primaryCtaUrl = $isAccessory
+            ? route('accessory-orders.create', $vehicle->slug)
+            : route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'test_drive']);
+        $secondaryCtaUrl = $isAccessory
+            ? route('contact.index')
+            : route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'quote']);
+        $quoteCtaUrl = $isAccessory
+            ? route('contact.index')
+            : route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'quote']);
         $heroCtaGridClass = $isAccessory ? 'sm:grid-cols-2' : 'sm:grid-cols-3';
         $sectionLabel = $isAccessory ? 'Accessory detail' : 'Vehicle detail';
         $overviewTitle = $isAccessory
@@ -81,17 +88,17 @@
                                 </p>
                             </div>
                             <div class="grid grid-cols-1 gap-3 {{ $heroCtaGridClass }}">
-                                <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => $primaryCtaType]) }}" class="bg-[#1C69D4] px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
+                                <a href="{{ $primaryCtaUrl }}" class="bg-[#1C69D4] px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
                                     {{ $primaryCtaLabel }}
                                 </a>
-                                <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => $secondaryCtaType]) }}" class="border border-white/70 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
+                                <a href="{{ $secondaryCtaUrl }}" class="border border-white/70 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
                                     {{ $secondaryCtaLabel }}
                                 </a>
-                                @unless($isAccessory)
+                                @if($vehicle->canCompare())
                                     <button type="button" onclick="toggleComparison({{ $vehicle->id }})" class="border border-zinc-700 px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-200 transition-all hover:border-[#1C69D4] hover:text-[#1C69D4]">
                                         Thêm so sánh
                                     </button>
-                                @endunless
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -190,7 +197,7 @@
                     <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $isAccessory ? 'Tư vấn lắp đặt' : 'Công nghệ' }}</p>
                     <h2 class="text-4xl font-black uppercase leading-tight tracking-normal md:text-6xl">{{ $technologyTitle }}</h2>
                     <p class="mt-6 text-base font-medium leading-7 text-zinc-600">
-                        {{ $isAccessory ? 'CTA phụ kiện dẫn về luồng tư vấn/báo giá hiện có để đội showroom xác nhận tương thích trước khi chốt mua hàng.' : 'Luồng đặt lịch, báo giá và so sánh vẫn giữ nguyên để người dùng chuyển từ khám phá sang hành động mà không mất logic CRM.' }}
+                        {{ $isAccessory ? 'CTA phụ kiện dẫn về form đặt hàng riêng để đội showroom xác nhận tương thích trước khi chốt mua hàng.' : 'Luồng đặt lịch, báo giá và so sánh vẫn giữ nguyên để người dùng chuyển từ khám phá sang hành động mà không mất logic CRM.' }}
                     </p>
                 </div>
                 <div class="aspect-[16/10] overflow-hidden bg-zinc-200">
@@ -296,24 +303,21 @@
                     <h2 class="text-4xl font-black uppercase tracking-normal md:text-6xl">{{ $bookingTitle }}</h2>
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => $primaryCtaType]) }}" class="bg-black px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-[#1C69D4]">
+                    <a href="{{ $primaryCtaUrl }}" class="bg-black px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-[#1C69D4]">
                         {{ $primaryCtaLabel }}
                     </a>
-                    <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => 'quote']) }}" class="border border-black px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:bg-black hover:text-white">
-                        Nhận báo giá
-                    </a>
-                    <a href="{{ route('appointments.create', ['product_id' => $vehicle->id, 'type' => $secondaryCtaType]) }}" class="border border-zinc-300 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:border-black">
+                    @unless($isAccessory)
+                        <a href="{{ $quoteCtaUrl }}" class="border border-black px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:bg-black hover:text-white">
+                            Nhận báo giá
+                        </a>
+                    @endunless
+                    <a href="{{ $secondaryCtaUrl }}" class="border border-zinc-300 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:border-black">
                         {{ $secondaryCtaLabel }}
                     </a>
-                    @unless($isAccessory)
+                    @if($vehicle->canCompare())
                         <button type="button" onclick="toggleComparison({{ $vehicle->id }})" class="border border-zinc-300 px-8 py-5 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:border-[#1C69D4] hover:text-[#1C69D4]">
                             Thêm vào so sánh
                         </button>
-                    @endunless
-                    @if($isAccessory)
-                        <a href="{{ route('contact.index') }}" class="border border-zinc-300 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:border-black">
-                            Liên hệ mua hàng
-                        </a>
                     @endif
                 </div>
             </div>
