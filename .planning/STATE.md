@@ -1,6 +1,43 @@
 # Project State
 
-Current phase: Phase 12 + Phase 13 post-phase regression QA completed with notes.
+Current phase: Phase 14 completed with notes.
+
+## Phase 14
+
+- Admin UI modernization + Article CMS da hoan tat.
+- Admin shell da duoc rebuild trong `resources/views/components/admin-layout.blade.php`.
+- Them admin article CMS:
+  - `articles` table.
+  - `App\Models\Article`.
+  - `App\Http\Controllers\Admin\ArticleController`.
+  - admin routes `/admin/articles`.
+  - views `resources/views/admin/articles/*`.
+- Them public "Tim hieu them":
+  - `GET /tim-hieu-them`, name `articles.index`.
+  - `GET /tim-hieu-them/{article:slug}`, name `articles.show`.
+  - controller `App\Http\Controllers\ArticleController`.
+  - views `resources/views/articles/*`.
+- Homepage, navigation va footer da them link/section bai viet.
+- Draft articles khong hien public va direct URL tra 404.
+- Admin delete modal contract duoc giu cho article delete.
+- Dashboard Phase 10 van giu route/controller/middleware.
+- Product/category/appointment/accessory order logic duoc giu.
+- Verification:
+  - `php artisan migrate`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 65 tests / 776 assertions.
+- Browser QA:
+  - homepage/article index/article detail/admin pages checked.
+  - mobile 390x900 checked.
+  - visible broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+- Known note: Browser QA tao 2 local dev articles, 1 draft va 1 published, khong xoa.
+- Report: `.planning/baocao/phase-reports/phase-14-report.md`.
 
 ## Post-phase regression QA - Phase 12 + Phase 13
 

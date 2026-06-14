@@ -1,13 +1,16 @@
 <x-admin-layout>
-    <div class="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-        <div>
-            <p class="mb-3 text-[10px] font-black uppercase tracking-[0.3em] text-[#1C69D4]">Accessory order #{{ $order->id }}</p>
-            <h1 class="text-5xl font-light uppercase tracking-tighter text-white">Chi tiết <span class="font-black text-[#1C69D4]">đơn phụ kiện</span></h1>
-        </div>
-        <a href="{{ route('admin.accessory-orders.index') }}" class="border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 transition-all hover:bg-zinc-900 hover:text-white">
-            Quay lại danh sách
-        </a>
-    </div>
+    <x-admin.page-header
+        eyebrow="Accessory order #{{ $order->id }}"
+        title="Chi tiết"
+        accent="Đơn phụ kiện"
+        :description="$order->customer_name"
+    >
+        <x-slot name="actions">
+            <a href="{{ route('admin.accessory-orders.index') }}" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+                Quay lại
+            </a>
+        </x-slot>
+    </x-admin.page-header>
 
     <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_420px]">
         <div class="space-y-8">

@@ -111,6 +111,56 @@
         </div>
     </section>
 
+    <section class="bg-black py-24 text-white">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">BMW stories</p>
+                    <h2 class="text-4xl font-black uppercase tracking-normal md:text-6xl">Tìm hiểu thêm</h2>
+                </div>
+                <a href="{{ route('articles.index') }}" class="inline-flex items-center justify-center border border-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+                    Xem tất cả
+                </a>
+            </div>
+
+            @if($latestArticles->isNotEmpty())
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    @foreach($latestArticles as $article)
+                        <article class="group flex h-full flex-col overflow-hidden border border-zinc-900 bg-zinc-950 transition-colors hover:border-[#1C69D4]">
+                            <a href="{{ route('articles.show', $article) }}" class="block">
+                                <div class="aspect-[16/10] bg-zinc-900">
+                                    @if($article->coverImageUrl())
+                                        <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                                    @else
+                                        <div class="flex h-full w-full items-center justify-center text-[10px] font-black uppercase tracking-[0.35em] text-zinc-700">
+                                            BMW showroom
+                                        </div>
+                                    @endif
+                                </div>
+                            </a>
+                            <div class="flex flex-1 flex-col p-7">
+                                <div class="flex-1">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">{{ $article->categoryLabel() }}</p>
+                                    <a href="{{ route('articles.show', $article) }}" class="mt-4 block">
+                                        <h3 class="text-2xl font-black uppercase leading-tight tracking-normal text-white transition-colors group-hover:text-[#70A7FF]">{{ $article->title }}</h3>
+                                    </a>
+                                    <p class="mt-4 text-sm font-medium leading-6 text-zinc-500">{{ $article->excerpt ?? Str::limit(strip_tags($article->body), 140) }}</p>
+                                </div>
+                                <p class="mt-8 border-t border-zinc-900 pt-5 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">
+                                    {{ $article->published_at?->format('d/m/Y') }}
+                                </p>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            @else
+                <div class="border border-zinc-900 bg-zinc-950 px-8 py-14 text-center">
+                    <p class="text-sm font-medium text-zinc-600">Showroom đang chuẩn bị các bài viết mới.</p>
+                </div>
+            @endif
+        </div>
+    </section>
+
     <section class="bg-zinc-950 py-24 text-white">
         <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8">
             <div>

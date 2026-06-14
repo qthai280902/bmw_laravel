@@ -1,14 +1,15 @@
 <x-admin-layout>
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-        <div>
-            <h1 class="text-6xl font-light uppercase tracking-tighter mb-2 text-white">Quản trị viên <span class="font-black text-[#1C69D4]">& Nhân sự</span></h1>
-            <p class="text-zinc-500 font-medium font-outfit">Danh sách các tài khoản có quyền truy cập quản trị BMW.</p>
-        </div>
-        <div class="px-6 py-3 bg-zinc-900 border border-zinc-800 flex items-center gap-4">
-            <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Tổng nhân sự:</p>
-            <p class="text-lg font-black text-white leading-none">{{ $users->total() }}</p>
-        </div>
-    </div>
+    <x-admin.page-header
+        eyebrow="Access control"
+        title="Quản trị viên"
+        accent="& Nhân sự"
+        description="Danh sách các tài khoản có quyền truy cập quản trị BMW."
+    >
+        <x-slot name="metric">
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tổng nhân sự</p>
+            <p class="mt-1 text-2xl font-black text-white">{{ $users->total() }}</p>
+        </x-slot>
+    </x-admin.page-header>
 
     <!-- Table -->
     <x-admin.card class="!p-0 border-zinc-800 overflow-hidden">
@@ -26,7 +27,7 @@
                         <tr class="group hover:bg-zinc-800/30 transition-all duration-300">
                             <td class="px-8 py-6">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center group-hover:border-[#1C69D4] transition-all overflow-hidden">
+                                    <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center group-hover:border-[#1C69D4] transition-all overflow-hidden">
                                         <span class="text-xs font-black text-zinc-600 group-hover:text-[#1C69D4] transition-colors">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
                                     </div>
                                     <div>
@@ -53,7 +54,7 @@
                         <tr>
                             <td colspan="3" class="px-8 py-32 text-center">
                                 <div class="flex flex-col items-center">
-                                    <div class="w-16 h-16 bg-zinc-900/50 rounded-full flex items-center justify-center border border-zinc-800 mb-6">
+                                    <div class="w-16 h-16 bg-zinc-900/50 flex items-center justify-center border border-zinc-800 mb-6">
                                         <svg class="w-6 h-6 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 01-12 0v1zm0-4.708a5.992 5.992 0 00-5.923-4.35H9v1.5a.5.5 0 01-1 0v-1.5H7.5c-2.31 0-4.223 1.636-4.636 3.791l-.114.563h6.5z"></path></svg>
                                     </div>
                                     <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500">Dữ liệu trống</h3>

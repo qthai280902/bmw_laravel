@@ -30,6 +30,9 @@
                     <x-nav-link :href="route('experiences.index')" :active="request()->is('experiences*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         Trải nghiệm
                     </x-nav-link>
+                    <x-nav-link :href="route('articles.index')" :active="request()->is('tim-hieu-them*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
+                        Tìm hiểu thêm
+                    </x-nav-link>
                     <x-nav-link :href="route('products.compare')" :active="request()->is('compare*')" class="text-sm font-black uppercase tracking-widest h-full flex items-center">
                         So sánh
                     </x-nav-link>
@@ -112,6 +115,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('experiences.index')" :active="request()->is('experiences*')">
                         Trải nghiệm
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('articles.index')" :active="request()->is('tim-hieu-them*')">
+                        Tìm hiểu thêm
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('products.compare')" :active="request()->is('compare*')">
                         So sánh

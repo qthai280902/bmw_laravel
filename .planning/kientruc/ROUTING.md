@@ -8,6 +8,8 @@
 - `/compare`
 - `/accessories`
 - `/accessories/{product:slug}/order`
+- `/tim-hieu-them`
+- `/tim-hieu-them/{article:slug}`
 - `/offers`
 - `/privacy-policy`
 - `/contact`
@@ -49,6 +51,15 @@
 - Vehicle compare bo qua accessory IDs.
 - Public booking category flow khong dua `phu_kien` vao `api/products-by-category`.
 
+## Phase 14 public routing notes
+
+- Article public routes:
+  - `articles.index`: `GET /tim-hieu-them`.
+  - `articles.show`: `GET /tim-hieu-them/{article:slug}`.
+- Public article show dung route model binding theo `slug`.
+- Controller chi hien published articles; draft direct URL tra 404.
+- Homepage lay latest published articles trong route `/` closure va truyen vao view.
+
 ## Auth routes
 
 - `/login`
@@ -78,8 +89,22 @@ Admin routes dung prefix `/admin`, middleware `auth` va `admin`.
 - `admin/categories`
 - `admin/appointments`
 - `admin/accessory-orders`
+- `admin/articles`
 - `admin/users`
 - `admin/customers`
+
+## Admin article routes
+
+- `admin.articles.index`: `GET /admin/articles`.
+- `admin.articles.create`: `GET /admin/articles/create`.
+- `admin.articles.store`: `POST /admin/articles`.
+- `admin.articles.edit`: `GET /admin/articles/{article}/edit`.
+- `admin.articles.update`: `PUT/PATCH /admin/articles/{article}`.
+- `admin.articles.destroy`: `DELETE /admin/articles/{article}`.
+- Middleware:
+  - `web`.
+  - `auth`.
+  - `admin`.
 
 ## Appointments routes
 

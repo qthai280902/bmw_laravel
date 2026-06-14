@@ -1,39 +1,56 @@
 <x-admin-layout>
-    <div class="mb-12">
-        <h1 class="text-6xl font-light uppercase tracking-tighter mb-2 text-white">New <span class="font-black text-[#1C69D4]">Line</span></h1>
-        <p class="text-zinc-500 font-medium font-outfit">Định nghĩa phân khúc và dòng xe mới cho hệ thống BMW Showroom.</p>
-    </div>
+    <x-admin.page-header
+        eyebrow="Showroom taxonomy"
+        title="Tạo"
+        accent="Dòng xe"
+        description="Định nghĩa phân khúc hoặc nhóm sản phẩm mới cho catalog BMW."
+    >
+        <x-slot name="actions">
+            <a href="{{ route('admin.categories.index') }}" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+                Quay lại
+            </a>
+        </x-slot>
+    </x-admin.page-header>
 
     <form action="{{ route('admin.categories.store') }}" method="POST">
         @csrf
-        <div class="max-w-3xl space-y-8">
-            <x-admin.card class="!p-10">
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-10 pb-4 border-b border-zinc-800">Cấu hình dòng xe</h3>
-                
-                <div class="space-y-8">
-                    <div>
-                        <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Tên định danh dòng xe</label>
-                        <input type="text" name="name" value="{{ old('name') }}" required 
-                               class="w-full bg-zinc-950 border-zinc-800 text-white text-base font-black px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all placeholder-zinc-800"
-                               placeholder="Ví dụ: BMW M Performance">
-                    </div>
+        <div class="max-w-3xl space-y-6">
+            <x-admin.card class="!p-6">
+                <div class="mb-6 border-b border-zinc-900 pb-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-600">Thông tin dòng xe</p>
+                </div>
 
-                    <div>
-                        <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Mô tả đặc điểm phân khúc</label>
-                        <textarea name="description" rows="5" 
-                                  class="w-full bg-zinc-950 border-zinc-800 text-zinc-300 text-sm px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all placeholder-zinc-800"
-                                  placeholder="Mô tả tóm tắt về đặc điểm kỹ thuật hoặc phong cách của dòng xe này...">{{ old('description') }}</textarea>
-                    </div>
+                <div class="space-y-6">
+                    <x-admin.form-field name="name" label="Tên dòng xe">
+                        <input
+                            id="name"
+                            type="text"
+                            name="name"
+                            value="{{ old('name') }}"
+                            required
+                            placeholder="Ví dụ: BMW M Performance"
+                            class="w-full border-zinc-800 bg-black px-5 py-4 text-base font-black text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        >
+                    </x-admin.form-field>
+
+                    <x-admin.form-field name="description" label="Mô tả phân khúc">
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="5"
+                            placeholder="Mô tả ngắn về đặc điểm kỹ thuật hoặc phong cách của dòng sản phẩm..."
+                            class="w-full border-zinc-800 bg-black px-5 py-4 text-sm leading-6 text-zinc-200 placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        >{{ old('description') }}</textarea>
+                    </x-admin.form-field>
                 </div>
             </x-admin.card>
 
-            <div class="grid grid-cols-2 gap-4">
-                <button type="submit" class="group relative py-5 bg-white text-black font-black uppercase text-sm tracking-widest shadow-2xl overflow-hidden text-center">
-                    <span class="relative z-10">Khởi tạo dòng xe</span>
-                    <div class="absolute inset-0 bg-zinc-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button type="submit" class="border border-white bg-white px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white">
+                    Tạo dòng xe
                 </button>
-                <a href="{{ route('admin.categories.index') }}" class="py-5 bg-zinc-900 border border-zinc-800 text-zinc-500 font-black uppercase text-sm tracking-widest text-center hover:text-white hover:bg-zinc-800 transition-all">
-                    Hủy bỏ
+                <a href="{{ route('admin.categories.index') }}" class="border border-zinc-800 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+                    Hủy
                 </a>
             </div>
         </div>

@@ -77,6 +77,50 @@ Relations:
 
 - `AccessoryOrder -> product`
 
+## articles
+
+Them trong Phase 14 de quan ly noi dung tin/bai viet cho public "Tim hieu them".
+
+Cot chinh:
+
+- `user_id`
+- `title`
+- `slug`
+- `category`
+- `excerpt`
+- `body`
+- `cover_image`
+- `status`
+- `published_at`
+- `seo_title`
+- `seo_description`
+- timestamps
+
+Status hien co:
+
+- `draft`
+- `published`
+
+Categories hien co:
+
+- `uu-dai-khach-hang`
+- `chuong-trinh-ban-hang`
+- `su-kien-showroom`
+- `trai-nghiem-bmw`
+- `dich-vu-hau-mai`
+- `tin-tuc-showroom`
+
+Relations:
+
+- `Article -> user`
+
+Ghi nhan:
+
+- Route binding dung `slug`.
+- `Article::published()` chi lay bai status `published` va `published_at <= now()`.
+- Cover image luu tren disk `public`, path folder `articles`.
+- ArticleSeeder dung `updateOrCreate` de tranh duplicate slug.
+
 ## categories
 
 Dung de phan loai/dong xe/segment san pham. Chi tiet cot can xem migration/model truoc khi sua.

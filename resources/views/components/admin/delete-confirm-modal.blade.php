@@ -4,22 +4,22 @@
     <div class="relative flex min-h-screen items-center justify-center px-4 py-8">
         <div class="w-full max-w-md border border-zinc-800 bg-zinc-950 shadow-2xl">
             <div class="border-b border-zinc-800 px-6 py-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500">Xac nhan xoa</p>
-                <h2 class="mt-2 text-xl font-black uppercase tracking-tight text-white">Thao tac khong the hoan tac</h2>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500">Xác nhận xóa</p>
+                <h2 class="mt-2 text-xl font-black uppercase tracking-tight text-white">Thao tác không thể hoàn tác</h2>
             </div>
 
             <div class="px-6 py-6">
                 <p class="text-sm font-medium leading-6 text-zinc-400" data-admin-delete-message>
-                    Ban co chac chan muon xoa ban ghi nay?
+                    Bạn có chắc chắn muốn xóa bản ghi này?
                 </p>
             </div>
 
             <div class="grid grid-cols-2 border-t border-zinc-800">
                 <button type="button" class="border-r border-zinc-800 px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 transition-all hover:bg-zinc-900 hover:text-white" data-admin-delete-cancel>
-                    Huy
+                    Hủy
                 </button>
                 <button type="button" class="bg-rose-600 px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-rose-500" data-admin-delete-confirm>
-                    Xoa
+                    Xóa
                 </button>
             </div>
         </div>
@@ -51,7 +51,7 @@
             pendingForm = form;
 
             if (message) {
-                message.textContent = form.dataset.confirmMessage || 'Ban co chac chan muon xoa ban ghi nay?';
+                message.textContent = form.dataset.confirmMessage || 'Bạn có chắc chắn muốn xóa bản ghi này?';
             }
 
             modal.classList.remove('hidden');

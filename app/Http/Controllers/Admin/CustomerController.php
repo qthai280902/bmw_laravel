@@ -16,7 +16,7 @@ class CustomerController extends Controller
         $customers = Appointment::select(
             DB::raw('COALESCE(guest_email, users.email) as email'),
             DB::raw('MAX(COALESCE(guest_name, users.name)) as name'),
-            DB::raw('MAX(COALESCE(guest_phone, "N/A")) as phone'),
+            DB::raw("MAX(COALESCE(guest_phone, 'N/A')) as phone"),
             DB::raw('COUNT(*) as interactions_count'),
             DB::raw('MAX(appointment_date) as last_interaction')
         )

@@ -4,6 +4,8 @@ CRM leads duoc luu trong `appointments`.
 
 Accessory orders khong con luu trong `appointments` sau Phase 13. Luong nay dung bang rieng `accessory_orders`.
 
+Article CMS Phase 14 khong tao CRM lead truc tiep. Public "Tim hieu them" la content/education flow va van lien ket ve cac CTA hien co neu can.
+
 ## Lead types da xac minh
 
 Tu enum `AppointmentType`:
@@ -36,6 +38,13 @@ Tu enum `AppointmentType`:
   - khong dung test-drive/viewing.
   - khong tham gia vehicle compare.
 - `StoreAppointmentRequest` chan accessory neu type la `test_drive` hoac `viewing`.
+
+## Phase 14 content flow
+
+- Articles duoc quan ly rieng trong `articles`.
+- Public article pages chi doc bai da published.
+- Content flow khong thay doi appointment/accessory order state machine.
+- Dashboard/admin CRM flow Phase 10/13 duoc giu.
 
 ## meta_data
 

@@ -2,16 +2,19 @@
 
 use App\Http\Controllers\AccessoryOrderController;
 use App\Http\Controllers\Admin\AccessoryOrderController as AdminAccessoryOrderController;
+use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Client\AppointmentController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceController;
+use App\Models\Article;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
@@ -24,12 +27,19 @@ Route::get('/', function () {
         ->take(3)
         ->get();
 
-    return view('welcome', compact('featuredProducts'));
+    $latestArticles = Article::published()
+        ->latest('published_at')
+        ->take(3)
+        ->get();
+
+    return view('welcome', compact('featuredProducts', 'latestArticles'));
 })->name('home');
 
 Route::get('/catalog', [ProductController::class, 'index'])->name('products.index');
 Route::get('/catalog/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/compare', [ProductController::class, 'compare'])->name('products.compare');
+Route::get('/tim-hieu-them', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/tim-hieu-them/{article:slug}', [ArticleController::class, 'show'])->name('articles.show');
 
 // Accessories (reuse ProductController with accessory type filter)
 Route::get('/accessories', [ProductController::class, 'index'])->defaults('type', 'accessory')->name('accessories.index');
@@ -64,6 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('products', AdminProductController::class);
         Route::resource('categories', CategoryController::class);
+        Route::resource('articles', AdminArticleController::class)->except(['show']);
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
         Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');

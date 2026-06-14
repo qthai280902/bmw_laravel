@@ -9,12 +9,42 @@
 - `php artisan test --compact tests/Feature/PublicUiPhase12_3Test.php`
 - `php artisan test --compact tests/Feature/AccessoryOrderTest.php`
 - `php artisan test --compact tests/Feature/AdminAccessoryOrderTest.php`
+- `php artisan test --compact tests/Feature/AdminArticleTest.php`
+- `php artisan test --compact tests/Feature/PublicArticleTest.php`
+- `php artisan test --compact tests/Feature/AdminUiPhase14Test.php`
 - `vendor/bin/pint --dirty --format agent`
 - `npm.cmd run build`
 - `php artisan view:cache`
 
 ## Trang thai hien tai
 
+- Phase 14:
+  - `php artisan migrate`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test --compact tests\Feature\AdminArticleTest.php`: pass, 5 tests / 29 assertions.
+  - `php artisan test --compact tests\Feature\PublicArticleTest.php`: pass, 4 tests / 13 assertions.
+  - `php artisan test --compact tests\Feature\AdminUiPhase14Test.php`: pass, 2 tests / 65 assertions.
+  - `php artisan test --compact tests\Feature\DashboardTest.php`: pass, 4 tests / 10 assertions.
+  - `php artisan test`: pass, 65 tests / 776 assertions.
+  - route verification:
+    - `php artisan route:list --path=admin -v`: pass, admin article routes use `web`, `auth`, `admin`.
+    - `php artisan route:list --path=tim-hieu-them -v`: pass, public article routes use `web`.
+  - browser QA:
+    - homepage latest article section checked.
+    - article index/detail checked.
+    - draft article 404 checked.
+    - admin article create/edit/index checked.
+    - delete modal open/cancel checked.
+    - core admin pages checked.
+    - mobile 390x900 checked.
+    - visible broken images: 0.
+    - console errors: 0.
+    - horizontal overflow: 0.
+  - result: PASS CO GHI CHU because 2 Browser QA article records remain in dev DB.
 - Post-phase regression QA on 2026-06-12 23:11:30 +07:00:
   - Phase 12 / 12.2 / 12.3 / 13 regression completed.
   - `php artisan config:clear`: pass.

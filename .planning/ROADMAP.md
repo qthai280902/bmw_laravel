@@ -2,6 +2,13 @@
 
 ## Current documented status
 
+- [x] Phase 14 completed with notes: Admin UI modernization + Article CMS.
+- [x] Admin article CMS added under `/admin/articles`.
+- [x] Public "Tim hieu them" routes added under `/tim-hieu-them`.
+- [x] Homepage, public navigation and footer link to latest published articles.
+- [x] Public article flow hides drafts and returns 404 for draft direct URLs.
+- [x] Admin delete modal contract preserved for article delete.
+- [x] Full `php artisan test` pass after Phase 14: 65 tests / 776 assertions.
 - [x] Phase 12.2 completed with notes: BMW 330i product image expansion.
 - [x] Phase 12.3 completed with notes: all product image expansion.
 - [x] Phase 13 completed with notes: product flow normalization + accessory order module.
@@ -33,6 +40,7 @@
 
 ## Next maintenance tasks
 
+- Optional cleanup: remove local Browser QA article records from dev DB only if explicitly requested.
 - Auth/register/settings tests da duoc dong bo voi route that.
 - Kiem tra runtime dashboard tren trinh duyet.
 - Kiem tra delete modal bang thao tac thuc te.

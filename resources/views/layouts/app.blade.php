@@ -102,6 +102,7 @@
                             <ul class="space-y-4 text-sm font-medium text-zinc-500">
                                 <li><a href="{{ route('services.index') }}" class="transition-colors hover:text-white">Dịch vụ</a></li>
                                 <li><a href="{{ route('experiences.index') }}" class="transition-colors hover:text-white">Trải nghiệm</a></li>
+                                <li><a href="{{ route('articles.index') }}" class="transition-colors hover:text-white">Tìm hiểu thêm</a></li>
                                 <li><a href="{{ route('offers.exclusive') }}" class="transition-colors hover:text-white">Ưu đãi</a></li>
                                 <li><a href="{{ route('contact.index') }}" class="transition-colors hover:text-white">Liên hệ showroom</a></li>
                             </ul>

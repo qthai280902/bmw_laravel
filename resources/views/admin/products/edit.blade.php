@@ -1,8 +1,16 @@
 <x-admin-layout>
-    <div class="mb-12">
-        <h1 class="text-6xl font-light uppercase tracking-tighter mb-2 text-white">Cập nhật <span class="font-black text-[#1C69D4]">Cấu hình</span></h1>
-        <p class="text-zinc-500 font-medium font-outfit">Hiệu chỉnh cấu hình xe: <span class="text-white font-black">{{ $product->name }}</span></p>
-    </div>
+    <x-admin.page-header
+        eyebrow="Inventory control"
+        title="Cập nhật"
+        accent="Sản phẩm"
+        :description="$product->name"
+    >
+        <x-slot name="actions">
+            <a href="{{ route('admin.products.index') }}" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+                Quay lại
+            </a>
+        </x-slot>
+    </x-admin.page-header>
 
     <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
         @csrf

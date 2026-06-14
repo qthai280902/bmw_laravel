@@ -6,6 +6,15 @@
 - File layout: `resources/views/components/admin-layout.blade.php`.
 - Sidebar co link products, categories, appointments, users, customers va dashboard CRM.
 - Phase 13 them sidebar link `Don phu kien` cho `admin.accessory-orders.index`.
+- Phase 14 them sidebar link `Bai viet` cho `admin.articles.index`.
+- Phase 14 rebuild admin shell voi dark sidebar/topbar, grouped navigation va quick link ra website public.
+
+## Shared admin components
+
+- `resources/views/components/admin/page-header.blade.php`.
+- `resources/views/components/admin/badge.blade.php`.
+- `resources/views/components/admin/empty-state.blade.php`.
+- `resources/views/components/admin/form-field.blade.php`.
 
 ## Dashboard
 
@@ -28,6 +37,20 @@
 - Inter trong admin layout hien tai.
 - 0px border radius theo design token.
 - Khong dung confirm mac dinh trong admin delete forms.
+- Khong dung `href="#"`.
+- Admin article delete van dung custom delete modal.
+
+## Phase 14 note
+
+- Them admin Article CMS:
+  - `resources/views/admin/articles/index.blade.php`.
+  - `resources/views/admin/articles/create.blade.php`.
+  - `resources/views/admin/articles/edit.blade.php`.
+  - `resources/views/admin/articles/_form.blade.php`.
+  - `App\Http\Controllers\Admin\ArticleController`.
+- Modernized dashboard/products/categories/appointments/accessory-orders list surfaces.
+- Product/category/appointment/accessory-order logic duoc giu; Phase 14 tap trung UI va article CMS.
+- Customer admin query duoc fix PostgreSQL string literal de page render on dinh.
 
 ## Phase 11 note
 
