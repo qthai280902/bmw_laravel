@@ -130,6 +130,8 @@
             });
         </script>
 
+        <x-public.ai-assistant-widget />
+
         {{-- Floating Comparison Bar --}}
         <div id="comparison-bar" x-data="{ 
             ids: getComparisonIds(),

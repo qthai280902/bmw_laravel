@@ -2,6 +2,20 @@
 
 ## Current documented status
 
+- [x] Phase 16 completed with notes: AI Showroom Assistant + Laravel AI SDK + PHP 8.5 deprecation cleanup.
+- [x] PHP 8.5 `PDO::MYSQL_ATTR_SSL_CA` deprecation fixed without changing DB connection logic.
+- [x] `laravel/ai` v0.7.2 installed and configured for Gemini through env/config.
+- [x] Public assistant route added: `POST /ai/showroom-assistant`.
+- [x] Public BMW AI widget added with draggable desktop panel and compact mobile launcher.
+- [x] AI prompt context limited to public products and published articles; private customer/admin data excluded.
+- [x] Full `php artisan test` pass after Phase 16: 83 tests / 975 assertions.
+- [x] Phase 15 completed: Public UI polish + article SEO content + premium form experience + product landing preview.
+- [x] Public `/booking` and accessory order forms now use an image-backed premium form shell.
+- [x] Admin visual setting route added: `/admin/site-settings`.
+- [x] `site_settings` key/value table added for `public_form_background_image`.
+- [x] ArticleSeeder now seeds 12 quality public articles and drafts Browser QA content.
+- [x] Admin product edit/index now link to public product landing pages.
+- [x] Full `php artisan test` pass after Phase 15: 71 tests / 825 assertions.
 - [x] Phase 14 completed with notes: Admin UI modernization + Article CMS.
 - [x] Admin article CMS added under `/admin/articles`.
 - [x] Public "Tim hieu them" routes added under `/tim-hieu-them`.

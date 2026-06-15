@@ -24,6 +24,7 @@
                 'users' => 'Nhân sự',
                 'customers' => 'Khách hàng',
             ];
+            $sectionLabels['site-settings'] = 'Thiết lập giao diện';
             $currentSection = request()->segment(2);
         @endphp
 
@@ -57,9 +58,9 @@
                     </div>
                 </div>
 
-                <nav class="flex-1 space-y-8 overflow-y-auto px-4 py-6">
+                <nav class="scrollbar-none flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-4 [mask-image:linear-gradient(to_bottom,transparent,black_1rem,black_calc(100%_-_1rem),transparent)]">
                     <section>
-                        <p class="mb-3 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Điều hành</p>
+                        <p class="mb-2 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Điều hành</p>
                         <div class="space-y-1">
                             <x-admin.sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                                 <span class="flex items-center gap-3">
@@ -91,7 +92,7 @@
                     </section>
 
                     <section>
-                        <p class="mb-3 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Showroom</p>
+                        <p class="mb-2 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Showroom</p>
                         <div class="space-y-1">
                             <x-admin.sidebar-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
                                 <span class="flex items-center gap-3">
@@ -110,11 +111,20 @@
                                     Dòng xe
                                 </span>
                             </x-admin.sidebar-link>
+
+                            <x-admin.sidebar-link :href="route('admin.site-settings.edit')" :active="request()->routeIs('admin.site-settings.*')">
+                                <span class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4-4 4 4 4-6 4 6M4 20h16M4 4h16v16H4z" />
+                                    </svg>
+                                    Thiết lập giao diện
+                                </span>
+                            </x-admin.sidebar-link>
                         </div>
                     </section>
 
                     <section>
-                        <p class="mb-3 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Nội dung</p>
+                        <p class="mb-2 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Nội dung</p>
                         <div class="space-y-1">
                             <x-admin.sidebar-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
                                 <span class="flex items-center gap-3">
@@ -128,7 +138,7 @@
                     </section>
 
                     <section>
-                        <p class="mb-3 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Tài khoản</p>
+                        <p class="mb-2 px-4 text-[9px] font-black uppercase tracking-[0.28em] text-zinc-700">Tài khoản</p>
                         <div class="space-y-1">
                             <x-admin.sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                                 <span class="flex items-center gap-3">

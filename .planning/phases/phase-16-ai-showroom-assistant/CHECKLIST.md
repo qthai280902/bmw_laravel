@@ -1,0 +1,30 @@
+# Phase 16 Checklist
+
+- [x] Audit `config/database.php` for PHP 8.5 deprecations.
+- [x] Replace direct deprecated MySQL SSL CA PDO constant usage with PHP 8.5-compatible fallback logic.
+- [x] Run `composer validate`.
+- [x] Run `php artisan config:clear`.
+- [x] Run baseline `php artisan test` after deprecation fix.
+- [x] Install `laravel/ai`.
+- [x] Publish Laravel AI package assets.
+- [x] Run Laravel AI package migration.
+- [x] Add env/config entries without hard-coding `GEMINI_API_KEY`.
+- [x] Create AI agent.
+- [x] Create assistant service.
+- [x] Create assistant controller.
+- [x] Add public throttled route.
+- [x] Build public AI assistant widget.
+- [x] Add custom animated assistant avatar.
+- [x] Keep admin layout free of public AI widget.
+- [x] Prevent private appointment/order/user data from entering prompt context.
+- [x] Add tests using AI fakes.
+- [x] Add fallback tests for missing key and provider failure.
+- [x] Add widget render/asset tests.
+- [x] Run `php artisan view:clear`.
+- [x] Run `php artisan view:cache`.
+- [x] Run `vendor\bin\pint --dirty --format agent`.
+- [x] Run `npm.cmd run build`.
+- [x] Run `php artisan test`.
+- [x] Run Browser QA on required public pages.
+- [x] Run Playwright mobile screenshot cross-check.
+- [x] Update `.planning`.

@@ -12,12 +12,134 @@
 - `php artisan test --compact tests/Feature/AdminArticleTest.php`
 - `php artisan test --compact tests/Feature/PublicArticleTest.php`
 - `php artisan test --compact tests/Feature/AdminUiPhase14Test.php`
+- `php artisan test --compact tests/Feature/AiShowroomAssistantTest.php tests/Feature/AiAssistantFallbackTest.php tests/Feature/AiAssistantWidgetTest.php`
 - `vendor/bin/pint --dirty --format agent`
 - `npm.cmd run build`
 - `php artisan view:cache`
 
 ## Trang thai hien tai
 
+- Phase 16 on 2026-06-15 +07:00:
+  - PHP local used for verification: PHP 8.5.7 from `C:\php85\php.exe`.
+  - `composer validate`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - focused AI assistant tests: pass, 12 tests / 150 assertions.
+  - `php artisan test`: pass, 83 tests / 975 assertions.
+  - `php artisan route:list --path=ai -v`: pass, includes `POST /ai/showroom-assistant` with `web` and `throttle:12,1`.
+  - Browser pages checked:
+    - `/`.
+    - `/catalog`.
+    - `/catalog/bmw-330i-sedan`.
+    - `/accessories`.
+    - `/tim-hieu-them`.
+    - `/booking?type=consult`.
+  - Responsive checked at 390x900, 768x1024 and 1366x768.
+  - page/viewport combinations: 18.
+  - widget present: pass.
+  - ready/greeting text: pass.
+  - desktop drag: pass.
+  - missing-key fallback response: pass.
+  - visible broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - Playwright mobile screenshot cross-check: pass; temporary screenshot artifact was cleaned after visual QA.
+  - result: PASS CO GHI CHU because live Gemini response was not tested without `GEMINI_API_KEY`.
+- Phase 15.1 on 2026-06-14 22:35:51 +07:00:
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 71 tests / 825 assertions.
+  - Browser pages checked:
+    - `/tim-hieu-them`.
+    - `/tim-hieu-them?category=uu-dai-khach-hang`.
+    - `/dashboard`.
+    - `/admin/products`.
+    - `/admin/articles`.
+  - Responsive checked at 1366x768, 768x1024 and 390x900.
+  - article filter links detected: 7.
+  - article filter active state detected.
+  - article filter horizontal overflow: 0.
+  - admin sidebar `overflow-y: auto` preserved.
+  - admin sidebar native scrollbar hidden with `scrollbar-width: none`.
+  - admin sidebar footer/logout visible.
+  - visible broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - result: PASS.
+- Phase 15 on 2026-06-14 22:07:49 +07:00:
+  - focused Phase 15 tests: pass, 6 tests / 49 assertions.
+  - `php artisan migrate`: pass.
+  - `php artisan db:seed --class=ArticleSeeder`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 71 tests / 825 assertions.
+  - `php artisan route:list --path=admin -v`: pass, includes `/admin/site-settings`.
+  - `php artisan route:list --path=tim-hieu-them -v`: pass.
+  - `php artisan route:list --path=catalog -v`: pass.
+  - Browser pages checked:
+    - `/`.
+    - `/tim-hieu-them`.
+    - `/tim-hieu-them/uu-dai-mua-he-bmw-2026-cho-khach-hang-dat-lich-showroom`.
+    - `/catalog/bmw-330i-sedan`.
+    - `/booking?type=consult`.
+    - `/accessories`.
+    - `/accessories/tham-lot-san-m-performance/order`.
+    - `/admin/site-settings`.
+    - `/admin/products/1/edit`.
+  - Responsive checked at 390x900 and 768x1024.
+  - visible broken images: 0 after lazy-load settle.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - dynamic public form background setting verified with temporary DB setting then reset.
+  - result: PASS.
+- Phase 14 post-phase regression QA on 2026-06-14 21:05:33 +07:00:
+  - `pwd`: correct workspace `C:\Users\thaib\du_an_code\bmw_laravel`.
+  - `git status --short`: clean before planning report update.
+  - `git branch --show-current`: `master`.
+  - `git remote -v`: `https://github.com/qthai280902/bmw_laravel.git`.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --test`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 65 tests / 776 assertions.
+  - `php artisan route:list --path=admin -v`: pass, admin article routes have `web`, `auth`, `admin`.
+  - `php artisan route:list --path=tim-hieu-them -v`: pass, public article routes have `web`.
+  - Browser pages checked:
+    - `/dashboard`.
+    - `/admin/products`.
+    - `/admin/categories`.
+    - `/admin/appointments`.
+    - `/admin/accessory-orders`.
+    - `/admin/articles`.
+    - `/admin/articles/create`.
+    - `/`.
+    - `/tim-hieu-them`.
+    - `/tim-hieu-them/uu-dai-mua-he-bmw-2026`.
+    - `/catalog/bmw-330i-sedan`.
+    - `/accessories`.
+    - `/catalog/tham-lot-san-m-performance`.
+    - `/accessories/tham-lot-san-m-performance/order`.
+    - `/compare?ids=1,2`.
+    - `/compare?ids=1,16`.
+  - Delete modal checked on products/categories/articles; cancel did not delete.
+  - Search/filter checked for admin articles/products/accessory-orders/appointments.
+  - Pagination checked on `/admin/products?page=2`.
+  - Responsive checked at 390x900, 768x900 and 1366x768.
+  - Security checked: guest redirect, non-admin 403, admin 200, draft 404, validation errors.
+  - visible broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - result: PASS CO GHI CHU because QA article data was created and Browser input needed authenticated HTTP form fallback.
 - Phase 14:
   - `php artisan migrate`: pass.
   - `php artisan config:clear`: pass.

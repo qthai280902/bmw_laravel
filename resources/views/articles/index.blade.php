@@ -7,7 +7,7 @@
                     Tìm hiểu thêm
                 </h1>
                 <p class="mt-5 max-w-2xl text-sm font-medium leading-6 text-zinc-500">
-                    Cập nhật ưu đãi, sự kiện showroom, chương trình bán hàng và các trải nghiệm BMW đã được đội ngũ quản trị xuất bản.
+                    Cập nhật ưu đãi, sự kiện showroom, chương trình bán hàng và các trải nghiệm BMW được biên tập cho khách hàng đang tìm hiểu xe.
                 </p>
             </div>
         </div>
@@ -15,16 +15,26 @@
 
     <section class="bg-zinc-950 py-16 text-white">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="mb-10 flex gap-3 overflow-x-auto border-b border-zinc-900 pb-5">
-                <a href="{{ route('articles.index') }}" class="shrink-0 border px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors {{ request('category') ? 'border-zinc-800 text-zinc-500 hover:text-white' : 'border-[#1C69D4] bg-[#1C69D4]/10 text-white' }}">
+            <nav class="mb-10 border-b border-zinc-900 pb-6" aria-label="Lọc bài viết theo chuyên mục">
+                <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+                    <a
+                        href="{{ route('articles.index') }}"
+                        @if(! request('category')) aria-current="page" @endif
+                        class="inline-flex min-h-11 items-center justify-center border px-4 py-3 text-center text-[10px] font-black uppercase leading-4 tracking-[0.18em] transition-colors sm:min-h-0 sm:px-5 {{ request('category') ? 'border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white' : 'border-[#1C69D4] bg-[#1C69D4]/10 text-white shadow-[inset_0_-2px_0_#1C69D4]' }}"
+                    >
                     Tất cả
-                </a>
-                @foreach($categories as $value => $label)
-                    <a href="{{ route('articles.index', ['category' => $value]) }}" class="shrink-0 border px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors {{ request('category') === $value ? 'border-[#1C69D4] bg-[#1C69D4]/10 text-white' : 'border-zinc-800 text-zinc-500 hover:text-white' }}">
-                        {{ $label }}
                     </a>
-                @endforeach
-            </div>
+                    @foreach($categories as $value => $label)
+                        <a
+                            href="{{ route('articles.index', ['category' => $value]) }}"
+                            @if(request('category') === $value) aria-current="page" @endif
+                            class="inline-flex min-h-11 items-center justify-center border px-4 py-3 text-center text-[10px] font-black uppercase leading-4 tracking-[0.18em] transition-colors sm:min-h-0 sm:px-5 {{ request('category') === $value ? 'border-[#1C69D4] bg-[#1C69D4]/10 text-white shadow-[inset_0_-2px_0_#1C69D4]' : 'border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white' }}"
+                        >
+                            {{ $label }}
+                        </a>
+                    @endforeach
+                </div>
+            </nav>
 
             @if($articles->isEmpty())
                 <div class="border border-zinc-800 bg-zinc-900/30 px-6 py-20 text-center">
@@ -39,14 +49,8 @@
                     @foreach($articles as $article)
                         <article class="group flex h-full flex-col overflow-hidden border border-zinc-900 bg-black transition-colors hover:border-[#1C69D4]">
                             <a href="{{ route('articles.show', $article) }}" class="block">
-                                <div class="aspect-[16/10] bg-zinc-900">
-                                    @if($article->coverImageUrl())
-                                        <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
-                                    @else
-                                        <div class="flex h-full w-full items-center justify-center border-b border-zinc-900 text-[10px] font-black uppercase tracking-[0.35em] text-zinc-700">
-                                            BMW showroom
-                                        </div>
-                                    @endif
+                                <div class="aspect-[16/10] overflow-hidden bg-zinc-900">
+                                    <img src="{{ $article->editorialImageUrl() }}" alt="{{ $article->title }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
                                 </div>
                             </a>
 

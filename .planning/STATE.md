@@ -1,6 +1,191 @@
 # Project State
 
-Current phase: Phase 14 completed with notes.
+Current phase: Phase 16 completed.
+
+## Phase 16
+
+- Test time: 2026-06-15 +07:00.
+- Scope:
+  - PHP 8.5 deprecation cleanup for MySQL SSL CA PDO constant.
+  - Laravel AI SDK integration.
+  - Public BMW AI Showroom Assistant widget.
+  - Gemini provider configuration through env/config only.
+- PHP 8.5 fix:
+  - `config/database.php` now uses `Pdo\Mysql::ATTR_SSL_CA` when available, with fallback to `PDO::MYSQL_ATTR_SSL_CA`.
+  - DB connection logic was preserved.
+  - `php artisan test` no longer reports the `PDO::MYSQL_ATTR_SSL_CA` deprecation.
+- AI backend:
+  - package: `laravel/ai` v0.7.2.
+  - agent: `App\Ai\Agents\ShowroomAssistant`.
+  - service: `App\Services\Ai\ShowroomAssistantService`.
+  - controller: `App\Http\Controllers\Ai\ShowroomAssistantController`.
+  - route: `POST /ai/showroom-assistant`, name `ai.showroom-assistant.ask`.
+  - middleware: `web`, `throttle:12,1`.
+- AI context:
+  - includes only active public products and published public articles.
+  - excludes appointments, accessory orders, users, admin notes and customer PII.
+- Widget:
+  - public layout only; admin layout does not render it.
+  - desktop opens panel by default.
+  - mobile starts as compact launcher/greeting.
+  - supports prompts, input, fallback response, drag movement and reduced-motion CSS.
+- Commands:
+  - `composer validate`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 83 tests / 975 assertions.
+- Browser QA:
+  - pages: `/`, `/catalog`, `/catalog/bmw-330i-sedan`, `/accessories`, `/tim-hieu-them`, `/booking?type=consult`.
+  - viewports: 390x900, 768x1024, 1366x768.
+  - page/viewport sweep: 18 combinations.
+  - widget present and ready/greeting text visible.
+  - desktop drag behavior: pass.
+  - missing-key fallback response: pass.
+  - broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+- Notes:
+  - `.env` currently has no `GEMINI_API_KEY`, so live Gemini API response was not exercised.
+  - automated tests use Laravel AI fakes and do not call a real AI provider.
+- Report: `.planning/baocao/phase-reports/phase-16-report.md`.
+- Result: PASS CO GHI CHU.
+
+## Phase 15.1
+
+- Test time: 2026-06-14 22:35:51 +07:00.
+- Scope:
+  - Public `/tim-hieu-them` article category filter overflow cleanup.
+  - Admin sidebar native scrollbar removal polish.
+  - Scroll behavior preserved without changing routes or business logic.
+- Article filter:
+  - source: `resources/views/articles/index.blade.php`.
+  - root cause: horizontal `overflow-x-auto` category row exposed a native mini scrollbar.
+  - fix: responsive mobile grid and tablet/desktop wrapped pills.
+  - active category now has `aria-current="page"`.
+- Admin sidebar:
+  - source: `resources/views/components/admin-layout.blade.php`.
+  - root cause: fixed sidebar internal `overflow-y-auto` nav exposed a native vertical scrollbar.
+  - fix: keep `overflow-y-auto`, add `.scrollbar-none`, `overscroll-contain`, tighter grouping and subtle mask fade.
+- CSS:
+  - added `.scrollbar-none` utility in `resources/css/app.css`.
+- Commands:
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 71 tests / 825 assertions.
+- Browser QA:
+  - pages: `/tim-hieu-them`, `/tim-hieu-them?category=uu-dai-khach-hang`, `/dashboard`, `/admin/products`, `/admin/articles`.
+  - viewports: 1366x768, 768x1024, 390x900.
+  - article filter horizontal overflow: 0.
+  - admin sidebar native scrollbar hidden and scroll behavior preserved.
+  - broken images: 0.
+  - console errors: 0.
+  - page horizontal overflow: 0.
+- Report: `.planning/baocao/phase-reports/phase-15-1-report.md`.
+- Result: PASS.
+
+## Phase 15
+
+- Test time: 2026-06-14 22:07:49 +07:00.
+- Scope:
+  - Public homepage/navigation polish.
+  - Article SEO content and public editorial cards.
+  - Premium image-backed public forms.
+  - Admin-configurable public form background.
+  - Admin product public landing preview links.
+- Added small visual settings system:
+  - `site_settings` table.
+  - `App\Models\SiteSetting`.
+  - `App\Http\Controllers\Admin\SiteSettingController`.
+  - admin route `GET|PUT /admin/site-settings`.
+- Added shared public form shell:
+  - `resources/views/components/public/form-shell.blade.php`.
+- Updated forms:
+  - `/booking` form.
+  - `/accessories/{product:slug}/order` form.
+- Updated article content:
+  - `ArticleSeeder` now seeds 12 SEO-quality published articles across all 6 article categories.
+  - Browser QA title/slug patterns are drafted without deleting records.
+  - Article cards/detail use editorial image fallback.
+- Product preview:
+  - admin product edit has `Xem trang public`.
+  - admin product index has `Public` action.
+- Commands:
+  - focused Phase 15 tests: pass, 6 tests / 49 assertions.
+  - `php artisan migrate`: pass.
+  - `php artisan db:seed --class=ArticleSeeder`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 71 tests / 825 assertions.
+- Route checks:
+  - `php artisan route:list --path=admin -v`: pass, includes `/admin/site-settings`.
+  - `php artisan route:list --path=tim-hieu-them -v`: pass.
+  - `php artisan route:list --path=catalog -v`: pass.
+- Browser QA:
+  - desktop public/admin pages checked.
+  - mobile 390x900 checked.
+  - tablet 768x1024 checked.
+  - broken images: 0 after lazy-load settle.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - dynamic form background switching verified with temporary DB setting then reset.
+- Report: `.planning/baocao/phase-reports/phase-15-report.md`.
+- Result: PASS.
+
+## Phase 14 post-phase regression QA
+
+- Test time: 2026-06-14 21:05:33 +07:00.
+- Scope:
+  - Admin UI modernization.
+  - Article CMS in admin.
+  - Public "Tim hieu them".
+  - Old product/accessory/compare/order regression.
+- Initial state:
+  - workspace: `C:\Users\thaib\du_an_code\bmw_laravel`.
+  - branch: `master`.
+  - remote: `https://github.com/qthai280902/bmw_laravel.git`.
+  - working tree: clean before planning report update.
+- Commands:
+  - `php artisan config:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --test`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 65 tests / 776 assertions.
+- Route checks:
+  - `php artisan route:list --path=admin -v`: pass.
+  - `php artisan route:list --path=tim-hieu-them -v`: pass.
+- Browser QA:
+  - admin pages checked: dashboard/products/categories/appointments/accessory-orders/articles.
+  - custom delete modal checked on products/categories/articles; cancel did not delete.
+  - public article pages checked.
+  - old product detail/accessory/compare flows checked.
+  - responsive viewports checked: 390x900, 768x900, 1366x768.
+  - visible broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+- Security QA:
+  - guest `/admin/articles`: 302 to login.
+  - non-admin `/admin/articles`: 403.
+  - admin `/admin/articles`: 200.
+  - draft direct public article URL: 404.
+- QA data:
+  - created article `#3`, slug `uu-dai-mua-he-bmw-2026`, status `published`.
+  - created article `#4`, slug `bai-nhap-noi-bo-showroom`, status `draft`.
+  - updated QA accessory order `#3` admin notes, status remains `completed`.
+  - pre-existing QA articles `#1` and `#2` remain.
+- Note:
+  - Browser input API could not type/fill due plugin clipboard runtime issue, so article create/update used authenticated admin HTTP form posts and was verified in Browser/DB.
+- Report: `.planning/baocao/phase-reports/phase-14-regression-test-report.md`.
+- Result: PASS CO GHI CHU.
 
 ## Phase 14
 

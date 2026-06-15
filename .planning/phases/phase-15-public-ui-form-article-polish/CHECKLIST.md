@@ -1,0 +1,32 @@
+# Phase 15 Checklist
+
+- [x] Audit current homepage, article CMS, forms, settings and admin product edit.
+- [x] Complete internet inspiration review for BMW/premium automotive UI, SEO topics and lead forms.
+- [x] Deliver pre-audit report before coding.
+- [x] Polish homepage hero, product lines, featured products, editorial article section and showroom CTA flow.
+- [x] Polish public navigation and mobile menu.
+- [x] Expand idempotent article SEO sample content.
+- [x] Draft Browser QA public content without deleting records.
+- [x] Add editorial image fallback for articles.
+- [x] Redesign booking/quote/consult form with image-backed premium shell.
+- [x] Redesign accessory order form with image-backed premium shell.
+- [x] Add `site_settings` migration/model.
+- [x] Add `/admin/site-settings` edit/update routes.
+- [x] Add admin visual settings sidebar link.
+- [x] Validate public form background upload and reset behavior.
+- [x] Add product public preview link on admin edit.
+- [x] Add product public preview link on admin index.
+- [x] Add focused Phase 15 tests.
+- [x] Run `php artisan migrate`.
+- [x] Run `php artisan db:seed --class=ArticleSeeder`.
+- [x] Run `php artisan config:clear`.
+- [x] Run `php artisan view:clear`.
+- [x] Run `php artisan view:cache`.
+- [x] Run `vendor\bin\pint --dirty --format agent`.
+- [x] Run `npm.cmd run build`.
+- [x] Run `php artisan test`.
+- [x] Run route checks for admin, tim-hieu-them and catalog.
+- [x] Run Browser QA desktop.
+- [x] Run Browser QA mobile 390x900.
+- [x] Run Browser QA tablet 768x1024.
+- [x] Update planning docs and Phase 15 report.

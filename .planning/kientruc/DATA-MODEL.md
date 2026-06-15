@@ -120,6 +120,69 @@ Ghi nhan:
 - `Article::published()` chi lay bai status `published` va `published_at <= now()`.
 - Cover image luu tren disk `public`, path folder `articles`.
 - ArticleSeeder dung `updateOrCreate` de tranh duplicate slug.
+- Phase 15 ArticleSeeder seeds 12 public SEO sample articles, 2 per configured category.
+- Phase 15 ArticleSeeder drafts Browser QA title/slug patterns without deleting records.
+- Phase 15 adds `Article::editorialImageUrl()` fallback by category.
+
+## site_settings
+
+Them trong Phase 15 de luu cau hinh giao dien nho gon cho public forms.
+
+Cot chinh:
+
+- `key` unique.
+- `value` nullable text.
+- `type` nullable string.
+- timestamps.
+
+Keys hien co:
+
+- `public_form_background_image`
+
+Ghi nhan:
+
+- Upload background duoc luu tren disk `public`, folder `site-settings`.
+- Neu khong co setting, fallback la `images/cars/330i/lifestyle-showroom.png`.
+
+## agent_conversations
+
+Them trong Phase 16 qua Laravel AI SDK migration.
+
+Cot chinh:
+
+- `id` string UUID-style primary key.
+- `user_id` nullable.
+- `title`.
+- timestamps.
+
+Ghi nhan:
+
+- Table name lay tu `config('ai.conversations.tables.conversations')`, default `agent_conversations`.
+- Public widget Phase 16 currently uses stateless prompt calls and tests do not require persisted real provider conversations.
+
+## agent_conversation_messages
+
+Them trong Phase 16 qua Laravel AI SDK migration.
+
+Cot chinh:
+
+- `id` string UUID-style primary key.
+- `conversation_id`.
+- `user_id` nullable.
+- `agent`.
+- `role`.
+- `content`.
+- `attachments`.
+- `tool_calls`.
+- `tool_results`.
+- `usage`.
+- `meta`.
+- timestamps.
+
+Ghi nhan:
+
+- Table name lay tu `config('ai.conversations.tables.messages')`, default `agent_conversation_messages`.
+- Do not store appointment/accessory order/customer PII in AI prompt context without a separate approved privacy design.
 
 ## categories
 

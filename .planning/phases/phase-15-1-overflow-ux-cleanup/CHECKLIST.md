@@ -1,0 +1,36 @@
+# Phase 15.1 Checklist
+
+- [x] Audit `resources/views/articles/index.blade.php`.
+- [x] Audit `resources/views/components/`.
+- [x] Audit `resources/views/layouts/`.
+- [x] Audit `resources/views/components/admin-layout.blade.php`.
+- [x] Audit `resources/css/app.css`.
+- [x] Audit `resources/js/`.
+- [x] Audit `tests/Feature/`.
+- [x] Deliver pre-audit report before coding.
+- [x] Remove exposed native horizontal scrollbar from the article category filter.
+- [x] Preserve article category filtering links.
+- [x] Preserve active category state.
+- [x] Improve responsive behavior for desktop, tablet and mobile.
+- [x] Remove exposed native vertical scrollbar from the admin sidebar.
+- [x] Keep admin sidebar scrollable if content is long.
+- [x] Keep admin footer/logout visible.
+- [x] Add cross-browser hidden scrollbar utility.
+- [x] Run `php artisan config:clear`.
+- [x] Run `php artisan view:clear`.
+- [x] Run `php artisan view:cache`.
+- [x] Run `vendor\bin\pint --dirty --format agent`.
+- [x] Run `npm.cmd run build`.
+- [x] Run `php artisan test`.
+- [x] Browser QA `/tim-hieu-them`.
+- [x] Browser QA `/tim-hieu-them?category=uu-dai-khach-hang`.
+- [x] Browser QA `/dashboard`.
+- [x] Browser QA `/admin/products`.
+- [x] Browser QA `/admin/articles`.
+- [x] Browser QA 1366x768.
+- [x] Browser QA 768x1024.
+- [x] Browser QA 390x900.
+- [x] Confirm broken images = 0.
+- [x] Confirm console errors = 0.
+- [x] Confirm horizontal overflow = 0.
+- [x] Update planning docs and Phase 15.1 report.

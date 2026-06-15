@@ -6,6 +6,9 @@
         :description="$product->name"
     >
         <x-slot name="actions">
+            <a href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center border border-[#1C69D4] px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white">
+                Xem trang public
+            </a>
             <a href="{{ route('admin.products.index') }}" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
                 Quay lại
             </a>

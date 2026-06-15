@@ -113,3 +113,77 @@
         @apply tracking-normal;
     }
 }
+
+@layer utilities {
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+
+    .ai-assistant-idle {
+        animation: ai-assistant-idle 1.8s ease-in-out infinite;
+        transform-origin: center bottom;
+    }
+
+    .ai-assistant-wheel {
+        animation: ai-assistant-wheel 1.8s linear infinite;
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .ai-assistant-ready-pulse {
+        animation: ai-assistant-ready-pulse 1.8s ease-out infinite;
+    }
+}
+
+@keyframes ai-assistant-idle {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+
+    35% {
+        transform: translate3d(0.5px, -0.7px, 0) rotate(-0.35deg);
+    }
+
+    70% {
+        transform: translate3d(-0.5px, 0.5px, 0) rotate(0.35deg);
+    }
+}
+
+@keyframes ai-assistant-wheel {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(10deg);
+    }
+}
+
+@keyframes ai-assistant-ready-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-assistant-idle,
+    .ai-assistant-wheel,
+    .ai-assistant-ready-pulse {
+        animation: none;
+    }
+}

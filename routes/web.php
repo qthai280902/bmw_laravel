@@ -7,7 +7,9 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Ai\ShowroomAssistantController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Client\AppointmentController;
 use App\Http\Controllers\PageController;
@@ -56,6 +58,10 @@ Route::get('/booking', [AppointmentController::class, 'create'])->name('appointm
 Route::post('/booking', [AppointmentController::class, 'store'])->name('appointments.store');
 Route::get('/booking/success', [AppointmentController::class, 'success'])->name('appointments.success');
 
+Route::post('/ai/showroom-assistant', ShowroomAssistantController::class)
+    ->middleware('throttle:12,1')
+    ->name('ai.showroom-assistant.ask');
+
 // Auth Dashboard & Appointments Mng
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -80,6 +86,8 @@ Route::middleware('auth')->group(function () {
         Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
         Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
         Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');
+        Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
+        Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
         Route::resource('users', UserController::class)->only(['index']);
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
     });

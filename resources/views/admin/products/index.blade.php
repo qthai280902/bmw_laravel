@@ -100,6 +100,9 @@
                             </td>
                             <td class="px-6 py-5">
                                 <div class="flex items-center justify-end gap-5">
+                                    <a href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener" class="text-[10px] font-black uppercase tracking-[0.2em] text-[#70A7FF] transition-colors hover:text-white">
+                                        Public
+                                    </a>
                                     <a href="{{ route('admin.products.edit', $product) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-white">
                                         Sửa
                                     </a>

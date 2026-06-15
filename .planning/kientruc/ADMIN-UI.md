@@ -7,6 +7,7 @@
 - Sidebar co link products, categories, appointments, users, customers va dashboard CRM.
 - Phase 13 them sidebar link `Don phu kien` cho `admin.accessory-orders.index`.
 - Phase 14 them sidebar link `Bai viet` cho `admin.articles.index`.
+- Phase 15 them sidebar link `Thiet lap giao dien` cho `admin.site-settings.edit`.
 - Phase 14 rebuild admin shell voi dark sidebar/topbar, grouped navigation va quick link ra website public.
 
 ## Shared admin components
@@ -51,6 +52,27 @@
 - Modernized dashboard/products/categories/appointments/accessory-orders list surfaces.
 - Product/category/appointment/accessory-order logic duoc giu; Phase 14 tap trung UI va article CMS.
 - Customer admin query duoc fix PostgreSQL string literal de page render on dinh.
+
+## Phase 15 note
+
+- Them admin visual settings page:
+  - Route: `/admin/site-settings`.
+  - Controller: `App\Http\Controllers\Admin\SiteSettingController`.
+  - View: `resources/views/admin/site-settings/edit.blade.php`.
+  - Cho phep upload/reset shared public form background.
+- Admin product edit them link `Xem trang public`.
+- Admin product index them action `Public`.
+- Product save/update/delete logic khong doi.
+
+## Phase 15.1 note
+
+- Admin sidebar scrollbar polish:
+  - file: `resources/views/components/admin-layout.blade.php`.
+  - nav area still uses internal `overflow-y-auto` so long menus remain reachable.
+  - native scrollbar is hidden with `.scrollbar-none` from `resources/css/app.css`.
+  - header/logo and user/logout footer remain outside the scrollable nav area.
+  - sidebar groups were tightened slightly to reduce scroll pressure.
+- No admin route, controller or navigation target changed.
 
 ## Phase 11 note
 

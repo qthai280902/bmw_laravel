@@ -23,20 +23,22 @@
             </div>
         </section>
 
-        @if($article->coverImageUrl())
-            <section class="bg-black">
-                <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-                    <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="max-h-[620px] w-full object-cover">
-                </div>
-            </section>
-        @endif
+        <section class="bg-black">
+            <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+                <img src="{{ $article->editorialImageUrl() }}" alt="{{ $article->title }}" class="max-h-[620px] w-full object-cover">
+            </div>
+        </section>
 
         <section class="py-16 sm:py-20">
             <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,760px)_1fr] lg:px-8">
                 <div class="space-y-7 text-base font-medium leading-8 text-zinc-300">
-                    @foreach(preg_split('/\R{2,}/', trim($article->body)) as $paragraph)
-                        @if(filled($paragraph))
-                            <p>{{ $paragraph }}</p>
+                    @foreach(preg_split('/\R{2,}/', trim($article->body)) as $block)
+                        @if(filled($block))
+                            @if(Str::startsWith($block, '## '))
+                                <h2 class="pt-4 text-2xl font-black uppercase leading-tight tracking-normal text-white">{{ Str::after($block, '## ') }}</h2>
+                            @else
+                                <p>{{ $block }}</p>
+                            @endif
                         @endif
                     @endforeach
                 </div>

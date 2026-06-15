@@ -17,7 +17,26 @@
 - `/booking/success`
 - `/services`
 - `/experiences`
+- `/ai/showroom-assistant`
 - `/api/products-by-category`
+
+## Phase 16 AI assistant routing notes
+
+- `ai.showroom-assistant.ask`: `POST /ai/showroom-assistant`.
+- Controller: `App\Http\Controllers\Ai\ShowroomAssistantController`.
+- Middleware:
+  - `web`.
+  - `throttle:12,1`.
+- Purpose: public AI showroom assistant endpoint for the floating widget.
+- The endpoint accepts only a validated `message` string and returns JSON.
+- Existing product, article, booking, accessory order and admin routes were preserved.
+
+## Phase 15 public routing notes
+
+- Existing public product/article/booking/accessory routes were preserved.
+- `/booking` still handles test-drive/viewing/quote/consult/advisor/service form display and submit.
+- `/accessories/{product:slug}/order` still handles accessory order display and submit.
+- Product public landing preview in admin links to existing route `products.show` / `/catalog/{product:slug}`.
 
 ## Product detail route
 
@@ -90,8 +109,19 @@ Admin routes dung prefix `/admin`, middleware `auth` va `admin`.
 - `admin/appointments`
 - `admin/accessory-orders`
 - `admin/articles`
+- `admin/site-settings`
 - `admin/users`
 - `admin/customers`
+
+## Admin site settings routes
+
+- `admin.site-settings.edit`: `GET /admin/site-settings`.
+- `admin.site-settings.update`: `PUT /admin/site-settings`.
+- Middleware:
+  - `web`.
+  - `auth`.
+  - `admin`.
+- Purpose: configure shared public form background image.
 
 ## Admin article routes
 

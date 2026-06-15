@@ -166,6 +166,24 @@ class Article extends Model
         return null;
     }
 
+    public function editorialImageUrl(): string
+    {
+        return $this->coverImageUrl() ?? asset($this->fallbackCoverImagePath());
+    }
+
+    public function fallbackCoverImagePath(): string
+    {
+        return match ($this->category) {
+            self::CATEGORY_OFFERS => 'images/cars/330i/lifestyle-showroom.png',
+            self::CATEGORY_SALES_PROGRAMS => 'images/cars/530i.png',
+            self::CATEGORY_SHOWROOM_EVENTS => 'images/cars/bmw-x3-m50-xdrive/lifestyle-showroom.png',
+            self::CATEGORY_BMW_EXPERIENCE => 'images/cars/330i/cockpit-interior.png',
+            self::CATEGORY_AFTERSALES => 'images/cars/bmw-550e-xdrive-sedan/design-detail.png',
+            self::CATEGORY_SHOWROOM_NEWS => 'images/cars/hero.png',
+            default => 'images/cars/hero.png',
+        };
+    }
+
     public static function generateUniqueSlug(string $title, ?int $ignoreId = null): string
     {
         $baseSlug = Str::slug($title);
