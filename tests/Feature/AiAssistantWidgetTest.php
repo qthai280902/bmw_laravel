@@ -16,18 +16,23 @@ class AiAssistantWidgetTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_homepage_renders_ready_draggable_ai_widget(): void
+    public function test_public_homepage_renders_compact_ai_widget(): void
     {
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('data-ai-assistant-widget', false)
-            ->assertSee('data-ai-draggable="true"', false)
-            ->assertSee('Trợ lý ảo AI sẵn sàng')
-            ->assertSee('Trợ lý ảo AI của BMW Showroom xin chào')
-            ->assertSee('Tư vấn xe theo ngân sách')
+            ->assertDontSee('data-ai-draggable', false)
+            ->assertSee('Trợ lý BMW')
+            ->assertSee('Sẵn sàng tư vấn')
+            ->assertSee('Bạn cần hỗ trợ gì?')
+            ->assertSee('Xin chào, tôi là trợ lý BMW')
+            ->assertSee('Tư vấn BMW Motorrad')
+            ->assertSee('Tìm BMW S1000RR')
             ->assertSee('So sánh BMW 330i và 530i')
             ->assertSee('ai-assistant-idle', false)
-            ->assertSee('data-ai-drag-handle', false);
+            ->assertSee('data-ai-intro-card', false)
+            ->assertSee('data-ai-action-chip', false)
+            ->assertDontSee('data-ai-drag-handle', false);
     }
 
     public function test_public_core_pages_render_widget_and_continue_to_load(): void
@@ -74,10 +79,35 @@ class AiAssistantWidgetTest extends TestCase
 
         $this->assertStringContainsString('window.aiAssistantWidget', $script);
         $this->assertStringContainsString('localStorage.setItem', $script);
-        $this->assertStringContainsString('clampedPosition', $script);
+        $this->assertStringContainsString('bmw_ai_assistant_state_v4', $script);
+        $this->assertStringContainsString('bmw_ai_assistant_state_v2', $script);
+        $this->assertStringContainsString('clearLegacyState', $script);
+        $this->assertStringContainsString('safeStoredText', $script);
+        $this->assertStringContainsString('hideToSide', $script);
+        $this->assertStringContainsString('clearConversation', $script);
+        $this->assertStringNotContainsString('clampedPosition', $script);
+        $this->assertStringContainsString('formatAssistantMessage', $script);
+        $this->assertStringContainsString('extractActions', $script);
+        $this->assertStringContainsString('actionLabel', $script);
+        $this->assertStringContainsString('internalLink', $script);
+        $this->assertStringContainsString("lowered.startsWith('javascript:')", $script);
+        $this->assertStringContainsString("lowered.startsWith('data:')", $script);
+        $this->assertStringNotContainsString("createMessage('assistant', config.greeting)", $script);
+        $this->assertStringNotContainsString('dangerouslySetInnerHTML', $script);
         $this->assertStringContainsString('prefers-reduced-motion', $styles);
         $this->assertStringContainsString('ai-assistant-ready-pulse', $styles);
-        $this->assertStringContainsString('data-ai-draggable', $widget);
+        $this->assertStringContainsString('ai-assistant-typing-dot', $styles);
+        $this->assertStringContainsString('data-ai-intro-card', $widget);
+        $this->assertStringContainsString('data-ai-action-chip', $widget);
+        $this->assertStringNotContainsString('data-ai-draggable', $widget);
+        $this->assertStringNotContainsString('data-ai-drag-handle', $widget);
+        $this->assertStringContainsString('data-ai-side-tab', $widget);
+        $this->assertStringContainsString('data-ai-clear-conversation', $widget);
+        $this->assertStringNotContainsString('x-html', $widget);
+        $this->assertStringContainsString('message.blocks', $widget);
+        $this->assertStringContainsString('message.actions', $widget);
+        $this->assertStringContainsString('overflow-y-auto', $widget);
+        $this->assertStringContainsString('data-ai-message', $widget);
     }
 
     public function test_views_do_not_use_empty_hash_links(): void

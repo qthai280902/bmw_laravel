@@ -1,0 +1,23 @@
+# Phase 16.1 Checklist
+
+- [x] Audit current AI widget file structure and state.
+- [x] Audit current compare route, controller flow and service query.
+- [x] Research chatbot widget UX patterns from licensed/open-source public references.
+- [x] Add compact AI launcher UX.
+- [x] Add premium panel header, actions and scrollable chat body.
+- [x] Add side-tab hidden mode.
+- [x] Persist widget mode and recent chat history in browser storage.
+- [x] Add clear conversation action.
+- [x] Keep Markdown/link rendering escaped without `x-html`.
+- [x] Keep automated tests free of real AI provider calls.
+- [x] Normalize compare IDs.
+- [x] Ignore invalid, duplicate and accessory IDs.
+- [x] Preserve requested compare order.
+- [x] Enforce server-side max compare count.
+- [x] Add focused regression tests.
+- [x] Run required config/cache/view commands.
+- [x] Run Pint.
+- [x] Run Vite build.
+- [x] Run full test suite.
+- [x] Run browser QA across required pages and viewports.
+- [x] Update summary, report and architecture notes.

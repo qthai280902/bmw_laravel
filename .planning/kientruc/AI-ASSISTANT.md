@@ -28,6 +28,7 @@ Allowed public context:
 
 - Active public products.
 - Product category/type/specifications/public URLs.
+- Product line and normalized search aliases.
 - Published public articles.
 
 Excluded private context:
@@ -50,7 +51,41 @@ Excluded private context:
 
 - Public layout only.
 - Admin layout does not render the public widget.
-- Desktop starts with the panel open.
-- Mobile starts with compact launcher/greeting.
-- Drag movement is handled by Alpine pointer events.
+- Phase 16.2 changes:
+  - fixed launcher/panel/side-tab pattern replaces drag-positioned UX.
+  - no drag handle and no persisted coordinate state.
+  - greeting text is an intro card, not a stored assistant message.
+  - state key is `bmw_ai_assistant_state_v4`.
+  - legacy `bmw_ai_assistant_state_v2`, `bmw_ai_assistant_state_v3` and `bmw_ai_assistant_position` keys are cleared.
+  - safe assistant rendering uses text blocks and internal action chips.
+  - action chip labels map internal URLs to clear actions such as product detail, quote, test drive, compare, accessory order and BMW Motorrad catalog.
+  - BMW S1000RR and model-code queries are supported through normalized aliases.
+  - mobile panel width is constrained to stay inside 390px viewports.
+- Phase 16.1 changes:
+  - fresh desktop and mobile start with compact launcher/greeting.
+  - panel opens only when the user clicks the launcher or side-tab.
+  - side-tab hidden mode persists through reload.
+  - recent messages persist through navigation/reload in `localStorage`.
+  - stored messages are capped at 24.
+  - email/phone-like contact data is redacted before local storage.
+  - conversation history is not sent back to the AI endpoint.
+  - clear conversation action resets local chat state.
 - Reduced-motion users do not receive assistant avatar animation.
+- Markdown rendering is token-based and escaped with `x-text`; the widget does not use `x-html`.
+
+## Product Context Intelligence
+
+- `ShowroomAssistantService::publicContext()` accepts the current message so products can be scored by relevance.
+- Context product query loads active products with categories and caps at at least 30 items.
+- Product matching uses normalized aliases from:
+  - product name.
+  - slug.
+  - category name.
+  - product line.
+  - useful model-code tokens containing digits.
+- Examples now covered:
+  - `330i`.
+  - `530i`.
+  - `x5`.
+  - `S1000RR`.
+  - `BMW S 1000 RR`.

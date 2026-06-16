@@ -32,6 +32,27 @@ class AiAssistantFallbackTest extends TestCase
         ShowroomAssistant::assertNeverPrompted();
     }
 
+    public function test_services_gemini_key_is_not_used_for_showroom_assistant_configuration(): void
+    {
+        config([
+            'showroom_ai.enabled' => true,
+            'showroom_ai.provider' => 'gemini',
+            'ai.providers.gemini.key' => null,
+            'services.gemini.key' => 'testing-services-key',
+        ]);
+
+        ShowroomAssistant::fake(['This should not be used.'])->preventStrayPrompts();
+
+        $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Tu van BMW 330i',
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'fallback')
+            ->assertJsonPath('reason', 'configuration');
+
+        ShowroomAssistant::assertNeverPrompted();
+    }
+
     public function test_ai_exception_returns_friendly_fallback_without_public_stack_trace(): void
     {
         config([

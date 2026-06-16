@@ -31,6 +31,20 @@
 - The endpoint accepts only a validated `message` string and returns JSON.
 - Existing product, article, booking, accessory order and admin routes were preserved.
 
+## Phase 16.1 compare routing notes
+
+- Compare route remains unchanged:
+  - `products.compare`: `GET /compare`.
+  - Controller: `App\Http\Controllers\ProductController@compare`.
+- Query param remains `ids`, comma-separated, for example `/compare?ids=1,2`.
+- Server-side compare normalization now:
+  - ignores invalid IDs.
+  - removes duplicate IDs.
+  - ignores accessories.
+  - allows car + motorbike because both are vehicles.
+  - preserves requested order.
+  - limits final compare set to 4 vehicles.
+
 ## Phase 15 public routing notes
 
 - Existing public product/article/booking/accessory routes were preserved.

@@ -115,6 +115,10 @@
 }
 
 @layer utilities {
+    [x-cloak] {
+        display: none !important;
+    }
+
     .scrollbar-none {
         -ms-overflow-style: none;
         scrollbar-width: none;
@@ -129,14 +133,31 @@
         transform-origin: center bottom;
     }
 
-    .ai-assistant-wheel {
-        animation: ai-assistant-wheel 1.8s linear infinite;
-        transform-box: fill-box;
-        transform-origin: center;
-    }
-
     .ai-assistant-ready-pulse {
         animation: ai-assistant-ready-pulse 1.8s ease-out infinite;
+    }
+
+    .ai-chat-panel {
+        background-image:
+            linear-gradient(135deg, rgba(112, 167, 255, 0.08), transparent 28%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%);
+    }
+
+    .ai-message-bubble {
+        border-radius: 14px;
+    }
+
+    .ai-assistant-launcher {
+        animation: ai-assistant-launcher-glow 3.2s ease-in-out infinite;
+        border-radius: 999px;
+    }
+
+    .ai-assistant-side-tab {
+        animation: ai-assistant-side-tab 2.8s ease-in-out infinite;
+    }
+
+    .ai-assistant-typing-dot {
+        animation: ai-assistant-typing-dot 1s ease-in-out infinite;
     }
 }
 
@@ -155,17 +176,6 @@
     }
 }
 
-@keyframes ai-assistant-wheel {
-    0%,
-    100% {
-        transform: rotate(0deg);
-    }
-
-    50% {
-        transform: rotate(10deg);
-    }
-}
-
 @keyframes ai-assistant-ready-pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
@@ -180,10 +190,47 @@
     }
 }
 
+@keyframes ai-assistant-launcher-glow {
+    0%,
+    100% {
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 18px 55px rgba(28, 105, 212, 0.28);
+    }
+}
+
+@keyframes ai-assistant-side-tab {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(-2px);
+    }
+}
+
+@keyframes ai-assistant-typing-dot {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translateY(-2px);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .ai-assistant-idle,
-    .ai-assistant-wheel,
-    .ai-assistant-ready-pulse {
+    .ai-assistant-ready-pulse,
+    .ai-assistant-launcher,
+    .ai-assistant-side-tab,
+    .ai-assistant-typing-dot {
         animation: none;
     }
 }

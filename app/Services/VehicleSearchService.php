@@ -52,11 +52,29 @@ class VehicleSearchService
      */
     public function getComparisonMatrix(array $productIds): array
     {
-        $products = Product::whereIn('id', $productIds)
+        $candidateIds = collect($productIds)
+            ->map(fn (mixed $id): int|false => filter_var($id, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]))
+            ->filter(fn (int|false $id): bool => $id !== false)
+            ->unique()
+            ->take(12)
+            ->values();
+
+        if ($candidateIds->isEmpty()) {
+            return [];
+        }
+
+        $positionById = $candidateIds->flip();
+
+        $products = Product::whereIn('id', $candidateIds->all())
             ->active()
             ->whereIn('type', [VehicleType::CAR->value, VehicleType::MOTORBIKE->value])
             ->with(['category', 'primaryImage', 'images'])
-            ->get();
+            ->get()
+            ->sortBy(fn (Product $product): int => $positionById->get($product->id, PHP_INT_MAX))
+            ->take(4)
+            ->values();
 
         if ($products->isEmpty()) {
             return [];

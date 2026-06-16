@@ -5,60 +5,64 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 
 window.aiAssistantWidget = (config) => ({
-    panelOpen: true,
-    greetingVisible: true,
-    readyText: config.ready,
-    prompts: config.prompts || [],
-    responseSuggestions: [],
-    messages: [
-        {
-            role: 'assistant',
-            text: config.greeting,
-        },
-    ],
+    config,
+    panelOpen: false,
+    sideTabVisible: false,
+    messages: [],
     input: '',
     loading: false,
-    position: null,
-    dragState: null,
-    dragMoved: false,
+    stateKey: 'bmw_ai_assistant_state_v4',
+    legacyStateKeys: [
+        'bmw_ai_assistant_state_v2',
+        'bmw_ai_assistant_state_v3',
+        'bmw_ai_assistant_position',
+    ],
+    maxStoredMessages: 24,
 
-    get positionStyle() {
-        if (!this.position) {
-            return 'right: 1rem; bottom: 1rem;';
-        }
-
-        return `left: ${this.position.x}px; top: ${this.position.y}px;`;
+    get hasMessages() {
+        return this.messages.length > 0;
     },
 
     init() {
-        this.restorePosition();
-        if (window.innerWidth < 640) {
-            this.panelOpen = false;
-            this.greetingVisible = true;
-        }
+        this.clearLegacyState();
+        this.restoreState();
+        this.scrollMessages();
 
-        window.addEventListener('resize', () => this.clampPosition());
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 640 && this.panelOpen) {
+                this.scrollMessages();
+            }
+        });
     },
 
     openPanel() {
-        if (this.dragMoved) {
-            this.dragMoved = false;
-            return;
-        }
-
         this.panelOpen = true;
-        this.greetingVisible = false;
-        this.$nextTick(() => this.clampPosition());
+        this.sideTabVisible = false;
+        this.persistState();
+        this.scrollMessages();
     },
 
     minimize() {
         this.panelOpen = false;
-        this.greetingVisible = true;
-        this.$nextTick(() => this.clampPosition());
+        this.sideTabVisible = false;
+        this.persistState();
+    },
+
+    hideToSide() {
+        this.panelOpen = false;
+        this.sideTabVisible = true;
+        this.persistState();
+    },
+
+    clearConversation() {
+        this.messages = [];
+        this.persistState();
+        this.scrollMessages();
     },
 
     sendSuggestion(prompt) {
         this.input = prompt;
+        this.openPanel();
         this.send();
     },
 
@@ -69,9 +73,10 @@ window.aiAssistantWidget = (config) => ({
             return;
         }
 
-        this.messages.push({ role: 'user', text: message });
+        this.messages.push(this.createUserMessage(message));
         this.input = '';
         this.loading = true;
+        this.persistState();
         this.scrollMessages();
 
         try {
@@ -87,20 +92,17 @@ window.aiAssistantWidget = (config) => ({
 
             const payload = await response.json().catch(() => ({}));
 
-            this.messages.push({
-                role: 'assistant',
-                text: payload.answer || config.fallback,
-            });
-            this.responseSuggestions = Array.isArray(payload.suggestions) ? payload.suggestions : [];
+            this.messages.push(this.createAssistantMessage(
+                payload.answer || config.fallback,
+                Array.isArray(payload.suggestions) ? payload.suggestions : [],
+            ));
         } catch (error) {
-            this.messages.push({
-                role: 'assistant',
-                text: config.fallback,
-            });
+            this.messages.push(this.createAssistantMessage(config.fallback, []));
         } finally {
+            this.pruneMessages();
             this.loading = false;
+            this.persistState();
             this.scrollMessages();
-            this.$nextTick(() => this.clampPosition());
         }
     },
 
@@ -112,106 +114,326 @@ window.aiAssistantWidget = (config) => ({
         });
     },
 
-    startDrag(event) {
-        if (event.target.closest('[data-ai-no-drag]')) {
-            return;
-        }
-
-        if (event.button !== undefined && event.button !== 0) {
-            return;
-        }
-
-        const rect = this.$root.getBoundingClientRect();
-        this.position = {
-            x: rect.left,
-            y: rect.top,
+    createUserMessage(text) {
+        return {
+            id: this.messageId(),
+            role: 'user',
+            text: String(text || ''),
+            blocks: [],
+            actions: [],
         };
-        this.dragMoved = false;
-        this.dragState = {
-            startX: event.clientX,
-            startY: event.clientY,
-            originX: rect.left,
-            originY: rect.top,
-            move: (moveEvent) => this.moveDrag(moveEvent),
-            end: () => this.endDrag(),
+    },
+
+    createAssistantMessage(text, suggestions = []) {
+        const formatted = this.formatAssistantMessage(text, suggestions);
+
+        return {
+            id: this.messageId(),
+            role: 'assistant',
+            text: String(text || ''),
+            blocks: formatted.blocks,
+            actions: formatted.actions,
+        };
+    },
+
+    messageId() {
+        if (window.crypto?.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+
+        return `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    },
+
+    formatAssistantMessage(text, suggestions = []) {
+        const extracted = this.extractActions(String(text || ''), suggestions);
+        const blocks = this.buildBlocks(extracted.text);
+
+        return {
+            blocks: blocks.length ? blocks : [{
+                type: 'paragraph',
+                parts: [{ type: 'text', text: 'Tôi đã chuẩn bị một số thao tác phù hợp cho bạn.' }],
+            }],
+            actions: extracted.actions,
+        };
+    },
+
+    buildBlocks(text) {
+        const lines = String(text || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .split('\n');
+        const blocks = [];
+        let paragraphLines = [];
+        let listItems = [];
+
+        const flushParagraph = () => {
+            const paragraph = paragraphLines.join(' ').replace(/\s{2,}/g, ' ').trim();
+
+            if (paragraph) {
+                blocks.push({
+                    type: 'paragraph',
+                    parts: this.parseTextParts(paragraph),
+                });
+            }
+
+            paragraphLines = [];
         };
 
-        window.addEventListener('pointermove', this.dragState.move);
-        window.addEventListener('pointerup', this.dragState.end, { once: true });
-        event.preventDefault();
+        const flushList = () => {
+            if (listItems.length) {
+                blocks.push({
+                    type: 'list',
+                    items: listItems.map((item) => ({
+                        parts: this.parseTextParts(item),
+                    })),
+                });
+            }
+
+            listItems = [];
+        };
+
+        lines.forEach((line) => {
+            const trimmedLine = line.trim();
+
+            if (!trimmedLine) {
+                flushParagraph();
+                flushList();
+                return;
+            }
+
+            const listMatch = trimmedLine.match(/^([-*\u2022]|\d+[.)])\s+(.+)$/);
+
+            if (listMatch) {
+                flushParagraph();
+                listItems.push(listMatch[2]);
+                return;
+            }
+
+            flushList();
+            paragraphLines.push(trimmedLine);
+        });
+
+        flushParagraph();
+        flushList();
+
+        return blocks;
     },
 
-    moveDrag(event) {
-        if (!this.dragState) {
-            return;
+    parseTextParts(text) {
+        const parts = [];
+        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)/g;
+        let cursor = 0;
+        let match;
+
+        while ((match = pattern.exec(text)) !== null) {
+            if (match.index > cursor) {
+                parts.push({ type: 'text', text: text.slice(cursor, match.index) });
+            }
+
+            parts.push({ type: 'strong', text: match[2] || match[4] });
+            cursor = pattern.lastIndex;
         }
 
-        const deltaX = event.clientX - this.dragState.startX;
-        const deltaY = event.clientY - this.dragState.startY;
-
-        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
-            this.dragMoved = true;
+        if (cursor < text.length) {
+            parts.push({ type: 'text', text: text.slice(cursor) });
         }
 
-        this.position = this.clampedPosition(
-            this.dragState.originX + deltaX,
-            this.dragState.originY + deltaY,
-        );
+        return parts.length ? parts : [{ type: 'text', text }];
     },
 
-    endDrag() {
-        if (!this.dragState) {
-            return;
-        }
+    extractActions(text, suggestions = []) {
+        const actions = [];
+        let cleanedText = String(text || '');
 
-        window.removeEventListener('pointermove', this.dragState.move);
-        this.dragState = null;
-        this.savePosition();
+        const addAction = (href, fallbackLabel = '') => {
+            const url = this.internalLink(href);
+
+            if (!url) {
+                return null;
+            }
+
+            const label = this.actionLabel(url, fallbackLabel);
+            const key = `${label}|${url}`;
+
+            if (!actions.some((action) => action.key === key || action.url === url)) {
+                actions.push({ key, label, url });
+            }
+
+            return url;
+        };
+
+        cleanedText = cleanedText.replace(/\[([^\]]{1,100})]\(([^)]+)\)/g, (match, label, href) => {
+            return addAction(href, label) ? label : label;
+        });
+
+        cleanedText = cleanedText.replace(/(^|[\s("'\[])(\/(?!\/)[^\s<>()]+)/g, (match, prefix, rawHref) => {
+            const trailing = rawHref.match(/[.,;:!?]+$/)?.[0] || '';
+            const cleanHref = trailing ? rawHref.slice(0, -trailing.length) : rawHref;
+
+            if (addAction(cleanHref)) {
+                return prefix.trimEnd() ? prefix : '';
+            }
+
+            return `${prefix}${cleanHref}${trailing}`;
+        });
+
+        suggestions.forEach((suggestion) => {
+            addAction(suggestion?.url, suggestion?.label);
+        });
+
+        return {
+            text: cleanedText
+                .replace(/[ \t]+\n/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .replace(/[ \t]{2,}/g, ' ')
+                .trim(),
+            actions: actions.map(({ label, url }) => ({ label, url })),
+        };
     },
 
-    restorePosition() {
+    actionLabel(url, fallbackLabel = '') {
+        const value = String(url || '');
+        const fallback = String(fallbackLabel || '').trim();
+
+        if (value.startsWith('/accessories/') && value.endsWith('/order')) {
+            return 'Đặt phụ kiện';
+        }
+
+        if (value.startsWith('/booking')) {
+            const type = new URL(value, window.location.origin).searchParams.get('type');
+
+            if (type === 'test_drive' || type === 'test') {
+                return 'Đặt lịch lái thử';
+            }
+
+            if (type === 'quote') {
+                return 'Nhận báo giá';
+            }
+
+            return 'Đặt lịch tư vấn';
+        }
+
+        if (value.startsWith('/compare')) {
+            return 'So sánh xe';
+        }
+
+        if (value.startsWith('/tim-hieu-them/')) {
+            return 'Đọc bài viết';
+        }
+
+        if (value.startsWith('/tim-hieu-them')) {
+            return 'Xem ưu đãi';
+        }
+
+        if (value.startsWith('/catalog?type=motorbike')) {
+            return 'Xem BMW Motorrad';
+        }
+
+        if (value.startsWith('/catalog/')) {
+            return 'Xem chi tiết';
+        }
+
+        if (value.startsWith('/accessories')) {
+            return 'Xem phụ kiện';
+        }
+
+        if (value.startsWith('/catalog')) {
+            return 'Xem danh mục';
+        }
+
+        return fallback || 'Mở liên kết';
+    },
+
+    internalLink(href) {
+        const value = String(href || '').trim();
+        const lowered = value.toLowerCase();
+
+        if (
+            !value
+            || value.startsWith('//')
+            || value.includes('\n')
+            || lowered.startsWith('javascript:')
+            || lowered.startsWith('data:')
+        ) {
+            return null;
+        }
+
+        if (value.startsWith('/') && !value.startsWith('/\\')) {
+            return value;
+        }
+
         try {
-            const saved = JSON.parse(localStorage.getItem('bmw_ai_assistant_position') || 'null');
-            if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
-                this.position = this.clampedPosition(saved.x, saved.y);
+            const url = new URL(value, window.location.origin);
+
+            return url.origin === window.location.origin
+                ? `${url.pathname}${url.search}${url.hash}`
+                : null;
+        } catch (error) {
+            return null;
+        }
+    },
+
+    restoreState() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(this.stateKey) || 'null');
+
+            if (!saved || typeof saved !== 'object') {
+                return;
+            }
+
+            this.panelOpen = saved.mode === 'panel';
+            this.sideTabVisible = saved.mode === 'hidden';
+
+            if (Array.isArray(saved.messages)) {
+                this.messages = saved.messages
+                    .filter((message) => ['assistant', 'user'].includes(message?.role) && typeof message?.text === 'string')
+                    .slice(-this.maxStoredMessages)
+                    .map((message) => message.role === 'user'
+                        ? this.createUserMessage(message.text)
+                        : this.createAssistantMessage(message.text, []));
             }
         } catch (error) {
-            this.position = null;
+            this.panelOpen = false;
+            this.sideTabVisible = false;
+            this.messages = [];
         }
     },
 
-    savePosition() {
-        if (!this.position) {
-            return;
-        }
-
+    persistState() {
         try {
-            localStorage.setItem('bmw_ai_assistant_position', JSON.stringify(this.position));
+            localStorage.setItem(this.stateKey, JSON.stringify({
+                mode: this.sideTabVisible ? 'hidden' : (this.panelOpen ? 'panel' : 'launcher'),
+                messages: this.messages.slice(-this.maxStoredMessages).map((message) => ({
+                    role: message.role === 'user' ? 'user' : 'assistant',
+                    text: this.safeStoredText(message.text),
+                })),
+            }));
         } catch (error) {
             void error;
         }
     },
 
-    clampPosition() {
-        if (!this.position) {
+    clearLegacyState() {
+        try {
+            this.legacyStateKeys.forEach((key) => localStorage.removeItem(key));
+        } catch (error) {
+            void error;
+        }
+    },
+
+    pruneMessages() {
+        if (this.messages.length <= this.maxStoredMessages) {
             return;
         }
 
-        this.position = this.clampedPosition(this.position.x, this.position.y);
-        this.savePosition();
+        this.messages = this.messages.slice(-this.maxStoredMessages);
     },
 
-    clampedPosition(x, y) {
-        const margin = 12;
-        const width = this.$root?.offsetWidth || 360;
-        const height = this.$root?.offsetHeight || 120;
-        const maxX = Math.max(margin, window.innerWidth - width - margin);
-        const maxY = Math.max(margin, window.innerHeight - height - margin);
-
-        return {
-            x: Math.min(Math.max(margin, x), maxX),
-            y: Math.min(Math.max(margin, y), maxY),
-        };
+    safeStoredText(text) {
+        return String(text || '')
+            .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email hidden]')
+            .replace(/(?:\+?84|0)(?:[\s.-]?\d){8,10}/g, '[contact hidden]')
+            .slice(0, 1400);
     },
 });
 

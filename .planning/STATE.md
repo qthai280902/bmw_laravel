@@ -1,6 +1,107 @@
 # Project State
 
-Current phase: Phase 16 completed.
+Current phase: Phase 16.2 completed.
+
+## Phase 16.2
+
+- Test time: 2026-06-16 +07:00.
+- Scope:
+  - AI Assistant UX overhaul.
+  - Product context intelligence fix for BMW Motorrad and model-code queries.
+  - Safe assistant answer rendering with action chips.
+  - Fresh widget state behavior and mobile viewport polish.
+- Widget:
+  - fixed launcher/panel/side-tab pattern.
+  - no drag handle or persisted coordinates.
+  - greeting is an intro card, not a stored assistant message.
+  - new localStorage key: `bmw_ai_assistant_state_v4`.
+  - legacy v2/v3/position keys are cleared.
+  - assistant links are extracted into internal action chips.
+  - rendering remains escaped with `x-text`; no `x-html`.
+  - mobile panel width now stays inside 390px viewport.
+- AI context:
+  - includes active public cars, BMW Motorrad, accessories and published articles.
+  - excludes appointments, accessory orders, users, admin/internal notes and customer PII.
+  - product context includes `product_line`, `slug`, URL and `search_aliases`.
+  - aliases cover `330i`, `530i`, `x5`, `s1000rr` and spaced S1000RR variants.
+  - assistant prompt now describes the showroom as BMW cars, BMW Motorrad, accessories, offers and services.
+- Commands:
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 89 tests / 1048 assertions.
+- Browser QA:
+  - pages: `/`, `/catalog`, `/catalog?type=motorbike`, `/catalog/bmw-330i-sedan`, `/catalog/bmw-s1000rr`, `/accessories`, `/tim-hieu-them`, `/booking?type=consult`, `/compare?ids=1,2`.
+  - viewports: 1366x768, 768x1024, 390x900.
+  - S1000RR live answer: pass.
+  - sedan live answer: pass.
+  - internal action chip navigation to `/catalog/bmw-s1000rr`: pass.
+  - broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - `x-html`: 0.
+  - draggable nodes: 0.
+- Playwright CLI:
+  - storage-cleared desktop session confirmed intro card and `messageCount = 0`.
+  - mobile 390x900 confirmed panel inside viewport.
+  - console errors: 0.
+  - temporary `.playwright-cli` artifact was removed.
+- Known note:
+  - One live SUV prompt returned safe fallback due provider `RateLimitedException` after successful live S1000RR and sedan answers.
+  - Automated tests use Laravel AI fakes and do not call Gemini.
+- Report: `.planning/baocao/phase-reports/phase-16-2-report.md`.
+- Result: PASS CO GHI CHU.
+
+## Phase 16.1
+
+- Test time: 2026-06-16 +07:00.
+- Scope:
+  - AI Assistant widget UX polish.
+  - Side-tab hidden mode.
+  - Client-side chat history persistence.
+  - AI message readability/link rendering verification.
+  - Compare logic normalization and regression tests.
+- AI widget:
+  - Fresh desktop/mobile default now uses compact launcher + greeting instead of a large open panel.
+  - Side-tab hidden mode persists through reload.
+  - Recent chat history persists through navigation/reload in `localStorage`.
+  - Stored history is capped at 24 messages.
+  - Email/phone-like contact patterns are redacted before local storage.
+  - Clear conversation action added.
+  - Markdown/link rendering stays escaped with `x-text`; no `x-html`.
+- Compare:
+  - Route preserved: `GET /compare`, name `products.compare`.
+  - Invalid IDs are ignored.
+  - Duplicate IDs are removed.
+  - Accessory IDs are ignored.
+  - Car and motorbike can be compared because both are vehicles.
+  - Requested order is preserved.
+  - Server-side max compare count is 4 vehicles.
+- Commands:
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 86 tests / 1006 assertions.
+- Browser QA:
+  - pages: `/`, `/catalog`, `/catalog/bmw-330i-sedan`, `/accessories`, `/tim-hieu-them`, `/booking?type=consult`, `/compare?ids=1,2`.
+  - viewports: 390x900, 768x1024, 1366x768.
+  - live AI widget questions sent successfully.
+  - fallback visible: false.
+  - side-tab hide/reload/reopen: pass.
+  - link navigation to `/catalog/bmw-330i-sedan` preserved chat history.
+  - broken images: 0.
+  - console errors: 0.
+  - page-level horizontal overflow: 0.
+- Playwright CLI:
+  - fresh mobile and desktop sessions confirmed compact launcher default after storage clear.
+- Report: `.planning/baocao/phase-reports/phase-16-1-report.md`.
+- Result: PASS.
 
 ## Phase 16
 

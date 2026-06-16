@@ -19,6 +19,68 @@
 
 ## Trang thai hien tai
 
+- Phase 16.2 on 2026-06-16 +07:00:
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - focused AI tests: pass, 13 tests / 202 assertions.
+  - `php artisan test`: pass, 89 tests / 1048 assertions.
+  - `php artisan route:list --path=ai -v`: pass, `POST /ai/showroom-assistant` keeps `web` and `throttle:12,1`.
+  - Browser pages checked:
+    - `/`.
+    - `/catalog`.
+    - `/catalog?type=motorbike`.
+    - `/catalog/bmw-330i-sedan`.
+    - `/catalog/bmw-s1000rr`.
+    - `/accessories`.
+    - `/tim-hieu-them`.
+    - `/booking?type=consult`.
+    - `/compare?ids=1,2`.
+  - Responsive checked at 1366x768, 768x1024 and 390x900.
+  - fresh AI widget state:
+    - intro card visible.
+    - `messageCount = 0`.
+    - no drag handle.
+    - no `x-html`.
+  - S1000RR live widget answer: pass.
+  - sedan live widget answer: pass.
+  - SUV live widget answer: safe fallback because provider returned `RateLimitedException`.
+  - action chip navigation to `/catalog/bmw-s1000rr`: pass.
+  - broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: 0.
+  - Playwright CLI fresh desktop/mobile sessions confirmed intro card, no messages and mobile panel within viewport.
+  - result: PASS CO GHI CHU.
+- Phase 16.1 on 2026-06-16 +07:00:
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - focused AI widget + compare tests: pass, 7 tests / 142 assertions.
+  - `php artisan test`: pass, 86 tests / 1006 assertions.
+  - Browser pages checked:
+    - `/`.
+    - `/catalog`.
+    - `/catalog/bmw-330i-sedan`.
+    - `/accessories`.
+    - `/tim-hieu-them`.
+    - `/booking?type=consult`.
+    - `/compare?ids=1,2`.
+  - Responsive checked at 390x900, 768x1024 and 1366x768.
+  - live AI questions sent through widget: pass.
+  - response fallback visible: false.
+  - side-tab hide/reload/reopen: pass.
+  - chat history persisted after link navigation: pass.
+  - broken images: 0.
+  - console errors: 0.
+  - page-level horizontal overflow: 0.
+  - Playwright CLI fresh sessions confirmed compact launcher default on desktop/mobile.
+  - result: PASS.
 - Phase 16 on 2026-06-15 +07:00:
   - PHP local used for verification: PHP 8.5.7 from `C:\php85\php.exe`.
   - `composer validate`: pass.
