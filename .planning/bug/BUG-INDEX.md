@@ -8,3 +8,4 @@
 | BUG-RUNTIME-001 | Storage junction cu va admin image URL raw gay request `/storage/...` hong | runtime/assets | Fixed / Verified | `fixed/phase-13-fixed-bugs.md` | Phase 13 recreate storage link va admin product views dung `displayImageUrl()`. |
 | BUG-COMPARE-001 | Compare raw IDs khong preserve order/limit server-side | public/compare | Fixed / Verified | `fixed/phase-16-1-compare-id-normalization.md` | Phase 16.1 normalize IDs, ignore invalid/accessory, preserve order, max 4 vehicles. |
 | BUG-AI-001 | AI context/matching bo sot BMW Motorrad va model code ngan | ai/context | Fixed / Verified | `fixed/phase-16-2-ai-context-product-matching.md` | Phase 16.2 expands public context and adds aliases like `330i`, `530i`, `s1000rr`. |
+| BUG-AI-002 | Gemini single-key rate limit tra fallback ngay | ai/provider | Fixed / Verified | `fixed/phase-16-3-gemini-rate-limit-failover.md` | Phase 16.3 adds multi-key rotation, cooldown and failover without logging raw keys. |

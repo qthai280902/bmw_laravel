@@ -1,6 +1,67 @@
 # Project State
 
-Current phase: Phase 16.2 completed.
+Current phase: Phase 16.3 completed.
+
+## Phase 16.3
+
+- Test time: 2026-06-17 +07:00.
+- Scope:
+  - Gemini multi-key rotation.
+  - Rate limit failover and cooldown.
+  - Safe logging and secret handling for AI provider keys.
+- Config:
+  - existing `GEMINI_API_KEY` remains supported.
+  - added `GEMINI_API_KEYS`.
+  - added `GEMINI_KEY_COOLDOWN_SECONDS`, default 120.
+  - added `GEMINI_KEY_ROTATION`, default `round_robin`.
+  - `.env.example` uses placeholders only and no longer contains an `APP_KEY=base64:` sample value.
+- Key pool:
+  - class: `App\Services\Ai\GeminiKeyPool`.
+  - combines primary and additional Gemini keys.
+  - supports comma, newline and pipe separators.
+  - trims, deduplicates and ignores empty values.
+  - has no hard-coded key count limit.
+  - round-robin cursor stored in cache.
+  - cooldown uses cache keys based on key index and fingerprint, not raw key text.
+- AI service:
+  - `ShowroomAssistantService` uses temporary Laravel AI provider aliases per Gemini attempt.
+  - temporary aliases are forgotten after each attempt to avoid stale provider cache.
+  - `RateLimitedException` marks a candidate cooldown and tries the next key.
+  - all-key rate limit returns `reason: rate_limited` and a friendly fallback.
+  - endpoint remains `POST /ai/showroom-assistant`.
+- Commands:
+  - focused AI tests: pass, 22 tests / 104 assertions.
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass after local XAMPP MySQL was started.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 100 tests / 1083 assertions.
+  - `php artisan route:list --path=ai -v`: pass, `POST /ai/showroom-assistant` keeps `web` and `throttle:12,1`.
+- Browser QA:
+  - live widget prompt: `tim giup toi chiec bmw s1000rr`.
+  - result: normal BMW S1000RR / BMW Motorrad answer.
+  - action chips: product detail, quote, test drive and BMW Motorrad catalog.
+  - broken images: 0.
+  - console errors: 0.
+  - horizontal overflow: false.
+  - visible secret pattern: false.
+- Playwright CLI:
+  - mobile 390x900 smoke pass.
+  - launcher visible.
+  - panel within viewport.
+  - broken images: 0.
+  - console errors: 0.
+  - no `x-html`.
+  - no draggable nodes.
+  - visible secret pattern: false.
+- Notes:
+  - local MySQL was initially off, causing default database-backed `cache:clear` and Browser QA to fail until XAMPP MySQL was started.
+  - temporary PHP server, XAMPP MySQL process and Playwright CLI artifacts were stopped/removed after QA.
+  - automated tests use Laravel AI fakes and do not call Gemini.
+- Report: `.planning/baocao/phase-reports/phase-16-3-report.md`.
+- Result: PASS CO GHI CHU.
 
 ## Phase 16.2
 

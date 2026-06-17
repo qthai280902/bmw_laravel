@@ -15,6 +15,8 @@ class AiAssistantFallbackTest extends TestCase
     {
         config([
             'showroom_ai.enabled' => true,
+            'showroom_ai.gemini_keys.primary' => null,
+            'showroom_ai.gemini_keys.additional' => null,
             'ai.providers.gemini.key' => null,
         ]);
 
@@ -37,6 +39,8 @@ class AiAssistantFallbackTest extends TestCase
         config([
             'showroom_ai.enabled' => true,
             'showroom_ai.provider' => 'gemini',
+            'showroom_ai.gemini_keys.primary' => null,
+            'showroom_ai.gemini_keys.additional' => null,
             'ai.providers.gemini.key' => null,
             'services.gemini.key' => 'testing-services-key',
         ]);

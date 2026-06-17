@@ -19,6 +19,39 @@
 
 ## Trang thai hien tai
 
+- Phase 16.3 on 2026-06-17 +07:00:
+  - focused AI tests: pass, 22 tests / 104 assertions.
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass after local XAMPP MySQL was started.
+  - `php artisan cache:clear array`: pass during environment isolation check.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 100 tests / 1083 assertions.
+  - `php artisan route:list --path=ai -v`: pass, `POST /ai/showroom-assistant` keeps `web` and `throttle:12,1`.
+  - Browser QA:
+    - local page `/` checked.
+    - live widget prompt `tim giup toi chiec bmw s1000rr`: normal BMW S1000RR / BMW Motorrad answer.
+    - action chips include product detail, quote, test drive and BMW Motorrad catalog.
+    - broken images: 0.
+    - console errors: 0.
+    - horizontal overflow: false.
+    - visible secret pattern: false.
+  - Playwright CLI:
+    - mobile 390x900 smoke checked.
+    - launcher visible.
+    - panel within viewport.
+    - broken images: 0.
+    - console errors: 0.
+    - no `x-html`.
+    - no draggable nodes.
+    - visible secret pattern: false.
+  - note:
+    - initial default `php artisan cache:clear` failed while local MySQL was off because default cache store is database.
+    - command passed after starting local XAMPP MySQL for QA.
+    - temporary PHP server, XAMPP MySQL process and Playwright CLI artifacts were stopped/removed.
+  - result: PASS CO GHI CHU.
 - Phase 16.2 on 2026-06-16 +07:00:
   - `php artisan config:clear`: pass.
   - `php artisan cache:clear`: pass.

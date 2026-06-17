@@ -6,14 +6,23 @@ use App\Ai\Agents\ShowroomAssistant;
 use App\Enums\VehicleType;
 use App\Models\Article;
 use App\Models\Product;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Laravel\Ai\AiManager;
+use Laravel\Ai\Exceptions\ProviderOverloadedException;
+use Laravel\Ai\Exceptions\RateLimitedException;
+use Laravel\Ai\Responses\AgentResponse;
 use Throwable;
 
 class ShowroomAssistantService
 {
+    public function __construct(private GeminiKeyPool $geminiKeyPool) {}
+
     /**
      * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
      */
@@ -23,6 +32,7 @@ class ShowroomAssistantService
         $suggestions = $this->suggestionsFor($message, $context);
         $provider = $this->configuredProvider();
         $model = $this->configuredModel();
+        $prompt = $this->buildPrompt($message, $context);
 
         if ($configurationReason = $this->configurationFailureReason($provider)) {
             Log::info('Showroom AI assistant skipped.', [
@@ -33,19 +43,14 @@ class ShowroomAssistantService
             return $this->fallbackResponse($suggestions, 'configuration');
         }
 
-        try {
-            $response = ShowroomAssistant::make()->prompt(
-                prompt: $this->buildPrompt($message, $context),
-                provider: $provider,
-                model: $model,
-                timeout: 20,
-            );
+        if ($provider === 'gemini') {
+            return $this->askGeminiWithRotation($prompt, $suggestions, $model);
+        }
 
-            return [
-                'answer' => trim($response->text) ?: $this->fallbackMessage(),
-                'suggestions' => $suggestions,
-                'status' => 'ok',
-            ];
+        try {
+            $response = $this->promptAssistant($prompt, $provider, $model);
+
+            return $this->successfulResponse($response, $suggestions);
         } catch (Throwable $exception) {
             Log::warning('Showroom AI assistant request failed.', [
                 'reason' => 'provider_error',
@@ -55,6 +60,154 @@ class ShowroomAssistantService
 
             return $this->fallbackResponse($suggestions, 'provider_error');
         }
+    }
+
+    /**
+     * @param  array<int, array{label: string, url: string}>  $suggestions
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
+     */
+    private function askGeminiWithRotation(string $prompt, array $suggestions, ?string $model): array
+    {
+        $candidates = $this->geminiKeyPool->candidateSequence();
+
+        if ($candidates === []) {
+            Log::info('Showroom AI assistant skipped.', [
+                'reason' => $this->geminiKeyPool->hasKeys() ? 'all_gemini_keys_cooling_down' : 'gemini_key_missing',
+                'provider' => 'gemini',
+            ]);
+
+            return $this->geminiKeyPool->hasKeys()
+                ? $this->fallbackResponse($suggestions, 'rate_limited', $this->rateLimitFallbackMessage())
+                : $this->fallbackResponse($suggestions, 'configuration');
+        }
+
+        $attempts = 0;
+        $rateLimitedAttempts = 0;
+
+        foreach ($candidates as $candidate) {
+            $attempts++;
+
+            try {
+                $response = $this->promptGeminiWithCandidate($candidate, $prompt, $model);
+
+                return $this->successfulResponse($response, $suggestions);
+            } catch (RateLimitedException $exception) {
+                $rateLimitedAttempts++;
+                $this->geminiKeyPool->markRateLimited($candidate);
+
+                Log::warning('Showroom AI assistant Gemini key rate limited.', [
+                    'reason' => 'rate_limited',
+                    'provider' => 'gemini',
+                    'model' => $model,
+                    'key_index' => $candidate['index'],
+                    'exception' => $exception::class,
+                    'attempt' => $attempts,
+                    'configured_keys' => count($this->geminiKeyPool->keys()),
+                ]);
+            } catch (Throwable $exception) {
+                if ($this->isTransientProviderException($exception)) {
+                    Log::warning('Showroom AI assistant Gemini key attempt failed.', [
+                        'reason' => 'provider_error',
+                        'provider' => 'gemini',
+                        'model' => $model,
+                        'key_index' => $candidate['index'],
+                        'exception' => $exception::class,
+                        'attempt' => $attempts,
+                        'configured_keys' => count($this->geminiKeyPool->keys()),
+                    ]);
+
+                    continue;
+                }
+
+                Log::warning('Showroom AI assistant request failed.', [
+                    'reason' => 'provider_error',
+                    'exception' => $exception::class,
+                    'provider' => 'gemini',
+                    'key_index' => $candidate['index'],
+                    'attempt' => $attempts,
+                ]);
+
+                return $this->fallbackResponse($suggestions, 'provider_error');
+            }
+        }
+
+        if ($attempts > 0 && $rateLimitedAttempts === $attempts) {
+            Log::warning('Showroom AI assistant exhausted Gemini keys.', [
+                'reason' => 'rate_limited',
+                'provider' => 'gemini',
+                'attempts' => $attempts,
+                'configured_keys' => count($this->geminiKeyPool->keys()),
+            ]);
+
+            return $this->fallbackResponse($suggestions, 'rate_limited', $this->rateLimitFallbackMessage());
+        }
+
+        Log::warning('Showroom AI assistant exhausted Gemini key attempts.', [
+            'reason' => 'provider_error',
+            'provider' => 'gemini',
+            'attempts' => $attempts,
+            'configured_keys' => count($this->geminiKeyPool->keys()),
+        ]);
+
+        return $this->fallbackResponse($suggestions, 'provider_error');
+    }
+
+    /**
+     * @param  array{index: int, key: string, fingerprint: string}  $candidate
+     */
+    private function promptGeminiWithCandidate(array $candidate, string $prompt, ?string $model): AgentResponse
+    {
+        $providerName = $this->geminiKeyPool->providerNameFor($candidate);
+        $originalConfig = config("ai.providers.{$providerName}");
+        $baseConfig = config('ai.providers.gemini', []);
+
+        Config::set("ai.providers.{$providerName}", array_merge($baseConfig, [
+            'driver' => 'gemini',
+            'key' => $candidate['key'],
+        ]));
+
+        app(AiManager::class)->forgetInstance($providerName);
+
+        try {
+            return $this->promptAssistant($prompt, $providerName, $model);
+        } finally {
+            app(AiManager::class)->forgetInstance($providerName);
+            Config::set("ai.providers.{$providerName}", $originalConfig);
+        }
+    }
+
+    private function promptAssistant(string $prompt, string $provider, ?string $model): AgentResponse
+    {
+        return ShowroomAssistant::make()->prompt(
+            prompt: $prompt,
+            provider: $provider,
+            model: $model,
+            timeout: 20,
+        );
+    }
+
+    /**
+     * @param  array<int, array{label: string, url: string}>  $suggestions
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
+     */
+    private function successfulResponse(AgentResponse $response, array $suggestions): array
+    {
+        return [
+            'answer' => trim($response->text) ?: $this->fallbackMessage(),
+            'suggestions' => $suggestions,
+            'status' => 'ok',
+        ];
+    }
+
+    private function isTransientProviderException(Throwable $exception): bool
+    {
+        if ($exception instanceof ProviderOverloadedException || $exception instanceof ConnectionException) {
+            return true;
+        }
+
+        return $exception instanceof RequestException
+            && $exception->response !== null
+            && $exception->response->status() >= 500;
     }
 
     /**
@@ -349,10 +502,10 @@ PROMPT;
     /**
      * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
      */
-    private function fallbackResponse(array $suggestions, string $reason): array
+    private function fallbackResponse(array $suggestions, string $reason, ?string $answer = null): array
     {
         return [
-            'answer' => $this->fallbackMessage(),
+            'answer' => $answer ?? $this->fallbackMessage(),
             'suggestions' => $suggestions,
             'status' => 'fallback',
             'reason' => $reason,
@@ -370,7 +523,7 @@ PROMPT;
         }
 
         if ($provider === 'gemini') {
-            return filled(config('ai.providers.gemini.key')) ? null : 'gemini_key_missing';
+            return $this->geminiKeyPool->hasKeys() ? null : 'gemini_key_missing';
         }
 
         return filled(Arr::get(config("ai.providers.{$provider}", []), 'key')) ? null : 'provider_key_missing';
@@ -391,6 +544,11 @@ PROMPT;
     private function fallbackMessage(): string
     {
         return (string) config('showroom_ai.fallback_message');
+    }
+
+    private function rateLimitFallbackMessage(): string
+    {
+        return (string) config('showroom_ai.rate_limit_fallback_message', $this->fallbackMessage());
     }
 
     private function normalizeSearchText(string $value): string

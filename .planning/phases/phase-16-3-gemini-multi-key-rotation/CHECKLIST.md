@@ -1,0 +1,21 @@
+# Phase 16.3 Checklist
+
+- [x] Audit AI service, config, route, tests and Laravel AI SDK key usage.
+- [x] Confirm Gemini key is read into provider config and then sent as `x-goog-api-key`.
+- [x] Confirm provider instances are cached by provider name.
+- [x] Add `GeminiKeyPool`.
+- [x] Support `GEMINI_API_KEY`.
+- [x] Support `GEMINI_API_KEYS`.
+- [x] Normalize, trim, dedupe and ignore empty keys.
+- [x] Avoid parser hard limit on key count.
+- [x] Add round-robin rotation.
+- [x] Add cache cooldown for rate-limited keys.
+- [x] Add temporary provider alias per key attempt.
+- [x] Catch `RateLimitedException` and continue failover.
+- [x] Add friendly rate-limit fallback when all keys are limited/cooling down.
+- [x] Keep logs free of raw keys.
+- [x] Add automated tests without real Gemini calls.
+- [x] Run required command suite.
+- [x] Run Browser QA.
+- [x] Run Playwright CLI QA.
+- [x] Update final summary/report/state docs.

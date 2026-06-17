@@ -17,6 +17,9 @@ Primary pieces:
 
 - Default assistant provider: `AI_ASSISTANT_PROVIDER`, fallback `gemini`.
 - Gemini API key: `GEMINI_API_KEY`.
+- Additional Gemini API keys: `GEMINI_API_KEYS`.
+- Gemini key cooldown: `GEMINI_KEY_COOLDOWN_SECONDS`, fallback 120 seconds.
+- Gemini key rotation mode: `GEMINI_KEY_ROTATION`, fallback `round_robin`.
 - Optional model override: `AI_ASSISTANT_MODEL`.
 - Assistant enabled flag: `AI_ASSISTANT_ENABLED`.
 
@@ -44,6 +47,16 @@ Excluded private context:
 
 - Missing key returns configured fallback message.
 - Provider exception returns configured fallback message and logs only exception class.
+- Phase 16.3 adds Gemini multi-key rotation:
+  - `App\Services\Ai\GeminiKeyPool` reads config values, normalizes keys, deduplicates them and returns key candidates.
+  - both `GEMINI_API_KEY` and `GEMINI_API_KEYS` are supported.
+  - `GEMINI_API_KEYS` supports comma, newline and pipe separators.
+  - parser has no hard-coded key count limit.
+  - round-robin cursor is stored in cache.
+  - rate-limited keys are placed in cache cooldown using hash-based cache keys.
+  - Laravel AI is invoked through temporary provider aliases per key attempt so provider cache does not keep stale key config.
+  - temporary provider aliases are forgotten after each attempt.
+  - all-key rate limit returns `showroom_ai.rate_limit_fallback_message`.
 - Endpoint validates message as required string max 600 chars.
 - Endpoint is rate limited with `throttle:12,1`.
 
