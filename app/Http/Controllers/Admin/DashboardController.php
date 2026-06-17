@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Http\Controllers\Controller;
+use App\Models\AiChatSession;
 use App\Models\Appointment;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -71,9 +72,23 @@ class DashboardController extends Controller
             ->get();
 
         $specialLeadSections = $this->specialLeadSections();
+        $aiConversationStats = [
+            'today' => AiChatSession::query()->whereDate('last_seen_at', today())->count(),
+            'linked' => AiChatSession::query()->whereNotNull('linked_source_type')->count(),
+            'interested' => AiChatSession::query()->whereNotNull('last_intent')->count(),
+            'fallback' => AiChatSession::query()
+                ->whereHas('messages', fn ($query) => $query->where('role', 'assistant')->where('response_reason', '!=', 'ok'))
+                ->count(),
+        ];
+        $latestAiLeads = AiChatSession::query()
+            ->latest('last_seen_at')
+            ->limit(5)
+            ->get();
 
         return view('admin.dashboard', [
+            'aiConversationStats' => $aiConversationStats,
             'latestAppointments' => $latestAppointments,
+            'latestAiLeads' => $latestAiLeads,
             'leadTrend' => $leadTrend,
             'maxTrendCount' => max(1, (int) ($leadTrend->max('count') ?? 0)),
             'pendingAppointments' => $pendingAppointments,

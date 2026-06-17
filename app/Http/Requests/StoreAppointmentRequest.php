@@ -36,6 +36,7 @@ class StoreAppointmentRequest extends FormRequest
             'meta_data' => ['nullable', 'array'],
             'meta_data.*' => ['nullable', 'string', 'max:500'],
             'showroom' => ['nullable', 'string', 'max:255'],
+            'ai_visitor_id' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z0-9._:-]+$/'],
             'customer_car_model' => [$isServiceType ? 'required' : 'nullable', 'string', 'max:255'],
             'customer_car_condition' => ['nullable', 'string', 'max:500'],
         ];

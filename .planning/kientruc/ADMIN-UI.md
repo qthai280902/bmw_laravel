@@ -101,3 +101,14 @@
 - Admin co the list/filter/detail/update status/internal notes cho accessory orders.
 - `confirmed_at` duoc set khi status chuyen sang `confirmed` hoac `completed`.
 - Admin product index/edit da doi image rendering sang `Product::displayImageUrl()` de dung fallback public asset va tranh storage URL hong.
+# Phase 17 Admin UI Notes
+
+- Admin shell now includes `Lịch sử trợ lý AI` in the operations section.
+- Shared admin cards/header/sidebar link components were polished with subtler borders, deeper dark surfaces and clearer active states.
+- Dashboard includes an AI Assistant CRM widget:
+  - conversations today.
+  - linked sessions.
+  - sessions with product intent.
+  - fallback count.
+  - latest AI leads.
+- AI conversation pages use the same admin component system and avoid separate third-party templates.

@@ -19,6 +19,33 @@
 
 ## Trang thai hien tai
 
+- Phase 17 on 2026-06-17 +07:00:
+  - focused Phase 17 tests: pass, 8 tests / 43 assertions.
+  - related AI/admin tests: pass, 34 tests / 310 assertions.
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --dirty --format agent`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 108 tests / 1128 assertions.
+  - `php artisan route:list --path=admin/ai -v`: pass.
+  - Browser QA:
+    - admin pages checked at 1366x768, 768x1024 and 390x900.
+    - `/admin/ai-conversations` list checked.
+    - `/admin/ai-conversations/1` detail checked.
+    - public AI widget asked about BMW 330i and returned live answer.
+    - public booking submit linked AI session to appointment by visitor id.
+    - broken images: 0.
+    - console errors: 0.
+    - horizontal overflow: false.
+    - visible secret pattern: false.
+  - Playwright CLI:
+    - mobile 390x900 public homepage smoke pass.
+    - widget launcher visible.
+    - broken images: 0.
+    - horizontal overflow: false.
+  - result: PASS CO GHI CHU.
 - Phase 16.3 on 2026-06-17 +07:00:
   - focused AI tests: pass, 22 tests / 104 assertions.
   - `php artisan config:clear`: pass.

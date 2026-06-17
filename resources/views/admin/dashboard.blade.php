@@ -37,6 +37,62 @@
         </x-admin.card>
     </section>
 
+    <section class="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.5fr]">
+        <x-admin.card class="!p-0 overflow-hidden">
+            <div class="border-b border-white/10 px-6 py-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-[#70A7FF]">AI Assistant CRM</p>
+                <p class="mt-2 text-sm font-semibold text-zinc-400">Tín hiệu khách hàng từ widget public</p>
+            </div>
+            <div class="grid grid-cols-2 gap-px bg-white/10">
+                <div class="bg-zinc-950/90 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Hôm nay</p>
+                    <p class="mt-3 text-3xl font-black text-white">{{ number_format($aiConversationStats['today']) }}</p>
+                </div>
+                <div class="bg-zinc-950/90 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Linked</p>
+                    <p class="mt-3 text-3xl font-black text-emerald-400">{{ number_format($aiConversationStats['linked']) }}</p>
+                </div>
+                <div class="bg-zinc-950/90 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Intent</p>
+                    <p class="mt-3 text-3xl font-black text-[#70A7FF]">{{ number_format($aiConversationStats['interested']) }}</p>
+                </div>
+                <div class="bg-zinc-950/90 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Fallback</p>
+                    <p class="mt-3 text-3xl font-black text-yellow-400">{{ number_format($aiConversationStats['fallback']) }}</p>
+                </div>
+            </div>
+            <div class="border-t border-white/10 px-6 py-5">
+                <a href="{{ route('admin.ai-conversations.index') }}" class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF] transition-colors hover:text-white">
+                    Mở lịch sử trợ lý AI
+                </a>
+            </div>
+        </x-admin.card>
+
+        <x-admin.card class="!p-0 overflow-hidden">
+            <div class="border-b border-white/10 px-6 py-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-600">AI leads mới nhất</p>
+            </div>
+            <div class="divide-y divide-zinc-900">
+                @forelse($latestAiLeads as $lead)
+                    <a href="{{ route('admin.ai-conversations.show', $lead) }}" class="flex items-center justify-between gap-5 px-6 py-5 transition-colors hover:bg-white/[0.03]">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-black text-white">{{ $lead->displayLabel() }}</p>
+                            <p class="mt-1 truncate text-xs font-medium text-zinc-500">{{ $lead->last_message_preview ?? 'Chưa có preview' }}</p>
+                        </div>
+                        <div class="shrink-0 text-right">
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#70A7FF]">{{ $lead->last_intent ?? 'general' }}</p>
+                            <p class="mt-1 text-[10px] font-medium text-zinc-600">{{ optional($lead->last_seen_at)->diffForHumans() }}</p>
+                        </div>
+                    </a>
+                @empty
+                    <div class="p-6">
+                        <x-admin.empty-state title="Chưa có AI lead" />
+                    </div>
+                @endforelse
+            </div>
+        </x-admin.card>
+    </section>
+
     <section class="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <x-admin.card class="xl:col-span-2 !p-0 overflow-hidden">
             <div class="border-b border-zinc-900 px-6 py-5">

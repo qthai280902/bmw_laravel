@@ -1,6 +1,33 @@
 # Project State
 
-Current phase: Phase 16.3 completed.
+Current phase: Phase 17 completed.
+
+## Phase 17
+
+- Scope:
+  - Admin AI conversation history.
+  - Visitor/session/IP tracking.
+  - Customer linking from appointment/accessory order submits.
+  - Admin AI conversation UI.
+  - Admin CRM UI polish.
+- Implemented:
+  - `ai_chat_sessions` and `ai_chat_messages`.
+  - `appointments.ai_visitor_id`.
+  - `accessory_orders.ai_visitor_id`.
+  - `App\Services\Ai\AiConversationTracker`.
+  - `App\Http\Controllers\Admin\AiConversationController`.
+  - admin views under `resources/views/admin/ai-conversations`.
+  - visitor id generation in `resources/js/app.js`.
+  - admin dashboard AI stats widget.
+- Verification:
+  - Phase 17 focused tests pass, 8 tests / 43 assertions.
+  - related AI/admin tests pass, 34 tests / 310 assertions.
+  - `php artisan test` pass, 108 tests / 1128 assertions.
+  - `npm.cmd run build` pass.
+  - `php artisan route:list --path=admin/ai -v` pass.
+  - Browser QA pass for admin AI list/detail and public-to-admin linking.
+- Result:
+  - PASS CO GHI CHU.
 
 ## Phase 16.3
 

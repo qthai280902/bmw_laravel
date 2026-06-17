@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccessoryOrderController;
 use App\Http\Controllers\Admin\AccessoryOrderController as AdminAccessoryOrderController;
+use App\Http\Controllers\Admin\AiConversationController as AdminAiConversationController;
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -86,6 +87,11 @@ Route::middleware('auth')->group(function () {
         Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
         Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
         Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');
+        Route::middleware('verified')->group(function () {
+            Route::get('ai-conversations', [AdminAiConversationController::class, 'index'])->name('ai-conversations.index');
+            Route::get('ai-conversations/{session}', [AdminAiConversationController::class, 'show'])->name('ai-conversations.show');
+            Route::patch('ai-conversations/{session}/status', [AdminAiConversationController::class, 'updateStatus'])->name('ai-conversations.update-status');
+        });
         Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
         Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
         Route::resource('users', UserController::class)->only(['index']);

@@ -37,3 +37,14 @@
 - Automated AI tests use Laravel AI fakes.
 - Tests must not call Gemini live.
 - Tests may use fake placeholder key strings only.
+
+## Phase 17 AI Conversation CRM
+
+- AI conversation storage must not store provider keys.
+- AI message content is sanitized for obvious API key and secret assignment patterns before storage.
+- Message previews redact email and phone-like values.
+- Admin UI masks visitor ids and IP labels.
+- Original IP metadata is preserved for internal CRM audit, but IP is not treated as a unique customer identity.
+- Visitor-id linking is preferred for customer conversion.
+- IP fallback links only one recent unlinked session and marks confidence as `ip_recent`.
+- Admin AI conversation routes are protected by `auth`, `admin` and `verified` middleware.

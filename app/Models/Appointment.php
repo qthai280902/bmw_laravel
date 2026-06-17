@@ -24,6 +24,7 @@ class Appointment extends Model
         'notes',
         'meta_data',
         'showroom',
+        'ai_visitor_id',
     ];
 
     protected function casts(): array

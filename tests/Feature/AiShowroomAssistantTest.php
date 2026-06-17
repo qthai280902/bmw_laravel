@@ -156,7 +156,11 @@ class AiShowroomAssistantTest extends TestCase
 
     public function test_ai_endpoint_is_rate_limited(): void
     {
-        config(['ai.providers.gemini.key' => null]);
+        config([
+            'showroom_ai.gemini_keys.primary' => null,
+            'showroom_ai.gemini_keys.additional' => null,
+            'ai.providers.gemini.key' => null,
+        ]);
 
         for ($index = 0; $index < 12; $index++) {
             $this

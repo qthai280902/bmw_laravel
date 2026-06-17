@@ -12,6 +12,8 @@ window.aiAssistantWidget = (config) => ({
     input: '',
     loading: false,
     stateKey: 'bmw_ai_assistant_state_v4',
+    visitorKey: 'bmw_ai_visitor_id',
+    visitorId: null,
     legacyStateKeys: [
         'bmw_ai_assistant_state_v2',
         'bmw_ai_assistant_state_v3',
@@ -25,6 +27,8 @@ window.aiAssistantWidget = (config) => ({
 
     init() {
         this.clearLegacyState();
+        this.visitorId = this.ensureVisitorId();
+        this.attachVisitorIdToForms();
         this.restoreState();
         this.scrollMessages();
 
@@ -33,6 +37,8 @@ window.aiAssistantWidget = (config) => ({
                 this.scrollMessages();
             }
         });
+
+        document.addEventListener('submit', () => this.attachVisitorIdToForms(), true);
     },
 
     openPanel() {
@@ -87,7 +93,12 @@ window.aiAssistantWidget = (config) => ({
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': config.csrf,
                 },
-                body: JSON.stringify({ message }),
+                body: JSON.stringify({
+                    message,
+                    visitor_id: this.ensureVisitorId(),
+                    page_url: window.location.href,
+                    referrer: document.referrer || null,
+                }),
             });
 
             const payload = await response.json().catch(() => ({}));
@@ -142,6 +153,54 @@ window.aiAssistantWidget = (config) => ({
         }
 
         return `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    },
+
+    ensureVisitorId() {
+        try {
+            const stored = localStorage.getItem(this.visitorKey);
+
+            if (this.isValidVisitorId(stored)) {
+                return stored;
+            }
+
+            const generated = window.crypto?.randomUUID
+                ? window.crypto.randomUUID()
+                : `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+            localStorage.setItem(this.visitorKey, generated);
+
+            return generated;
+        } catch (error) {
+            return `volatile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        }
+    },
+
+    isValidVisitorId(value) {
+        return typeof value === 'string'
+            && value.length > 0
+            && value.length <= 80
+            && /^[A-Za-z0-9._:-]+$/.test(value);
+    },
+
+    attachVisitorIdToForms() {
+        const visitorId = this.ensureVisitorId();
+        const forms = document.querySelectorAll(
+            'form[action*="/booking"], form[action*="/accessories/"][action*="/order"]',
+        );
+
+        forms.forEach((form) => {
+            let input = form.querySelector('input[name="ai_visitor_id"]');
+
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ai_visitor_id';
+                input.setAttribute('data-ai-visitor-field', 'true');
+                form.appendChild(input);
+            }
+
+            input.value = visitorId;
+        });
     },
 
     formatAssistantMessage(text, suggestions = []) {

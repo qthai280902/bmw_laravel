@@ -102,3 +102,27 @@ Excluded private context:
   - `x5`.
   - `S1000RR`.
   - `BMW S 1000 RR`.
+
+## Phase 17 Conversation Tracking
+
+- CRM tracking service: `App\Services\Ai\AiConversationTracker`.
+- Session model: `App\Models\AiChatSession`.
+- Message model: `App\Models\AiChatMessage`.
+- Tables:
+  - `ai_chat_sessions`.
+  - `ai_chat_messages`.
+- The AI endpoint still responds through `POST /ai/showroom-assistant`.
+- Optional request metadata:
+  - `visitor_id`.
+  - `page_url`.
+  - `referrer`.
+- The endpoint logs one user message and one assistant message after the assistant response is produced.
+- Logging failure is caught and logged with safe metadata only, so the AI response contract is not broken.
+- `bmw_ai_visitor_id` is generated in public localStorage and submitted with AI requests.
+- Public appointment/accessory forms receive hidden `ai_visitor_id` fields from the widget runtime.
+- Secret-like values are redacted from stored chat content.
+- Email/phone-like values are redacted from previews.
+- Customer linking:
+  - visitor id is primary.
+  - IP recent fallback links only one recent unlinked session.
+  - IP fallback is marked as `ip_recent`.

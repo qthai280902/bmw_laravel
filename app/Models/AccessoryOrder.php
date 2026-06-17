@@ -21,6 +21,7 @@ class AccessoryOrder extends Model
         'customer_phone',
         'customer_address',
         'customer_email',
+        'ai_visitor_id',
         'quantity',
         'notes',
         'status',

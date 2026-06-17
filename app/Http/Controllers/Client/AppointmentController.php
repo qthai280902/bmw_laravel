@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Product;
+use App\Services\Ai\AiConversationTracker;
 use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
@@ -42,7 +43,7 @@ class AppointmentController extends Controller
     /**
      * Lưu lịch hẹn mới.
      */
-    public function store(StoreAppointmentRequest $request)
+    public function store(StoreAppointmentRequest $request, AiConversationTracker $tracker)
     {
         $data = $request->validated();
 
@@ -72,7 +73,13 @@ class AppointmentController extends Controller
         // Xóa các trường không thuộc bảng appointments
         unset($data['showroom'], $data['customer_car_model'], $data['customer_car_condition']);
 
-        Appointment::create($data);
+        $appointment = Appointment::create($data);
+
+        $tracker->linkCustomerTouchpoint($request, 'appointment', $appointment->id, $data['ai_visitor_id'] ?? null, [
+            'name' => $appointment->guest_name ?? Auth::user()?->name,
+            'email' => $appointment->guest_email ?? Auth::user()?->email,
+            'phone' => $appointment->guest_phone,
+        ]);
 
         return redirect()->route('appointments.success')->with('success', 'Bạn đã đặt lịch hẹn thành công. Chúng tôi sẽ sớm liên hệ xác nhận.');
     }
