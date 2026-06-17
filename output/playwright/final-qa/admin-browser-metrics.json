@@ -1,0 +1,222 @@
+[
+  {
+    "label": "dashboard",
+    "urlPath": "/dashboard",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 1,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/dashboard",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ DASHBOARD XEM WEB",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "products",
+    "urlPath": "/admin/products",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 12,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/products",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ KHO SẢN PHẨM XEM ",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "products-create",
+    "urlPath": "/admin/products/create",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 2,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/products/create",
+      "tableCount": 0,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ KHO SẢN PHẨM XEM ",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "categories",
+    "urlPath": "/admin/categories",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 9,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/categories",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ DÒNG XE XEM WEBSI",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "appointments",
+    "urlPath": "/admin/appointments",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 4,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/appointments",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ LỊCH HẸN XEM WEBS",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "accessory-orders",
+    "urlPath": "/admin/accessory-orders",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 2,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/accessory-orders",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ ĐƠN PHỤ KIỆN XEM ",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "articles",
+    "urlPath": "/admin/articles",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 14,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/articles",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ BÀI VIẾT XEM WEBS",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "site-settings",
+    "urlPath": "/admin/site-settings",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 2,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/site-settings",
+      "tableCount": 0,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ THIẾT LẬP GIAO DI",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "ai-conversations",
+    "urlPath": "/admin/ai-conversations",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 2,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/ai-conversations",
+      "tableCount": 1,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ LỊCH SỬ TRỢ LÝ AI",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "ai-conversation-detail",
+    "urlPath": "/admin/ai-conversations/2",
+    "metrics": {
+      "adminIndicators": [
+        true,
+        true
+      ],
+      "brokenImages": [],
+      "formCount": 2,
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "isLoginPage": false,
+      "modalContract": true,
+      "nativeConfirmReferences": 0,
+      "path": "/admin/ai-conversations/2",
+      "tableCount": 0,
+      "textHint": "BMW ADMIN SHOWROOM CRM ĐIỀU HÀNH TỔNG QUAN CRM LỊCH HẸN ĐƠN PHỤ KIỆN LỊCH SỬ TRỢ LÝ AI SHOWROOM KHO SẢN PHẨM DÒNG XE THIẾT LẬP GIAO DIỆN NỘI DUNG BÀI VIẾT TÀI KHOẢN NHÂN SỰ KHÁCH HÀNG A ADMIN BMW SHOWROOM admin@bmw.com ĐĂNG XUẤT CỔNG QUẢN TRỊ LỊCH SỬ TRỢ LÝ AI",
+      "title": "Admin - Laravel"
+    },
+    "consoleErrors": []
+  }
+]

@@ -1,0 +1,1309 @@
+[
+  {
+    "label": "home",
+    "urlPath": "/",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 13,
+      "javascriptLinkCount": 0,
+      "path": "/",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM BMW SHOWROOM VIETNAM KHÁM PHÁ BMW THEO NHỊP SHOWROOM. Từ catalog, landing page sản phẩm, so sánh xe đến form tư vấn, m",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "catalog",
+    "urlPath": "/catalog",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/catalog",
+          "controls": 7,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 14,
+      "javascriptLinkCount": 0,
+      "path": "/catalog",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM MODEL RANGE BMW SHOWROOM Khám phá danh mục ô tô và Motorrad với bộ lọc giữ nguyên logic sản phẩm hiện có. COMPARISON 0",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "product-330i",
+    "urlPath": "/catalog/bmw-330i-sedan",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 15,
+      "javascriptLinkCount": 0,
+      "path": "/catalog/bmw-330i-sedan",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM VEHICLE DETAIL BMW 330I SEDAN SEDAN 2,499,000,000 VNĐ ĐĂNG KÝ LÁI THỬ NHẬN BÁO GIÁ THÊM SO SÁNH TỔNG QUAN ĐIỂM NỔI BẬT",
+      "title": "BMW 330i Sedan - BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "booking-consult",
+    "urlPath": "/booking?type=consult",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/booking",
+          "controls": 9,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/booking?type=consult",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM BMW ADVISOR TƯ VẤN TRỰC TIẾP Gửi thông tin để showroom chuẩn bị mẫu xe, cấu hình hoặc lịch chăm sóc phù hợp trước khi ",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-1-2",
+    "urlPath": "/compare?ids=1,2",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 4,
+      "javascriptLinkCount": 0,
+      "path": "/compare?ids=1,2",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm d",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "home",
+    "urlPath": "/",
+    "viewportName": "tablet",
+    "size": {
+      "width": 768,
+      "height": 1024
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 753,
+      "brokenImages": [],
+      "documentWidth": 753,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 13,
+      "javascriptLinkCount": 0,
+      "path": "/",
+      "textHint": "BMW SHOWROOM BMW SHOWROOM VIETNAM KHÁM PHÁ BMW THEO NHỊP SHOWROOM. Từ catalog, landing page sản phẩm, so sánh xe đến form tư vấn, mọi điểm chạm public được tổ chức lại để khách hàng đi từ cảm hứng đến lịch hẹn rõ ràng hơ",
+      "title": "BMW Showroom",
+      "viewportHeight": 1024,
+      "viewportWidth": 768
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "catalog",
+    "urlPath": "/catalog",
+    "viewportName": "tablet",
+    "size": {
+      "width": 768,
+      "height": 1024
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 753,
+      "brokenImages": [],
+      "documentWidth": 753,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/catalog",
+          "controls": 7,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 14,
+      "javascriptLinkCount": 0,
+      "path": "/catalog",
+      "textHint": "BMW SHOWROOM MODEL RANGE BMW SHOWROOM Khám phá danh mục ô tô và Motorrad với bộ lọc giữ nguyên logic sản phẩm hiện có. COMPARISON 0/4 MẪU XE SO SÁNH BỘ LỌC TÌM MẪU XE LOẠI SẢN PHẨM Ô TÔ XE MÁY PHỤ KIỆN XÓA LỌC LOẠI PHÂN ",
+      "title": "BMW Showroom",
+      "viewportHeight": 1024,
+      "viewportWidth": 768
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "product-330i",
+    "urlPath": "/catalog/bmw-330i-sedan",
+    "viewportName": "tablet",
+    "size": {
+      "width": 768,
+      "height": 1024
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 753,
+      "brokenImages": [],
+      "documentWidth": 753,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 15,
+      "javascriptLinkCount": 0,
+      "path": "/catalog/bmw-330i-sedan",
+      "textHint": "BMW SHOWROOM VEHICLE DETAIL BMW 330I SEDAN SEDAN 2,499,000,000 VNĐ ĐĂNG KÝ LÁI THỬ NHẬN BÁO GIÁ THÊM SO SÁNH TỔNG QUAN ĐIỂM NỔI BẬT THIẾT KẾ CÔNG NGHỆ GALLERY THÔNG TIN ĐẶT LỊCH TỔNG QUAN MỘT CẤU HÌNH BMW ĐƯỢC ĐẶT Ở TRUN",
+      "title": "BMW 330i Sedan - BMW Showroom",
+      "viewportHeight": 1024,
+      "viewportWidth": 768
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "booking-consult",
+    "urlPath": "/booking?type=consult",
+    "viewportName": "tablet",
+    "size": {
+      "width": 768,
+      "height": 1024
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 753,
+      "brokenImages": [],
+      "documentWidth": 753,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/booking",
+          "controls": 9,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/booking?type=consult",
+      "textHint": "BMW SHOWROOM BMW ADVISOR TƯ VẤN TRỰC TIẾP Gửi thông tin để showroom chuẩn bị mẫu xe, cấu hình hoặc lịch chăm sóc phù hợp trước khi cố vấn liên hệ xác nhận. RESPONSE 24H SHOWROOM BMW SUPPORT 1:1 TRẢI NGHIỆM SHOWROOM TƯ VẤ",
+      "title": "BMW Showroom",
+      "viewportHeight": 1024,
+      "viewportWidth": 768
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-1-2",
+    "urlPath": "/compare?ids=1,2",
+    "viewportName": "tablet",
+    "size": {
+      "width": 768,
+      "height": 1024
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 753,
+      "brokenImages": [],
+      "documentWidth": 753,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 4,
+      "javascriptLinkCount": 0,
+      "path": "/compare?ids=1,2",
+      "textHint": "BMW SHOWROOM COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm dùng dữ liệu nội bộ và fallback an toàn khi thiếu media. QUAY LẠI CATALOG SEDAN BMW 330I S",
+      "title": "BMW Showroom",
+      "viewportHeight": 1024,
+      "viewportWidth": 768
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "home",
+    "urlPath": "/",
+    "viewportName": "mobile",
+    "size": {
+      "width": 390,
+      "height": 900
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 375,
+      "brokenImages": [],
+      "documentWidth": 375,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 13,
+      "javascriptLinkCount": 0,
+      "path": "/",
+      "textHint": "BMW SHOWROOM VIETNAM KHÁM PHÁ BMW THEO NHỊP SHOWROOM. Từ catalog, landing page sản phẩm, so sánh xe đến form tư vấn, mọi điểm chạm public được tổ chức lại để khách hàng đi từ cảm hứng đến lịch hẹn rõ ràng hơn. KHÁM PHÁ Ô",
+      "title": "BMW Showroom",
+      "viewportHeight": 900,
+      "viewportWidth": 390
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "catalog",
+    "urlPath": "/catalog",
+    "viewportName": "mobile",
+    "size": {
+      "width": 390,
+      "height": 900
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 375,
+      "brokenImages": [],
+      "documentWidth": 375,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/catalog",
+          "controls": 7,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 14,
+      "javascriptLinkCount": 0,
+      "path": "/catalog",
+      "textHint": "MODEL RANGE BMW SHOWROOM Khám phá danh mục ô tô và Motorrad với bộ lọc giữ nguyên logic sản phẩm hiện có. COMPARISON 0/4 MẪU XE SO SÁNH BỘ LỌC TÌM MẪU XE LOẠI SẢN PHẨM Ô TÔ XE MÁY PHỤ KIỆN XÓA LỌC LOẠI PHÂN KHÚC Tất cả B",
+      "title": "BMW Showroom",
+      "viewportHeight": 900,
+      "viewportWidth": 390
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "product-330i",
+    "urlPath": "/catalog/bmw-330i-sedan",
+    "viewportName": "mobile",
+    "size": {
+      "width": 390,
+      "height": 900
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 375,
+      "brokenImages": [],
+      "documentWidth": 375,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 15,
+      "javascriptLinkCount": 0,
+      "path": "/catalog/bmw-330i-sedan",
+      "textHint": "VEHICLE DETAIL BMW 330I SEDAN SEDAN 2,499,000,000 VNĐ ĐĂNG KÝ LÁI THỬ NHẬN BÁO GIÁ THÊM SO SÁNH TỔNG QUAN ĐIỂM NỔI BẬT THIẾT KẾ CÔNG NGHỆ GALLERY THÔNG TIN ĐẶT LỊCH TỔNG QUAN MỘT CẤU HÌNH BMW ĐƯỢC ĐẶT Ở TRUNG TÂM TRẢI NG",
+      "title": "BMW 330i Sedan - BMW Showroom",
+      "viewportHeight": 900,
+      "viewportWidth": 390
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "booking-consult",
+    "urlPath": "/booking?type=consult",
+    "viewportName": "mobile",
+    "size": {
+      "width": 390,
+      "height": 900
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 375,
+      "brokenImages": [],
+      "documentWidth": 375,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/booking",
+          "controls": 9,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/booking?type=consult",
+      "textHint": "BMW ADVISOR TƯ VẤN TRỰC TIẾP Gửi thông tin để showroom chuẩn bị mẫu xe, cấu hình hoặc lịch chăm sóc phù hợp trước khi cố vấn liên hệ xác nhận. RESPONSE 24H SHOWROOM BMW SUPPORT 1:1 TRẢI NGHIỆM SHOWROOM TƯ VẤN TRỰC TIẾP C",
+      "title": "BMW Showroom",
+      "viewportHeight": 900,
+      "viewportWidth": 390
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-1-2",
+    "urlPath": "/compare?ids=1,2",
+    "viewportName": "mobile",
+    "size": {
+      "width": 390,
+      "height": 900
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 375,
+      "brokenImages": [],
+      "documentWidth": 375,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 4,
+      "javascriptLinkCount": 0,
+      "path": "/compare?ids=1,2",
+      "textHint": "COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm dùng dữ liệu nội bộ và fallback an toàn khi thiếu media. QUAY LẠI CATALOG SEDAN BMW 330I SEDAN GIÁ NIÊM",
+      "title": "BMW Showroom",
+      "viewportHeight": 900,
+      "viewportWidth": 390
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "catalog-car",
+    "urlPath": "/catalog?type=car",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/catalog",
+          "controls": 7,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 12,
+      "javascriptLinkCount": 0,
+      "path": "/catalog?type=car",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM MODEL RANGE BMW SHOWROOM Khám phá danh mục ô tô và Motorrad với bộ lọc giữ nguyên logic sản phẩm hiện có. COMPARISON 0",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "catalog-motorbike",
+    "urlPath": "/catalog?type=motorbike",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/catalog",
+          "controls": 7,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 7,
+      "javascriptLinkCount": 0,
+      "path": "/catalog?type=motorbike",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM MODEL RANGE BMW SHOWROOM Khám phá danh mục ô tô và Motorrad với bộ lọc giữ nguyên logic sản phẩm hiện có. COMPARISON 0",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "catalog-accessory",
+    "urlPath": "/catalog?type=accessory",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/accessories",
+          "controls": 5,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 12,
+      "javascriptLinkCount": 0,
+      "path": "/catalog?type=accessory",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM ACCESSORIES STUDIO PHỤ KIỆN CHÍNH HÃNG Khám phá phụ kiện chính hãng, tư vấn tương thích và lắp đặt cho từng dòng BMW. ",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "product-530i",
+    "urlPath": "/catalog/bmw-530i-sedan",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 14,
+      "javascriptLinkCount": 0,
+      "path": "/catalog/bmw-530i-sedan",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM VEHICLE DETAIL BMW 530I SEDAN SEDAN 3,199,000,000 VNĐ ĐĂNG KÝ LÁI THỬ NHẬN BÁO GIÁ THÊM SO SÁNH TỔNG QUAN ĐIỂM NỔI BẬT",
+      "title": "BMW 530i Sedan - BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "product-s1000rr",
+    "urlPath": "/catalog/bmw-s1000rr",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 14,
+      "javascriptLinkCount": 0,
+      "path": "/catalog/bmw-s1000rr",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM VEHICLE DETAIL BMW S1000RR MOTORRAD 959,000,000 VNĐ ĐĂNG KÝ LÁI THỬ NHẬN BÁO GIÁ THÊM SO SÁNH TỔNG QUAN ĐIỂM NỔI BẬT T",
+      "title": "BMW S1000RR - BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "accessories",
+    "urlPath": "/accessories",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/accessories",
+          "controls": 5,
+          "method": "get"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 12,
+      "javascriptLinkCount": 0,
+      "path": "/accessories",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM ACCESSORIES STUDIO PHỤ KIỆN CHÍNH HÃNG Khám phá phụ kiện chính hãng, tư vấn tương thích và lắp đặt cho từng dòng BMW. ",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "articles",
+    "urlPath": "/tim-hieu-them",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 11,
+      "javascriptLinkCount": 0,
+      "path": "/tim-hieu-them",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM BMW STORIES TÌM HIỂU THÊM Cập nhật ưu đãi, sự kiện showroom, chương trình bán hàng và các trải nghiệm BMW được biên tậ",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "article-detail",
+    "urlPath": "/tim-hieu-them/uu-dai-mua-he-bmw-2026",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/tim-hieu-them/uu-dai-mua-he-bmw-2026",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM QUAY LẠI DANH SÁCH ƯU ĐÃI CHO KHÁCH HÀNG ƯU ĐÃI MÙA HÈ BMW 2026 14/06/2026 13:59 BY ADMIN BMW SHOWROOM Chương trình ưu",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "booking-test-drive",
+    "urlPath": "/booking?type=test_drive&product_id=1",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/booking",
+          "controls": 9,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/booking?type=test_drive&product_id=1",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM BMW ADVISOR LÁI THỬ XE Gửi thông tin để showroom chuẩn bị mẫu xe, cấu hình hoặc lịch chăm sóc phù hợp trước khi cố vấn",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "booking-quote",
+    "urlPath": "/booking?type=quote&product_id=1",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/booking",
+          "controls": 9,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/booking?type=quote&product_id=1",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM BMW ADVISOR YÊU CẦU BÁO GIÁ Gửi thông tin để showroom chuẩn bị mẫu xe, cấu hình hoặc lịch chăm sóc phù hợp trước khi c",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-duplicate",
+    "urlPath": "/compare?ids=1,1,2",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 4,
+      "javascriptLinkCount": 0,
+      "path": "/compare?ids=1,1,2",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm d",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-invalid",
+    "urlPath": "/compare?ids=abc,999999",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 2,
+      "javascriptLinkCount": 0,
+      "path": "/compare?ids=abc,999999",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm d",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-empty",
+    "urlPath": "/compare",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 2,
+      "javascriptLinkCount": 0,
+      "path": "/compare",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm d",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  },
+  {
+    "label": "compare-accessory",
+    "urlPath": "/compare?ids=1,16",
+    "viewportName": "desktop",
+    "size": {
+      "width": 1366,
+      "height": 768
+    },
+    "metrics": {
+      "aiWidget": true,
+      "bodyWidth": 1351,
+      "brokenImages": [],
+      "documentWidth": 1351,
+      "forms": [
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 1,
+          "method": "post"
+        },
+        {
+          "action": "http://127.0.0.1:8000/logout",
+          "controls": 2,
+          "method": "post"
+        },
+        {
+          "action": "",
+          "controls": 2,
+          "method": "get"
+        }
+      ],
+      "hasHorizontalOverflow": false,
+      "hasStackTraceHint": false,
+      "hashLinkCount": 0,
+      "imageCount": 3,
+      "javascriptLinkCount": 0,
+      "path": "/compare?ids=1,16",
+      "textHint": "BMW SHOWROOM Ô TÔ XE MÁY PHỤ KIỆN DỊCH VỤ TRẢI NGHIỆM TÌM HIỂU THÊM SO SÁNH TƯ VẤN ADMIN BMW SHOWROOM COMPARISON STUDIO BẢN ĐỐI CHIẾU THÔNG SỐ So sánh cấu hình, mức giá và thông số đang lưu trong showroom. Ảnh sản phẩm d",
+      "title": "BMW Showroom",
+      "viewportHeight": 768,
+      "viewportWidth": 1366
+    },
+    "consoleErrors": []
+  }
+]

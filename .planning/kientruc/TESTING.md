@@ -19,6 +19,20 @@
 
 ## Trang thai hien tai
 
+- CI Workflow Fix (Post Phase 17) on 2026-06-17:
+  - PHP version upgraded to 8.4 in GitHub Actions to match composer requirements stably.
+  - Node.js setup configured to version 24.
+  - `composer validate`: pass.
+  - `npm.cmd ci`: pass.
+  - `php artisan optimize:clear`: pass.
+  - `php artisan config:clear`: pass.
+  - `php artisan cache:clear`: pass.
+  - `php artisan view:clear`: pass.
+  - `php artisan view:cache`: pass.
+  - `vendor\bin\pint --test`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test`: pass, 108 tests / 1128 assertions.
+  - result: PASS.
 - Phase 17 on 2026-06-17 +07:00:
   - focused Phase 17 tests: pass, 8 tests / 43 assertions.
   - related AI/admin tests: pass, 34 tests / 310 assertions.

@@ -29,6 +29,27 @@ Current phase: Phase 17 completed.
 - Result:
   - PASS CO GHI CHU.
 
+## CI Workflow Fix (Post Phase 17)
+
+- Test time: 2026-06-17 +07:00.
+- Scope:
+  - Fix GitHub Actions `Verify & Test` workflow failing on `composer install`.
+  - Align CI PHP version and Node.js version with local development.
+- Implemented:
+  - Upgraded `setup-php` version to 8.4 to safely support composer requirements.
+  - Added Node.js version 24 setup.
+  - Replaced `npm install` with `npm ci`.
+  - Added SQLite test DB creation step.
+  - Added test environment overrides in `verify.yml` environment block.
+- Verification:
+  - `composer validate`: pass.
+  - `npm.cmd ci`: pass.
+  - `php artisan test`: pass.
+  - `vendor/bin/pint --test`: pass.
+  - `npm.cmd run build`: pass.
+- Result:
+  - CI Workflow updated and ready for GitHub push.
+
 ## Phase 16.3
 
 - Test time: 2026-06-17 +07:00.
