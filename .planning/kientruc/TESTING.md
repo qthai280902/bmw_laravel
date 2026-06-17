@@ -19,6 +19,17 @@
 
 ## Trang thai hien tai
 
+- Docker Completion on 2026-06-17 +07:00:
+  - Docker source files and documentation updated.
+  - `vendor/` and `node_modules/` were not cleaned, moved, deleted, or modified.
+  - `.env.docker.example` uses placeholder values only.
+  - `composer validate --no-check-publish`: pass.
+  - `vendor\bin\pint --test`: pass.
+  - `php artisan view:cache`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test --compact`: pass, 108 tests / 1128 assertions.
+  - Docker CLI/Compose unavailable locally, so `docker compose config`, `docker compose build`, container boot, and containerized tests were not run.
+  - result: app regression PASS; Docker runtime CHUA PASS until verified on a Docker-capable host.
 - CI Workflow Fix (Post Phase 17) on 2026-06-17:
   - PHP version upgraded to 8.4 in GitHub Actions to match composer requirements stably.
   - Node.js setup configured to version 24.

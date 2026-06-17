@@ -2,6 +2,37 @@
 
 Current phase: Phase 17 completed.
 
+## Docker Completion (Post Phase 17)
+
+- Test time: 2026-06-17 +07:00.
+- Scope:
+  - Complete local Docker development setup.
+  - Keep local secrets and dependencies out of source cleanup.
+  - Document Docker usage and cleanup decisions.
+- Implemented:
+  - `Dockerfile` now uses PHP 8.4 FPM with Composer 2 and Node.js 24.
+  - `docker-compose.yml` defines `app`, `nginx`, and `mysql` services.
+  - Added `docker/php/php.ini`.
+  - Added `docker/nginx/default.conf`.
+  - Added `.env.docker.example`.
+  - Updated `.dockerignore`.
+  - Updated README Docker instructions.
+  - Added `.planning/kientruc/DOCKER.md`.
+- Cleanup:
+  - `vendor/` was not cleaned, moved, deleted, or modified.
+  - `node_modules/` was not cleaned, moved, deleted, or modified.
+  - No tracked file was moved into `.no/`.
+- Verification:
+  - `composer validate --no-check-publish`: pass.
+  - `vendor\bin\pint --test`: pass.
+  - `php artisan view:cache`: pass.
+  - `npm.cmd run build`: pass.
+  - `php artisan test --compact`: pass, 108 tests / 1128 assertions.
+  - Docker CLI/Compose unavailable locally, so Docker runtime verification is pending.
+- Result:
+  - App regression PASS.
+  - Docker runtime CHUA PASS until `docker compose config/build/up` and container tests pass on a Docker-capable host.
+
 ## Phase 17
 
 - Scope:
@@ -62,7 +93,7 @@ Current phase: Phase 17 completed.
   - added `GEMINI_API_KEYS`.
   - added `GEMINI_KEY_COOLDOWN_SECONDS`, default 120.
   - added `GEMINI_KEY_ROTATION`, default `round_robin`.
-  - `.env.example` uses placeholders only and no longer contains an `APP_KEY=base64:` sample value.
+  - `.env.example` uses placeholders only and no longer contains a sample encoded app key value.
 - Key pool:
   - class: `App\Services\Ai\GeminiKeyPool`.
   - combines primary and additional Gemini keys.

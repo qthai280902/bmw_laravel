@@ -1,55 +1,80 @@
+name: bmw_laravel
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bmw_app
-    ports:
-      - "8000:80"
-    environment:
-      - APP_ENV=local
-      - APP_DEBUG=true
-      - DB_CONNECTION=mysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=bmw_showroom
-      - DB_USERNAME=sail
-      - DB_PASSWORD=password
+    image: bmw_laravel_app:local
+    container_name: bmw_laravel_app
+    working_dir: /var/www/html
     volumes:
-      - .:/var/www/html
+      - ./:/var/www/html
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      DB_CONNECTION: ${DB_CONNECTION:-mysql}
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_DATABASE: ${DB_DATABASE:-vehicle_ecommerce}
+      DB_USERNAME: ${DB_USERNAME:-bmw}
+      DB_PASSWORD: ${DB_PASSWORD:-bmw_password}
+      CACHE_STORE: ${CACHE_STORE:-file}
+      SESSION_DRIVER: ${SESSION_DRIVER:-file}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}
+      MAIL_MAILER: ${MAIL_MAILER:-log}
+      AI_ASSISTANT_ENABLED: ${AI_ASSISTANT_ENABLED:-false}
+      AI_ASSISTANT_PROVIDER: ${AI_ASSISTANT_PROVIDER:-gemini}
+      AI_ASSISTANT_MODEL: ${AI_ASSISTANT_MODEL:-gemini-2.5-flash}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_API_KEYS: ${GEMINI_API_KEYS:-}
+      GEMINI_KEY_COOLDOWN_SECONDS: ${GEMINI_KEY_COOLDOWN_SECONDS:-120}
+      GEMINI_KEY_ROTATION: ${GEMINI_KEY_ROTATION:-round_robin}
     depends_on:
-      - db
+      mysql:
+        condition: service_healthy
     networks:
-      - sail
+      - bmw
 
-  db:
-    image: mysql:8.0
-    container_name: bmw_db
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: bmw_laravel_nginx
     ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: bmw_showroom
-      MYSQL_USER: sail
-      MYSQL_PASSWORD: password
-      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+      - "${APP_PORT:-8080}:80"
     volumes:
-      - sail-mysql:/var/lib/mysql
+      - ./:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
     networks:
-      - sail
+      - bmw
+
+  mysql:
+    image: mysql:8.4
+    container_name: bmw_laravel_mysql
+    ports:
+      - "${FORWARD_DB_PORT:-3307}:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-vehicle_ecommerce}
+      MYSQL_USER: ${DB_USERNAME:-bmw}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-bmw_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+    volumes:
+      - bmw-mysql-data:/var/lib/mysql
     healthcheck:
-      test:
-        - CMD
-        - mysqladmin
-        - ping
-        - "-p${MYSQL_ROOT_PASSWORD}"
-      retries: 3
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
       timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - bmw
 
 networks:
-  sail:
+  bmw:
     driver: bridge
 
 volumes:
-  sail-mysql:
+  bmw-mysql-data:
     driver: local

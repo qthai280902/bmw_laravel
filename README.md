@@ -5,7 +5,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20.svg?style=for-the-badge&logo=laravel" alt="Laravel 12" />
-    <img src="https://img.shields.io/badge/PHP-8.2+-777BB4.svg?style=for-the-badge&logo=php" alt="PHP 8.2" />
+    <img src="https://img.shields.io/badge/PHP-8.4+-777BB4.svg?style=for-the-badge&logo=php" alt="PHP 8.4" />
     <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC.svg?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS" />
     <img src="https://img.shields.io/badge/Alpine.js-8BC0D0.svg?style=for-the-badge&logo=alpine.js" alt="Alpine.js" />
     <img src="https://img.shields.io/badge/MySQL-4479A1.svg?style=for-the-badge&logo=mysql" alt="MySQL" />
@@ -96,6 +96,75 @@ Dự án tuân thủ nghiêm ngặt mô hình **Service/Action Pattern**:
 Sau khi chạy lệnh `seed` thành công, bạn có thể đăng nhập bằng các tài khoản sau:
 - **Admin:** `admin@example.com` / `password`
 - **Khách hàng:** `user@example.com` / `password`
+
+## Docker local development
+
+This project includes a local Docker setup for Laravel development. It uses PHP 8.4 FPM, Nginx, MySQL 8.4, Composer, and Node.js 24 inside the app container.
+
+### Requirements
+
+- Docker Desktop with Docker Compose.
+
+### Setup
+
+Copy the Docker environment template:
+
+```powershell
+Copy-Item .env.docker.example .env
+```
+
+On macOS/Linux:
+
+```bash
+cp .env.docker.example .env
+```
+
+Build and start the containers:
+
+```powershell
+docker compose build
+docker compose up -d
+```
+
+Install dependencies and prepare the app:
+
+```powershell
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+docker compose exec app npm ci
+docker compose exec app npm run build
+```
+
+Open the app at:
+
+```text
+http://localhost:8080
+```
+
+Run tests inside the container:
+
+```powershell
+docker compose exec app php artisan test
+```
+
+Stop containers:
+
+```powershell
+docker compose down
+```
+
+Reset the Docker database volume when you intentionally want a fresh database:
+
+```powershell
+docker compose down -v
+```
+
+Warning: `docker compose down -v` removes the MySQL Docker volume.
+
+### AI keys
+
+AI is disabled by default in `.env.docker.example`. To test live Gemini responses, put local keys in your copied `.env` only. Do not commit real API keys.
 
 ## 📄 Giấy Phép (License)
 Dự án được xây dựng với mục đích học tập, nghiên cứu kiến trúc hệ thống E-commerce & CRM. Các thương hiệu, hình ảnh BMW thuộc bản quyền của tập đoàn BMW.
