@@ -77,7 +77,7 @@
                 <div class="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
                     <div class="max-w-5xl">
                         <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $sectionLabel }}</p>
-                        <h1 class="text-5xl font-black uppercase leading-none tracking-normal text-white sm:text-7xl lg:text-8xl">
+                        <h1 class="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
                             {{ $vehicle->name }}
                         </h1>
                         <div class="mt-8 grid grid-cols-1 gap-6 border-l-2 border-[#1C69D4] pl-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
@@ -106,57 +106,124 @@
             </div>
         </section>
 
-        <nav class="sticky top-20 z-40 border-y border-zinc-800 bg-zinc-950/95 backdrop-blur">
-            <div class="mx-auto flex max-w-7xl gap-7 overflow-x-auto px-4 py-5 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 sm:px-6 lg:px-8">
-                <a href="#overview" class="shrink-0 transition-colors hover:text-white">Tổng quan</a>
-                <a href="#highlights" class="shrink-0 transition-colors hover:text-white">Điểm nổi bật</a>
-                <a href="#design" class="shrink-0 transition-colors hover:text-white">{{ $isAccessory ? 'Vật liệu' : 'Thiết kế' }}</a>
-                <a href="#technology" class="shrink-0 transition-colors hover:text-white">{{ $isAccessory ? 'Tương thích' : 'Công nghệ' }}</a>
-                <a href="#gallery" class="shrink-0 transition-colors hover:text-white">Gallery</a>
-                <a href="#technical-data" class="shrink-0 transition-colors hover:text-white">Thông tin</a>
-                <a href="#booking" class="shrink-0 text-[#1C69D4] transition-colors hover:text-white">{{ $isAccessory ? 'Tư vấn' : 'Đặt lịch' }}</a>
+        <nav
+            x-data="{
+                activeSection: 'overview',
+                sections: ['overview', 'highlights', 'design', 'technology', 'gallery', 'technical-data', 'booking'],
+                init() {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                this.activeSection = entry.target.id;
+                            }
+                        });
+                    }, { rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+
+                    this.sections.forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (el) observer.observe(el);
+                    });
+
+                    window.addEventListener('scroll', () => {
+                        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60) {
+                            this.activeSection = 'booking';
+                        }
+                    }, { passive: true });
+                },
+                scrollTo(id) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            }"
+            class="sticky top-20 z-40 border-y border-zinc-800 bg-zinc-950/95 backdrop-blur"
+        >
+            <div class="scrollbar-none mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 text-[10px] font-black uppercase tracking-[0.22em] sm:gap-4 sm:px-6 lg:px-8">
+                <a
+                    href="#overview"
+                    @click.prevent="scrollTo('overview')"
+                    :class="activeSection === 'overview' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >Tổng quan</a>
+                <a
+                    href="#highlights"
+                    @click.prevent="scrollTo('highlights')"
+                    :class="activeSection === 'highlights' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >Điểm nổi bật</a>
+                <a
+                    href="#design"
+                    @click.prevent="scrollTo('design')"
+                    :class="activeSection === 'design' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >{{ $isAccessory ? 'Vật liệu' : 'Thiết kế' }}</a>
+                <a
+                    href="#technology"
+                    @click.prevent="scrollTo('technology')"
+                    :class="activeSection === 'technology' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >{{ $isAccessory ? 'Tương thích' : 'Công nghệ' }}</a>
+                <a
+                    href="#gallery"
+                    @click.prevent="scrollTo('gallery')"
+                    :class="activeSection === 'gallery' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >Gallery</a>
+                <a
+                    href="#technical-data"
+                    @click.prevent="scrollTo('technical-data')"
+                    :class="activeSection === 'technical-data' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >Thông tin</a>
+                <a
+                    href="#booking"
+                    @click.prevent="scrollTo('booking')"
+                    :class="activeSection === 'booking' ? 'border-b-2 border-[#1C69D4] bg-blue-950/30 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent'"
+                    class="shrink-0 px-3 py-5 transition-all"
+                >{{ $isAccessory ? 'Tư vấn' : 'Đặt lịch' }}</a>
             </div>
         </nav>
 
-        <section id="overview" class="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+        <section id="overview" class="scroll-mt-32 mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
             <div>
                 <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Tổng quan</p>
-                <h2 class="text-4xl font-black uppercase leading-tight tracking-normal text-white md:text-6xl">
+                <h2 class="text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">
                     {{ $overviewTitle }}
                 </h2>
             </div>
             <div class="space-y-10">
-                <p class="text-lg font-medium leading-8 text-zinc-300">
+                <p class="text-lg font-medium leading-relaxed text-zinc-300">
                     {{ filled($vehicle->description) ? $vehicle->description : ($isAccessory ? 'Liên hệ showroom để nhận tư vấn về khả năng tương thích, lắp đặt và lựa chọn phụ kiện phù hợp với xe của bạn.' : 'Liên hệ showroom để nhận tư vấn chi tiết về cấu hình, trang bị và trải nghiệm vận hành của mẫu xe này.') }}
                 </p>
 
                 <div class="grid grid-cols-1 border-y border-zinc-800 sm:grid-cols-3">
                     <div class="border-b border-zinc-800 py-6 sm:border-b-0 sm:border-r sm:px-6 sm:pl-0">
                         <p class="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-600">{{ $isAccessory ? 'Tư vấn' : 'Trải nghiệm' }}</p>
-                        <p class="mt-3 text-xl font-black uppercase tracking-normal text-white">{{ $isAccessory ? 'Đúng cấu hình xe' : 'Showroom & lái thử' }}</p>
+                        <p class="mt-3 text-xl font-bold tracking-tight text-white">{{ $isAccessory ? 'Đúng cấu hình xe' : 'Showroom & lái thử' }}</p>
                     </div>
                     <div class="border-b border-zinc-800 py-6 sm:border-b-0 sm:border-r sm:px-6">
                         <p class="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-600">{{ $isAccessory ? 'Lắp đặt' : 'Tài chính' }}</p>
-                        <p class="mt-3 text-xl font-black uppercase tracking-normal text-white">{{ $isAccessory ? 'Theo lịch hẹn' : 'Báo giá cá nhân' }}</p>
+                        <p class="mt-3 text-xl font-bold tracking-tight text-white">{{ $isAccessory ? 'Theo lịch hẹn' : 'Báo giá cá nhân' }}</p>
                     </div>
                     <div class="py-6 sm:px-6">
                         <p class="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-600">{{ $isAccessory ? 'Nguồn gốc' : 'Dịch vụ' }}</p>
-                        <p class="mt-3 text-xl font-black uppercase tracking-normal text-white">{{ $isAccessory ? 'Chính hãng BMW' : 'Hậu mãi đồng bộ' }}</p>
+                        <p class="mt-3 text-xl font-bold tracking-tight text-white">{{ $isAccessory ? 'Chính hãng BMW' : 'Hậu mãi đồng bộ' }}</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="highlights" class="border-y border-zinc-900 bg-zinc-900/30 py-20">
+        <section id="highlights" class="scroll-mt-32 border-y border-zinc-900 bg-zinc-900/30 py-20">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
                     <div>
                         <p class="mb-4 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Điểm nổi bật</p>
-                        <h2 class="text-4xl font-black uppercase tracking-normal text-white md:text-5xl">
+                        <h2 class="text-3xl font-bold tracking-tight text-white md:text-5xl">
                             {{ $isAccessory ? 'Thông tin nổi bật của phụ kiện' : 'Hiệu năng và cấu hình chính' }}
                         </h2>
                     </div>
-                    <p class="text-sm font-medium leading-6 text-zinc-500">
+                    <p class="text-sm font-medium leading-relaxed text-zinc-400">
                         Nội dung bên dưới được lấy từ dữ liệu sản phẩm hiện có. Khi thông tin chưa đầy đủ, showroom sẽ tư vấn trực tiếp thay vì hiển thị dữ liệu giả.
                     </p>
                 </div>
@@ -165,11 +232,11 @@
                     @forelse($highlightSpecs as $highlight)
                         <div class="bg-zinc-950 p-8">
                             <p class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">{{ $highlight['label'] }}</p>
-                            <p class="mt-5 text-2xl font-black uppercase tracking-normal text-white">{{ $highlight['value'] }}</p>
+                            <p class="mt-5 text-2xl font-bold tracking-tight text-white">{{ $highlight['value'] }}</p>
                         </div>
                     @empty
                         <div class="bg-zinc-950 p-8 md:col-span-2 xl:col-span-3">
-                            <p class="text-sm font-medium text-zinc-400">
+                            <p class="text-sm font-medium leading-relaxed text-zinc-400">
                                 {{ $isAccessory ? 'Thông tin vật liệu và tương thích sẽ được tư vấn trực tiếp tại showroom.' : 'Thông số vận hành chi tiết sẽ được tư vấn trực tiếp tại showroom.' }}
                             </p>
                         </div>
@@ -178,25 +245,25 @@
             </div>
         </section>
 
-        <section id="design" class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-24 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
+        <section id="design" class="scroll-mt-32 mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-24 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
             <div class="aspect-[16/10] overflow-hidden border border-zinc-800 bg-zinc-900">
                 <img src="{{ $designImageUrl }}" alt="{{ $vehicle->name }} - {{ $isAccessory ? 'vật liệu' : 'thiết kế' }}" class="h-full w-full object-cover">
             </div>
             <div class="lg:pl-10">
                 <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $isAccessory ? 'Vật liệu' : 'Thiết kế' }}</p>
-                <h2 class="text-4xl font-black uppercase leading-tight tracking-normal text-white">{{ $designTitle }}</h2>
-                <p class="mt-6 text-base font-medium leading-7 text-zinc-400">
+                <h2 class="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl">{{ $designTitle }}</h2>
+                <p class="mt-6 text-base font-medium leading-relaxed text-zinc-300">
                     {{ $isAccessory ? 'Phụ kiện được trình bày như một sản phẩm riêng: tập trung vào chất liệu, độ hoàn thiện, tính tương thích và trải nghiệm sử dụng hằng ngày.' : 'Bố cục hình ảnh ưu tiên tỷ lệ lớn, khoảng thở rộng và nhịp section giống một landing page showroom thay vì trang thông tin ngắn.' }}
                 </p>
             </div>
         </section>
 
-        <section id="technology" class="border-y border-zinc-900 bg-white py-24 text-black">
+        <section id="technology" class="scroll-mt-32 border-y border-zinc-900 bg-white py-24 text-black">
             <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
                 <div>
                     <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $isAccessory ? 'Tư vấn lắp đặt' : 'Công nghệ' }}</p>
-                    <h2 class="text-4xl font-black uppercase leading-tight tracking-normal md:text-6xl">{{ $technologyTitle }}</h2>
-                    <p class="mt-6 text-base font-medium leading-7 text-zinc-600">
+                    <h2 class="text-3xl font-bold leading-tight tracking-tight md:text-5xl">{{ $technologyTitle }}</h2>
+                    <p class="mt-6 text-base font-medium leading-relaxed text-zinc-600">
                         {{ $isAccessory ? 'CTA phụ kiện dẫn về form đặt hàng riêng để đội showroom xác nhận tương thích trước khi chốt mua hàng.' : 'Luồng đặt lịch, báo giá và so sánh vẫn giữ nguyên để người dùng chuyển từ khám phá sang hành động mà không mất logic CRM.' }}
                     </p>
                 </div>
@@ -206,13 +273,13 @@
             </div>
         </section>
 
-        <section id="gallery" class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+        <section id="gallery" class="scroll-mt-32 mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
             <div class="mb-12 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Gallery</p>
-                    <h2 class="text-4xl font-black uppercase tracking-normal text-white md:text-6xl">Không gian hình ảnh</h2>
+                    <h2 class="text-3xl font-bold tracking-tight text-white md:text-5xl">Không gian hình ảnh</h2>
                 </div>
-                <p class="max-w-xl text-sm font-medium leading-6 text-zinc-500">
+                <p class="max-w-xl text-sm font-medium leading-relaxed text-zinc-400">
                     Gallery ưu tiên nhiều góc ảnh khác nhau theo thứ tự ảnh sản phẩm. Nếu dữ liệu còn ít, hệ thống vẫn fallback có kiểm soát để không tạo khung trống.
                 </p>
             </div>
@@ -233,8 +300,8 @@
                     </div>
                     <div class="border border-zinc-800 bg-zinc-900/40 p-8">
                         <p class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{{ $isAccessory ? 'Purchase support' : 'Showroom support' }}</p>
-                        <h3 class="mt-5 text-3xl font-black uppercase tracking-normal text-white">{{ $isAccessory ? 'Xác nhận đúng phụ kiện trước khi mua' : 'Từ xem xe đến đặt lịch trong một flow' }}</h3>
-                        <p class="mt-5 text-sm font-medium leading-6 text-zinc-500">
+                        <h3 class="mt-5 text-2xl font-bold tracking-tight text-white">{{ $isAccessory ? 'Xác nhận đúng phụ kiện trước khi mua' : 'Từ xem xe đến đặt lịch trong một flow' }}</h3>
+                        <p class="mt-5 text-sm font-medium leading-relaxed text-zinc-400">
                             {{ $isAccessory ? 'Ảnh sản phẩm được dùng để kể rõ vật liệu, tương thích và trải nghiệm sử dụng.' : 'Bộ ảnh detail được phân phối theo từng section để tránh lặp một hình ở toàn bộ landing page.' }}
                         </p>
                     </div>
@@ -242,12 +309,12 @@
             </div>
         </section>
 
-        <section id="technical-data" class="border-y border-zinc-800 bg-zinc-950 py-24">
+        <section id="technical-data" class="scroll-mt-32 border-y border-zinc-800 bg-zinc-950 py-24">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Thông tin</p>
-                        <h2 class="text-4xl font-black uppercase tracking-normal text-white md:text-6xl">{{ $technicalTitle }}</h2>
+                        <h2 class="text-3xl font-bold tracking-tight text-white md:text-5xl">{{ $technicalTitle }}</h2>
                     </div>
                     <button type="button" @click="showDetailedSpecs = true" class="border border-zinc-700 px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:border-white hover:bg-white hover:text-black">
                         Xem chi tiết
@@ -265,7 +332,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="px-6 py-12 text-sm font-medium text-zinc-400">
+                        <div class="px-6 py-12 text-sm font-medium leading-relaxed text-zinc-400">
                             {{ $isAccessory ? 'Thông tin sản phẩm đang được showroom cập nhật. Vui lòng gửi yêu cầu tư vấn để được xác nhận chi tiết.' : 'Thông số kỹ thuật chưa được cập nhật cho mẫu xe này. Vui lòng liên hệ showroom để được tư vấn.' }}
                         </div>
                     @endforelse
@@ -273,12 +340,12 @@
             </div>
         </section>
 
-        <section id="services" class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+        <section id="services" class="scroll-mt-32 mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-12 border border-zinc-800 bg-zinc-900/40 p-8 lg:grid-cols-[1fr_0.9fr] lg:p-12">
                 <div>
                     <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $isAccessory ? 'Mua hàng' : 'Sở hữu' }}</p>
-                    <h2 class="text-4xl font-black uppercase tracking-normal text-white">{{ $servicesTitle }}</h2>
-                    <p class="mt-6 max-w-3xl text-base font-medium leading-7 text-zinc-400">
+                    <h2 class="text-3xl font-bold tracking-tight text-white md:text-4xl">{{ $servicesTitle }}</h2>
+                    <p class="mt-6 max-w-3xl text-base font-medium leading-relaxed text-zinc-300">
                         {{ $isAccessory ? 'Showroom sẽ kiểm tra dòng xe, nhu cầu sử dụng và phương án lắp đặt trước khi xác nhận báo giá cuối cùng.' : 'Liên hệ showroom để nhận tư vấn giá lăn bánh, cấu hình, lịch lái thử và chương trình hiện hành.' }}
                     </p>
                 </div>
@@ -288,19 +355,19 @@
                         {{ number_format($vehicle->price) }} <span class="text-sm text-zinc-500">VNĐ</span>
                     </p>
                     @if($vehicle->deposit_amount)
-                        <p class="mt-3 text-xs font-bold uppercase tracking-widest text-zinc-500">
-                            Mức cọc tham khảo: <span class="text-zinc-300">{{ number_format($vehicle->deposit_amount) }} VNĐ</span>
+                        <p class="mt-3 text-xs font-medium leading-relaxed text-zinc-400">
+                            Mức cọc tham khảo: <span class="font-bold text-zinc-200">{{ number_format($vehicle->deposit_amount) }} VNĐ</span>
                         </p>
                     @endif
                 </div>
             </div>
         </section>
 
-        <section id="booking" class="bg-white py-20 text-black">
+        <section id="booking" class="scroll-mt-32 bg-white py-20 text-black">
             <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
                 <div>
                     <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">{{ $isAccessory ? 'Tư vấn' : 'Đặt lịch' }}</p>
-                    <h2 class="text-4xl font-black uppercase tracking-normal md:text-6xl">{{ $bookingTitle }}</h2>
+                    <h2 class="text-3xl font-bold tracking-tight md:text-5xl">{{ $bookingTitle }}</h2>
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <a href="{{ $primaryCtaUrl }}" class="bg-black px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-[#1C69D4]">
@@ -328,7 +395,7 @@
                 <div class="mb-12 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <p class="mb-5 text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Related</p>
-                        <h2 class="text-4xl font-black uppercase tracking-normal text-white md:text-6xl">{{ $relatedTitle }}</h2>
+                        <h2 class="text-3xl font-bold tracking-tight text-white md:text-5xl">{{ $relatedTitle }}</h2>
                     </div>
                     <a href="{{ $relatedIndexUrl }}" class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:text-white">
                         {{ $isAccessory ? 'Xem thêm phụ kiện' : 'Xem thêm mẫu xe' }}
@@ -363,7 +430,7 @@
                 x-transition:enter-end="translate-y-0"
             >
                 <div class="flex items-center justify-between border-b border-zinc-900 p-6 sm:p-8">
-                    <h4 class="text-xl font-black uppercase tracking-normal text-white">
+                    <h4 class="text-xl font-bold tracking-tight text-white">
                         {{ $technicalTitle }} <span class="text-[#1C69D4]">chi tiết</span>
                     </h4>
                     <button type="button" @click="showDetailedSpecs = false" class="text-zinc-500 transition-colors hover:text-white" aria-label="Đóng thông tin chi tiết">
@@ -392,12 +459,12 @@
                             </tbody>
                         </table>
                     @else
-                        <p class="text-sm font-medium text-zinc-400">Thông tin chi tiết đang được showroom cập nhật.</p>
+                        <p class="text-sm font-medium leading-relaxed text-zinc-400">Thông tin chi tiết đang được showroom cập nhật.</p>
                     @endif
                 </div>
 
                 <div class="border-t border-zinc-900 bg-zinc-900/50 p-6 sm:p-8">
-                    <p class="text-[10px] uppercase leading-relaxed tracking-widest text-zinc-500">
+                    <p class="text-xs font-normal leading-relaxed text-zinc-400">
                         * Thông tin có thể thay đổi tùy phiên bản, cấu hình, phụ kiện đi kèm và điều kiện thực tế tại showroom.
                     </p>
                 </div>

@@ -26,7 +26,7 @@
                             <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2">Showroom Hà Nội</p>
                             <p class="text-white font-black uppercase tracking-widest text-sm">268 Đội Cấn, Ba Đình, Hà Nội</p>
                             <p class="text-zinc-500 text-xs mt-2 mb-6">Tel: (024) 3771 8888</p>
-                            <x-quick-booking-form showroom="Showroom Hà Nội" />
+                            <x-quick-booking-form showroom="Showroom Hà Nội" :products="$bookableProducts" />
                         </div>
 
                         <!-- Showroom TP. HCM -->
@@ -34,7 +34,7 @@
                             <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2">Showroom TP. HCM</p>
                             <p class="text-white font-black uppercase tracking-widest text-sm">800 BMW Way, Quận 7, TP. HCM</p>
                             <p class="text-zinc-500 text-xs mt-2 mb-6">Tel: (028) 3773 8888</p>
-                            <x-quick-booking-form showroom="Showroom TP. HCM" />
+                            <x-quick-booking-form showroom="Showroom TP. HCM" :products="$bookableProducts" />
                         </div>
 
                         <!-- Hotline -->

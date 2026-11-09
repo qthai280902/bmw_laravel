@@ -1,6 +1,67 @@
 # Project State
 
-Current phase: Phase 17 completed.
+Current phase: Phase 20 completed.
+
+## Phase 20: Catalog Accordion Filters, Scroll Reveal Landing Page, Product Detail Scrollspy & Article Typography Hierarchy
+
+- Completion time: 2026-11-09 +07:00.
+- Scope:
+  - Install `@alpinejs/collapse` and configure `Alpine.plugin(collapse)` + global `window.initScrollReveal` (`IntersectionObserver`) in `resources/js/app.js`.
+  - Add `.reveal-on-scroll`, `.is-revealed`, `.scrollbar-none`, reduced-motion overrides, and `.article-content` (`h2`, `h3`, `p`, `strong`/`b`) rules in `resources/css/app.css`.
+  - Catalog Sidebar Accordion (`x-data="{ open: true }"`, `x-collapse`, rotating chevron SVG) and independent desktop scrolling (`lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto scrollbar-none`) in `resources/views/products/index.blade.php`.
+  - Landing Page Scroll Reveal and image/card hover polish (`group-hover:scale-105`, `hover:border-[#1C69D4]/50`) in `resources/views/welcome.blade.php`.
+  - Product Detail Scrollspy sticky navigation (`IntersectionObserver` with `rootMargin: '-20% 0px -60% 0px'`, active tab highlight `border-b-2 border-[#1C69D4] bg-blue-950/20`, smooth scroll, and `scroll-mt-32` section offsets) in `resources/views/products/show.blade.php`.
+  - Article Typography & Visual Hierarchy overhaul in `resources/views/articles/show.blade.php` and `resources/views/articles/index.blade.php`.
+- Verification:
+  - Pint style check: pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`55 modules transformed`, `public/build/assets/app-B4Eogft3.css` 84.25 kB, `public/build/assets/app-Dma1Dh-p.js` 93.62 kB in 1.09s).
+  - Full test suite: `php artisan test` pass, **114 tests / 1147 assertions (100% PASS)**.
+- Report: `.planning/baocao/phase-reports/phase-20-report.md`.
+- Result:
+  - PASS 100%.
+
+## Phase 19: Vietnamese Typography Overhaul & Be Vietnam Pro Font Standardization
+
+- Completion time: 2026-11-08 +07:00.
+- Scope:
+  - Configure `Be Vietnam Pro` (weights 300–800 and 400 italic) as primary sans-serif typeface in Tailwind CSS v4 (`resources/css/app.css`).
+  - Eliminate `uppercase` and wide letter-spacing (`tracking-widest`, `tracking-wider`, `tracking-[0.2em]`) on all `<p>` paragraphs, excerpts, and multi-word Vietnamese headings (`h1`–`h4`) across public Blade views.
+  - Standardize `tracking-tight` (`-0.02em`) on headings and `leading-relaxed` (`1.625`) on body paragraphs for optimal Vietnamese diacritic rendering.
+- Implemented:
+  - `resources/css/app.css`: Added Google Fonts `@import` for `Be Vietnam Pro` on line 1 (before `@import 'tailwindcss';`), defined `--font-sans` inside `@theme`, and configured `:root`, `body`, `h1–h6`, and `p` base rules.
+  - Refactored 6 public Blade views: `resources/views/articles/show.blade.php`, `resources/views/articles/index.blade.php`, `resources/views/welcome.blade.php`, `resources/views/services.blade.php`, `resources/views/experiences.blade.php`, `resources/views/products/show.blade.php`.
+- Verification:
+  - Pint style check: pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`public/build/assets/app-izHYdINk.css` 82.20 kB in 1.24s).
+  - Full test suite: `php artisan test` pass, **114 tests / 1147 assertions (100% PASS)** in 33.64s.
+- Report: `.planning/baocao/phase-reports/phase-19-report.md`.
+- Result:
+  - PASS 100%.
+
+## Phase 18: Automated Email Notifications & Queue Module
+
+- Completion time: 2026-11-08 +07:00.
+- Scope:
+  - Event-Driven Architecture for customer touchpoints (appointments & accessory orders).
+  - Asynchronous background queue processing on dedicated `notifications` queue.
+  - Transactional HTML email templates following BMW Dark Luxury design language (#09090b, 0px border-radius).
+  - Comprehensive null-safety for customer email and product relations.
+- Implemented:
+  - Events: `App\Events\AppointmentCreated`, `App\Events\AccessoryOrderCreated`.
+  - Queued Listeners: `App\Listeners\SendAppointmentNotifications`, `App\Listeners\SendAccessoryOrderNotifications` (`ShouldQueue`, queue: `notifications`, tries: 3).
+  - Mailables: `AppointmentConfirmationMail`, `AppointmentAlertMail`, `AccessoryOrderConfirmationMail`, `AccessoryOrderAlertMail` (`ShouldQueue`, queue: `notifications`).
+  - Blade templates: `resources/views/emails/layouts/bmw-transactional.blade.php`, `emails/customer/*`, `emails/admin/*`.
+  - Controllers: Dispatched events in `Client\AppointmentController@store` and `AccessoryOrderController@store`.
+  - Config: Added `mail.showroom_admin` (default `advisor@bmw.com`) and updated `.env.example`.
+- Verification:
+  - Pint style check: pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Focused feature tests: `tests/Feature/Notification/NotificationFlowTest.php` pass, 6 tests / 14 assertions.
+  - Full test suite: `php artisan test` pass, **114 tests / 1147 assertions (100% PASS)** in ~20.45s.
+- Result:
+  - PASS 100%.
 
 ## Docker Completion (Post Phase 17)
 

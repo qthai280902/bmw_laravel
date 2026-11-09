@@ -254,6 +254,14 @@ class Product extends Model
     }
 
     /**
+     * Scope a query to only include vehicle products (Car and Motorbike).
+     */
+    public function scopeVehicles($query)
+    {
+        return $query->whereIn('type', [VehicleType::CAR, VehicleType::MOTORBIKE]);
+    }
+
+    /**
      * Generate a unique slug based on the product name.
      */
     public static function generateUniqueSlug(string $name): string

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-black text-xl text-white leading-tight uppercase tracking-[0.3em]">
-            Dịch vụ <span class="text-zinc-500">BMW Excellence</span>
+        <h2 class="font-bold text-xl text-white leading-tight tracking-tight">
+            Dịch vụ <span class="text-zinc-400">BMW Excellence</span>
         </h2>
     </x-slot>
 
@@ -11,10 +11,10 @@
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent"></div>
         <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center max-w-3xl px-6">
-                <h1 class="text-5xl md:text-7xl font-light text-white uppercase tracking-[0.2em] mb-6 leading-none">
-                    Chăm sóc <br> <span class="font-black">Đẳng cấp</span>
+                <h1 class="text-4xl md:text-6xl font-light text-white tracking-tight mb-6 leading-tight">
+                    Chăm sóc <br> <span class="font-extrabold">Đẳng cấp</span>
                 </h1>
-                <p class="text-zinc-400 font-medium tracking-widest text-xs md:text-sm uppercase leading-relaxed">
+                <p class="text-zinc-300 font-normal text-sm md:text-base leading-relaxed">
                     Đưa chiếc BMW của bạn về trạng thái hoàn mỹ nhất với các dịch vụ bảo trì và chăm sóc chuyên dụng từ đội ngũ chuyên gia.
                 </p>
             </div>
@@ -28,8 +28,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div class="order-2 lg:order-1">
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Precision</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Chăm sóc xe chuyên sâu</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Chăm sóc xe chuyên sâu</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Dịch vụ Detailing và Ceramic cao cấp giúp bảo vệ lớp sơn nguyên bản và tạo độ bóng gương hoàn hảo. Chúng tôi sử dụng các sản phẩm chăm sóc từ những thương hiệu hàng đầu thế giới được BMW khuyên dùng.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'detailing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
@@ -54,8 +54,8 @@
                 </div>
                 <div>
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Purity</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Rửa xe Premium</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Rửa xe Premium</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Không chỉ là làm sạch, quy trình rửa xe 24 bước của chúng tôi loại bỏ hoàn toàn các tác nhân gây hại từ môi trường, bảo vệ từng chi tiết ngoại thất và nội thất bằng các dụng cụ chuyên dụng không gây trầy xước.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'car_wash']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
@@ -70,8 +70,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div class="order-2 lg:order-1">
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Reliability</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Bảo dưỡng định kỳ</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Bảo dưỡng định kỳ</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Hệ thống nhắc hẹn bảo dưỡng thông minh giúp xe của bạn luôn ở trạng thái vận hành tối ưu. Đội ngũ kỹ thuật viên được đào tạo theo tiêu chuẩn BMW toàn cầu sử dụng phụ tùng chính hãng 100%.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'maintenance']) }}" class="inline-block px-12 py-5 bg-[#1C69D4] text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#165bb0] transition-all duration-300 shadow-xl shadow-[#1C69D4]/20">
@@ -90,19 +90,19 @@
     <!-- Contact & Location -->
     <div class="bg-black py-24 border-t border-zinc-900">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <h3 class="text-white font-black text-xl uppercase tracking-widest mb-8">BMW Service Center</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-zinc-500 text-xs font-black uppercase tracking-[0.2em]">
+            <h3 class="text-white font-bold text-xl tracking-tight mb-8">BMW Service Center</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-zinc-400 text-xs font-medium">
                 <div>
-                    <p class="mb-2 text-white">Địa chỉ</p>
-                    <p>800 BMW Way, District 7, HCMC</p>
+                    <p class="mb-2 text-white font-bold uppercase tracking-wider">Địa chỉ</p>
+                    <p class="leading-relaxed">800 BMW Way, District 7, HCMC</p>
                 </div>
                 <div>
-                    <p class="mb-2 text-white">Hotline Dịch vụ</p>
-                    <p>1800 8080 (24/7)</p>
+                    <p class="mb-2 text-white font-bold uppercase tracking-wider">Hotline Dịch vụ</p>
+                    <p class="leading-relaxed">1800 8080 (24/7)</p>
                 </div>
                 <div>
-                    <p class="mb-2 text-white">Giờ làm việc</p>
-                    <p>Mon - Sat: 08:00 - 18:00</p>
+                    <p class="mb-2 text-white font-bold uppercase tracking-wider">Giờ làm việc</p>
+                    <p class="leading-relaxed">Mon - Sat: 08:00 - 18:00</p>
                 </div>
             </div>
         </div>

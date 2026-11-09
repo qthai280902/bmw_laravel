@@ -2,6 +2,11 @@
 
 ## Current documented status
 
+- [x] Phase 20 completed with notes: Catalog Accordion Filters & Independent Scroll, Scroll Reveal Landing Page, Product Detail Scrollspy Sticky Nav & `scroll-mt-32`, and Article Typography Hierarchy (`@alpinejs/collapse`, `window.initScrollReveal`, `.article-content`). Full `php artisan test` pass: 114 tests / 1147 assertions.
+- [x] Phase 19 completed with notes: Vietnamese Typography Overhaul & `Be Vietnam Pro` Font Standardization (`resources/css/app.css` Tailwind v4 `@theme`, removed `uppercase` & wide tracking from `<p>` and multi-word Vietnamese headings across 6 core public views). Full `php artisan test` pass: 114 tests / 1147 assertions.
+- [x] Phase 18 completed with notes: Automated Email Notifications & Queue Module (`AppointmentCreated` & `AccessoryOrderCreated`, Queued Listeners on `notifications` queue, BMW Dark Luxury Transactional Mailables, Null-safe fallback). Full `php artisan test` pass: 114 tests / 1147 assertions.
+- [x] Phase 17 completed with notes: Admin AI conversation history + visitor identity linking + admin CRM UI overhaul. Full `php artisan test` pass: 108 tests / 1128 assertions.
+- [x] Phase 16.3 completed with notes: Gemini Multi-Key Rotation + Rate Limit Failover & Cooldown.
 - [x] Phase 16 completed with notes: AI Showroom Assistant + Laravel AI SDK + PHP 8.5 deprecation cleanup.
 - [x] PHP 8.5 `PDO::MYSQL_ATTR_SSL_CA` deprecation fixed without changing DB connection logic.
 - [x] `laravel/ai` v0.7.2 installed and configured for Gemini through env/config.

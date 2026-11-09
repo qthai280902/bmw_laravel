@@ -1,8 +1,32 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
 
+Alpine.plugin(collapse);
 window.Alpine = Alpine;
+
+window.initScrollReveal = function (root = document) {
+    if (!('IntersectionObserver' in window)) {
+        root.querySelectorAll('.reveal-on-scroll').forEach((el) => el.classList.add('is-revealed'));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+    root.querySelectorAll('.reveal-on-scroll:not(.is-revealed)').forEach((el) => observer.observe(el));
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.initScrollReveal();
+});
 
 window.aiAssistantWidget = (config) => ({
     config,

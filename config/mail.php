@@ -113,4 +113,6 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    'showroom_admin' => env('MAIL_SHOWROOM_ADMIN', 'advisor@bmw.com'),
+
 ];

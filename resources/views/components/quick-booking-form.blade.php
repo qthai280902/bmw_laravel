@@ -1,5 +1,17 @@
 {{-- Quick Booking Form Component (Context-Aware with pre-filled Showroom) --}}
-@props(['showroom' => ''])
+@props([
+    'showroom' => '',
+    'products' => null,
+])
+
+@php
+    $bookableProducts = $products ?? \App\Models\Product::query()
+        ->active()
+        ->vehicles()
+        ->select(['id', 'name', 'type'])
+        ->orderBy('name')
+        ->get();
+@endphp
 
 <div x-data="{ showModal: false }" class="inline-block w-full">
     <button @click="showModal = true" type="button"
@@ -78,7 +90,7 @@
                         <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Sản phẩm quan tâm *</label>
                         <select name="product_id" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
                             <option value="">-- Chọn sản phẩm --</option>
-                            @foreach(\App\Models\Product::where('is_active', true)->get() as $product)
+                            @foreach($bookableProducts as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }}</option>
                             @endforeach
                         </select>

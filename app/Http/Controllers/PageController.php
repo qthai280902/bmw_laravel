@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
+
 class PageController extends Controller
 {
     public function exclusiveOffers()
@@ -16,6 +18,13 @@ class PageController extends Controller
 
     public function contact()
     {
-        return view('pages.contact');
+        $bookableProducts = Product::query()
+            ->active()
+            ->vehicles()
+            ->select(['id', 'name', 'type'])
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.contact', compact('bookableProducts'));
     }
 }

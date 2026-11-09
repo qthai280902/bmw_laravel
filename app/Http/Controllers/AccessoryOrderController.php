@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AccessoryOrderCreated;
 use App\Http\Requests\StoreAccessoryOrderRequest;
 use App\Models\AccessoryOrder;
 use App\Models\Product;
@@ -41,6 +42,8 @@ class AccessoryOrderController extends Controller
             'email' => $order->customer_email,
             'phone' => $order->customer_phone,
         ]);
+
+        event(new AccessoryOrderCreated($order));
 
         return redirect()
             ->route('accessory-orders.create', $product->slug)

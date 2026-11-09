@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-black text-xl text-white leading-tight uppercase tracking-[0.3em]">
-            Trải nghiệm <span class="text-zinc-500">BMW Showroom</span>
+        <h2 class="font-bold text-xl text-white leading-tight tracking-tight">
+            Trải nghiệm <span class="text-zinc-400">BMW Showroom</span>
         </h2>
     </x-slot>
 
@@ -11,10 +11,10 @@
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent"></div>
         <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center max-w-3xl px-6">
-                <h1 class="text-5xl md:text-7xl font-light text-white uppercase tracking-[0.2em] mb-6 leading-none">
-                    Khát khao <br> <span class="font-black">Bứt phá</span>
+                <h1 class="text-4xl md:text-6xl font-light text-white tracking-tight mb-6 leading-tight">
+                    Khát khao <br> <span class="font-extrabold">Bứt phá</span>
                 </h1>
-                <p class="text-zinc-400 font-medium tracking-widest text-xs md:text-sm uppercase leading-relaxed">
+                <p class="text-zinc-300 font-normal text-sm md:text-base leading-relaxed">
                     Khám phá thế giới BMW qua những trải nghiệm thực tế đầy phấn khích. Từ việc lái thử các dòng xe mới nhất đến nhận tư vấn chuyên sâu từ chuyên gia.
                 </p>
             </div>
@@ -28,8 +28,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div class="order-2 lg:order-1">
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Adrenaline</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Đăng ký lái thử</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Đăng ký lái thử</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Ngồi sau tay lái và trực tiếp cảm nhận sức mạnh, sự linh hoạt và công nghệ đỉnh cao của các dòng xe BMW M, BMW i hay BMW X. Khơi dậy mọi giác quan trên những cung đường đầy phấn khích.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'test_drive']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
@@ -54,8 +54,8 @@
                 </div>
                 <div>
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Elegance</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Xem xe trực tiếp</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Xem xe trực tiếp</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Tận mắt chiêm ngưỡng những tuyệt tác cơ khí tại không gian trưng bày sang trọng. Tìm hiểu kỹ hơn về các gói trang bị cá nhân hóa và các giải pháp nội thất tinh tế từ chuyên gia BMW.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'viewing']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
@@ -70,8 +70,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div class="order-2 lg:order-1">
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Decision</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Yêu cầu báo giá</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Yêu cầu báo giá</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Nhận báo giá chi tiết và các chương trình ưu đãi độc quyền dành riêng cho từng dòng xe. Chúng tôi cung cấp các giải pháp tài chính linh hoạt giúp bạn sớm sở hữu chiếc BMW mơ ước.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'quote']) }}" class="inline-block px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all duration-300">
@@ -96,8 +96,8 @@
                 </div>
                 <div>
                     <div class="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-4">Expertise</div>
-                    <h2 class="text-3xl font-black text-white uppercase tracking-widest mb-6">Tư vấn trực tiếp</h2>
-                    <p class="text-zinc-400 text-sm leading-8 mb-10 tracking-widest">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Tư vấn trực tiếp</h2>
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-10">
                         Kết nối trực tiếp với các cố vấn chuyên nghiệp của BMW. Chúng tôi sẵn sàng giải đáp mọi thắc mắc về tính năng xe, công nghệ mới nhất và các đặc quyền dành cho chủ sở hữu BMW Excellence.
                     </p>
                     <a href="{{ route('appointments.create', ['type' => 'consult']) }}" class="inline-block px-12 py-5 bg-[#1C69D4] text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#165bb0] transition-all duration-300 shadow-xl shadow-[#1C69D4]/20">
@@ -111,19 +111,19 @@
     <!-- Contact & Location Footer -->
     <div class="bg-black py-24 border-t border-zinc-900">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <h3 class="text-white font-black text-xl uppercase tracking-widest mb-8">BMW Excellence Showroom</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-zinc-500 text-xs font-black uppercase tracking-[0.2em]">
+            <h3 class="text-white font-bold text-xl tracking-tight mb-8">BMW Excellence Showroom</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-zinc-400 text-xs font-medium">
                 <div>
-                    <p class="mb-2 text-white">Địa chỉ Shop</p>
-                    <p>800 BMW Way, District 7, HCMC</p>
+                    <p class="mb-2 text-white font-bold uppercase tracking-wider">Địa chỉ Shop</p>
+                    <p class="leading-relaxed">800 BMW Way, District 7, HCMC</p>
                 </div>
                 <div>
-                    <p class="mb-2 text-white">Hotline Trải nghiệm</p>
-                    <p>1800 8080 (Showroom)</p>
+                    <p class="mb-2 text-white font-bold uppercase tracking-wider">Hotline Trải nghiệm</p>
+                    <p class="leading-relaxed">1800 8080 (Showroom)</p>
                 </div>
                 <div>
-                    <p class="mb-2 text-white">Giờ đón khách</p>
-                    <p>Mon - Sun: 09:00 - 21:00</p>
+                    <p class="mb-2 text-white font-bold uppercase tracking-wider">Giờ đón khách</p>
+                    <p class="leading-relaxed">Mon - Sun: 09:00 - 21:00</p>
                 </div>
             </div>
         </div>

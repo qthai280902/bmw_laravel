@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Client;
 
-use App\Enums\VehicleType;
+use App\Events\AppointmentCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
@@ -33,7 +33,7 @@ class AppointmentController extends Controller
     {
         $products = Product::query()
             ->active()
-            ->whereIn('type', [VehicleType::CAR->value, VehicleType::MOTORBIKE->value])
+            ->vehicles()
             ->orderBy('name')
             ->get();
 
@@ -80,6 +80,8 @@ class AppointmentController extends Controller
             'email' => $appointment->guest_email ?? Auth::user()?->email,
             'phone' => $appointment->guest_phone,
         ]);
+
+        event(new AppointmentCreated($appointment));
 
         return redirect()->route('appointments.success')->with('success', 'Bạn đã đặt lịch hẹn thành công. Chúng tôi sẽ sớm liên hệ xác nhận.');
     }

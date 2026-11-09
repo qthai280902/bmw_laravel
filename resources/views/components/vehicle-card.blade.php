@@ -17,11 +17,11 @@
             this.isSelected = isVehicleSelected({{ $vehicle->id }});
         }
     }"
-    class="group relative flex h-full flex-col overflow-hidden border border-zinc-900 bg-zinc-950 transition-all duration-500 hover:border-[#1C69D4]"
+    class="bg-card-luxury group relative flex h-full flex-col overflow-hidden"
 >
     @if($vehicle->is_featured)
         <div class="absolute left-4 top-4 z-10">
-            <span class="bg-[#1C69D4] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+            <span class="border border-blue-500/20 bg-blue-950/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF] backdrop-blur">
                 Premium
             </span>
         </div>
@@ -45,7 +45,7 @@
     @endif
 
     <a href="{{ route('products.show', $vehicle->slug) }}" class="block shrink-0">
-        <div class="h-64 overflow-hidden bg-zinc-900 sm:h-72 lg:h-64">
+        <div class="car-floor-reflection h-64 overflow-hidden bg-zinc-900 sm:h-72 lg:h-64">
             <img
                 loading="lazy"
                 src="{{ $vehicle->displayImageUrl() }}"
@@ -58,9 +58,9 @@
     <div class="flex flex-1 flex-col p-6 sm:p-8">
         <div class="flex-1 space-y-8">
             <div class="space-y-3">
-                <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">{{ $categoryName }}</p>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#70A7FF]">{{ $categoryName }}</p>
                 <a href="{{ route('products.show', $vehicle->slug) }}" class="block">
-                    <h3 class="min-h-16 text-2xl font-black uppercase leading-none tracking-normal text-white transition-colors group-hover:text-[#1C69D4]">
+                    <h3 class="min-h-16 text-2xl font-bold leading-tight tracking-tight text-white transition-colors group-hover:text-[#70A7FF]">
                         {{ $vehicle->name }}
                     </h3>
                 </a>
@@ -69,7 +69,7 @@
                 </p>
             </div>
 
-            <div class="border-t border-zinc-900 pt-6">
+            <div class="border-t border-white/[0.06] pt-6">
                 <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Giá niêm yết</p>
                 <p class="mt-2 text-2xl font-black tracking-normal text-white">
                     {{ number_format($vehicle->price) }} <span class="text-xs text-zinc-500">VNĐ</span>
