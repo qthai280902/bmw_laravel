@@ -14,12 +14,14 @@
     data-ai-assistant-widget
     x-data="aiAssistantWidget(@js([
         'endpoint' => route('ai.showroom-assistant.ask'),
+        'resetEndpoint' => route('ai.showroom-assistant.reset'),
         'csrf' => csrf_token(),
         'fallback' => config('showroom_ai.fallback_message'),
         'ready' => 'Sẵn sàng tư vấn',
         'prompts' => $assistantPrompts,
     ]))"
     x-init="init()"
+    @keydown.escape.window="if (panelOpen) minimize()"
     x-cloak
     class="fixed z-[70] text-white"
     :class="sideTabVisible ? 'right-0 bottom-28 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2' : 'right-3 bottom-4 sm:right-5 sm:bottom-5'"
@@ -43,7 +45,7 @@
 
             <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="ai-assistant-ready-pulse h-2 w-2 bg-emerald-400"></span>
                     <p class="text-[11px] font-bold text-[#70A7FF]" x-text="config.ready">Sẵn sàng tư vấn</p>
                 </div>
                 <h2 class="mt-0.5 truncate text-sm font-extrabold tracking-normal text-white">
@@ -55,12 +57,16 @@
                 <button
                     type="button"
                     data-ai-clear-conversation
-                    class="flex h-9 w-9 items-center justify-center border border-zinc-800 text-xs font-black text-zinc-400 transition-colors hover:border-white hover:text-white"
+                    :disabled="!hasMessages && !loading"
+                    class="flex h-9 items-center gap-1.5 border border-zinc-800 px-2.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 transition-colors hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                     @click="clearConversation()"
-                    aria-label="Xóa cuộc trò chuyện"
-                    title="Xóa cuộc trò chuyện"
+                    aria-label="Làm mới hội thoại"
+                    title="Làm mới hội thoại"
                 >
-                    ↺
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0v2.43l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="hidden sm:inline">Làm mới</span>
                 </button>
                 <button
                     type="button"
@@ -84,6 +90,17 @@
                 </button>
             </div>
         </header>
+
+        <div
+            x-show="activePageContext && (activePageContext.product_name || activePageContext.product_slug)"
+            data-ai-context-badge
+            class="flex items-center justify-between gap-2 border-b border-white/10 bg-[#121215] px-4 py-2 text-[11px]"
+        >
+            <span class="min-w-0 truncate font-semibold text-zinc-300">
+                Đang xem: <span class="font-bold text-[#70A7FF]" x-text="activePageContext.product_name || activePageContext.product_slug"></span>
+            </span>
+            <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-zinc-500">Ngữ cảnh</span>
+        </div>
 
         <div
             class="scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4"
@@ -142,17 +159,20 @@
                                 <div class="space-y-3">
                                     <template x-for="(block, blockIndex) in message.blocks" :key="blockIndex">
                                         <div>
-                                            <p x-show="block.type === 'paragraph'" class="leading-6">
+                                            <p
+                                                x-show="block.type === 'paragraph' && (!block.parts.length || (message.revealedChars ?? message.totalChars ?? 0) > (block.parts[0]?.start ?? 0))"
+                                                class="leading-6"
+                                            >
                                                 <template x-for="(part, partIndex) in block.parts" :key="partIndex">
                                                     <span>
-                                                        <template x-if="part.type === 'link'">
-                                                            <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="part.text"></a>
+                                                        <template x-if="part.type === 'link' && visiblePartText(part, message.revealedChars).length > 0">
+                                                            <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="visiblePartText(part, message.revealedChars)"></a>
                                                         </template>
-                                                        <template x-if="part.type === 'strong'">
-                                                            <span class="font-black text-white" x-text="part.text"></span>
+                                                        <template x-if="part.type === 'strong' && visiblePartText(part, message.revealedChars).length > 0">
+                                                            <span class="font-black text-white" x-text="visiblePartText(part, message.revealedChars)"></span>
                                                         </template>
-                                                        <template x-if="part.type === 'text'">
-                                                            <span x-text="part.text"></span>
+                                                        <template x-if="part.type === 'text' && visiblePartText(part, message.revealedChars).length > 0">
+                                                            <span x-text="visiblePartText(part, message.revealedChars)"></span>
                                                         </template>
                                                     </span>
                                                 </template>
@@ -160,17 +180,20 @@
 
                                             <ul x-show="block.type === 'list'" class="list-disc space-y-1.5 pl-5 marker:text-[#70A7FF]">
                                                 <template x-for="(item, itemIndex) in block.items" :key="itemIndex">
-                                                    <li class="pl-1 leading-6">
+                                                    <li
+                                                        x-show="item.parts.length && (message.revealedChars ?? message.totalChars ?? 0) > (item.parts[0]?.start ?? 0)"
+                                                        class="pl-1 leading-6"
+                                                    >
                                                         <template x-for="(part, partIndex) in item.parts" :key="partIndex">
                                                             <span>
-                                                                <template x-if="part.type === 'link'">
-                                                                    <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="part.text"></a>
+                                                                <template x-if="part.type === 'link' && visiblePartText(part, message.revealedChars).length > 0">
+                                                                    <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="visiblePartText(part, message.revealedChars)"></a>
                                                                 </template>
-                                                                <template x-if="part.type === 'strong'">
-                                                                    <span class="font-black text-white" x-text="part.text"></span>
+                                                                <template x-if="part.type === 'strong' && visiblePartText(part, message.revealedChars).length > 0">
+                                                                    <span class="font-black text-white" x-text="visiblePartText(part, message.revealedChars)"></span>
                                                                 </template>
-                                                                <template x-if="part.type === 'text'">
-                                                                    <span x-text="part.text"></span>
+                                                                <template x-if="part.type === 'text' && visiblePartText(part, message.revealedChars).length > 0">
+                                                                    <span x-text="visiblePartText(part, message.revealedChars)"></span>
                                                                 </template>
                                                             </span>
                                                         </template>
@@ -184,16 +207,23 @@
                         </div>
 
                         <div
-                            x-show="message.role === 'assistant' && message.actions.length"
-                            class="mt-2 flex flex-wrap gap-2"
+                            x-show="message.role === 'assistant' && message.actions.length && (message.revealedChars ?? message.totalChars ?? 0) >= (message.totalChars ?? 0)"
+                            class="mt-2.5 grid grid-cols-1 gap-1.5"
                         >
                             <template x-for="action in message.actions" :key="action.label + action.url">
                                 <a
                                     data-ai-action-chip
-                                    class="inline-flex items-center justify-center border border-[#1C69D4]/45 bg-[#1C69D4]/10 px-3 py-2 text-xs font-bold text-[#70A7FF] transition-colors hover:border-[#70A7FF] hover:bg-[#1C69D4] hover:text-white"
+                                    class="group flex items-center justify-between gap-3 border border-zinc-800 bg-[#09090b] px-3.5 py-2.5 transition-all hover:border-[#1C69D4] hover:bg-[#121215]"
                                     :href="action.url"
-                                    x-text="action.label"
-                                ></a>
+                                >
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[10px] font-black uppercase tracking-[0.16em] text-[#70A7FF]" x-text="action.subtitle || 'BMW Showroom'"></span>
+                                        <span class="mt-0.5 block truncate text-xs font-bold text-white" x-text="action.label"></span>
+                                    </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 shrink-0 text-[#70A7FF] transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
                             </template>
                         </div>
                     </div>
@@ -205,9 +235,9 @@
                 data-ai-loading
                 class="flex items-center gap-2 text-sm font-medium text-zinc-400"
             >
-                <span class="ai-assistant-typing-dot h-2 w-2 rounded-full bg-[#70A7FF] animate-bounce [animation-delay:0ms]"></span>
-                <span class="ai-assistant-typing-dot h-2 w-2 rounded-full bg-[#70A7FF] animate-bounce [animation-delay:150ms]"></span>
-                <span class="ai-assistant-typing-dot h-2 w-2 rounded-full bg-[#70A7FF] animate-bounce [animation-delay:300ms]"></span>
+                <span class="ai-assistant-typing-dot h-2 w-2 bg-[#70A7FF] animate-bounce [animation-delay:0ms]"></span>
+                <span class="ai-assistant-typing-dot h-2 w-2 bg-[#70A7FF] animate-bounce [animation-delay:150ms]"></span>
+                <span class="ai-assistant-typing-dot h-2 w-2 bg-[#70A7FF] animate-bounce [animation-delay:300ms]"></span>
                 <span class="text-xs text-zinc-400 ml-1">BMW AI đang trả lời...</span>
             </div>
         </div>

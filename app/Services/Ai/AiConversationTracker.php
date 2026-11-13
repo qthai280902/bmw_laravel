@@ -2,8 +2,10 @@
 
 namespace App\Services\Ai;
 
+use App\Enums\VehicleType;
 use App\Models\AiChatMessage;
 use App\Models\AiChatSession;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,7 +15,8 @@ use Throwable;
 class AiConversationTracker
 {
     /**
-     * @param  array{answer?: string, status?: string, reason?: string, suggestions?: array<int, mixed>}  $assistantResponse
+     * @param  array{answer?: string, status?: string, reason?: string, suggestions?: array<int, mixed>, current_product?: array<string, mixed>|null}  $assistantResponse
+     * @param  array<string, mixed>|null  $currentProduct
      */
     public function recordExchange(
         Request $request,
@@ -22,10 +25,11 @@ class AiConversationTracker
         int $latencyMs,
         ?string $visitorId = null,
         ?string $pageUrl = null,
-        ?string $referrer = null
+        ?string $referrer = null,
+        ?array $currentProduct = null
     ): ?AiChatSession {
         try {
-            return DB::transaction(function () use ($request, $message, $assistantResponse, $latencyMs, $visitorId, $pageUrl, $referrer): AiChatSession {
+            return DB::transaction(function () use ($request, $message, $assistantResponse, $latencyMs, $visitorId, $pageUrl, $referrer, $currentProduct): AiChatSession {
                 $session = $this->resolveSession(
                     visitorId: $this->normalizeVisitorId($visitorId),
                     ipAddress: $request->ip(),
@@ -35,6 +39,9 @@ class AiConversationTracker
                 $answer = (string) ($assistantResponse['answer'] ?? '');
                 $reason = (string) ($assistantResponse['reason'] ?? $assistantResponse['status'] ?? 'ok');
                 $pagePath = $this->safePath($pageUrl);
+                $resolvedProduct = $currentProduct
+                    ?? ($assistantResponse['current_product'] ?? null)
+                    ?? $this->resolveProductFromPagePath($pagePath);
 
                 AiChatMessage::create([
                     'ai_chat_session_id' => $session->id,
@@ -60,12 +67,24 @@ class AiConversationTracker
                     'latency_ms' => max(0, $latencyMs),
                 ]);
 
-                $session->forceFill([
+                $detectedIntent = $this->detectIntent($message, is_array($resolvedProduct) ? $resolvedProduct : null);
+
+                $attributes = [
                     'last_seen_at' => now(),
                     'message_count' => $session->message_count + 2,
                     'last_message_preview' => $this->preview($message),
-                    'last_intent' => $this->detectIntent($message),
-                ])->save();
+                    'last_intent' => $detectedIntent ?? $session->last_intent,
+                ];
+
+                if (is_array($resolvedProduct) && filled($resolvedProduct['id'] ?? null) && filled($resolvedProduct['name'] ?? null)) {
+                    $attributes['context_product_id'] = (int) $resolvedProduct['id'];
+                    $attributes['context_product_name'] = Str::limit((string) $resolvedProduct['name'], 255, '');
+                    $attributes['context_product_slug'] = filled($resolvedProduct['slug'] ?? null)
+                        ? Str::limit((string) $resolvedProduct['slug'], 255, '')
+                        : null;
+                }
+
+                $session->forceFill($attributes)->save();
 
                 return $session;
             });
@@ -179,6 +198,40 @@ class AiConversationTracker
         return $session;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolveProductFromPagePath(?string $pagePath): ?array
+    {
+        if (! is_string($pagePath) || $pagePath === '') {
+            return null;
+        }
+
+        if (preg_match('#^/catalog/([a-z0-9-]+)$#i', $pagePath, $matches) !== 1) {
+            return null;
+        }
+
+        $product = Product::query()
+            ->active()
+            ->with('category')
+            ->select(['id', 'category_id', 'name', 'slug', 'type'])
+            ->where('slug', $matches[1])
+            ->first();
+
+        if (! $product) {
+            return null;
+        }
+
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'raw_type' => $product->type instanceof VehicleType ? $product->type->value : (string) $product->type,
+            'is_accessory' => $product->isAccessory(),
+            'category' => $product->category?->name,
+        ];
+    }
+
     private function normalizeVisitorId(?string $visitorId): ?string
     {
         $visitorId = trim((string) $visitorId);
@@ -234,19 +287,42 @@ class AiConversationTracker
         ], $text) ?? $text;
     }
 
-    private function detectIntent(string $message): ?string
+    /**
+     * @param  array<string, mixed>|null  $currentProduct
+     */
+    private function detectIntent(string $message, ?array $currentProduct = null): ?string
     {
         $normalized = Str::ascii(Str::lower($message));
 
-        return match (true) {
-            Str::contains($normalized, ['s1000', 'motorrad', 'xe may']) => 'motorbike',
+        $intent = match (true) {
+            Str::contains($normalized, ['s1000', 'motorrad', 'xe may', 'mo to', 'pkl']) => 'motorbike',
             Str::contains($normalized, ['phu kien', 'tham', 'ao khoac', 'mu bao hiem']) => 'accessory',
             Str::contains($normalized, ['so sanh', 'khac gi']) => 'compare',
             Str::contains($normalized, ['bao gia', 'gia', 'tra gop']) => 'quote',
             Str::contains($normalized, ['lai thu', 'test drive']) => 'test_drive',
-            Str::contains($normalized, ['suv', 'x5', 'x3', 'gam cao']) => 'suv',
+            Str::contains($normalized, ['suv', 'sav', 'x5', 'x3', 'gam cao']) => 'suv',
             Str::contains($normalized, ['sedan', '330i', '530i']) => 'sedan',
             default => null,
+        };
+
+        if ($intent !== null || ! is_array($currentProduct)) {
+            return $intent;
+        }
+
+        if (($currentProduct['raw_type'] ?? null) === VehicleType::MOTORBIKE->value) {
+            return 'motorbike';
+        }
+
+        if (($currentProduct['is_accessory'] ?? false) === true) {
+            return 'accessory';
+        }
+
+        $productHaystack = Str::ascii(Str::lower((string) (($currentProduct['category'] ?? '').' '.($currentProduct['name'] ?? ''))));
+
+        return match (true) {
+            Str::contains($productHaystack, ['sav', 'suv']) => 'suv',
+            Str::contains($productHaystack, ['sedan']) => 'sedan',
+            default => 'vehicle',
         };
     }
 

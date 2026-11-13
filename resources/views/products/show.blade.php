@@ -87,18 +87,45 @@
                                     {{ number_format($vehicle->price) }} <span class="text-sm text-zinc-500">VNĐ</span>
                                 </p>
                             </div>
-                            <div class="grid grid-cols-1 gap-3 {{ $heroCtaGridClass }}">
-                                <a href="{{ $primaryCtaUrl }}" class="bg-[#1C69D4] px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
-                                    {{ $primaryCtaLabel }}
-                                </a>
-                                <a href="{{ $secondaryCtaUrl }}" class="border border-white/70 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
-                                    {{ $secondaryCtaLabel }}
-                                </a>
-                                @if($vehicle->canCompare())
-                                    <button type="button" onclick="toggleComparison({{ $vehicle->id }})" class="border border-zinc-700 px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-200 transition-all hover:border-[#1C69D4] hover:text-[#1C69D4]">
-                                        Thêm so sánh
-                                    </button>
-                                @endif
+                            <div class="space-y-3">
+                                <div
+                                    id="ai-page-context"
+                                    data-ai-page-context
+                                    data-product-slug="{{ $vehicle->slug }}"
+                                    data-product-name="{{ $vehicle->name }}"
+                                    class="hidden"
+                                ></div>
+
+                                <div class="grid grid-cols-1 gap-3 {{ $heroCtaGridClass }}">
+                                    <a href="{{ $primaryCtaUrl }}" class="bg-[#1C69D4] px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
+                                        {{ $primaryCtaLabel }}
+                                    </a>
+                                    <a href="{{ $secondaryCtaUrl }}" class="border border-white/70 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white hover:text-black">
+                                        {{ $secondaryCtaLabel }}
+                                    </a>
+                                    @if($vehicle->canCompare())
+                                        <button type="button" onclick="toggleComparison({{ $vehicle->id }})" class="border border-zinc-700 px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-200 transition-all hover:border-[#1C69D4] hover:text-[#1C69D4]">
+                                            Thêm so sánh
+                                        </button>
+                                    @endif
+                                </div>
+
+                                <button
+                                    type="button"
+                                    data-ai-context-trigger
+                                    data-product-slug="{{ $vehicle->slug }}"
+                                    data-product-name="{{ $vehicle->name }}"
+                                    @click="window.dispatchEvent(new CustomEvent('bmw-ai:ask', { detail: { prompt: 'Tư vấn chi tiết thông số, giá bán và ưu đãi của ' + $el.dataset.productName, context: { product_slug: $el.dataset.productSlug, product_name: $el.dataset.productName } } }))"
+                                    class="group flex w-full items-center justify-between border border-white/15 bg-[#121215]/90 px-5 py-3.5 text-left transition-all hover:border-[#1C69D4] hover:bg-[#1C69D4]/15"
+                                >
+                                    <span class="flex items-center gap-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-200 group-hover:text-white">
+                                        <span class="inline-block h-1.5 w-1.5 bg-[#70A7FF]"></span>
+                                        <span>Hỏi trợ lý AI về {{ $vehicle->name }}</span>
+                                    </span>
+                                    <span class="text-[10px] font-black uppercase tracking-[0.18em] text-[#70A7FF] transition-transform group-hover:translate-x-0.5">
+                                        Hỏi ngay →
+                                    </span>
+                                </button>
                             </div>
                         </div>
                     </div>

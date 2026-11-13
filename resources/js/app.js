@@ -35,6 +35,12 @@ window.aiAssistantWidget = (config) => ({
     messages: [],
     input: '',
     loading: false,
+    pageContextOverride: null,
+    activePageContext: {
+        product_slug: null,
+        product_name: null,
+    },
+    revealTimer: null,
     stateKey: 'bmw_ai_assistant_state_v4',
     visitorKey: 'bmw_ai_visitor_id',
     visitorId: null,
@@ -52,6 +58,7 @@ window.aiAssistantWidget = (config) => ({
     init() {
         this.clearLegacyState();
         this.visitorId = this.ensureVisitorId();
+        this.activePageContext = this.detectPageContext();
         this.attachVisitorIdToForms();
         this.restoreState();
         this.scrollMessages();
@@ -60,6 +67,10 @@ window.aiAssistantWidget = (config) => ({
             if (window.innerWidth < 640 && this.panelOpen) {
                 this.scrollMessages();
             }
+        });
+
+        window.addEventListener('bmw-ai:ask', (event) => {
+            this.handleContextualAsk(event?.detail || {});
         });
 
         document.addEventListener('submit', () => this.attachVisitorIdToForms(), true);
@@ -85,9 +96,76 @@ window.aiAssistantWidget = (config) => ({
     },
 
     clearConversation() {
+        this.stopProgressiveReveal();
         this.messages = [];
         this.persistState();
         this.scrollMessages();
+
+        const resetEndpoint = this.config.resetEndpoint || '/ai/showroom-assistant/reset';
+
+        fetch(resetEndpoint, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': this.config.csrf,
+            },
+            body: JSON.stringify({
+                visitor_id: this.ensureVisitorId(),
+            }),
+            keepalive: true,
+        }).catch(() => {});
+    },
+
+    handleContextualAsk(detail = {}) {
+        if (detail?.context && typeof detail.context === 'object') {
+            this.pageContextOverride = {
+                product_slug: detail.context.product_slug || null,
+                product_name: detail.context.product_name || null,
+            };
+        }
+
+        this.activePageContext = this.detectPageContext();
+        this.openPanel();
+
+        const prompt = typeof detail?.prompt === 'string' ? detail.prompt.trim() : '';
+
+        if (prompt && !this.loading) {
+            this.input = prompt;
+            this.send();
+        }
+    },
+
+    detectPageContext() {
+        if (this.pageContextOverride?.product_slug) {
+            return {
+                product_slug: this.pageContextOverride.product_slug,
+                product_name: this.pageContextOverride.product_name || null,
+            };
+        }
+
+        const contextEl = document.querySelector('[data-ai-page-context]');
+
+        if (contextEl?.dataset?.productSlug) {
+            return {
+                product_slug: contextEl.dataset.productSlug,
+                product_name: contextEl.dataset.productName || null,
+            };
+        }
+
+        const pathMatch = window.location.pathname.match(/^\/catalog\/([a-z0-9-]+)$/i);
+
+        if (pathMatch) {
+            return {
+                product_slug: pathMatch[1],
+                product_name: null,
+            };
+        }
+
+        return {
+            product_slug: null,
+            product_name: null,
+        };
     },
 
     sendSuggestion(prompt) {
@@ -102,6 +180,10 @@ window.aiAssistantWidget = (config) => ({
         if (!message || this.loading) {
             return;
         }
+
+        const pageContext = this.detectPageContext();
+        this.activePageContext = pageContext;
+        this.stopProgressiveReveal();
 
         this.messages.push(this.createUserMessage(message));
         this.input = '';
@@ -122,17 +204,20 @@ window.aiAssistantWidget = (config) => ({
                     visitor_id: this.ensureVisitorId(),
                     page_url: window.location.href,
                     referrer: document.referrer || null,
+                    product_slug: pageContext.product_slug,
+                    product_name: pageContext.product_name,
                 }),
             });
 
             const payload = await response.json().catch(() => ({}));
 
-            this.messages.push(this.createAssistantMessage(
+            this.appendAssistantMessage(
                 payload.answer || config.fallback,
                 Array.isArray(payload.suggestions) ? payload.suggestions : [],
-            ));
+                true,
+            );
         } catch (error) {
-            this.messages.push(this.createAssistantMessage(config.fallback, []));
+            this.appendAssistantMessage(config.fallback, [], true);
         } finally {
             this.pruneMessages();
             this.loading = false;
@@ -149,6 +234,65 @@ window.aiAssistantWidget = (config) => ({
         });
     },
 
+    prefersReducedMotion() {
+        return typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    },
+
+    stopProgressiveReveal() {
+        if (this.revealTimer) {
+            clearInterval(this.revealTimer);
+            this.revealTimer = null;
+        }
+
+        this.messages.forEach((item) => {
+            if (item.role === 'assistant' && Number.isFinite(item.totalChars)) {
+                item.revealedChars = item.totalChars;
+            }
+        });
+    },
+
+    appendAssistantMessage(text, suggestions = [], animate = true) {
+        const assistantMessage = this.createAssistantMessage(text, suggestions, animate);
+        this.messages.push(assistantMessage);
+
+        if (animate && !this.prefersReducedMotion() && assistantMessage.totalChars > 0) {
+            this.startProgressiveReveal(assistantMessage.id, assistantMessage.totalChars);
+        }
+    },
+
+    startProgressiveReveal(messageId, totalChars) {
+        const step = Math.max(4, Math.ceil(totalChars / 36));
+
+        this.revealTimer = setInterval(() => {
+            const target = this.messages.find((item) => item.id === messageId);
+
+            if (!target) {
+                this.stopProgressiveReveal();
+                return;
+            }
+
+            target.revealedChars = Math.min(totalChars, (target.revealedChars ?? 0) + step);
+            this.scrollMessages();
+
+            if (target.revealedChars >= totalChars) {
+                this.stopProgressiveReveal();
+            }
+        }, 18);
+    },
+
+    visiblePartText(part, revealedChars) {
+        const text = String(part?.text || '');
+        const limit = Number.isFinite(revealedChars) ? revealedChars : text.length;
+        const start = Number(part?.start ?? 0);
+
+        if (limit <= start) {
+            return '';
+        }
+
+        return text.slice(0, Math.max(0, limit - start));
+    },
+
     createUserMessage(text) {
         return {
             id: this.messageId(),
@@ -159,15 +303,55 @@ window.aiAssistantWidget = (config) => ({
         };
     },
 
-    createAssistantMessage(text, suggestions = []) {
+    createAssistantMessage(text, suggestions = [], animate = false) {
         const formatted = this.formatAssistantMessage(text, suggestions);
+        const offsetState = this.assignPartOffsets(formatted.blocks);
+        const shouldAnimate = animate && !this.prefersReducedMotion() && offsetState.totalChars > 0;
 
         return {
             id: this.messageId(),
             role: 'assistant',
             text: String(text || ''),
-            blocks: formatted.blocks,
+            blocks: offsetState.blocks,
             actions: formatted.actions,
+            totalChars: offsetState.totalChars,
+            revealedChars: shouldAnimate ? 0 : offsetState.totalChars,
+        };
+    },
+
+    assignPartOffsets(blocks) {
+        let offset = 0;
+
+        const mappedBlocks = blocks.map((block) => {
+            if (block.type === 'list') {
+                return {
+                    ...block,
+                    items: (block.items || []).map((item) => ({
+                        ...item,
+                        parts: (item.parts || []).map((part) => {
+                            const text = String(part.text || '');
+                            const mapped = { ...part, start: offset, end: offset + text.length };
+                            offset += text.length;
+                            return mapped;
+                        }),
+                    })),
+                };
+            }
+
+            return {
+                ...block,
+                parts: (block.parts || []).map((part) => {
+                    const text = String(part.text || '');
+                    const mapped = { ...part, start: offset, end: offset + text.length };
+                    offset += text.length;
+                    return mapped;
+                }),
+            };
+        });
+
+        return {
+            blocks: mappedBlocks,
+            totalChars: offset,
         };
     },
 
@@ -376,8 +560,61 @@ window.aiAssistantWidget = (config) => ({
                 .replace(/\n{3,}/g, '\n\n')
                 .replace(/[ \t]{2,}/g, ' ')
                 .trim(),
-            actions: actions.map(({ label, url }) => ({ label, url })),
+            actions: actions.map(({ label, url }) => this.actionMeta(url, label)),
         };
+    },
+
+    actionMeta(url, fallbackLabel = '') {
+        const value = String(url || '');
+        const label = this.actionLabel(value, fallbackLabel);
+
+        if (value.startsWith('/accessories/') && value.endsWith('/order')) {
+            return { label, subtitle: 'Đặt hàng chính hãng', kind: 'accessory', url: value };
+        }
+
+        if (value.startsWith('/booking')) {
+            const type = new URL(value, window.location.origin).searchParams.get('type');
+
+            if (type === 'test_drive' || type === 'test') {
+                return { label, subtitle: 'Trải nghiệm thực tế', kind: 'booking', url: value };
+            }
+
+            if (type === 'quote') {
+                return { label, subtitle: 'Tư vấn tài chính', kind: 'quote', url: value };
+            }
+
+            return { label, subtitle: 'Showroom BMW', kind: 'booking', url: value };
+        }
+
+        if (value.startsWith('/compare')) {
+            return { label, subtitle: 'Bảng đối chiếu thông số', kind: 'compare', url: value };
+        }
+
+        if (value.startsWith('/tim-hieu-them/')) {
+            return { label, subtitle: 'Chuyên mục Showroom', kind: 'article', url: value };
+        }
+
+        if (value.startsWith('/tim-hieu-them') || value.startsWith('/offers')) {
+            return { label, subtitle: 'Chương trình ưu đãi', kind: 'offer', url: value };
+        }
+
+        if (value.startsWith('/catalog?type=motorbike')) {
+            return { label, subtitle: 'BMW Motorrad', kind: 'catalog', url: value };
+        }
+
+        if (value.startsWith('/catalog/')) {
+            return { label, subtitle: 'Hồ sơ sản phẩm', kind: 'product', url: value };
+        }
+
+        if (value.startsWith('/accessories')) {
+            return { label, subtitle: 'Phụ kiện chính hãng', kind: 'accessory', url: value };
+        }
+
+        if (value.startsWith('/catalog')) {
+            return { label, subtitle: 'Danh mục Showroom', kind: 'catalog', url: value };
+        }
+
+        return { label, subtitle: 'Showroom BMW', kind: 'link', url: value };
     },
 
     actionLabel(url, fallbackLabel = '') {

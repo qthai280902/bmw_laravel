@@ -1,6 +1,25 @@
 # Project State
 
-Current phase: Phase 21 & Bổ Sung completed.
+Current phase: Phase 22 completed.
+
+## Phase 22: AI Agent Tool Calling, Conversational Memory, Rich Action Cards & Contextual UX
+
+- Completion time: 2026-11-13 +07:00.
+- Scope:
+  - Build `App\Services\Ai\ShowroomCatalogMatcher` + 3 read-only AI Tools (`SearchCatalogTool`, `CompareVehiclesTool` with ID deduplication `unique('id')` and single-match guidance, `SearchArticlesAndOffersTool`) supporting Vietnamese synonyms (`suv` <-> `sav`, `xe điện` <-> `i4`/`iX`, `xe máy`/`mô tô`/`pkl` <-> `motorrad`).
+  - Upgrade `App\Ai\Agents\ShowroomAssistant` (`#[MaxSteps(6)]`, `HasTools`, `Conversational`, normalized real routes) and `App\Services\Ai\ShowroomAssistantService` (multi-turn `AiChatMessage` history after reset marker, config-driven limits in `config/showroom_ai.php`, page context summary & `current_product`).
+  - Add safe reset endpoint `POST /ai/showroom-assistant/reset` handling empty/stale `visitor_id` gracefully while preserving CRM database logs.
+  - Sync active product context (`context_product_id`, `context_product_name`, `context_product_slug`) from `/catalog/{slug}` into `ai_chat_sessions`, `AiConversationTracker`, and Admin CRM views (`admin/ai-conversations/{index,show}.blade.php`).
+  - Upgrade frontend widget (`resources/js/app.js`, `ai-assistant-widget.blade.php`, `resources/css/app.css`) and `resources/views/products/show.blade.php` with 0px Rich Action Cards (`x-text` only, zero `x-html`), safe inline link reveal (`visiblePartText(...).length > 0`), `Esc` minimize, `"Làm mới"` reset fallback, and contextual trigger button `"Hỏi trợ lý AI về ..."`.
+  - Add `tests/Feature/AiAssistantPhase22Test.php` covering all backend tools, memory/reset, CRM context sync, and 0px/XSS frontend contracts.
+- Verification:
+  - Pint style check: pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`55 modules transformed`, `public/build/assets/app-CjKkumYC.css` 95.92 kB, `public/build/assets/app-DrWX-9im.js` 98.09 kB in 1.23s).
+  - Full test suite: `php artisan test --compact` pass, **121 passed (1239 assertions)** in 31.22s (100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-22-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 21 & Bổ Sung: Admin UI Overhaul, Cinematic Login, Public Article Editorial, Canvas Studio, Cố Định Bảng Quản Trị, Nâng Cấp Chatbot AI & Toàn Diện Việt Hóa
 

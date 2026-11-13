@@ -88,6 +88,24 @@
                             {{ optional($session->last_seen_at)->format('d/m/Y H:i') ?? 'n/a' }}
                         </dd>
                     </div>
+                    @if ($session->contextProductLabel())
+                        <div class="border-t border-zinc-800/80 pt-3">
+                            <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">Sản phẩm đang xem</dt>
+                            <dd class="mt-1.5 font-bold text-white">
+                                {{ $session->contextProductLabel() }}
+                            </dd>
+                            @if ($session->contextProduct && $session->contextProduct->is_active)
+                                <dd class="mt-2 flex flex-wrap gap-3 text-[11px] font-bold">
+                                    <a href="{{ route('products.show', $session->contextProduct->slug) }}" target="_blank" class="text-[#70A7FF] hover:text-white">
+                                        Xem public →
+                                    </a>
+                                    <a href="{{ route('admin.products.edit', $session->contextProduct) }}" class="text-zinc-400 hover:text-white">
+                                        Mở trong Admin →
+                                    </a>
+                                </dd>
+                            @endif
+                        </div>
+                    @endif
                 </dl>
             </x-admin.card>
 

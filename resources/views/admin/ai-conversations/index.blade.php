@@ -114,6 +114,11 @@
                                 @else
                                     <span class="text-xs font-semibold text-zinc-600">Chưa rõ</span>
                                 @endif
+                                @if ($session->contextProductLabel())
+                                    <p class="mt-2 text-xs font-bold text-[#70A7FF]">
+                                        Đang xem: {{ $session->contextProductLabel() }}
+                                    </p>
+                                @endif
                             </td>
                             <td class="px-5 py-5 align-top">
                                 <p class="text-xs font-bold text-zinc-300">{{ $session->linkedSourceLabel() }}</p>

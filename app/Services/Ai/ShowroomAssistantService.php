@@ -4,35 +4,48 @@ namespace App\Services\Ai;
 
 use App\Ai\Agents\ShowroomAssistant;
 use App\Enums\VehicleType;
+use App\Models\AiChatMessage;
+use App\Models\AiChatSession;
 use App\Models\Article;
 use App\Models\Product;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Ai\AiManager;
 use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Exceptions\RateLimitedException;
+use Laravel\Ai\Messages\Message;
+use Laravel\Ai\Messages\MessageRole;
 use Laravel\Ai\Responses\AgentResponse;
 use Throwable;
 
 class ShowroomAssistantService
 {
-    public function __construct(private GeminiKeyPool $geminiKeyPool) {}
+    public function __construct(
+        private GeminiKeyPool $geminiKeyPool,
+        private ?ShowroomCatalogMatcher $matcher = null,
+    ) {}
 
     /**
-     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
+     * @param  array{visitor_id?: string|null, page_url?: string|null, product_slug?: string|null, product_name?: string|null}  $options
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string, reason?: string, current_product?: array<string, mixed>|null}
      */
-    public function ask(string $message): array
+    public function ask(string $message, array $options = []): array
     {
-        $context = $this->publicContext($message);
+        $pageContext = $this->resolvePageContext($options);
+        $context = $this->publicContext($message, $pageContext);
         $suggestions = $this->suggestionsFor($message, $context);
         $provider = $this->configuredProvider();
         $model = $this->configuredModel();
         $prompt = $this->buildPrompt($message, $context);
+        $conversationMessages = $this->recentConversationMessages($options['visitor_id'] ?? null);
+        $pageContextSummary = $this->buildPageContextSummary($pageContext);
+        $trackerProduct = $pageContext['tracker_product'] ?? null;
 
         if ($configurationReason = $this->configurationFailureReason($provider)) {
             Log::info('Showroom AI assistant skipped.', [
@@ -40,17 +53,31 @@ class ShowroomAssistantService
                 'provider' => $provider,
             ]);
 
-            return $this->fallbackResponse($suggestions, 'configuration');
+            return $this->withTrackerProduct($this->fallbackResponse($suggestions, 'configuration'), $trackerProduct);
         }
 
         if ($provider === 'gemini') {
-            return $this->askGeminiWithRotation($prompt, $suggestions, $model);
+            $payload = $this->askGeminiWithRotation(
+                prompt: $prompt,
+                suggestions: $suggestions,
+                model: $model,
+                conversationMessages: $conversationMessages,
+                pageContextSummary: $pageContextSummary,
+            );
+
+            return $this->withTrackerProduct($payload, $trackerProduct);
         }
 
         try {
-            $response = $this->promptAssistant($prompt, $provider, $model);
+            $response = $this->promptAssistant(
+                prompt: $prompt,
+                provider: $provider,
+                model: $model,
+                conversationMessages: $conversationMessages,
+                pageContextSummary: $pageContextSummary,
+            );
 
-            return $this->successfulResponse($response, $suggestions);
+            return $this->withTrackerProduct($this->successfulResponse($response, $suggestions), $trackerProduct);
         } catch (Throwable $exception) {
             Log::warning('Showroom AI assistant request failed.', [
                 'reason' => 'provider_error',
@@ -58,16 +85,119 @@ class ShowroomAssistantService
                 'provider' => $provider,
             ]);
 
-            return $this->fallbackResponse($suggestions, 'provider_error');
+            return $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct);
         }
+    }
+
+    public function resetConversation(?string $visitorId): bool
+    {
+        $normalizedVisitorId = $this->normalizeVisitorId($visitorId);
+
+        if ($normalizedVisitorId === null) {
+            return false;
+        }
+
+        $latestMessageId = (int) (AiChatMessage::query()
+            ->whereHas('session', fn ($query) => $query->where('visitor_id', $normalizedVisitorId))
+            ->max('id') ?? 0);
+
+        Cache::put(
+            $this->resetCacheKey($normalizedVisitorId),
+            [
+                'after_id' => $latestMessageId,
+                'reset_at' => now()->toIso8601String(),
+            ],
+            now()->addDays(7)
+        );
+
+        return true;
+    }
+
+    /**
+     * @return array<int, Message>
+     */
+    public function recentConversationMessages(?string $visitorId): array
+    {
+        $normalizedVisitorId = $this->normalizeVisitorId($visitorId);
+
+        if ($normalizedVisitorId === null) {
+            return [];
+        }
+
+        $session = AiChatSession::query()
+            ->where('visitor_id', $normalizedVisitorId)
+            ->latest('last_seen_at')
+            ->first();
+
+        if (! $session) {
+            return [];
+        }
+
+        $maxMessages = max(2, (int) config('showroom_ai.max_history_messages', 14));
+        $ttlHours = max(1, (int) config('showroom_ai.history_ttl_hours', 6));
+        $resetMarker = Cache::get($this->resetCacheKey($normalizedVisitorId));
+        $afterId = is_array($resetMarker) ? (int) ($resetMarker['after_id'] ?? 0) : 0;
+
+        $records = AiChatMessage::query()
+            ->where('ai_chat_session_id', $session->id)
+            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
+            ->where('created_at', '>=', now()->subHours($ttlHours))
+            ->orderByDesc('id')
+            ->limit($maxMessages * 2)
+            ->get()
+            ->reverse()
+            ->values();
+
+        $pairs = [];
+        $pendingUserMessage = null;
+
+        foreach ($records as $record) {
+            $content = $this->redactHistoryText((string) $record->content);
+            if ($content === '') {
+                continue;
+            }
+
+            if ($record->role === 'user') {
+                $pendingUserMessage = $content;
+
+                continue;
+            }
+
+            if ($record->role === 'assistant' && $record->response_reason === 'ok' && $pendingUserMessage !== null) {
+                $pairs[] = [
+                    new Message(MessageRole::User, $pendingUserMessage),
+                    new Message(MessageRole::Assistant, $content),
+                ];
+                $pendingUserMessage = null;
+            } else {
+                $pendingUserMessage = null;
+            }
+        }
+
+        $maxPairs = max(1, intdiv($maxMessages, 2));
+        $selectedPairs = array_slice($pairs, -$maxPairs);
+        $messages = [];
+
+        foreach ($selectedPairs as $pair) {
+            $messages[] = $pair[0];
+            $messages[] = $pair[1];
+        }
+
+        return $messages;
     }
 
     /**
      * @param  array<int, array{label: string, url: string}>  $suggestions
-     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
+     * @param  array<int, Message>  $conversationMessages
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string, reason?: string}
      */
-    private function askGeminiWithRotation(string $prompt, array $suggestions, ?string $model): array
-    {
+    private function askGeminiWithRotation(
+        string $prompt,
+        array $suggestions,
+        ?string $model,
+        array $conversationMessages = [],
+        ?string $pageContextSummary = null
+    ): array {
         $candidates = $this->geminiKeyPool->candidateSequence();
 
         if ($candidates === []) {
@@ -88,7 +218,13 @@ class ShowroomAssistantService
             $attempts++;
 
             try {
-                $response = $this->promptGeminiWithCandidate($candidate, $prompt, $model);
+                $response = $this->promptGeminiWithCandidate(
+                    candidate: $candidate,
+                    prompt: $prompt,
+                    model: $model,
+                    conversationMessages: $conversationMessages,
+                    pageContextSummary: $pageContextSummary,
+                );
 
                 return $this->successfulResponse($response, $suggestions);
             } catch (RateLimitedException $exception) {
@@ -154,9 +290,15 @@ class ShowroomAssistantService
 
     /**
      * @param  array{index: int, key: string, fingerprint: string}  $candidate
+     * @param  array<int, Message>  $conversationMessages
      */
-    private function promptGeminiWithCandidate(array $candidate, string $prompt, ?string $model): AgentResponse
-    {
+    private function promptGeminiWithCandidate(
+        array $candidate,
+        string $prompt,
+        ?string $model,
+        array $conversationMessages = [],
+        ?string $pageContextSummary = null
+    ): AgentResponse {
         $providerName = $this->geminiKeyPool->providerNameFor($candidate);
         $originalConfig = config("ai.providers.{$providerName}");
         $baseConfig = config('ai.providers.gemini', []);
@@ -169,20 +311,37 @@ class ShowroomAssistantService
         app(AiManager::class)->forgetInstance($providerName);
 
         try {
-            return $this->promptAssistant($prompt, $providerName, $model);
+            return $this->promptAssistant(
+                prompt: $prompt,
+                provider: $providerName,
+                model: $model,
+                conversationMessages: $conversationMessages,
+                pageContextSummary: $pageContextSummary,
+            );
         } finally {
             app(AiManager::class)->forgetInstance($providerName);
             Config::set("ai.providers.{$providerName}", $originalConfig);
         }
     }
 
-    private function promptAssistant(string $prompt, string $provider, ?string $model): AgentResponse
-    {
-        return ShowroomAssistant::make()->prompt(
+    /**
+     * @param  array<int, Message>  $conversationMessages
+     */
+    private function promptAssistant(
+        string $prompt,
+        string $provider,
+        ?string $model,
+        array $conversationMessages = [],
+        ?string $pageContextSummary = null
+    ): AgentResponse {
+        return ShowroomAssistant::make(
+            conversationMessages: $conversationMessages,
+            pageContextSummary: $pageContextSummary,
+        )->prompt(
             prompt: $prompt,
             provider: $provider,
             model: $model,
-            timeout: 20,
+            timeout: max(10, (int) config('showroom_ai.timeout_seconds', 30)),
         );
     }
 
@@ -211,15 +370,21 @@ class ShowroomAssistantService
     }
 
     /**
+     * @param  array<string, mixed>  $pageContext
      * @return array{
      *     products: array<int, array<string, mixed>>,
      *     articles: array<int, array<string, mixed>>,
-     *     routes: array<string, string>
+     *     routes: array<string, string>,
+     *     current_product?: array<string, mixed>,
+     *     current_article?: array<string, mixed>
      * }
      */
-    public function publicContext(?string $message = null): array
+    public function publicContext(?string $message = null, array $pageContext = []): array
     {
-        $products = $this->contextProducts($message)
+        /** @var Product|null $currentProductModel */
+        $currentProductModel = $pageContext['product_model'] ?? null;
+
+        $products = $this->contextProducts($message, $currentProductModel)
             ->map(fn (Product $product): array => $this->productContext($product))
             ->values()
             ->all();
@@ -233,13 +398,13 @@ class ShowroomAssistantService
             ->map(fn (Article $article): array => [
                 'title' => $article->title,
                 'category' => $article->categoryLabel(),
-                'excerpt' => $this->compactText($article->excerpt),
+                'excerpt' => $this->matcher()->compactText($article->excerpt),
                 'url' => route('articles.show', $article->slug, false),
             ])
             ->values()
             ->all();
 
-        return [
+        $context = [
             'products' => $products,
             'articles' => $articles,
             'routes' => [
@@ -251,6 +416,16 @@ class ShowroomAssistantService
                 'articles' => route('articles.index', [], false),
             ],
         ];
+
+        if ($currentProductModel instanceof Product) {
+            $context['current_product'] = $this->productContext($currentProductModel);
+        }
+
+        if (isset($pageContext['current_article']) && is_array($pageContext['current_article'])) {
+            $context['current_article'] = $pageContext['current_article'];
+        }
+
+        return $context;
     }
 
     /**
@@ -263,6 +438,28 @@ class ShowroomAssistantService
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
         );
 
+        $pageContextBlock = '';
+
+        if (isset($context['current_product']) && is_array($context['current_product'])) {
+            $currentProduct = $context['current_product'];
+            $priceText = $currentProduct['price'] ?? 'Liên hệ showroom';
+            $pageContextBlock = <<<CONTEXT
+
+Ngữ cảnh trang hiện tại:
+- Khách hàng đang xem sản phẩm public: {$currentProduct['name']} (đường dẫn: {$currentProduct['url']}, dòng: {$currentProduct['product_line']}, giá: {$priceText}).
+- Nếu Quý khách dùng đại từ như "xe này", "mẫu này", "chiếc này", "sản phẩm này" mà không nêu tên cụ thể, mặc định là đang hỏi về {$currentProduct['name']}.
+
+CONTEXT;
+        } elseif (isset($context['current_article']) && is_array($context['current_article'])) {
+            $currentArticle = $context['current_article'];
+            $pageContextBlock = <<<CONTEXT
+
+Ngữ cảnh trang hiện tại:
+- Khách hàng đang đọc bài viết public: {$currentArticle['title']} ({$currentArticle['url']}).
+
+CONTEXT;
+        }
+
         return <<<PROMPT
 BMW showroom gồm ô tô BMW, BMW Motorrad, phụ kiện, ưu đãi và dịch vụ showroom.
 Bạn là Chuyên viên Tư vấn Trực tuyến Cao cấp của BMW Showroom Vietnam.
@@ -270,9 +467,10 @@ Phong cách giao tiếp: Chuẩn mực, thượng lưu, lịch thiệp, xưng h�
 
 Dữ liệu public của showroom BMW:
 {$encodedContext}
-
+{$pageContextBlock}
 Nguyên tắc trả lời:
-- CHỈ sử dụng dữ liệu public ở trên (danh mục sản phẩm, cấu hình kỹ thuật, giá niêm yết chính thức đang có trong cơ sở dữ liệu showroom).
+- CHỈ sử dụng dữ liệu public ở trên và kết quả từ các công cụ (`search_catalog`, `compare_vehicles`, `search_articles_and_offers`).
+- Khi cần tra cứu chi tiết theo ngân sách, phân khúc (SUV/SAV, xe điện, xe máy/mô tô PKL), so sánh 2–3 mẫu xe hoặc tìm ưu đãi/bài viết, chủ động gọi công cụ tương ứng.
 - Tuyệt đối KHÔNG suy diễn hoặc bịa đặt giá bán, thông số kỹ thuật hay ưu đãi nếu không có trong dữ liệu trên. Nếu thiếu thông tin, nói rõ chưa có thông tin thay vì tự phỏng đoán.
 - Khi Quý khách quan tâm mua xe, nhận báo giá chi tiết, đăng ký lái thử hoặc bảo dưỡng dịch vụ: Luôn chủ động đính kèm liên kết điều hướng chuẩn xác tới form lịch hẹn:
   * Đăng ký lái thử xe: [Đăng ký lái thử]({$context['routes']['booking_test_drive']})
@@ -288,6 +486,105 @@ PROMPT;
     }
 
     /**
+     * @param  array<string, mixed>  $options
+     * @return array{
+     *     product_model: Product|null,
+     *     current_article: array<string, mixed>|null,
+     *     tracker_product: array<string, mixed>|null
+     * }
+     */
+    private function resolvePageContext(array $options): array
+    {
+        $pagePath = $this->safePath($options['page_url'] ?? null);
+        $productSlug = trim((string) ($options['product_slug'] ?? ''));
+
+        if ($productSlug === '' && $pagePath && preg_match('#^/catalog/([a-z0-9-]+)$#i', $pagePath, $matches) === 1) {
+            $productSlug = $matches[1];
+        }
+
+        $productModel = null;
+        $trackerProduct = null;
+
+        if ($productSlug !== '' && preg_match('/^[a-z0-9-]+$/i', $productSlug) === 1) {
+            $productModel = Product::query()
+                ->active()
+                ->with('category')
+                ->select([
+                    'id',
+                    'category_id',
+                    'name',
+                    'slug',
+                    'type',
+                    'price',
+                    'deposit_amount',
+                    'specifications',
+                    'description',
+                ])
+                ->where('slug', $productSlug)
+                ->first();
+
+            if ($productModel) {
+                $trackerProduct = [
+                    'id' => $productModel->id,
+                    'name' => $productModel->name,
+                    'slug' => $productModel->slug,
+                    'raw_type' => $productModel->type instanceof VehicleType ? $productModel->type->value : (string) $productModel->type,
+                    'is_accessory' => $productModel->isAccessory(),
+                    'category' => $productModel->category?->name,
+                ];
+            }
+        }
+
+        $currentArticle = null;
+        if ($pagePath && preg_match('#^/tim-hieu-them/([a-z0-9-]+)$#i', $pagePath, $matches) === 1) {
+            $article = Article::query()
+                ->published()
+                ->select(['title', 'slug', 'category', 'excerpt', 'published_at'])
+                ->where('slug', $matches[1])
+                ->first();
+
+            if ($article) {
+                $currentArticle = [
+                    'title' => $article->title,
+                    'slug' => $article->slug,
+                    'category' => $article->categoryLabel(),
+                    'excerpt' => $this->matcher()->compactText($article->excerpt),
+                    'url' => route('articles.show', $article->slug, false),
+                ];
+            }
+        }
+
+        return [
+            'product_model' => $productModel,
+            'current_article' => $currentArticle,
+            'tracker_product' => $trackerProduct,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $pageContext
+     */
+    private function buildPageContextSummary(array $pageContext): ?string
+    {
+        /** @var Product|null $product */
+        $product = $pageContext['product_model'] ?? null;
+
+        if ($product instanceof Product) {
+            $price = $this->matcher()->money($product->price) ?? 'Liên hệ showroom';
+
+            return "Quý khách đang đứng tại trang chi tiết sản phẩm {$product->name} (slug: {$product->slug}, dòng: {$this->matcher()->productLine($product)}, giá: {$price}).";
+        }
+
+        if (isset($pageContext['current_article']) && is_array($pageContext['current_article'])) {
+            $article = $pageContext['current_article'];
+
+            return "Quý khách đang đọc bài viết {$article['title']} ({$article['url']}).";
+        }
+
+        return null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function productContext(Product $product): array
@@ -299,14 +596,16 @@ PROMPT;
             'name' => $product->name,
             'slug' => $product->slug,
             'type' => $product->type instanceof VehicleType ? $product->type->label() : (string) $product->type,
-            'product_line' => $this->productLine($product),
+            'raw_type' => $product->type instanceof VehicleType ? $product->type->value : (string) $product->type,
+            'is_accessory' => $isAccessory,
+            'product_line' => $this->matcher()->productLine($product),
             'category' => $product->category?->name,
             'segment' => $product->category?->name,
-            'price' => $this->money($product->price),
-            'deposit' => $this->money($product->deposit_amount),
-            'description' => $this->compactText($product->description),
-            'specs' => $this->specContext($product),
-            'search_aliases' => $this->productAliases($product),
+            'price' => $this->matcher()->money($product->price),
+            'deposit' => $this->matcher()->money($product->deposit_amount),
+            'description' => $this->matcher()->compactText($product->description),
+            'specs' => $this->matcher()->specContext($product, 6),
+            'search_aliases' => $this->matcher()->productAliases($product),
             'url' => route('products.show', $product->slug, false),
             'compare_url' => $product->canCompare() ? route('products.compare', ['ids' => $product->id], false) : null,
             'booking_url' => $product->canTestDrive()
@@ -324,10 +623,10 @@ PROMPT;
     /**
      * @return Collection<int, Product>
      */
-    private function contextProducts(?string $message): Collection
+    private function contextProducts(?string $message, ?Product $currentProduct = null): Collection
     {
         $limit = max(30, (int) config('showroom_ai.max_context_products', 30));
-        $normalizedMessage = $this->normalizeSearchText((string) $message);
+        $normalizedMessage = $this->matcher()->normalizeSearchText((string) $message);
 
         return Product::query()
             ->active()
@@ -345,86 +644,17 @@ PROMPT;
             ])
             ->orderBy('id')
             ->get()
-            ->sortByDesc(fn (Product $product): int => $this->productMatchScore($product, $normalizedMessage))
+            ->sortByDesc(function (Product $product) use ($normalizedMessage, $currentProduct): int {
+                $score = $this->matcher()->scoreMessageRelevance($product, $normalizedMessage);
+
+                if ($currentProduct instanceof Product && $product->id === $currentProduct->id) {
+                    $score += 1000;
+                }
+
+                return $score;
+            })
             ->take($limit)
             ->values();
-    }
-
-    private function productLine(Product $product): string
-    {
-        if ($product->type === VehicleType::MOTORBIKE) {
-            return 'BMW Motorrad';
-        }
-
-        if ($product->isAccessory()) {
-            return 'BMW phụ kiện chính hãng';
-        }
-
-        return 'BMW ô tô';
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function specContext(Product $product): array
-    {
-        return collect($product->translated_specs)
-            ->take(6)
-            ->map(fn (mixed $value): string => is_array($value) ? implode(', ', $value) : (string) $value)
-            ->all();
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function productAliases(Product $product): array
-    {
-        $values = [
-            $product->name,
-            $product->slug,
-            $product->category?->name,
-            $this->productLine($product),
-        ];
-
-        if (Str::startsWith(Str::lower($product->name), 'bmw ')) {
-            $values[] = Str::after($product->name, 'BMW ');
-        }
-
-        $tokenValues = collect([$product->name, $product->slug])
-            ->filter()
-            ->flatMap(fn (string $value): array => preg_split('/[\s\-\/]+/', Str::ascii(Str::lower($value))) ?: [])
-            ->map(fn (string $value): string => $this->normalizeSearchText($value))
-            ->filter(fn (string $value): bool => $this->isUsefulProductAliasToken($value))
-            ->all();
-
-        return collect(array_merge($values, $tokenValues))
-            ->filter()
-            ->map(fn (string $value): string => $this->normalizeSearchText($value))
-            ->filter(fn (string $value): bool => strlen($value) >= 4 || $this->isUsefulProductAliasToken($value))
-            ->unique()
-            ->values()
-            ->all();
-    }
-
-    private function isUsefulProductAliasToken(string $value): bool
-    {
-        if ($value === 'bmw') {
-            return false;
-        }
-
-        return strlen($value) >= 2 && preg_match('/\d/', $value) === 1;
-    }
-
-    private function productMatchScore(Product $product, string $normalizedMessage): int
-    {
-        if ($normalizedMessage === '') {
-            return 0;
-        }
-
-        return collect($this->productAliases($product))
-            ->contains(fn (string $alias): bool => Str::contains($normalizedMessage, $alias))
-            ? 100
-            : 0;
     }
 
     /**
@@ -448,9 +678,47 @@ PROMPT;
     private function suggestionsFor(string $message, array $context): array
     {
         $message = Str::lower($message);
-        $normalizedMessage = $this->normalizeSearchText($message);
+        $normalizedMessage = $this->matcher()->normalizeSearchText($message);
         $products = collect($context['products']);
         $suggestions = [];
+        $currentProduct = isset($context['current_product']) && is_array($context['current_product'])
+            ? $context['current_product']
+            : null;
+
+        if ($currentProduct) {
+            if (($currentProduct['is_accessory'] ?? false) === true) {
+                if (filled($currentProduct['accessory_order_url'] ?? null)) {
+                    $suggestions[] = [
+                        'label' => 'Đặt phụ kiện '.$currentProduct['name'],
+                        'url' => $currentProduct['accessory_order_url'],
+                    ];
+                }
+
+                $suggestions[] = [
+                    'label' => 'Xem phụ kiện chính hãng',
+                    'url' => route('accessories.index', [], false),
+                ];
+            } else {
+                if (filled($currentProduct['booking_url'] ?? null)) {
+                    $suggestions[] = [
+                        'label' => 'Đặt lịch lái thử',
+                        'url' => $currentProduct['booking_url'],
+                    ];
+                }
+
+                if (filled($currentProduct['quote_url'] ?? null)) {
+                    $suggestions[] = [
+                        'label' => 'Nhận báo giá '.$currentProduct['name'],
+                        'url' => $currentProduct['quote_url'],
+                    ];
+                }
+
+                $suggestions[] = [
+                    'label' => 'Xem '.$currentProduct['name'],
+                    'url' => $currentProduct['url'],
+                ];
+            }
+        }
 
         $matchedProducts = $products
             ->filter(fn (array $product): bool => $this->contextProductMatches($product, $normalizedMessage))
@@ -487,7 +755,7 @@ PROMPT;
             ];
         }
 
-        if (Str::contains($message, ['motorrad', 'xe máy', 'xe may', 's1000', 's 1000'])) {
+        if (Str::contains($message, ['motorrad', 'xe máy', 'xe may', 'mô tô', 'mo to', 'pkl', 's1000', 's 1000'])) {
             $suggestions[] = [
                 'label' => 'Xem BMW Motorrad',
                 'url' => route('products.index', ['type' => VehicleType::MOTORBIKE->value], false),
@@ -506,7 +774,22 @@ PROMPT;
     }
 
     /**
-     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>|null  $trackerProduct
+     * @return array<string, mixed>
+     */
+    private function withTrackerProduct(array $payload, ?array $trackerProduct): array
+    {
+        if ($trackerProduct !== null) {
+            $payload['current_product'] = $trackerProduct;
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param  array<int, array{label: string, url: string}>  $suggestions
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string, reason: string}
      */
     private function fallbackResponse(array $suggestions, string $reason, ?string $answer = null): array
     {
@@ -557,26 +840,54 @@ PROMPT;
         return (string) config('showroom_ai.rate_limit_fallback_message', $this->fallbackMessage());
     }
 
-    private function normalizeSearchText(string $value): string
+    private function matcher(): ShowroomCatalogMatcher
     {
-        return preg_replace(
-            '/[^a-z0-9]+/',
-            '',
-            Str::ascii(Str::lower($value))
-        ) ?? '';
+        return $this->matcher ??= app(ShowroomCatalogMatcher::class);
     }
 
-    private function compactText(?string $text): ?string
+    private function normalizeVisitorId(?string $visitorId): ?string
     {
-        return filled($text)
-            ? Str::limit(preg_replace('/\s+/', ' ', strip_tags((string) $text)) ?? '', 220)
-            : null;
+        $visitorId = trim((string) $visitorId);
+
+        if ($visitorId === '' || strlen($visitorId) > 80) {
+            return null;
+        }
+
+        return preg_match('/^[A-Za-z0-9._:-]+$/', $visitorId) === 1 ? $visitorId : null;
     }
 
-    private function money(?int $amount): ?string
+    private function resetCacheKey(string $visitorId): string
     {
-        return $amount !== null && $amount > 0
-            ? number_format($amount, 0, ',', '.').' VND'
-            : null;
+        return 'showroom_ai:reset:'.$visitorId;
+    }
+
+    private function redactHistoryText(string $text): string
+    {
+        $cleaned = preg_replace([
+            '/AIza[0-9A-Za-z_\-]{20,}/',
+            '/sk-[A-Za-z0-9_\-]{20,}/',
+            '/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i',
+            '/(?:\+?84|0)(?:[\s.-]?\d){8,10}/',
+        ], [
+            '[api-key hidden]',
+            '[api-key hidden]',
+            '[email hidden]',
+            '[phone hidden]',
+        ], $text) ?? $text;
+
+        return Str::limit(trim($cleaned), 1200);
+    }
+
+    private function safePath(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || strlen($url) > 2048 || Str::contains($url, ["\n", "\r"])) {
+            return null;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+
+        return is_string($path) ? Str::limit($path, 500, '') : null;
     }
 }

@@ -241,12 +241,12 @@
     }
 
     .ai-message-bubble {
-        border-radius: 14px;
+        border-radius: 0px;
     }
 
     .ai-assistant-launcher {
         animation: ai-assistant-launcher-glow 3.2s ease-in-out infinite;
-        border-radius: 999px;
+        border-radius: 0px;
     }
 
     .ai-assistant-side-tab {

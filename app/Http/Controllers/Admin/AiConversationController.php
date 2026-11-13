@@ -19,7 +19,7 @@ class AiConversationController extends Controller
         $statusOptions = AiChatSession::statuses();
 
         $query = AiChatSession::query()
-            ->with('latestMessage')
+            ->with(['latestMessage', 'contextProduct'])
             ->withCount('messages')
             ->when($request->filled('search'), function (Builder $query) use ($request): void {
                 $search = $request->string('search')->toString();
@@ -31,6 +31,7 @@ class AiConversationController extends Controller
                         ->orWhere('customer_phone', 'like', "%{$search}%")
                         ->orWhere('visitor_id', 'like', "%{$search}%")
                         ->orWhere('ip_address', 'like', "%{$search}%")
+                        ->orWhere('context_product_name', 'like', "%{$search}%")
                         ->orWhere('last_message_preview', 'like', "%{$search}%")
                         ->orWhereHas('messages', function (Builder $query) use ($search): void {
                             $query->where('content', 'like', "%{$search}%");
@@ -44,7 +45,10 @@ class AiConversationController extends Controller
                 $query->whereNull('linked_source_type');
             })
             ->when($request->string('interest')->toString() === 'product', function (Builder $query): void {
-                $query->whereNotNull('last_intent');
+                $query->where(function (Builder $query): void {
+                    $query->whereNotNull('last_intent')
+                        ->orWhereNotNull('context_product_id');
+                });
             })
             ->when($request->filled('reason'), function (Builder $query) use ($request): void {
                 $reason = $request->string('reason')->toString();
@@ -78,7 +82,12 @@ class AiConversationController extends Controller
             'fallback' => AiChatSession::query()
                 ->whereHas('messages', fn (Builder $query): Builder => $query->where('role', 'assistant')->where('response_reason', '!=', 'ok'))
                 ->count(),
-            'interested' => AiChatSession::query()->whereNotNull('last_intent')->count(),
+            'interested' => AiChatSession::query()
+                ->where(function (Builder $query): void {
+                    $query->whereNotNull('last_intent')
+                        ->orWhereNotNull('context_product_id');
+                })
+                ->count(),
         ];
 
         return view('admin.ai-conversations.index', [
@@ -90,7 +99,7 @@ class AiConversationController extends Controller
 
     public function show(AiChatSession $session): View
     {
-        $session->load(['messages']);
+        $session->load(['messages', 'contextProduct']);
 
         return view('admin.ai-conversations.show', [
             'linkedRecord' => $this->linkedRecord($session),

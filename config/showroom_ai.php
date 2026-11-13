@@ -6,6 +6,9 @@ return [
     'model' => env('AI_ASSISTANT_MODEL'),
     'max_context_products' => env('AI_ASSISTANT_MAX_CONTEXT_PRODUCTS', 30),
     'max_context_articles' => env('AI_ASSISTANT_MAX_CONTEXT_ARTICLES', 5),
+    'max_history_messages' => (int) env('AI_ASSISTANT_MAX_HISTORY_MESSAGES', 14),
+    'history_ttl_hours' => (int) env('AI_ASSISTANT_HISTORY_TTL_HOURS', 6),
+    'timeout_seconds' => (int) env('AI_ASSISTANT_TIMEOUT_SECONDS', 30),
     'gemini_keys' => [
         'primary' => env('GEMINI_API_KEY'),
         'additional' => env('GEMINI_API_KEYS'),

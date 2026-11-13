@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
@@ -34,6 +35,9 @@ class AiChatSession extends Model
         'message_count',
         'last_message_preview',
         'last_intent',
+        'context_product_id',
+        'context_product_name',
+        'context_product_slug',
         'status',
     ];
 
@@ -54,6 +58,20 @@ class AiChatSession extends Model
     public function latestMessage(): HasOne
     {
         return $this->hasOne(AiChatMessage::class)->latestOfMany();
+    }
+
+    public function contextProduct(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'context_product_id');
+    }
+
+    public function contextProductLabel(): ?string
+    {
+        if ($this->contextProduct && filled($this->contextProduct->name)) {
+            return (string) $this->contextProduct->name;
+        }
+
+        return filled($this->context_product_name) ? (string) $this->context_product_name : null;
     }
 
     /**

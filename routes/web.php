@@ -62,6 +62,9 @@ Route::get('/booking/success', [AppointmentController::class, 'success'])->name(
 Route::post('/ai/showroom-assistant', ShowroomAssistantController::class)
     ->middleware('throttle:12,1')
     ->name('ai.showroom-assistant.ask');
+Route::post('/ai/showroom-assistant/reset', [ShowroomAssistantController::class, 'reset'])
+    ->middleware('throttle:20,1')
+    ->name('ai.showroom-assistant.reset');
 
 // Auth Dashboard & Appointments Mng
 Route::middleware(['auth', 'verified'])->group(function () {
