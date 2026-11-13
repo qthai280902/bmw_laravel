@@ -22,7 +22,7 @@
     @if($vehicle->is_featured)
         <div class="absolute left-4 top-4 z-10">
             <span class="border border-blue-500/20 bg-blue-950/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF] backdrop-blur">
-                Premium
+                Chính Hãng
             </span>
         </div>
     @endif

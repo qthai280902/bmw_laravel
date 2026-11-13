@@ -10,28 +10,47 @@
         <!-- Fonts: Be Vietnam Pro & JetBrains Mono for optimal Vietnamese diacritics -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-zinc-950 text-white min-h-screen">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-12 sm:pt-0 bg-black bg-[radial-gradient(circle_at_top,#1c69d410,transparent_50%)]">
-            <div class="mb-8">
-                <a href="/">
-                    <h1 class="text-4xl font-black uppercase tracking-tighter text-white">
-                        BMW <span class="text-[#1C69D4] underline decoration-4 underline-offset-8">SHOWROOM</span>
-                    </h1>
+    <body class="font-sans antialiased bg-zinc-950 text-white min-h-screen selection:bg-[#1C69D4] selection:text-white">
+        <div class="min-h-screen flex flex-col justify-between items-center py-12 px-4 sm:px-6 relative overflow-hidden bg-ambient-showroom">
+            <!-- Ambient Glow Spotlights -->
+            <div class="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-[#1C69D4]/10 blur-[130px] rounded-full"></div>
+            <div class="pointer-events-none absolute bottom-0 right-10 w-96 h-96 bg-[#1C69D4]/5 blur-[100px] rounded-full"></div>
+
+            <!-- Top Header / Brand Logo -->
+            <div class="w-full flex justify-center pt-4 z-10">
+                <a href="/" class="group flex flex-col items-center gap-1.5 focus:outline-none">
+                    <div class="flex items-center gap-3">
+                        <span class="w-2.5 h-2.5 bg-[#1C69D4] rotate-45 group-hover:scale-125 transition-transform duration-300"></span>
+                        <span class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white uppercase group-hover:text-zinc-100 transition-colors">
+                            BMW <span class="text-[#1C69D4] font-black">SHOWROOM</span>
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium tracking-wider text-zinc-400 uppercase">
+                        Hệ Thống Quản Trị Nội Bộ (Admin Portal)
+                    </span>
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md bg-zinc-900/50 border border-zinc-800 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                {{ $slot }}
+            <!-- Main Auth Card -->
+            <div class="w-full sm:max-w-md my-8 z-10">
+                <div class="bg-card-luxury p-8 sm:p-10 relative">
+                    <!-- Subtle top light bar -->
+                    <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#1C69D4] to-transparent"></div>
+                    {{ $slot }}
+                </div>
             </div>
 
-            <p class="mt-8 text-[10px] uppercase tracking-widest text-zinc-600 font-bold">
-                Experience the Ultimate Driving Machine.
-            </p>
+            <!-- Footer -->
+            <div class="w-full text-center z-10">
+                <p class="text-xs text-zinc-500 font-normal tracking-wide">
+                    &copy; {{ date('Y') }} BMW Group Vietnam. Hệ thống quản trị đặc quyền.
+                </p>
+            </div>
         </div>
     </body>
 </html>

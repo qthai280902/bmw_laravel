@@ -49,7 +49,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-[0.78fr_1fr] lg:items-end">
                 <div>
-                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Product lines</p>
+                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Dòng sản phẩm</p>
                     <h2 class="text-3xl font-bold tracking-tight sm:text-5xl">Dòng sản phẩm</h2>
                 </div>
                 <p class="max-w-2xl text-sm font-medium leading-relaxed text-zinc-400">
@@ -63,7 +63,7 @@
                         <img src="{{ asset('images/cars/sedan.png') }}" alt="BMW ô tô" class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105">
                     </div>
                     <div class="p-6">
-                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Cars</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Ô tô BMW</p>
                         <h3 class="mt-3 text-2xl font-bold tracking-tight text-white">Ô tô BMW</h3>
                         <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Sedan, SUV, xe điện và các mẫu M Performance.</p>
                     </div>
@@ -83,7 +83,7 @@
                         <img src="{{ asset('images/accessories/tham-lot-san-m-performance/lifestyle-use.png') }}" alt="BMW phụ kiện" class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105">
                     </div>
                     <div class="p-6">
-                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Accessories</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Phụ kiện chính hãng</p>
                         <h3 class="mt-3 text-2xl font-bold tracking-tight text-white">Phụ kiện</h3>
                         <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Phụ kiện chính hãng cho xe, nội thất và phong cách lái.</p>
                     </div>
@@ -93,7 +93,7 @@
                         <img src="{{ asset('images/cars/bmw-550e-xdrive-sedan/design-detail.png') }}" alt="BMW dịch vụ" class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105">
                     </div>
                     <div class="p-6">
-                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Aftersales</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Hậu mãi & Dịch vụ</p>
                         <h3 class="mt-3 text-2xl font-bold tracking-tight text-white">Dịch vụ</h3>
                         <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Bảo dưỡng, chăm sóc xe và đặt lịch dịch vụ.</p>
                     </div>
@@ -106,11 +106,11 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Featured selection</p>
+                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Tuyển chọn đặc quyền</p>
                     <h2 class="text-3xl font-bold tracking-tight sm:text-5xl">Mẫu nổi bật</h2>
                 </div>
                 <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center border border-black px-7 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:bg-black hover:text-white">
-                    Xem catalog
+                    Xem Toàn Bộ Sản Phẩm
                 </a>
             </div>
 
@@ -132,7 +132,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Editorial showroom</p>
+                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Chuyên mục Showroom</p>
                     <h2 class="text-3xl font-bold tracking-tight sm:text-5xl">Tìm hiểu thêm</h2>
                     <p class="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-400">
                         Ưu đãi, sự kiện, kinh nghiệm chọn xe và dịch vụ hậu mãi được viết theo ngữ cảnh showroom BMW.
@@ -181,7 +181,7 @@
     <section class="reveal-on-scroll bg-zinc-950 py-20 text-white sm:py-24">
         <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
             <div>
-                <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Showroom flow</p>
+                <p class="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#1C69D4]">Hành trình Showroom</p>
                 <h2 class="text-3xl font-bold leading-tight tracking-tight sm:text-5xl">Từ khám phá đến tư vấn trong cùng một trải nghiệm.</h2>
                 <p class="mt-6 max-w-2xl text-base font-medium leading-relaxed text-zinc-400">
                     Người dùng có thể xem chi tiết, thêm xe vào so sánh, yêu cầu báo giá hoặc đặt lịch gặp cố vấn mà không thay đổi luồng CRM hiện tại.
@@ -189,22 +189,22 @@
             </div>
             <div class="grid grid-cols-1 gap-px bg-zinc-800 sm:grid-cols-2">
                 <a href="{{ route('appointments.create', ['type' => 'advisor_meeting']) }}" class="border border-transparent bg-zinc-950 p-8 transition-colors duration-300 hover:border-[#1C69D4]/50 hover:bg-zinc-900">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Advisor</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Cố vấn tận tâm</p>
                     <h3 class="mt-4 text-2xl font-bold tracking-tight">Gặp cố vấn</h3>
                     <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Trao đổi cấu hình và nhu cầu sử dụng.</p>
                 </a>
                 <a href="{{ route('appointments.create', ['type' => 'quote']) }}" class="border border-transparent bg-zinc-950 p-8 transition-colors duration-300 hover:border-[#1C69D4]/50 hover:bg-zinc-900">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Quote</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Báo giá chính xác</p>
                     <h3 class="mt-4 text-2xl font-bold tracking-tight">Nhận báo giá</h3>
                     <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Yêu cầu showroom phản hồi chi tiết.</p>
                 </a>
                 <a href="{{ route('products.compare') }}" class="border border-transparent bg-zinc-950 p-8 transition-colors duration-300 hover:border-[#1C69D4]/50 hover:bg-zinc-900">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Compare</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">So sánh trực quan</p>
                     <h3 class="mt-4 text-2xl font-bold tracking-tight">So sánh xe</h3>
                     <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Đặt các mẫu quan tâm cạnh nhau.</p>
                 </a>
                 <a href="{{ route('offers.exclusive') }}" class="border border-transparent bg-zinc-950 p-8 transition-colors duration-300 hover:border-[#1C69D4]/50 hover:bg-zinc-900">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Offers</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#1C69D4]">Đặc quyền ưu đãi</p>
                     <h3 class="mt-4 text-2xl font-bold tracking-tight">Ưu đãi</h3>
                     <p class="mt-3 text-sm font-medium leading-relaxed text-zinc-400">Xem chương trình đang áp dụng.</p>
                 </a>

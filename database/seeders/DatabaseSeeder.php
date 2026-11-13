@@ -31,6 +31,13 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('12345678'),
             ]
         );
+        User::firstOrCreate(
+            ['email' => 'thai@bmw.com'],
+            [
+                'name' => 'Nguyễn Quốc Thái - Quản Lý',
+                'password' => Hash::make('12345678'),
+            ]
+        );
 
         $this->call([
             CategorySeeder::class,

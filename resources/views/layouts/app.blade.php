@@ -164,7 +164,7 @@
                         </template>
                     </div>
                     <div class="text-left">
-                        <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em]">Comparison</p>
+                        <p class="text-[10px] font-black text-accent uppercase tracking-[0.4em]">Bảng so sánh</p>
                         <p class="text-sm font-black text-white uppercase tracking-widest">
                             Đã chọn <span x-text="ids.length" class="text-accent"></span> mẫu xe
                         </p>

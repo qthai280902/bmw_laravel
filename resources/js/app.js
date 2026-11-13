@@ -304,7 +304,7 @@ window.aiAssistantWidget = (config) => ({
 
     parseTextParts(text) {
         const parts = [];
-        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)/g;
+        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\[([^\]]{1,100})\]\(([^)]+)\))/g;
         let cursor = 0;
         let match;
 
@@ -313,7 +313,12 @@ window.aiAssistantWidget = (config) => ({
                 parts.push({ type: 'text', text: text.slice(cursor, match.index) });
             }
 
-            parts.push({ type: 'strong', text: match[2] || match[4] });
+            if (match[2] || match[4]) {
+                parts.push({ type: 'strong', text: match[2] || match[4] });
+            } else if (match[6] && match[7]) {
+                const url = this.internalLink(match[7]) || match[7];
+                parts.push({ type: 'link', text: match[6], url: url });
+            }
             cursor = pattern.lastIndex;
         }
 
@@ -345,8 +350,9 @@ window.aiAssistantWidget = (config) => ({
             return url;
         };
 
-        cleanedText = cleanedText.replace(/\[([^\]]{1,100})]\(([^)]+)\)/g, (match, label, href) => {
-            return addAction(href, label) ? label : label;
+        cleanedText.replace(/\[([^\]]{1,100})]\(([^)]+)\)/g, (match, label, href) => {
+            addAction(href, label);
+            return match;
         });
 
         cleanedText = cleanedText.replace(/(^|[\s("'\[])(\/(?!\/)[^\s<>()]+)/g, (match, prefix, rawHref) => {

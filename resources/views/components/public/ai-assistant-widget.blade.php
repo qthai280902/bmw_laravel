@@ -1,11 +1,11 @@
 @php
     $assistantPrompts = [
-        'Tư vấn xe sedan',
-        'Tư vấn SUV/SAV',
+        'Báo giá BMW 330i',
+        'Đặt lịch lái thử',
+        'Chính sách bảo hành',
         'Tư vấn BMW Motorrad',
         'Tìm BMW S1000RR',
         'So sánh BMW 330i và 530i',
-        'Xem ưu đãi mới nhất',
     ];
 @endphp
 
@@ -35,7 +35,7 @@
         x-show="panelOpen"
         x-transition.opacity.duration.150ms
         data-ai-panel
-        class="ai-chat-panel flex h-[min(39rem,calc(100vh-2rem))] w-[calc(100vw-2rem)] max-w-[25rem] flex-col overflow-hidden border border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/70 backdrop-blur-2xl sm:h-[min(39rem,calc(100vh-7rem))]"
+        class="ai-chat-panel flex h-[min(39rem,calc(100vh-2rem))] w-[calc(100vw-2rem)] max-w-[25rem] flex-col overflow-hidden border border-white/10 border-t-2 border-t-[#1C69D4] bg-zinc-950/95 shadow-2xl shadow-black/90 backdrop-blur-2xl sm:h-[min(39rem,calc(100vh-7rem))]"
         aria-label="BMW AI Assistant"
     >
         <header class="flex items-center gap-3 border-b border-white/10 bg-black/35 px-4 py-3">
@@ -43,7 +43,7 @@
 
             <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <p class="text-[11px] font-bold text-[#70A7FF]" x-text="config.ready">Sẵn sàng tư vấn</p>
                 </div>
                 <h2 class="mt-0.5 truncate text-sm font-extrabold tracking-normal text-white">
@@ -144,10 +144,17 @@
                                         <div>
                                             <p x-show="block.type === 'paragraph'" class="leading-6">
                                                 <template x-for="(part, partIndex) in block.parts" :key="partIndex">
-                                                    <span
-                                                        :class="part.type === 'strong' ? 'font-black text-white' : ''"
-                                                        x-text="part.text"
-                                                    ></span>
+                                                    <span>
+                                                        <template x-if="part.type === 'link'">
+                                                            <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="part.text"></a>
+                                                        </template>
+                                                        <template x-if="part.type === 'strong'">
+                                                            <span class="font-black text-white" x-text="part.text"></span>
+                                                        </template>
+                                                        <template x-if="part.type === 'text'">
+                                                            <span x-text="part.text"></span>
+                                                        </template>
+                                                    </span>
                                                 </template>
                                             </p>
 
@@ -155,10 +162,17 @@
                                                 <template x-for="(item, itemIndex) in block.items" :key="itemIndex">
                                                     <li class="pl-1 leading-6">
                                                         <template x-for="(part, partIndex) in item.parts" :key="partIndex">
-                                                            <span
-                                                                :class="part.type === 'strong' ? 'font-black text-white' : ''"
-                                                                x-text="part.text"
-                                                            ></span>
+                                                            <span>
+                                                                <template x-if="part.type === 'link'">
+                                                                    <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="part.text"></a>
+                                                                </template>
+                                                                <template x-if="part.type === 'strong'">
+                                                                    <span class="font-black text-white" x-text="part.text"></span>
+                                                                </template>
+                                                                <template x-if="part.type === 'text'">
+                                                                    <span x-text="part.text"></span>
+                                                                </template>
+                                                            </span>
                                                         </template>
                                                     </li>
                                                 </template>
@@ -191,10 +205,10 @@
                 data-ai-loading
                 class="flex items-center gap-2 text-sm font-medium text-zinc-400"
             >
-                <span class="ai-assistant-typing-dot h-1.5 w-1.5 rounded-full bg-[#70A7FF]"></span>
-                <span class="ai-assistant-typing-dot h-1.5 w-1.5 rounded-full bg-[#70A7FF] [animation-delay:120ms]"></span>
-                <span class="ai-assistant-typing-dot h-1.5 w-1.5 rounded-full bg-[#70A7FF] [animation-delay:240ms]"></span>
-                <span>BMW AI đang trả lời...</span>
+                <span class="ai-assistant-typing-dot h-2 w-2 rounded-full bg-[#70A7FF] animate-bounce [animation-delay:0ms]"></span>
+                <span class="ai-assistant-typing-dot h-2 w-2 rounded-full bg-[#70A7FF] animate-bounce [animation-delay:150ms]"></span>
+                <span class="ai-assistant-typing-dot h-2 w-2 rounded-full bg-[#70A7FF] animate-bounce [animation-delay:300ms]"></span>
+                <span class="text-xs text-zinc-400 ml-1">BMW AI đang trả lời...</span>
             </div>
         </div>
 
@@ -249,7 +263,7 @@
         <button
             type="button"
             data-ai-launcher
-            class="ai-assistant-launcher flex items-center gap-3 border border-white/10 bg-black/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl transition-colors hover:border-[#1C69D4]"
+            class="ai-assistant-launcher flex items-center gap-3 border border-white/10 bg-black/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-300 hover:border-[#1C69D4] hover:shadow-[0_0_25px_rgba(28,105,212,0.4)]"
             @click="openPanel()"
             aria-label="Mở BMW AI Assistant"
         >

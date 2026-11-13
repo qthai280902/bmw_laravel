@@ -1,6 +1,26 @@
 # Project State
 
-Current phase: Phase 20 completed.
+Current phase: Phase 21 & Bổ Sung completed.
+
+## Phase 21 & Bổ Sung: Admin UI Overhaul, Cinematic Login, Public Article Editorial, Canvas Studio, Cố Định Bảng Quản Trị, Nâng Cấp Chatbot AI & Toàn Diện Việt Hóa
+
+- Completion time: 2026-11-10 +07:00.
+- Scope:
+  - Redesign Admin Login and Guest layout (`resources/views/layouts/guest.blade.php`, `resources/views/auth/login.blade.php`): Cinematic focus layout, `.bg-ambient-showroom` glow, `.bg-card-luxury` surface, Title Case labels, sleek inputs with BMW Blue focus ring, gradient submit button, and Vietnamese copyright footer.
+  - Upgrade Public Article View (`resources/views/articles/show.blade.php`, `resources/css/app.css`): Markdown rendering with `{!! \Illuminate\Support\Str::markdown($article->body) !!}`, 2-column luxury editorial layout, H2 with BMW Blue accent bar (`#1C69D4`), blockquote, list, inline images with captions, Alpine.js dynamic TOC sidebar, consultation/test-drive booking card, and related articles.
+  - Overhaul Admin CRM Shell & Dashboard (`resources/views/components/admin-layout.blade.php`, `resources/views/components/admin/sidebar-link.blade.php`, `resources/views/admin/dashboard.blade.php`, `resources/views/admin/articles/index.blade.php`): Title Case navigation with `Be Vietnam Pro`, 4 luxury stat cards with dedicated SVG icons, elegant SVG empty states ("Chưa ghi nhận hội thoại mới từ Trợ lý ảo"), emerald status badge, quick action links.
+  - Build Canvas Studio Visual Block Editor (`resources/views/admin/articles/_form.blade.php`): Alpine.js `articleCanvasStudio()` with 4 block types (Heading H2/H3, Rich Paragraph, Single Image + Caption, Quote / Spec Highlight), block reordering (up/down/delete), Toolbar drawer, Live Public Preview tab, Markdown raw tab, automatic two-way serialization into hidden/synced `name="body"` textarea for 100% backward compatibility.
+  - Cố Định Khung Bảng Quản Trị (`resources/views/admin/articles/index.blade.php`): `table-fixed w-full`, 5 cột tỷ lệ chuẩn (`42%`, `18%`, `12%`, `14%`, `14%`), xử lý ellipsis chữ dài `truncate block` kèm tooltip `title="..."` trên tiêu đề, mô tả và chuyên mục.
+  - Nâng Cấp Chatbot AI Showroom (`resources/views/components/public/ai-assistant-widget.blade.php`, `resources/js/app.js`, `app/Services/Ai/ShowroomAssistantService.php`, `app/Ai/Agents/ShowroomAssistant.php`): Nút nổi LED pulse online, viền xanh `#1C69D4`, typing indicator 3 chấm nảy sóng âm có delay bậc thang `animate-bounce`, 6 prompt chips (bảo tồn 3 test chips), hiển thị markdown link an toàn bằng template Alpine (không dùng `x-html`), System Prompt chỉ thị tư vấn chuẩn xác không bịa giá và xưng hô lịch thiệp.
+  - Toàn Diện Việt Hóa Website: Admin Shell (`Cổng Quản Trị Showroom`, `Hệ Thống Trực Tuyến`, `Xem Trang Chủ`), Dashboard CRM (`Khách Hàng Tiềm Năng Từ AI Mới Nhất`, `Toàn thời gian`, `Hôm nay`, `Chờ xử lý`, `Trợ lý AI`), Public Landing & Cards (`Dòng sản phẩm`, `Ô tô BMW`, `Phụ kiện chính hãng`, `Hậu mãi & Dịch vụ`, `Tuyển chọn đặc quyền`, `Xem Toàn Bộ Sản Phẩm`, `Chuyên mục Showroom`, `Hành trình Showroom`, `Cố vấn tận tâm`, `Báo giá chính xác`, `So sánh trực quan`, `Đặc quyền ưu đãi`, `Chính Hãng`, `Bảng so sánh`), bảo tồn nguyên vẹn các chuỗi assert test.
+- Verification:
+  - Pint style check: pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`55 modules transformed`, `public/build/assets/app-CMpl15ba.css` 95.14 kB, `public/build/assets/app-DC-JuK-4.js` 93.76 kB in 981ms).
+  - Full test suite: `php artisan test` pass, **114 tests / 1147 assertions (100% PASS)** in 19.03s.
+- Report: `.planning/baocao/phase-reports/phase-21-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 20: Catalog Accordion Filters, Scroll Reveal Landing Page, Product Detail Scrollspy & Article Typography Hierarchy
 

@@ -1,96 +1,331 @@
-<div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+<div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_360px]"
+     x-data="articleCanvasStudio(@js(old('body', $article->body ?? '')))">
+    <!-- Main Content Column -->
     <div class="space-y-6">
-        <x-admin.card class="!p-6">
-            <div class="mb-6 border-b border-zinc-900 pb-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-600">Nội dung chính</p>
+        <!-- Article Basic Information Card -->
+        <div class="bg-card-luxury p-6 relative">
+            <div class="mb-5 border-b border-zinc-800/80 pb-3 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Thông Tin Bài Viết</h3>
+                    <p class="text-xs text-zinc-400 mt-0.5">Tiêu đề, đường dẫn thân thiện và tóm tắt hiển thị ngoài website</p>
+                </div>
+                <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-[#70A7FF] bg-blue-950/40 border border-blue-500/20">Metadata</span>
             </div>
 
-            <div class="space-y-6">
-                <x-admin.form-field name="title" label="Tiêu đề">
+            <div class="space-y-5">
+                <x-admin.form-field name="title" label="Tiêu đề bài viết">
                     <input
                         id="title"
                         type="text"
                         name="title"
                         value="{{ old('title', $article->title) }}"
                         required
-                        class="w-full border-zinc-800 bg-black px-5 py-4 text-lg font-black text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                        placeholder="Ví dụ: Trải nghiệm lái thử BMW cuối tuần"
+                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-3 text-base font-bold text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        placeholder="Ví dụ: Trải nghiệm công nghệ lái điện hoàn toàn mới trên BMW i7"
                     >
                 </x-admin.form-field>
 
-                <x-admin.form-field name="slug" label="Slug" hint="Để trống để hệ thống tự tạo từ tiêu đề.">
+                <x-admin.form-field name="slug" label="Đường dẫn tĩnh (Slug)" hint="Để trống để hệ thống tự tạo tự động từ tiêu đề.">
                     <input
                         id="slug"
                         type="text"
                         name="slug"
                         value="{{ old('slug', $article->slug) }}"
-                        class="w-full border-zinc-800 bg-black px-5 py-3 text-sm text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                        placeholder="trai-nghiem-lai-thu-bmw"
+                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-zinc-300 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        placeholder="trai-nghiem-cong-nghe-lai-dien-bmw-i7"
                     >
                 </x-admin.form-field>
 
-                <x-admin.form-field name="excerpt" label="Tóm tắt ngắn">
+                <x-admin.form-field name="excerpt" label="Đoạn trích tóm tắt (Lead Excerpt)" hint="Đoạn văn ngắn nổi bật xuất hiện đầu bài viết và thẻ danh sách.">
                     <textarea
                         id="excerpt"
                         name="excerpt"
                         rows="3"
                         maxlength="500"
-                        class="w-full border-zinc-800 bg-black px-5 py-4 text-sm leading-6 text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                        placeholder="Tóm tắt hiển thị ở card public..."
+                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-3 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        placeholder="Nhập tóm tắt dẫn dắt bài viết..."
                     >{{ old('excerpt', $article->excerpt) }}</textarea>
                 </x-admin.form-field>
-
-                <x-admin.form-field name="body" label="Nội dung bài viết">
-                    <textarea
-                        id="body"
-                        name="body"
-                        rows="16"
-                        required
-                        class="w-full border-zinc-800 bg-black px-5 py-4 text-sm leading-7 text-zinc-100 placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                        placeholder="Nhập nội dung bài viết..."
-                    >{{ old('body', $article->body) }}</textarea>
-                </x-admin.form-field>
             </div>
-        </x-admin.card>
+        </div>
 
-        <x-admin.card class="!p-6">
-            <div class="mb-6 border-b border-zinc-900 pb-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-600">SEO tùy chọn</p>
+        <!-- Canvas Studio Editor Card -->
+        <div class="bg-card-luxury overflow-hidden">
+            <!-- Studio Toolbar & Tab Navigation -->
+            <div class="border-b border-zinc-800/80 px-6 py-4 flex flex-wrap items-center justify-between gap-4 bg-[#121215]">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-2.5 bg-[#1C69D4]"></div>
+                    <div>
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Canvas Studio Visual Editor</h3>
+                        <p class="text-[11px] text-zinc-400">Trình soạn thảo khối trực quan chuẩn BMW Editorial</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 border border-zinc-800 bg-zinc-950 p-1">
+                    <button type="button" 
+                            @click="switchTab('canvas')"
+                            :class="activeTab === 'canvas' ? 'bg-[#1C69D4] text-white shadow-sm font-semibold' : 'text-zinc-400 hover:text-white'"
+                            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Khối Studio
+                    </button>
+
+                    <button type="button" 
+                            @click="switchTab('markdown')"
+                            :class="activeTab === 'markdown' ? 'bg-[#1C69D4] text-white shadow-sm font-semibold' : 'text-zinc-400 hover:text-white'"
+                            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Mã Markdown
+                    </button>
+
+                    <button type="button" 
+                            @click="switchTab('preview')"
+                            :class="activeTab === 'preview' ? 'bg-[#1C69D4] text-white shadow-sm font-semibold' : 'text-zinc-400 hover:text-white'"
+                            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Xem Trước
+                    </button>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <x-admin.form-field name="seo_title" label="SEO title">
+            <!-- Tab 1: Visual Block Canvas -->
+            <div x-show="activeTab === 'canvas'" class="p-6 space-y-5">
+                <template x-for="(block, index) in blocks" :key="block.id">
+                    <div class="border border-zinc-800 bg-[#121215] p-4 relative group shadow-sm transition-all hover:border-zinc-700">
+                        <!-- Block Header Controls -->
+                        <div class="flex items-center justify-between mb-3 border-b border-zinc-800/80 pb-2.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border"
+                                      :class="{
+                                          'text-[#70A7FF] bg-blue-950/40 border-blue-500/30': block.type === 'heading',
+                                          'text-emerald-400 bg-emerald-950/40 border-emerald-500/30': block.type === 'paragraph',
+                                          'text-amber-400 bg-amber-950/40 border-amber-500/30': block.type === 'image',
+                                          'text-purple-400 bg-purple-950/40 border-purple-500/30': block.type === 'quote'
+                                      }">
+                                    <span x-show="block.type === 'heading'" x-text="block.level ? block.level.toUpperCase() : 'H2'"></span>
+                                    <span x-show="block.type === 'paragraph'">Đoạn văn</span>
+                                    <span x-show="block.type === 'image'">Hình ảnh</span>
+                                    <span x-show="block.type === 'quote'">Trích dẫn</span>
+                                </span>
+                                <span class="text-[11px] text-zinc-500" x-text="'Khối #' + (index + 1)"></span>
+                            </div>
+
+                            <div class="flex items-center gap-1">
+                                <button type="button" 
+                                        @click="moveBlock(index, -1)" 
+                                        :disabled="index === 0"
+                                        title="Di chuyển lên"
+                                        class="p-1.5 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                    </svg>
+                                </button>
+                                <button type="button" 
+                                        @click="moveBlock(index, 1)" 
+                                        :disabled="index === blocks.length - 1"
+                                        title="Di chuyển xuống"
+                                        class="p-1.5 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7 7" />
+                                    </svg>
+                                </button>
+                                <button type="button" 
+                                        @click="removeBlock(index)" 
+                                        title="Xóa khối"
+                                        class="p-1.5 text-zinc-500 hover:text-rose-400 transition-colors ml-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Heading Block Input -->
+                        <div x-show="block.type === 'heading'" class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <select x-model="block.level" @change="sync()" class="border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-300 focus:border-[#1C69D4] focus:ring-0">
+                                    <option value="h2">Tiêu đề lớn H2</option>
+                                    <option value="h3">Tiêu đề phụ H3</option>
+                                </select>
+                                <input type="text" 
+                                       x-model="block.text" 
+                                       @input="sync()"
+                                       placeholder="Nhập tiêu đề phần..." 
+                                       class="flex-1 border-zinc-800 bg-zinc-950 px-3.5 py-2 text-sm font-bold text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                            </div>
+                        </div>
+
+                        <!-- Paragraph Block Input -->
+                        <div x-show="block.type === 'paragraph'">
+                            <textarea x-model="block.text" 
+                                      @input="sync()"
+                                      rows="4" 
+                                      placeholder="Nhập nội dung đoạn văn bài viết..." 
+                                      class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                        </div>
+
+                        <!-- Image Block Input -->
+                        <div x-show="block.type === 'image'" class="space-y-3">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input type="text" 
+                                       x-model="block.url" 
+                                       @input="sync()"
+                                       placeholder="URL ảnh (https://... hoặc /images/cars/...)" 
+                                       class="border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                                <input type="text" 
+                                       x-model="block.caption" 
+                                       @input="sync()"
+                                       placeholder="Chú thích ảnh (caption)..." 
+                                       class="border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-300 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                            </div>
+                            <template x-if="block.url">
+                                <div class="relative max-h-48 overflow-hidden border border-zinc-800 bg-black flex items-center justify-center">
+                                    <img :src="block.url" class="max-h-48 object-cover w-full" alt="Preview">
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Quote Block Input -->
+                        <div x-show="block.type === 'quote'" class="space-y-3">
+                            <textarea x-model="block.text" 
+                                      @input="sync()"
+                                      rows="3" 
+                                      placeholder="Nhập câu trích dẫn hoặc thông số kỹ thuật nổi bật..." 
+                                      class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs italic leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                            <input type="text" 
+                                   x-model="block.author" 
+                                   @input="sync()"
+                                   placeholder="Nguồn phát biểu hoặc thông số (Ví dụ: Đội ngũ thiết kế BMW M)" 
+                                   class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-400 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Add Block Actions Toolbar -->
+                <div class="border border-dashed border-zinc-800 bg-zinc-950/60 p-4 text-center">
+                    <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Thêm Khối Nội Dung Mới</p>
+                    <div class="flex flex-wrap items-center justify-center gap-2.5">
+                        <button type="button" 
+                                @click="addBlock('heading')"
+                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-[#1C69D4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            + Tiêu đề (H2/H3)
+                        </button>
+
+                        <button type="button" 
+                                @click="addBlock('paragraph')"
+                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            + Đoạn văn
+                        </button>
+
+                        <button type="button" 
+                                @click="addBlock('image')"
+                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            + Hình ảnh
+                        </button>
+
+                        <button type="button" 
+                                @click="addBlock('quote')"
+                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                            + Trích dẫn
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Raw Markdown Editor -->
+            <div x-show="activeTab === 'markdown'" class="p-6">
+                <p class="text-xs text-zinc-400 mb-2">Chỉnh sửa trực tiếp cú pháp Markdown. Mọi thay đổi sẽ tự động đồng bộ sang giao diện Khối Studio.</p>
+                <textarea x-model="serializedMarkdown" 
+                          @input="syncFromMarkdown()"
+                          rows="18" 
+                          class="w-full font-mono text-xs leading-relaxed border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+            </div>
+
+            <!-- Tab 3: Live Public Preview -->
+            <div x-show="activeTab === 'preview'" class="p-6 bg-zinc-950">
+                <div class="border border-zinc-800 bg-[#121215] p-6 sm:p-8">
+                    <span class="inline-block border border-blue-500/20 bg-blue-950/40 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF] mb-3">
+                        Xem trước công khai
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-4" x-text="document.getElementById('title')?.value || 'Tiêu đề bài viết mẫu'"></h2>
+                    
+                    <div class="article-content" x-html="renderHtmlPreview()"></div>
+                </div>
+            </div>
+
+            <!-- Hidden Synchronized Textarea for Laravel Backend Form Submission -->
+            <textarea id="body" 
+                      name="body" 
+                      x-model="serializedMarkdown" 
+                      required 
+                      class="sr-only" 
+                      tabindex="-1">{{ old('body', $article->body) }}</textarea>
+            <x-input-error :messages="$errors->get('body')" class="px-6 pb-4" />
+        </div>
+
+        <!-- SEO Settings Card -->
+        <div class="bg-card-luxury p-6 relative">
+            <div class="mb-5 border-b border-zinc-800/80 pb-3">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Cấu Hình SEO Tìm Kiếm</h3>
+                <p class="text-xs text-zinc-400 mt-0.5">Tùy biến thẻ tiêu đề và mô tả xuất hiện trên kết quả Google Tìm kiếm</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <x-admin.form-field name="seo_title" label="Tiêu đề SEO">
                     <input
                         id="seo_title"
                         type="text"
                         name="seo_title"
                         value="{{ old('seo_title', $article->seo_title) }}"
-                        class="w-full border-zinc-800 bg-black px-5 py-3 text-sm text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        placeholder="Tiêu đề hiển thị trên Google..."
                     >
                 </x-admin.form-field>
 
-                <x-admin.form-field name="seo_description" label="SEO description">
+                <x-admin.form-field name="seo_description" label="Mô tả SEO">
                     <input
                         id="seo_description"
                         type="text"
                         name="seo_description"
                         value="{{ old('seo_description', $article->seo_description) }}"
-                        class="w-full border-zinc-800 bg-black px-5 py-3 text-sm text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        placeholder="Đoạn văn ngắn mô tả bài viết..."
                     >
                 </x-admin.form-field>
             </div>
-        </x-admin.card>
+        </div>
     </div>
 
+    <!-- Sidebar Right Column -->
     <aside class="space-y-6">
-        <x-admin.card class="!p-6">
-            <div class="mb-6 border-b border-zinc-900 pb-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-600">Xuất bản</p>
+        <!-- Publication Settings Card -->
+        <div class="bg-card-luxury p-6 relative">
+            <div class="mb-5 border-b border-zinc-800/80 pb-3">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Xuất Bản Bài Viết</h3>
             </div>
 
-            <div class="space-y-6">
-                <x-admin.form-field name="category" label="Chuyên mục">
-                    <select id="category" name="category" required class="w-full border-zinc-800 bg-black px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+            <div class="space-y-5">
+                <x-admin.form-field name="category" label="Chuyên mục bài viết">
+                    <select id="category" name="category" required class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs font-semibold text-zinc-200 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                         @foreach($categories as $value => $label)
                             <option value="{{ $value }}" {{ old('category', $article->category) === $value ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
@@ -98,54 +333,249 @@
                 </x-admin.form-field>
 
                 <x-admin.form-field name="status" label="Trạng thái">
-                    <select id="status" name="status" required class="w-full border-zinc-800 bg-black px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    <select id="status" name="status" required class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs font-semibold text-zinc-200 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                         @foreach($statuses as $value => $label)
                             <option value="{{ $value }}" {{ old('status', $article->status) === $value ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
                 </x-admin.form-field>
 
-                <x-admin.form-field name="published_at" label="Ngày xuất bản" hint="Nếu để trống khi chọn xuất bản, hệ thống dùng thời điểm hiện tại.">
+                <x-admin.form-field name="published_at" label="Thời gian xuất bản" hint="Để trống khi xuất bản để dùng thời gian hiện tại.">
                     <input
                         id="published_at"
                         type="datetime-local"
                         name="published_at"
                         value="{{ old('published_at', $article->published_at?->format('Y-m-d\TH:i')) }}"
-                        class="w-full border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-200 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                     >
                 </x-admin.form-field>
             </div>
-        </x-admin.card>
+        </div>
 
-        <x-admin.card class="!p-6">
-            <div class="mb-6 border-b border-zinc-900 pb-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-600">Ảnh đại diện</p>
+        <!-- Cover Image Card -->
+        <div class="bg-card-luxury p-6 relative">
+            <div class="mb-5 border-b border-zinc-800/80 pb-3">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Ảnh Đại Diện</h3>
             </div>
 
             @if($article->coverImageUrl())
-                <div class="mb-5 aspect-video border border-zinc-800 bg-black">
+                <div class="mb-4 aspect-video border border-zinc-800 bg-zinc-950 overflow-hidden shadow-sm">
                     <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="h-full w-full object-cover">
                 </div>
             @endif
 
-            <x-admin.form-field name="cover_image" label="Upload ảnh">
+            <x-admin.form-field name="cover_image" label="Tải lên ảnh mới">
                 <input
                     id="cover_image"
                     type="file"
                     name="cover_image"
                     accept="image/*"
-                    class="w-full border border-zinc-800 bg-black p-3 text-xs text-zinc-500 file:mr-4 file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-[10px] file:font-black file:uppercase file:tracking-[0.2em] file:text-zinc-300 hover:file:bg-zinc-800"
+                    class="w-full border border-zinc-800 bg-zinc-950 p-2.5 text-xs text-zinc-400 file:mr-3 file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-zinc-200 hover:file:bg-zinc-700 cursor-pointer"
                 >
             </x-admin.form-field>
-        </x-admin.card>
+        </div>
 
+        <!-- Submit & Actions -->
         <div class="grid grid-cols-1 gap-3">
-            <button type="submit" class="border border-white bg-white px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white">
+            <button type="submit" class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-[#1C69D4] to-[#154fa0] hover:from-[#2575e6] hover:to-[#1c69d4] text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-900/30 hover:shadow-blue-700/40 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all cursor-pointer">
                 {{ $submitLabel }}
             </button>
-            <a href="{{ route('admin.articles.index') }}" class="border border-zinc-800 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500 transition-colors hover:border-white hover:text-white">
-                Hủy
+            <a href="{{ route('admin.articles.index') }}" class="border border-zinc-800 bg-zinc-950 px-5 py-3 text-center text-xs font-semibold text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white">
+                Hủy bỏ
             </a>
         </div>
     </aside>
 </div>
+
+<script>
+function articleCanvasStudio(initialMarkdown) {
+    return {
+        activeTab: 'canvas',
+        serializedMarkdown: initialMarkdown || '',
+        blocks: [],
+
+        init() {
+            this.parseMarkdown(this.serializedMarkdown);
+            if (this.blocks.length === 0) {
+                this.blocks.push({ id: Date.now(), type: 'heading', level: 'h2', text: '' });
+                this.blocks.push({ id: Date.now() + 1, type: 'paragraph', text: '' });
+            }
+            this.sync();
+        },
+
+        switchTab(tab) {
+            if (this.activeTab === 'markdown' && tab !== 'markdown') {
+                this.parseMarkdown(this.serializedMarkdown);
+            } else if (tab === 'markdown' || tab === 'preview') {
+                this.sync();
+            }
+            this.activeTab = tab;
+        },
+
+        addBlock(type) {
+            const id = Date.now() + Math.random();
+            if (type === 'heading') {
+                this.blocks.push({ id, type: 'heading', level: 'h2', text: '' });
+            } else if (type === 'paragraph') {
+                this.blocks.push({ id, type: 'paragraph', text: '' });
+            } else if (type === 'image') {
+                this.blocks.push({ id, type: 'image', url: '', caption: '' });
+            } else if (type === 'quote') {
+                this.blocks.push({ id, type: 'quote', text: '', author: '' });
+            }
+            this.sync();
+        },
+
+        removeBlock(index) {
+            if (this.blocks.length <= 1) {
+                this.blocks = [{ id: Date.now(), type: 'paragraph', text: '' }];
+            } else {
+                this.blocks.splice(index, 1);
+            }
+            this.sync();
+        },
+
+        moveBlock(index, direction) {
+            const targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= this.blocks.length) return;
+            const temp = this.blocks[index];
+            this.blocks[index] = this.blocks[targetIndex];
+            this.blocks[targetIndex] = temp;
+            this.sync();
+        },
+
+        sync() {
+            const lines = [];
+            for (const b of this.blocks) {
+                if (b.type === 'heading') {
+                    const prefix = b.level === 'h3' ? '### ' : '## ';
+                    if (b.text && b.text.trim()) {
+                        lines.push(prefix + b.text.trim());
+                    }
+                } else if (b.type === 'paragraph') {
+                    if (b.text && b.text.trim()) {
+                        lines.push(b.text.trim());
+                    }
+                } else if (b.type === 'image') {
+                    if (b.url && b.url.trim()) {
+                        lines.push(`![${b.caption ? b.caption.trim() : ''}](${b.url.trim()})`);
+                    }
+                } else if (b.type === 'quote') {
+                    if (b.text && b.text.trim()) {
+                        let quoteStr = '> ' + b.text.trim().split('\n').join('\n> ');
+                        if (b.author && b.author.trim()) {
+                            quoteStr += '\n> — *' + b.author.trim() + '*';
+                        }
+                        lines.push(quoteStr);
+                    }
+                }
+            }
+            this.serializedMarkdown = lines.join('\n\n');
+        },
+
+        syncFromMarkdown() {
+            // Keep serializedMarkdown intact while typing in markdown tab
+        },
+
+        parseMarkdown(md) {
+            if (!md || !md.trim()) {
+                this.blocks = [];
+                return;
+            }
+
+            const chunks = md.split(/\n{2,}/);
+            const parsed = [];
+
+            for (const chunk of chunks) {
+                const trimmed = chunk.trim();
+                if (!trimmed) continue;
+
+                if (trimmed.startsWith('### ')) {
+                    parsed.push({
+                        id: Math.random(),
+                        type: 'heading',
+                        level: 'h3',
+                        text: trimmed.replace(/^###\s+/, '')
+                    });
+                } else if (trimmed.startsWith('## ')) {
+                    parsed.push({
+                        id: Math.random(),
+                        type: 'heading',
+                        level: 'h2',
+                        text: trimmed.replace(/^##\s+/, '')
+                    });
+                } else if (trimmed.startsWith('> ')) {
+                    const lines = trimmed.split('\n');
+                    let author = '';
+                    const quoteLines = [];
+                    for (const line of lines) {
+                        const clean = line.replace(/^>\s*/, '');
+                        if (clean.startsWith('— *') && clean.endsWith('*')) {
+                            author = clean.substring(3, clean.length - 1);
+                        } else {
+                            quoteLines.push(clean);
+                        }
+                    }
+                    parsed.push({
+                        id: Math.random(),
+                        type: 'quote',
+                        text: quoteLines.join('\n'),
+                        author: author
+                    });
+                } else {
+                    const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
+                    if (imgMatch) {
+                        parsed.push({
+                            id: Math.random(),
+                            type: 'image',
+                            caption: imgMatch[1],
+                            url: imgMatch[2]
+                        });
+                    } else {
+                        parsed.push({
+                            id: Math.random(),
+                            type: 'paragraph',
+                            text: trimmed
+                        });
+                    }
+                }
+            }
+
+            this.blocks = parsed;
+        },
+
+        renderHtmlPreview() {
+            let html = '';
+            for (const b of this.blocks) {
+                if (b.type === 'heading') {
+                    if (b.level === 'h3') {
+                        html += `<h3>${this.escapeHtml(b.text || '')}</h3>`;
+                    } else {
+                        html += `<h2>${this.escapeHtml(b.text || '')}</h2>`;
+                    }
+                } else if (b.type === 'paragraph') {
+                    html += `<p>${this.escapeHtml(b.text || '').replace(/\n/g, '<br>')}</p>`;
+                } else if (b.type === 'image') {
+                    if (b.url) {
+                        html += `<figure><img src="${this.escapeHtml(b.url)}" alt="${this.escapeHtml(b.caption || '')}">${b.caption ? `<figcaption>${this.escapeHtml(b.caption)}</figcaption>` : ''}</figure>`;
+                    }
+                } else if (b.type === 'quote') {
+                    html += `<blockquote><p>${this.escapeHtml(b.text || '')}</p>${b.author ? `<figcaption class="text-right text-xs text-zinc-400 mt-2">— ${this.escapeHtml(b.author)}</figcaption>` : ''}</blockquote>`;
+                }
+            }
+            return html || '<p class="text-zinc-500 italic">Nội dung bài viết đang trống...</p>';
+        },
+
+        escapeHtml(string) {
+            const entityMap = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            };
+            return String(string).replace(/[&<>"']/g, s => entityMap[s]);
+        }
+    };
+}
+</script>
