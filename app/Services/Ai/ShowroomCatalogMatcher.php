@@ -3,6 +3,7 @@
 namespace App\Services\Ai;
 
 use App\Enums\VehicleType;
+use App\Models\Article;
 use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -242,6 +243,51 @@ class ShowroomCatalogMatcher
         }
 
         return $score;
+    }
+
+    public function scoreArticleQuery(Article $article, string $keyword): int
+    {
+        $compactKeyword = $this->normalizeSearchText($keyword);
+
+        if ($compactKeyword === '') {
+            return 0;
+        }
+
+        $haystack = implode(' ', array_filter([
+            $article->title,
+            $article->slug,
+            $article->categoryLabel(),
+            $article->excerpt,
+            $article->body ? strip_tags($article->body) : null,
+        ]));
+
+        $compactHaystack = $this->normalizeSearchText($haystack);
+
+        if ($compactKeyword === $this->normalizeSearchText((string) $article->slug)) {
+            return 1000;
+        }
+
+        if (str_contains($this->normalizeSearchText((string) $article->title), $compactKeyword)) {
+            return 700;
+        }
+
+        if (str_contains($compactHaystack, $compactKeyword)) {
+            return 450;
+        }
+
+        $queryTokens = array_values(array_diff(
+            $this->tokenizeText($keyword),
+            ['bmw', 'uu', 'dai', 'chuong', 'trinh', 'bai', 'viet', 'tin', 'tuc']
+        ));
+
+        if ($queryTokens === []) {
+            $queryTokens = $this->tokenizeText($keyword);
+        }
+
+        $articleTokens = $this->tokenizeText($haystack);
+        $matchedCount = count(array_intersect($queryTokens, $articleTokens));
+
+        return $matchedCount > 0 ? $matchedCount * 150 : 0;
     }
 
     /**

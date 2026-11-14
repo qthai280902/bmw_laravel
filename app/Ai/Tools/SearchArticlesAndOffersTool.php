@@ -49,7 +49,7 @@ class SearchArticlesAndOffersTool implements Tool
             $articles = $articles
                 ->map(fn (Article $article): array => [
                     'article' => $article,
-                    'score' => $this->scoreArticle($article, $keyword),
+                    'score' => $this->matcher->scoreArticleQuery($article, $keyword),
                 ])
                 ->filter(fn (array $entry): bool => $entry['score'] > 0)
                 ->sortByDesc('score')
@@ -94,50 +94,5 @@ class SearchArticlesAndOffersTool implements Tool
                 ->description('Lọc theo chuyên mục bài viết hợp lệ của showroom.')
                 ->nullable(),
         ];
-    }
-
-    private function scoreArticle(Article $article, string $keyword): int
-    {
-        $compactKeyword = $this->matcher->normalizeSearchText($keyword);
-
-        if ($compactKeyword === '') {
-            return 0;
-        }
-
-        $haystack = implode(' ', array_filter([
-            $article->title,
-            $article->slug,
-            $article->categoryLabel(),
-            $article->excerpt,
-            $article->body ? strip_tags($article->body) : null,
-        ]));
-
-        $compactHaystack = $this->matcher->normalizeSearchText($haystack);
-
-        if ($compactKeyword === $this->matcher->normalizeSearchText($article->slug)) {
-            return 1000;
-        }
-
-        if (str_contains($this->matcher->normalizeSearchText($article->title), $compactKeyword)) {
-            return 700;
-        }
-
-        if (str_contains($compactHaystack, $compactKeyword)) {
-            return 450;
-        }
-
-        $queryTokens = array_values(array_diff(
-            $this->matcher->tokenizeText($keyword),
-            ['bmw', 'uu', 'dai', 'chuong', 'trinh', 'bai', 'viet', 'tin', 'tuc']
-        ));
-
-        if ($queryTokens === []) {
-            $queryTokens = $this->matcher->tokenizeText($keyword);
-        }
-
-        $articleTokens = $this->matcher->tokenizeText($haystack);
-        $matchedCount = count(array_intersect($queryTokens, $articleTokens));
-
-        return $matchedCount > 0 ? $matchedCount * 150 : 0;
     }
 }

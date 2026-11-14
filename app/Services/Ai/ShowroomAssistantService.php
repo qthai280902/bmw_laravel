@@ -29,6 +29,7 @@ class ShowroomAssistantService
     public function __construct(
         private GeminiKeyPool $geminiKeyPool,
         private ?ShowroomCatalogMatcher $matcher = null,
+        private ?ShowroomKnowledgeBaseService $knowledgeBase = null,
     ) {}
 
     /**
@@ -63,6 +64,7 @@ class ShowroomAssistantService
                 model: $model,
                 conversationMessages: $conversationMessages,
                 pageContextSummary: $pageContextSummary,
+                context: $context,
             );
 
             return $this->withTrackerProduct($payload, $trackerProduct);
@@ -77,7 +79,7 @@ class ShowroomAssistantService
                 pageContextSummary: $pageContextSummary,
             );
 
-            return $this->withTrackerProduct($this->successfulResponse($response, $suggestions), $trackerProduct);
+            return $this->withTrackerProduct($this->successfulResponse($response, $suggestions, $context), $trackerProduct);
         } catch (Throwable $exception) {
             Log::warning('Showroom AI assistant request failed.', [
                 'reason' => 'provider_error',
@@ -189,6 +191,7 @@ class ShowroomAssistantService
     /**
      * @param  array<int, array{label: string, url: string}>  $suggestions
      * @param  array<int, Message>  $conversationMessages
+     * @param  array<string, mixed>  $context
      * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string, reason?: string}
      */
     private function askGeminiWithRotation(
@@ -196,7 +199,8 @@ class ShowroomAssistantService
         array $suggestions,
         ?string $model,
         array $conversationMessages = [],
-        ?string $pageContextSummary = null
+        ?string $pageContextSummary = null,
+        array $context = []
     ): array {
         $candidates = $this->geminiKeyPool->candidateSequence();
 
@@ -226,7 +230,7 @@ class ShowroomAssistantService
                     pageContextSummary: $pageContextSummary,
                 );
 
-                return $this->successfulResponse($response, $suggestions);
+                return $this->successfulResponse($response, $suggestions, $context);
             } catch (RateLimitedException $exception) {
                 $rateLimitedAttempts++;
                 $this->geminiKeyPool->markRateLimited($candidate);
@@ -347,12 +351,19 @@ class ShowroomAssistantService
 
     /**
      * @param  array<int, array{label: string, url: string}>  $suggestions
+     * @param  array<string, mixed>  $context
      * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
      */
-    private function successfulResponse(AgentResponse $response, array $suggestions): array
+    private function successfulResponse(AgentResponse $response, array $suggestions, array $context = []): array
     {
+        $answer = trim($response->text);
+
+        if ($answer !== '') {
+            $answer = $this->sanitizeAndRepairMarkdownLinks($answer, $context);
+        }
+
         return [
-            'answer' => trim($response->text) ?: $this->fallbackMessage(),
+            'answer' => $answer !== '' ? $answer : $this->fallbackMessage(),
             'suggestions' => $suggestions,
             'status' => 'ok',
         ];
@@ -460,19 +471,37 @@ Ngữ cảnh trang hiện tại:
 CONTEXT;
         }
 
+        $ragChunks = $this->knowledgeBase()->retrieveRelevantChunks($message, 3, false);
+        $ragBlock = '';
+
+        if ($ragChunks !== []) {
+            $encodedRag = json_encode(
+                $ragChunks,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
+            );
+
+            $ragBlock = <<<RAG
+
+[TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC]
+{$encodedRag}
+
+RAG;
+        }
+
         return <<<PROMPT
 BMW showroom gồm ô tô BMW, BMW Motorrad, phụ kiện, ưu đãi và dịch vụ showroom.
 Bạn là Chuyên viên Tư vấn Trực tuyến Cao cấp của BMW Showroom Vietnam.
-Phong cách giao tiếp: Chuẩn mực, thượng lưu, lịch thiệp, xưng hô "BMW Showroom" (hoặc "Tôi") và gọi khách hàng là "Quý khách".
+Phong cách giao tiếp: Tinh tế, súc tích, chuẩn chuyên gia; gọi khách hàng là "Quý khách", không lặp "BMW Showroom" quá 2 lần/câu trả lời và tránh mở đầu rập khuôn kiểu "Kính thưa Quý khách".
 
 Dữ liệu public của showroom BMW:
 {$encodedContext}
-{$pageContextBlock}
+{$pageContextBlock}{$ragBlock}
 Nguyên tắc trả lời:
-- CHỈ sử dụng dữ liệu public ở trên và kết quả từ các công cụ (`search_catalog`, `compare_vehicles`, `search_articles_and_offers`).
-- Khi cần tra cứu chi tiết theo ngân sách, phân khúc (SUV/SAV, xe điện, xe máy/mô tô PKL), so sánh 2–3 mẫu xe hoặc tìm ưu đãi/bài viết, chủ động gọi công cụ tương ứng.
-- Tuyệt đối KHÔNG suy diễn hoặc bịa đặt giá bán, thông số kỹ thuật hay ưu đãi nếu không có trong dữ liệu trên. Nếu thiếu thông tin, nói rõ chưa có thông tin thay vì tự phỏng đoán.
-- Khi Quý khách quan tâm mua xe, nhận báo giá chi tiết, đăng ký lái thử hoặc bảo dưỡng dịch vụ: Luôn chủ động đính kèm liên kết điều hướng chuẩn xác tới form lịch hẹn:
+- CHỈ sử dụng dữ liệu public ở trên, tài liệu trong mục [TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC] và kết quả từ các công cụ (`search_catalog`, `compare_vehicles`, `search_articles_and_offers`, `search_knowledge_base`).
+- Khi cần tra cứu chi tiết theo ngân sách, phân khúc (SUV/SAV, xe điện, xe máy/mô tô PKL), so sánh 2–3 mẫu xe, tìm ưu đãi/bài viết hoặc chính sách bảo hành/bảo dưỡng/lái thử/trả góp/thu cũ đổi mới, chủ động gọi công cụ tương ứng.
+- Tuyệt đối KHÔNG suy diễn hoặc bịa đặt giá bán, thông số kỹ thuật hay chính sách nếu không có trong RAG hoặc dữ liệu public trên. Nếu thiếu thông tin, nói rõ chưa có thông tin và mời Quý khách đặt lịch tư vấn qua [Tư vấn trực tiếp]({$context['routes']['booking_consult']}).
+- Tuyệt đối KHÔNG xuất markdown link rỗng `[]()` hoặc `(#)`, và KHÔNG viết câu dẫn link thừa kiểu "Quý khách có thể tìm hiểu thêm tại đây:" ở cuối câu trả lời vì Action Cards đã hiển thị sẵn bên dưới.
+- Khi Quý khách quan tâm mua xe, nhận báo giá chi tiết, đăng ký lái thử hoặc bảo dưỡng dịch vụ: Luôn sử dụng đúng liên kết chính thức:
   * Đăng ký lái thử xe: [Đăng ký lái thử]({$context['routes']['booking_test_drive']})
   * Nhận báo giá & tư vấn: [Yêu cầu báo giá]({$context['routes']['quote']}) hoặc [Tư vấn trực tiếp]({$context['routes']['booking_consult']})
   * Phụ kiện chính hãng: [Xem phụ kiện]({$context['routes']['accessories']})
@@ -840,9 +869,274 @@ PROMPT;
         return (string) config('showroom_ai.rate_limit_fallback_message', $this->fallbackMessage());
     }
 
+    /**
+     * Repair empty, hash, legacy, or hallucinated markdown links in AI responses.
+     *
+     * @param  array<string, mixed>  $context
+     */
+    public function sanitizeAndRepairMarkdownLinks(string $answer, array $context = []): string
+    {
+        if (! str_contains($answer, '[') || ! str_contains($answer, '](')) {
+            return $answer;
+        }
+
+        $activeProducts = Product::query()
+            ->active()
+            ->with('category')
+            ->select(['id', 'category_id', 'name', 'slug', 'type'])
+            ->get();
+
+        $publishedArticles = Article::query()
+            ->published()
+            ->select(['id', 'title', 'slug', 'category', 'excerpt'])
+            ->get();
+
+        $repaired = preg_replace_callback(
+            '/\[([^\[\]\n]{1,120})\]\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\)/u',
+            function (array $matches) use ($context, $activeProducts, $publishedArticles): string {
+                $rawLabel = trim($matches[1]);
+                $rawHref = trim($matches[2]);
+                $plainLabel = trim(preg_replace('/\*{1,2}/', '', $rawLabel) ?? $rawLabel);
+
+                if ($plainLabel === '') {
+                    return '';
+                }
+
+                $validHref = $this->resolveMarkdownHref(
+                    rawHref: $rawHref,
+                    label: $plainLabel,
+                    context: $context,
+                    activeProducts: $activeProducts,
+                    publishedArticles: $publishedArticles,
+                );
+
+                if ($validHref !== null) {
+                    return "[{$plainLabel}]({$validHref})";
+                }
+
+                return "**{$plainLabel}**";
+            },
+            $answer
+        );
+
+        return is_string($repaired) ? trim($repaired) : $answer;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @param  Collection<int, Product>  $activeProducts
+     * @param  Collection<int, Article>  $publishedArticles
+     */
+    private function resolveMarkdownHref(
+        string $rawHref,
+        string $label,
+        array $context,
+        Collection $activeProducts,
+        Collection $publishedArticles
+    ): ?string {
+        $candidate = $this->normalizeInternalHrefCandidate($rawHref);
+
+        if ($candidate !== null && $this->isVerifiedShowroomHref($candidate, $activeProducts, $publishedArticles)) {
+            return $candidate;
+        }
+
+        return $this->inferHrefFromLabel($label, $context, $activeProducts, $publishedArticles);
+    }
+
+    private function normalizeInternalHrefCandidate(string $rawHref): ?string
+    {
+        $href = trim($rawHref);
+        $lowered = Str::lower($href);
+
+        if (
+            $href === ''
+            || $href === '#'
+            || str_starts_with($href, '#')
+            || str_starts_with($lowered, 'javascript:')
+            || str_starts_with($lowered, 'data:')
+            || str_starts_with($lowered, 'vbscript:')
+            || str_starts_with($href, '//')
+        ) {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $href) === 1) {
+            $parsedHref = parse_url($href);
+            $parsedApp = parse_url(url('/'));
+
+            if (
+                ! is_array($parsedHref)
+                || ! is_array($parsedApp)
+                || Str::lower((string) ($parsedHref['host'] ?? '')) !== Str::lower((string) ($parsedApp['host'] ?? ''))
+            ) {
+                return null;
+            }
+
+            $path = (string) ($parsedHref['path'] ?? '/');
+            $query = isset($parsedHref['query']) && $parsedHref['query'] !== '' ? '?'.$parsedHref['query'] : '';
+            $href = $path.$query;
+        }
+
+        if (! str_starts_with($href, '/') || str_starts_with($href, '/\\')) {
+            return null;
+        }
+
+        $path = (string) (parse_url($href, PHP_URL_PATH) ?? '/');
+        $query = (string) (parse_url($href, PHP_URL_QUERY) ?? '');
+
+        if ($path === '/dat-lich' || str_starts_with($path, '/dat-lich/')) {
+            $path = '/booking'.substr($path, strlen('/dat-lich'));
+        } elseif ($path === '/phu-kien' || str_starts_with($path, '/phu-kien/')) {
+            $path = '/accessories'.substr($path, strlen('/phu-kien'));
+        }
+
+        return $path.($query !== '' ? '?'.$query : '');
+    }
+
+    /**
+     * @param  Collection<int, Product>  $activeProducts
+     * @param  Collection<int, Article>  $publishedArticles
+     */
+    private function isVerifiedShowroomHref(
+        string $href,
+        Collection $activeProducts,
+        Collection $publishedArticles
+    ): bool {
+        $path = (string) (parse_url($href, PHP_URL_PATH) ?? '');
+
+        if ($path === '') {
+            return false;
+        }
+
+        if (preg_match('#^/catalog/([a-z0-9-]+)$#i', $path, $matches) === 1) {
+            return $activeProducts->contains(fn (Product $product): bool => Str::lower($product->slug) === Str::lower($matches[1]));
+        }
+
+        if (preg_match('#^/tim-hieu-them/([a-z0-9-]+)$#i', $path, $matches) === 1) {
+            return $publishedArticles->contains(fn (Article $article): bool => Str::lower($article->slug) === Str::lower($matches[1]));
+        }
+
+        if (preg_match('#^/accessories/([a-z0-9-]+)/order$#i', $path, $matches) === 1) {
+            return $activeProducts->contains(
+                fn (Product $product): bool => $product->isAccessory() && Str::lower($product->slug) === Str::lower($matches[1])
+            );
+        }
+
+        return in_array($path, [
+            '/',
+            '/catalog',
+            '/compare',
+            '/accessories',
+            '/tim-hieu-them',
+            '/offers',
+            '/booking',
+            '/contact',
+            '/privacy-policy',
+        ], true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @param  Collection<int, Product>  $activeProducts
+     * @param  Collection<int, Article>  $publishedArticles
+     */
+    private function inferHrefFromLabel(
+        string $label,
+        array $context,
+        Collection $activeProducts,
+        Collection $publishedArticles
+    ): ?string {
+        $normalizedLabel = Str::ascii(Str::lower($label));
+
+        if ($normalizedLabel === '') {
+            return null;
+        }
+
+        $bestProductEntry = $activeProducts
+            ->map(fn (Product $product): array => [
+                'product' => $product,
+                'score' => $this->matcher()->scoreProductQuery($product, $label, true, false),
+            ])
+            ->filter(fn (array $entry): bool => $entry['score'] >= 350)
+            ->sortByDesc('score')
+            ->first();
+
+        if ($bestProductEntry !== null) {
+            /** @var Product $matchedProduct */
+            $matchedProduct = $bestProductEntry['product'];
+
+            if ($matchedProduct->canTestDrive() && Str::contains($normalizedLabel, ['lai thu', 'test drive'])) {
+                return route('appointments.create', ['type' => 'test_drive', 'product_id' => $matchedProduct->id], false);
+            }
+
+            if ($matchedProduct->isVehicle() && Str::contains($normalizedLabel, ['bao gia', 'quote', 'lan banh'])) {
+                return route('appointments.create', ['type' => 'quote', 'product_id' => $matchedProduct->id], false);
+            }
+
+            if (Str::contains($normalizedLabel, ['tu van', 'consult'])) {
+                return route('appointments.create', ['type' => 'consult', 'product_id' => $matchedProduct->id], false);
+            }
+
+            if ($matchedProduct->isAccessory() && Str::contains($normalizedLabel, ['dat phu kien', 'dat mua', 'order'])) {
+                return route('accessory-orders.create', $matchedProduct->slug, false);
+            }
+
+            return route('products.show', $matchedProduct->slug, false);
+        }
+
+        $bestArticleEntry = $publishedArticles
+            ->map(fn (Article $article): array => [
+                'article' => $article,
+                'score' => $this->matcher()->scoreArticleQuery($article, $label),
+            ])
+            ->filter(fn (array $entry): bool => $entry['score'] >= 350)
+            ->sortByDesc('score')
+            ->first();
+
+        if ($bestArticleEntry !== null) {
+            /** @var Article $matchedArticle */
+            $matchedArticle = $bestArticleEntry['article'];
+
+            return route('articles.show', $matchedArticle->slug, false);
+        }
+
+        if (
+            isset($context['current_product']['url'])
+            && is_string($context['current_product']['url'])
+            && Str::contains($normalizedLabel, ['xem chi tiet', 'chi tiet xe', 'san pham nay', 'xe nay', 'chiec nay'])
+        ) {
+            return $context['current_product']['url'];
+        }
+
+        $intentRoutes = [
+            ['keywords' => ['lai thu', 'test drive', 'dat lich lai'], 'url' => route('appointments.create', ['type' => 'test_drive'], false)],
+            ['keywords' => ['bao gia', 'quote', 'lan banh', 'tra gop'], 'url' => route('appointments.create', ['type' => 'quote'], false)],
+            ['keywords' => ['tu van', 'bao duong', 'dat lich', 'consult', 'lien he'], 'url' => route('appointments.create', ['type' => 'consult'], false)],
+            ['keywords' => ['phu kien', 'accessory', 'do choi'], 'url' => route('accessories.index', [], false)],
+            ['keywords' => ['so sanh', 'compare'], 'url' => route('products.compare', [], false)],
+            ['keywords' => ['uu dai', 'khuyen mai', 'exclusive'], 'url' => route('offers.exclusive', [], false)],
+            ['keywords' => ['bai viet', 'tin tuc', 'tim hieu'], 'url' => route('articles.index', [], false)],
+            ['keywords' => ['motorrad', 'xe may', 'mo to', 'pkl'], 'url' => route('products.index', ['type' => VehicleType::MOTORBIKE->value], false)],
+            ['keywords' => ['danh muc', 'tat ca xe', 'san pham'], 'url' => route('products.index', [], false)],
+        ];
+
+        foreach ($intentRoutes as $entry) {
+            if (Str::contains($normalizedLabel, $entry['keywords'])) {
+                return $entry['url'];
+            }
+        }
+
+        return null;
+    }
+
     private function matcher(): ShowroomCatalogMatcher
     {
         return $this->matcher ??= app(ShowroomCatalogMatcher::class);
+    }
+
+    private function knowledgeBase(): ShowroomKnowledgeBaseService
+    {
+        return $this->knowledgeBase ??= app(ShowroomKnowledgeBaseService::class);
     }
 
     private function normalizeVisitorId(?string $visitorId): ?string

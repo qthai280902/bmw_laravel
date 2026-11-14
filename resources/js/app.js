@@ -49,7 +49,7 @@ window.aiAssistantWidget = (config) => ({
         'bmw_ai_assistant_state_v3',
         'bmw_ai_assistant_position',
     ],
-    maxStoredMessages: 24,
+    maxStoredMessages: 16,
 
     get hasMessages() {
         return this.messages.length > 0;
@@ -216,6 +216,8 @@ window.aiAssistantWidget = (config) => ({
                 Array.isArray(payload.suggestions) ? payload.suggestions : [],
                 true,
             );
+            this.pruneMessages();
+            this.persistState();
         } catch (error) {
             this.appendAssistantMessage(config.fallback, [], true);
         } finally {
@@ -303,8 +305,10 @@ window.aiAssistantWidget = (config) => ({
         };
     },
 
-    createAssistantMessage(text, suggestions = [], animate = false) {
-        const formatted = this.formatAssistantMessage(text, suggestions);
+    createAssistantMessage(text, suggestions = [], animate = false, restoredActions = null) {
+        const normalizedSuggestions = this.normalizeSuggestionList(suggestions);
+        const normalizedRestoredActions = this.normalizeActionList(restoredActions);
+        const formatted = this.formatAssistantMessage(text, normalizedSuggestions, normalizedRestoredActions);
         const offsetState = this.assignPartOffsets(formatted.blocks);
         const shouldAnimate = animate && !this.prefersReducedMotion() && offsetState.totalChars > 0;
 
@@ -312,6 +316,7 @@ window.aiAssistantWidget = (config) => ({
             id: this.messageId(),
             role: 'assistant',
             text: String(text || ''),
+            suggestions: normalizedSuggestions,
             blocks: offsetState.blocks,
             actions: formatted.actions,
             totalChars: offsetState.totalChars,
@@ -411,8 +416,8 @@ window.aiAssistantWidget = (config) => ({
         });
     },
 
-    formatAssistantMessage(text, suggestions = []) {
-        const extracted = this.extractActions(String(text || ''), suggestions);
+    formatAssistantMessage(text, suggestions = [], restoredActions = []) {
+        const extracted = this.extractActions(String(text || ''), suggestions, restoredActions);
         const blocks = this.buildBlocks(extracted.text);
 
         return {
@@ -468,11 +473,33 @@ window.aiAssistantWidget = (config) => ({
                 return;
             }
 
+            const headingMatch = trimmedLine.match(/^#{1,4}\s+(.+)$/);
+
+            if (headingMatch) {
+                flushParagraph();
+                flushList();
+                const headingText = headingMatch[1].replace(/\*{1,2}/g, '').trim();
+
+                if (headingText) {
+                    blocks.push({
+                        type: 'paragraph',
+                        parts: [{ type: 'strong', text: headingText }],
+                    });
+                }
+
+                return;
+            }
+
             const listMatch = trimmedLine.match(/^([-*\u2022]|\d+[.)])\s+(.+)$/);
 
             if (listMatch) {
                 flushParagraph();
-                listItems.push(listMatch[2]);
+                const itemText = listMatch[2].trim();
+
+                if (itemText) {
+                    listItems.push(itemText);
+                }
+
                 return;
             }
 
@@ -488,7 +515,7 @@ window.aiAssistantWidget = (config) => ({
 
     parseTextParts(text) {
         const parts = [];
-        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\[([^\]]{1,100})\]\(([^)]+)\))/g;
+        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\[([^\]]{1,120})\]\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\))/g;
         let cursor = 0;
         let match;
 
@@ -499,10 +526,18 @@ window.aiAssistantWidget = (config) => ({
 
             if (match[2] || match[4]) {
                 parts.push({ type: 'strong', text: match[2] || match[4] });
-            } else if (match[6] && match[7]) {
-                const url = this.internalLink(match[7]) || match[7];
-                parts.push({ type: 'link', text: match[6], url: url });
+            } else if (match[6] !== undefined) {
+                const label = match[6].replace(/\*{1,2}/g, '').trim();
+                const rawHref = String(match[7] || '').trim();
+                const url = rawHref ? this.internalLink(rawHref) : null;
+
+                if (label && url) {
+                    parts.push({ type: 'link', text: label, url });
+                } else if (label) {
+                    parts.push({ type: 'strong', text: label });
+                }
             }
+
             cursor = pattern.lastIndex;
         }
 
@@ -513,7 +548,7 @@ window.aiAssistantWidget = (config) => ({
         return parts.length ? parts : [{ type: 'text', text }];
     },
 
-    extractActions(text, suggestions = []) {
+    extractActions(text, suggestions = [], restoredActions = []) {
         const actions = [];
         let cleanedText = String(text || '');
 
@@ -534,9 +569,22 @@ window.aiAssistantWidget = (config) => ({
             return url;
         };
 
-        cleanedText.replace(/\[([^\]]{1,100})]\(([^)]+)\)/g, (match, label, href) => {
-            addAction(href, label);
-            return match;
+        if (Array.isArray(restoredActions)) {
+            restoredActions.forEach((action) => {
+                addAction(action?.url, action?.label || '');
+            });
+        }
+
+        cleanedText = cleanedText.replace(/\[([^\]]{1,120})\]\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\)/g, (match, rawLabel, rawHref) => {
+            const label = String(rawLabel || '').replace(/\*{1,2}/g, '').trim();
+
+            if (!label) {
+                return '';
+            }
+
+            const validUrl = addAction(rawHref, label);
+
+            return validUrl ? `[${label}](${validUrl})` : `**${label}**`;
         });
 
         cleanedText = cleanedText.replace(/(^|[\s("'\[])(\/(?!\/)[^\s<>()]+)/g, (match, prefix, rawHref) => {
@@ -554,13 +602,27 @@ window.aiAssistantWidget = (config) => ({
             addAction(suggestion?.url, suggestion?.label);
         });
 
+        const prioritizedActions = this.prioritizeAndLimitActions(
+            actions.map(({ label, url }) => this.actionMeta(url, label)),
+            4,
+        );
+
+        if (prioritizedActions.length > 0) {
+            cleanedText = cleanedText
+                .replace(
+                    /(?:Quý khách có thể|Bạn có thể|Có thể)?\s*(?:tìm hiểu thêm|xem thêm chi tiết|xem chi tiết|tham khảo thêm|truy cập)\s*(?:tại đây|ở đây|tại liên kết|qua liên kết|bên dưới)?\s*[:\-–]+\s*(?=\n|$)/gim,
+                    '',
+                )
+                .replace(/[:\-–]\s*[.,]?\s*$/gm, '.');
+        }
+
         return {
             text: cleanedText
                 .replace(/[ \t]+\n/g, '\n')
                 .replace(/\n{3,}/g, '\n\n')
                 .replace(/[ \t]{2,}/g, ' ')
                 .trim(),
-            actions: actions.map(({ label, url }) => this.actionMeta(url, label)),
+            actions: prioritizedActions,
         };
     },
 
@@ -676,10 +738,13 @@ window.aiAssistantWidget = (config) => ({
 
         if (
             !value
+            || value === '#'
+            || value.startsWith('#')
             || value.startsWith('//')
             || value.includes('\n')
             || lowered.startsWith('javascript:')
             || lowered.startsWith('data:')
+            || lowered.startsWith('vbscript:')
         ) {
             return null;
         }
@@ -699,6 +764,93 @@ window.aiAssistantWidget = (config) => ({
         }
     },
 
+    actionPriority(action) {
+        const url = String(action?.url || '');
+
+        if (url.startsWith('/catalog/') || (url.startsWith('/accessories/') && url.endsWith('/order'))) {
+            return 1;
+        }
+
+        if (url.startsWith('/booking') && url.includes('type=test_drive')) {
+            return 2;
+        }
+
+        if (url.startsWith('/booking') && url.includes('type=quote')) {
+            return 3;
+        }
+
+        if (url.startsWith('/compare')) {
+            return 4;
+        }
+
+        if (url.startsWith('/offers') || url.startsWith('/tim-hieu-them')) {
+            return 5;
+        }
+
+        if (url.startsWith('/booking')) {
+            return 6;
+        }
+
+        return 7;
+    },
+
+    prioritizeAndLimitActions(actions = [], limit = 4) {
+        return actions
+            .map((action, index) => ({ action, index, priority: this.actionPriority(action) }))
+            .sort((a, b) => (a.priority - b.priority) || (a.index - b.index))
+            .slice(0, limit)
+            .map(({ action }) => action);
+    },
+
+    normalizeSuggestionList(items = []) {
+        if (!Array.isArray(items)) {
+            return [];
+        }
+
+        const unique = [];
+
+        items.forEach((item) => {
+            const url = this.internalLink(item?.url);
+
+            if (!url || unique.some((entry) => entry.url === url)) {
+                return;
+            }
+
+            unique.push({
+                label: String(item?.label || this.actionLabel(url)).trim(),
+                url,
+            });
+        });
+
+        return unique.slice(0, 6);
+    },
+
+    normalizeActionList(items = []) {
+        if (!Array.isArray(items)) {
+            return [];
+        }
+
+        const unique = [];
+
+        items.forEach((item) => {
+            const url = this.internalLink(item?.url);
+
+            if (!url || unique.some((entry) => entry.url === url)) {
+                return;
+            }
+
+            const meta = this.actionMeta(url, item?.label || '');
+            unique.push({
+                label: meta.label,
+                subtitle: String(item?.subtitle || meta.subtitle || 'BMW Showroom').trim(),
+                kind: String(item?.kind || meta.kind || 'link').trim(),
+                url,
+            });
+        });
+
+        return this.prioritizeAndLimitActions(unique, 4);
+    },
+
     restoreState() {
         try {
             const saved = JSON.parse(localStorage.getItem(this.stateKey) || 'null');
@@ -714,9 +866,21 @@ window.aiAssistantWidget = (config) => ({
                 this.messages = saved.messages
                     .filter((message) => ['assistant', 'user'].includes(message?.role) && typeof message?.text === 'string')
                     .slice(-this.maxStoredMessages)
-                    .map((message) => message.role === 'user'
-                        ? this.createUserMessage(message.text)
-                        : this.createAssistantMessage(message.text, []));
+                    .map((message) => {
+                        if (message.role === 'user') {
+                            return this.createUserMessage(message.text);
+                        }
+
+                        const savedSuggestions = this.normalizeSuggestionList(message.suggestions || []);
+                        const savedActions = this.normalizeActionList(message.actions || []);
+
+                        return this.createAssistantMessage(
+                            message.text,
+                            savedSuggestions,
+                            false,
+                            savedActions,
+                        );
+                    });
             }
         } catch (error) {
             this.panelOpen = false;
@@ -729,10 +893,21 @@ window.aiAssistantWidget = (config) => ({
         try {
             localStorage.setItem(this.stateKey, JSON.stringify({
                 mode: this.sideTabVisible ? 'hidden' : (this.panelOpen ? 'panel' : 'launcher'),
-                messages: this.messages.slice(-this.maxStoredMessages).map((message) => ({
-                    role: message.role === 'user' ? 'user' : 'assistant',
-                    text: this.safeStoredText(message.text),
-                })),
+                messages: this.messages.slice(-this.maxStoredMessages).map((message) => {
+                    if (message.role === 'user') {
+                        return {
+                            role: 'user',
+                            text: this.safeStoredText(message.text),
+                        };
+                    }
+
+                    return {
+                        role: 'assistant',
+                        text: this.safeStoredText(message.text),
+                        suggestions: this.normalizeSuggestionList(message.suggestions || []),
+                        actions: this.normalizeActionList(message.actions || []),
+                    };
+                }),
             }));
         } catch (error) {
             void error;

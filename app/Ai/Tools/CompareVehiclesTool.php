@@ -94,16 +94,38 @@ class CompareVehiclesTool implements Tool
         ];
 
         if ($uniqueProducts->count() === 1) {
+            /** @var Product $singleVehicle */
             $singleVehicle = $uniqueProducts->first();
-            $payload['message'] = "Chỉ khớp 1 mẫu xe duy nhất sau khi lọc trùng ({$singleVehicle->name}). Cần ít nhất 2 mẫu xe khác nhau để lập bảng so sánh; vui lòng gợi ý Quý khách chọn thêm một mẫu xe khác để đối chiếu.";
-            $payload['available_vehicle_suggestions'] = $activeVehicles
-                ->reject(fn (Product $vehicle): bool => $vehicle->id === $singleVehicle->id)
+            $sortedCompanions = $this->rankCompanionVehicles($activeVehicles, $singleVehicle);
+            /** @var Product|null $suggestedCompanion */
+            $suggestedCompanion = $sortedCompanions->first();
+
+            if ($suggestedCompanion instanceof Product) {
+                $suggestedCompareUrl = route('products.compare', [
+                    'ids' => $singleVehicle->id.','.$suggestedCompanion->id,
+                ], false);
+
+                $payload['suggested_comparison_vehicle'] = array_merge(
+                    $this->matcher->formatProductForTool($suggestedCompanion, 4),
+                    ['compare_url' => $suggestedCompareUrl]
+                );
+                $payload['suggested_compare_url'] = $suggestedCompareUrl;
+                $payload['message'] = "Chỉ khớp 1 mẫu xe duy nhất sau khi lọc trùng ({$singleVehicle->name}). Hệ thống đã tự động chọn mẫu xe gần nhất cùng phân khúc/dòng xe để đối chiếu là {$suggestedCompanion->name}. Hãy nêu rõ hai tên gọi cùng trỏ về {$singleVehicle->name}, cung cấp giá niêm yết + 3 thông số chính và đối chiếu trực tiếp với {$suggestedCompanion->name} kèm liên kết so sánh sẵn có.";
+            } else {
+                $payload['message'] = "Chỉ khớp 1 mẫu xe duy nhất sau khi lọc trùng ({$singleVehicle->name}). Cần ít nhất 2 mẫu xe khác nhau để lập bảng so sánh; vui lòng gợi ý Quý khách chọn thêm một mẫu xe khác để đối chiếu.";
+            }
+
+            $payload['available_vehicle_suggestions'] = $sortedCompanions
                 ->take(4)
                 ->map(fn (Product $vehicle): array => [
                     'name' => $vehicle->name,
                     'slug' => $vehicle->slug,
+                    'category' => $vehicle->category?->name,
                     'price_vnd' => $this->matcher->money($vehicle->price),
                     'url' => route('products.show', $vehicle->slug, false),
+                    'compare_url' => route('products.compare', [
+                        'ids' => $singleVehicle->id.','.$vehicle->id,
+                    ], false),
                 ])
                 ->values()
                 ->all();
@@ -144,5 +166,50 @@ class CompareVehiclesTool implements Tool
             ->first();
 
         return $scored['vehicle'] ?? null;
+    }
+
+    /**
+     * Rank candidate companion vehicles preferring identical segment and powertrain line.
+     *
+     * @param  Collection<int, Product>  $activeVehicles
+     * @return Collection<int, Product>
+     */
+    private function rankCompanionVehicles(Collection $activeVehicles, Product $singleVehicle): Collection
+    {
+        $singlePrice = (float) ($singleVehicle->price ?? 0);
+
+        return $activeVehicles
+            ->reject(fn (Product $vehicle): bool => $vehicle->id === $singleVehicle->id)
+            ->sort(function (Product $a, Product $b) use ($singleVehicle, $singlePrice): int {
+                $tierA = $this->companionAffinityTier($a, $singleVehicle);
+                $tierB = $this->companionAffinityTier($b, $singleVehicle);
+
+                if ($tierA !== $tierB) {
+                    return $tierA <=> $tierB;
+                }
+
+                $diffA = abs(((float) ($a->price ?? 0)) - $singlePrice);
+                $diffB = abs(((float) ($b->price ?? 0)) - $singlePrice);
+
+                if ($diffA !== $diffB) {
+                    return $diffA <=> $diffB;
+                }
+
+                return $a->id <=> $b->id;
+            })
+            ->values();
+    }
+
+    private function companionAffinityTier(Product $candidate, Product $singleVehicle): int
+    {
+        if ($candidate->type === $singleVehicle->type && $candidate->category_id === $singleVehicle->category_id) {
+            return 0;
+        }
+
+        if ($candidate->type === $singleVehicle->type) {
+            return 1;
+        }
+
+        return 2;
     }
 }

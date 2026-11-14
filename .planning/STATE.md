@@ -1,6 +1,25 @@
 # Project State
 
-Current phase: Phase 22 completed.
+Current phase: Phase 22.1 completed.
+
+## Phase 22.1: Hotfix UX/Markdown, Tái Thiết Kế UI shadcn/ui & Kiến Trúc RAG Showroom AI
+
+- Completion time: 2026-11-14 +07:00.
+- Scope:
+  - Persist & restore Action Cards seamlessly across page navigations (`resources/js/app.js`): limit `maxStoredMessages` to 16, persist validated `suggestions` & `actions` immediately upon API response arrival, prioritize practical actions (Chi tiết xe → Đặt lái thử → Báo giá → So sánh/Ưu đãi) with a strict max-4 cap.
+  - Sanitize & repair malformed/unsafe/broken markdown links (`ShowroomAssistantService::sanitizeAndRepairMarkdownLinks`, `resources/js/app.js`): neutralize empty `[]()`, `#`, XSS parens (`javascript:alert(1)`), hallucinated `/catalog/{slug}`, `/tim-hieu-them/{slug}`, and `/accessories/{slug}/order` slugs against live active/published records, map legacy `/dat-lich` → `/booking` & `/phu-kien` → `/accessories`, and convert unmapped links to bold (`**Nhãn**` / `type: 'strong'`).
+  - Upgrade duplicate-vehicle comparison (`CompareVehiclesTool`) to preserve `status: needs_more_vehicles` / `compare_url: null` while attaching nearest same-segment `suggested_comparison_vehicle` and ready `suggested_compare_url`; tighten `ShowroomAssistant::instructions()` advisor cadence.
+  - Redesign chat widget (`ai-assistant-widget.blade.php`, `resources/css/app.css`) with shadcn/ui 0px cards (`sm:w-[420px] w-[calc(100vw-1.5rem)] max-w-[420px]`, `.scrollbar-none`), compact `BMW AI` badge header removing per-message avatars, and balanced `grid-cols-2` Action Cards (`col-span-2` first card when count is odd).
+  - Build RAG architecture: `resources/knowledge/bmw_showroom_knowledge.json` (7 chunks), `App\Services\Ai\ShowroomKnowledgeBaseService` (resilient `File::exists()` + `is_array()` JSON loading + Hybrid Retrieval reusing shared `ShowroomCatalogMatcher::scoreArticleQuery()`), 4th AI Tool `App\Ai\Tools\SearchKnowledgeBaseTool` (`search_knowledge_base`), and automatic `[TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC]` injection inside `buildPrompt()`.
+- Verification:
+  - Pint style check: pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`55 modules transformed`, `public/build/assets/app-BXsuYffs.css` 96.50 kB, `public/build/assets/app-B0NegWBV.js` 100.66 kB in 946ms).
+  - AI test cluster: `20 passed (320 assertions)` in 6.39s.
+  - Full test suite: `php artisan test --compact` pass, **124 passed (1288 assertions)** in 20.48s (100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-22-1-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 22: AI Agent Tool Calling, Conversational Memory, Rich Action Cards & Contextual UX
 

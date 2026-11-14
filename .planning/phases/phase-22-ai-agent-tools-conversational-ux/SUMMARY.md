@@ -32,3 +32,13 @@
   - `public/build/assets/app-DrWX-9im.js` (`98.09 kB`)
 - **Làm mới bộ nhớ đệm (`php artisan optimize:clear`)**: Sạch sẽ (`config`, `cache`, `compiled`, `events`, `routes`, `views`).
 - **Tiêu chuẩn mã nguồn (`vendor\bin\pint --dirty --format agent`)**: `{"tool":"pint","result":"passed"}`.
+
+---
+
+## 3. Bổ Sung Phase 22.1 (Hotfix UX/Markdown, UI shadcn/ui & Kiến Trúc RAG)
+- **Bảo toàn Action Cards & giới hạn tối đa 4 thẻ (`resources/js/app.js`)**: Lưu/khôi phục `suggestions` và `actions` (tối đa 16 tin nhắn), `persistState()` ngay khi nhận phản hồi API, chuẩn hóa thứ tự ưu tiên và giới hạn tối đa 4 Action Cards mỗi tin nhắn; loại bỏ link `#` trong `internalLink()`, chuyển link rỗng/bị từ chối thành `type: 'strong'`, và loại bỏ `###` thô trong `buildBlocks()`.
+- **Vá Link Backend (`ShowroomAssistantService::sanitizeAndRepairMarkdownLinks`)**: Xử lý cả URL có ngoặc đơn XSS (`javascript:alert(1)`), link rỗng `[]()`, `(#)`, slug `/catalog/{slug}` / `/tim-hieu-them/{slug}` / `/accessories/{slug}/order` không tồn tại DB, ánh xạ `/dat-lich` → `/booking` và `/phu-kien` → `/accessories`, và giữ nguyên văn bản thường.
+- **So sánh Trùng Tên Xe & Giọng Văn (`CompareVehiclesTool.php`, `ShowroomAssistant.php`)**: Bổ sung `suggested_comparison_vehicle` cùng phân khúc và `suggested_compare_url` khi chỉ khớp 1 xe duy nhất sau lọc trùng (giữ `status: needs_more_vehicles`, `compare_url: null`); tinh chỉnh lời văn chuyên gia ngắn gọn.
+- **Giao diện shadcn/ui 0px (`ai-assistant-widget.blade.php`, `resources/css/app.css`)**: Khung `w-[calc(100vw-1.5rem)] sm:w-[420px] max-w-[420px]`, bỏ avatar lặp lại bên trái từng tin nhắn, bong bóng `border-zinc-800/90 bg-zinc-900/90`, lưới Action Cards `grid-cols-2` (`col-span-2` cho thẻ đầu khi số thẻ lẻ), giữ `.scrollbar-none` và `border-radius: 0px`.
+- **Kiến trúc RAG (`bmw_showroom_knowledge.json`, `ShowroomKnowledgeBaseService.php`, `SearchKnowledgeBaseTool.php`)**: 7 chunks tri thức showroom đọc an toàn (`File::exists()` & `is_array()`), Hybrid Retrieval dùng chung `ShowroomCatalogMatcher` (kể cả `scoreArticleQuery()`), tool thứ 4 `search_knowledge_base`, tự động bơm top 3 chunks `[TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC]` vào `buildPrompt()`.
+- **Kiểm chứng sau Phase 22.1**: `pint` (`passed`), `php artisan optimize:clear` (pass), `npm run build` trong **946ms** (`public/build/assets/app-BXsuYffs.css` 96.50 kB, `public/build/assets/app-B0NegWBV.js` 100.66 kB), và `php artisan test --compact`: **124 passed (1288 assertions)** trong **20.48s**.

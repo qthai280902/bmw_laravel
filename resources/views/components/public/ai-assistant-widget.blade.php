@@ -37,7 +37,7 @@
         x-show="panelOpen"
         x-transition.opacity.duration.150ms
         data-ai-panel
-        class="ai-chat-panel flex h-[min(39rem,calc(100vh-2rem))] w-[calc(100vw-2rem)] max-w-[25rem] flex-col overflow-hidden border border-white/10 border-t-2 border-t-[#1C69D4] bg-zinc-950/95 shadow-2xl shadow-black/90 backdrop-blur-2xl sm:h-[min(39rem,calc(100vh-7rem))]"
+        class="ai-chat-panel flex h-[min(640px,calc(100vh-2rem))] w-[calc(100vw-1.5rem)] max-w-[420px] flex-col overflow-hidden border border-white/10 border-t-2 border-t-[#1C69D4] bg-zinc-950/95 shadow-2xl shadow-black/90 backdrop-blur-2xl sm:h-[min(640px,calc(100vh-5rem))] sm:w-[420px]"
         aria-label="BMW AI Assistant"
     >
         <header class="flex items-center gap-3 border-b border-white/10 bg-black/35 px-4 py-3">
@@ -132,31 +132,28 @@
                 <article
                     data-ai-message
                     :data-ai-role="message.role"
-                    class="flex gap-2"
+                    class="flex"
                     :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
                 >
-                    <div x-show="message.role === 'assistant'" class="mt-1 shrink-0">
-                        <x-public.ai-assistant-avatar size="h-7 w-7" />
-                    </div>
-
-                    <div class="max-w-[82%]">
-                        <p
+                    <div :class="message.role === 'user' ? 'max-w-[85%]' : 'w-full max-w-[94%]'">
+                        <div
                             x-show="message.role === 'assistant'"
-                            class="mb-1 text-[11px] font-bold text-[#70A7FF]"
+                            class="mb-1.5 flex items-center gap-1.5"
                         >
-                            BMW AI
-                        </p>
+                            <span class="h-1.5 w-1.5 bg-[#70A7FF]"></span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.14em] text-[#70A7FF]">BMW AI</span>
+                        </div>
 
                         <div
-                            class="ai-message-bubble px-4 py-3 text-sm leading-6 shadow-lg [overflow-wrap:anywhere]"
-                            :class="message.role === 'user' ? 'bg-[#1C69D4] text-white shadow-[#1C69D4]/15' : 'bg-zinc-900/90 text-zinc-200 shadow-black/20'"
+                            class="ai-message-bubble px-4 py-3 text-[13.5px] leading-6 shadow-lg [overflow-wrap:anywhere]"
+                            :class="message.role === 'user' ? 'bg-[#1C69D4] text-white shadow-[#1C69D4]/15' : 'border border-zinc-800/90 bg-zinc-900/90 text-zinc-200 shadow-black/20'"
                         >
                             <template x-if="message.role === 'user'">
                                 <p class="whitespace-pre-wrap break-words" x-text="message.text"></p>
                             </template>
 
                             <template x-if="message.role === 'assistant'">
-                                <div class="space-y-3">
+                                <div class="space-y-2.5">
                                     <template x-for="(block, blockIndex) in message.blocks" :key="blockIndex">
                                         <div>
                                             <p
@@ -169,7 +166,7 @@
                                                             <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="visiblePartText(part, message.revealedChars)"></a>
                                                         </template>
                                                         <template x-if="part.type === 'strong' && visiblePartText(part, message.revealedChars).length > 0">
-                                                            <span class="font-black text-white" x-text="visiblePartText(part, message.revealedChars)"></span>
+                                                            <span class="font-bold text-white" x-text="visiblePartText(part, message.revealedChars)"></span>
                                                         </template>
                                                         <template x-if="part.type === 'text' && visiblePartText(part, message.revealedChars).length > 0">
                                                             <span x-text="visiblePartText(part, message.revealedChars)"></span>
@@ -178,7 +175,7 @@
                                                 </template>
                                             </p>
 
-                                            <ul x-show="block.type === 'list'" class="list-disc space-y-1.5 pl-5 marker:text-[#70A7FF]">
+                                            <ul x-show="block.type === 'list'" class="list-disc space-y-1.5 pl-4 marker:text-[#70A7FF]">
                                                 <template x-for="(item, itemIndex) in block.items" :key="itemIndex">
                                                     <li
                                                         x-show="item.parts.length && (message.revealedChars ?? message.totalChars ?? 0) > (item.parts[0]?.start ?? 0)"
@@ -190,7 +187,7 @@
                                                                     <a :href="part.url" class="inline-flex items-center gap-1 text-[#70A7FF] underline hover:text-white font-medium transition-colors" x-text="visiblePartText(part, message.revealedChars)"></a>
                                                                 </template>
                                                                 <template x-if="part.type === 'strong' && visiblePartText(part, message.revealedChars).length > 0">
-                                                                    <span class="font-black text-white" x-text="visiblePartText(part, message.revealedChars)"></span>
+                                                                    <span class="font-bold text-white" x-text="visiblePartText(part, message.revealedChars)"></span>
                                                                 </template>
                                                                 <template x-if="part.type === 'text' && visiblePartText(part, message.revealedChars).length > 0">
                                                                     <span x-text="visiblePartText(part, message.revealedChars)"></span>
@@ -208,19 +205,20 @@
 
                         <div
                             x-show="message.role === 'assistant' && message.actions.length && (message.revealedChars ?? message.totalChars ?? 0) >= (message.totalChars ?? 0)"
-                            class="mt-2.5 grid grid-cols-1 gap-1.5"
+                            class="mt-2.5 grid grid-cols-2 gap-1.5"
                         >
-                            <template x-for="action in message.actions" :key="action.label + action.url">
+                            <template x-for="(action, actionIndex) in message.actions" :key="action.label + action.url">
                                 <a
                                     data-ai-action-chip
-                                    class="group flex items-center justify-between gap-3 border border-zinc-800 bg-[#09090b] px-3.5 py-2.5 transition-all hover:border-[#1C69D4] hover:bg-[#121215]"
+                                    :class="message.actions.length % 2 === 1 && actionIndex === 0 ? 'col-span-2 border-l-2 border-l-[#1C69D4]' : 'col-span-1'"
+                                    class="group flex items-center justify-between gap-2.5 border border-zinc-800/90 bg-zinc-900/90 px-3 py-2 text-left transition-all hover:border-[#1C69D4] hover:bg-[#121215]"
                                     :href="action.url"
                                 >
                                     <span class="min-w-0">
-                                        <span class="block truncate text-[10px] font-black uppercase tracking-[0.16em] text-[#70A7FF]" x-text="action.subtitle || 'BMW Showroom'"></span>
+                                        <span class="block truncate text-[9px] font-black uppercase tracking-[0.14em] text-[#70A7FF]" x-text="action.subtitle || 'BMW Showroom'"></span>
                                         <span class="mt-0.5 block truncate text-xs font-bold text-white" x-text="action.label"></span>
                                     </span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 shrink-0 text-[#70A7FF] transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 shrink-0 text-[#70A7FF] transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden="true">
                                         <path fill-rule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clip-rule="evenodd" />
                                     </svg>
                                 </a>

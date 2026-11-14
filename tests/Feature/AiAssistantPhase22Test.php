@@ -6,6 +6,7 @@ use App\Ai\Agents\ShowroomAssistant;
 use App\Ai\Tools\CompareVehiclesTool;
 use App\Ai\Tools\SearchArticlesAndOffersTool;
 use App\Ai\Tools\SearchCatalogTool;
+use App\Ai\Tools\SearchKnowledgeBaseTool;
 use App\Enums\VehicleType;
 use App\Models\AiChatMessage;
 use App\Models\AiChatSession;
@@ -13,8 +14,12 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\Ai\ShowroomAssistantService;
+use App\Services\Ai\ShowroomCatalogMatcher;
+use App\Services\Ai\ShowroomKnowledgeBaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Messages\MessageRole;
@@ -166,7 +171,8 @@ class AiAssistantPhase22Test extends TestCase
         $this->assertStringContainsString('/compare?ids=', (string) $compareResult['compare_url']);
         $this->assertContains('BMW Hidden Concept', $compareResult['unmatched_queries']);
 
-        // Deduplication check: aliasing the same car twice yields a single unique vehicle and clear guidance.
+        // Deduplication check: aliasing the same car twice yields a single unique vehicle, clear guidance,
+        // and auto-suggests the closest active same-segment companion for immediate comparison.
         $duplicateResult = json_decode((string) $tool->handle(new ToolRequest([
             'vehicles' => ['BMW 330i', 'bmw-330i-sedan'],
         ])), true);
@@ -176,6 +182,9 @@ class AiAssistantPhase22Test extends TestCase
         $this->assertNull($duplicateResult['compare_url']);
         $this->assertStringContainsString('Chỉ khớp 1 mẫu xe duy nhất sau khi lọc trùng', (string) $duplicateResult['message']);
         $this->assertNotEmpty($duplicateResult['available_vehicle_suggestions']);
+        $this->assertSame($car530i->slug, $duplicateResult['suggested_comparison_vehicle']['slug']);
+        $this->assertStringContainsString('/compare?ids=', (string) $duplicateResult['suggested_compare_url']);
+        $this->assertStringContainsString((string) $car530i->id, (string) $duplicateResult['suggested_compare_url']);
     }
 
     public function test_search_articles_and_offers_tool_returns_only_published_articles(): void
@@ -215,14 +224,14 @@ class AiAssistantPhase22Test extends TestCase
         $this->assertStringContainsString('/tim-hieu-them/'.$published->slug, $result['articles'][0]['url']);
     }
 
-    public function test_agent_registers_all_three_tools_with_valid_schemas_and_real_routes(): void
+    public function test_agent_registers_all_four_tools_with_valid_schemas_and_real_routes(): void
     {
         $agent = new ShowroomAssistant;
         $tools = collect($agent->tools());
 
-        $this->assertCount(3, $tools);
+        $this->assertCount(4, $tools);
         $this->assertSame(
-            ['search_catalog', 'compare_vehicles', 'search_articles_and_offers'],
+            ['search_catalog', 'compare_vehicles', 'search_articles_and_offers', 'search_knowledge_base'],
             $tools->map(fn ($tool): string => $tool->name())->values()->all()
         );
 
@@ -467,5 +476,163 @@ class AiAssistantPhase22Test extends TestCase
         $appCss = file_get_contents(resource_path('css/app.css')) ?: '';
         $this->assertMatchesRegularExpression('/\.ai-message-bubble\s*\{[^}]*border-radius:\s*0px\s*;/s', $appCss);
         $this->assertMatchesRegularExpression('/\.ai-assistant-launcher\s*\{[^}]*border-radius:\s*0px\s*;/s', $appCss);
+        $this->assertMatchesRegularExpression('/\[data-ai-action-chip\]\s*\{[^}]*border-radius:\s*0px\s*;/s', $appCss);
+    }
+
+    public function test_search_knowledge_base_tool_and_rag_prompt_grounding_and_resilience(): void
+    {
+        config([
+            'showroom_ai.enabled' => true,
+            'showroom_ai.provider' => 'gemini',
+            'showroom_ai.gemini_keys.primary' => 'AIzaPhase221RagKey1234567890',
+        ]);
+
+        $sedanCategory = Category::factory()->create(['name' => 'Sedan', 'slug' => 'sedan']);
+        $car = Product::factory()->create([
+            'category_id' => $sedanCategory->id,
+            'name' => 'BMW i4 eDrive40',
+            'slug' => 'bmw-i4-edrive40',
+            'type' => VehicleType::CAR,
+            'price' => 2750000000,
+            'is_active' => true,
+        ]);
+
+        Article::factory()->published()->create([
+            'title' => 'Ưu đãi bảo dưỡng CBS mùa thu',
+            'slug' => 'uu-dai-bao-duong-cbs-mua-thu',
+            'category' => 'service',
+            'excerpt' => 'Miễn phí kiểm tra xe đa điểm theo tiêu chuẩn BMW CBS.',
+        ]);
+
+        $matcher = app(ShowroomCatalogMatcher::class);
+        $knowledgeBase = app(ShowroomKnowledgeBaseService::class);
+        $chunks = $knowledgeBase->knowledgeChunks();
+        $this->assertCount(7, $chunks);
+
+        // Resilience guard: missing or corrupted JSON files never raise exceptions.
+        $missingService = new ShowroomKnowledgeBaseService($matcher, storage_path('framework/testing/non-existent-rag.json'));
+        $this->assertSame([], $missingService->knowledgeChunks());
+
+        $badJsonPath = storage_path('framework/testing/corrupt-rag.json');
+        File::ensureDirectoryExists(dirname($badJsonPath));
+        File::put($badJsonPath, '{invalid json');
+        try {
+            $corruptService = new ShowroomKnowledgeBaseService($matcher, $badJsonPath);
+            $this->assertSame([], $corruptService->knowledgeChunks());
+        } finally {
+            File::delete($badJsonPath);
+        }
+
+        // Tool hybrid search retrieves both RAG warranty policy and matching active EV product.
+        $tool = app(SearchKnowledgeBaseTool::class);
+        $result = json_decode((string) $tool->handle(new ToolRequest([
+            'query' => 'Chính sách bảo hành pin xe điện BMW i4',
+        ])), true);
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertGreaterThan(0, $result['total_found']);
+        $ids = array_column($result['chunks'], 'id');
+        $this->assertContains('warranty_policy', $ids);
+        $this->assertContains('product:'.$car->slug, $ids);
+
+        // Endpoint automatically injects verified RAG section into the generated prompt.
+        ShowroomAssistant::fake(['Pin xe thuần điện BMW i được bảo hành chính hãng 8 năm hoặc 160.000 km.']);
+
+        $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Chính sách bảo hành pin xe điện và trả góp như thế nào?',
+            'visitor_id' => 'phase221-rag-visitor-01',
+        ])->assertOk();
+
+        ShowroomAssistant::assertPrompted(fn (AgentPrompt $prompt): bool => Str::contains($prompt->prompt, '[TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC]')
+            && Str::contains($prompt->prompt, 'warranty_policy')
+            && Str::contains($prompt->prompt, 'Dữ liệu public của showroom BMW'));
+    }
+
+    public function test_markdown_link_sanitizer_repairs_empty_hash_bad_slug_and_legacy_routes_without_touching_plain_text(): void
+    {
+        config([
+            'showroom_ai.enabled' => true,
+            'showroom_ai.provider' => 'gemini',
+            'showroom_ai.gemini_keys.primary' => 'AIzaPhase221Sanitizer12345678',
+        ]);
+
+        $sedanCategory = Category::factory()->create(['name' => 'Sedan', 'slug' => 'sedan']);
+        Product::factory()->create([
+            'category_id' => $sedanCategory->id,
+            'name' => 'BMW 330i M Sport',
+            'slug' => 'bmw-330i-m-sport',
+            'type' => VehicleType::CAR,
+            'price' => 1799000000,
+            'is_active' => true,
+        ]);
+
+        Article::factory()->published()->create([
+            'title' => 'Ưu đãi BMW mùa thu',
+            'slug' => 'uu-dai-bmw-mua-thu',
+            'category' => 'offers',
+            'excerpt' => 'Thông tin ưu đãi chính thức từ showroom BMW.',
+        ]);
+
+        $service = app(ShowroomAssistantService::class);
+        $plainText = 'BMW 330i phù hợp nếu bạn muốn sedan thể thao.';
+        $this->assertSame($plainText, $service->sanitizeAndRepairMarkdownLinks($plainText));
+
+        $dirtyReply = implode("\n", [
+            '- Xe đề xuất: [BMW 330i M Sport]().',
+            '- Sai slug xe: [BMW 330i M Sport](/catalog/bmw-330i-fake-slug).',
+            '- Sai slug bài viết: [Ưu đãi BMW mùa thu](/tim-hieu-them/bai-ao-khong-co).',
+            '- Hash link: [Đăng ký lái thử](#) hoặc [Nhận báo giá](javascript:alert(1)).',
+            '- Legacy routes: [Đặt lịch tư vấn](/dat-lich?type=consult) và [Phụ kiện BMW](/phu-kien).',
+            '- Nhãn không rõ route: [Gói đặc quyền nội bộ chưa mở]().',
+        ]);
+
+        ShowroomAssistant::fake([$dirtyReply])->preventStrayPrompts();
+
+        $response = $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Tư vấn giúp tôi BMW 330i M Sport và ưu đãi',
+            'visitor_id' => 'phase221-link-sanitizer-01',
+        ])->assertOk();
+
+        $answer = (string) $response->json('answer');
+        $this->assertStringNotContainsString(']()', $answer);
+        $this->assertStringNotContainsString('(#)', $answer);
+        $this->assertStringNotContainsString('javascript:', $answer);
+        $this->assertStringNotContainsString('bmw-330i-fake-slug', $answer);
+        $this->assertStringNotContainsString('bai-ao-khong-co', $answer);
+        $this->assertStringNotContainsString('/dat-lich', $answer);
+        $this->assertStringNotContainsString('/phu-kien', $answer);
+        $this->assertStringContainsString('[BMW 330i M Sport](/catalog/bmw-330i-m-sport)', $answer);
+        $this->assertStringContainsString('[Ưu đãi BMW mùa thu](/tim-hieu-them/uu-dai-bmw-mua-thu)', $answer);
+        $this->assertStringContainsString('[Đăng ký lái thử](/booking?type=test_drive)', $answer);
+        $this->assertStringContainsString('[Nhận báo giá](/booking?type=quote)', $answer);
+        $this->assertStringContainsString('[Đặt lịch tư vấn](/booking?type=consult)', $answer);
+        $this->assertStringContainsString('[Phụ kiện BMW](/accessories)', $answer);
+        $this->assertStringContainsString('**Gói đặc quyền nội bộ chưa mở**', $answer);
+    }
+
+    public function test_phase22_1_widget_persistence_shadcn_grid_and_mobile_contracts(): void
+    {
+        $widgetBlade = file_get_contents(resource_path('views/components/public/ai-assistant-widget.blade.php')) ?: '';
+        $this->assertStringContainsString('sm:w-[420px]', $widgetBlade);
+        $this->assertStringContainsString('w-[calc(100vw-1.5rem)]', $widgetBlade);
+        $this->assertStringContainsString('max-w-[420px]', $widgetBlade);
+        $this->assertStringContainsString('grid-cols-2', $widgetBlade);
+        $this->assertStringContainsString('message.actions.length % 2 === 1 && actionIndex === 0', $widgetBlade);
+        $this->assertStringContainsString('col-span-2', $widgetBlade);
+        $this->assertStringContainsString('scrollbar-none', $widgetBlade);
+        $this->assertStringContainsString('visiblePartText(part, message.revealedChars).length > 0', $widgetBlade);
+        $this->assertStringNotContainsString('size="h-7 w-7"', $widgetBlade);
+        $this->assertStringNotContainsString('x-html', $widgetBlade);
+        $this->assertStringNotContainsString('href="#"', $widgetBlade);
+        $this->assertStringNotContainsString('rounded-', $widgetBlade);
+
+        $appJs = file_get_contents(resource_path('js/app.js')) ?: '';
+        $this->assertStringContainsString('maxStoredMessages: 16', $appJs);
+        $this->assertStringContainsString('normalizeSuggestionList(', $appJs);
+        $this->assertStringContainsString('normalizeActionList(', $appJs);
+        $this->assertStringContainsString('prioritizeAndLimitActions(', $appJs);
+        $this->assertStringContainsString("value === '#'", $appJs);
+        $this->assertStringContainsString("value.startsWith('#')", $appJs);
+        $this->assertMatchesRegularExpression('/this\.appendAssistantMessage\([\s\S]*?\);\s*this\.pruneMessages\(\);\s*this\.persistState\(\);/', $appJs);
     }
 }

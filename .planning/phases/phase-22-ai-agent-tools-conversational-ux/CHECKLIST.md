@@ -26,3 +26,11 @@
 - [x] Chạy `vendor\bin\pint --dirty --format agent` (PASSED).
 - [x] Chạy `php artisan optimize:clear` và `npm run build` (PASSED).
 - [x] Chạy toàn bộ `php artisan test --compact`.
+
+## 6. Phase 22.1 Hotfix UX/Markdown, UI shadcn/ui & Kiến Trúc RAG
+- [x] Khắc phục mất Action Cards khi chuyển trang (`resources/js/app.js`): `maxStoredMessages: 16`, lưu/khôi phục `suggestions` & `actions`, gọi `persistState()` ngay sau phản hồi API, giới hạn tối đa 4 Action Cards theo độ ưu tiên.
+- [x] Vá `[]()`, `(#)`, `javascript:alert(1)`, slug hallucinated (`/catalog/{slug}`, `/tim-hieu-them/{slug}`, `/accessories/{slug}/order`) và route cũ (`/dat-lich`, `/phu-kien`) trong `ShowroomAssistantService::sanitizeAndRepairMarkdownLinks()`, kèm chuyển sang `type: 'strong'` khi không khớp route; hoàn thiện `internalLink()`, `extractActions()`, `parseTextParts()` và heading `#` trong `buildBlocks()`.
+- [x] Nâng cấp `CompareVehiclesTool` gợi ý `suggested_comparison_vehicle` cùng phân khúc và `suggested_compare_url` khi chỉ khớp 1 xe duy nhất sau lọc trùng; tinh chỉnh `ShowroomAssistant::instructions()`.
+- [x] Tái thiết kế `ai-assistant-widget.blade.php` & `resources/css/app.css`: `sm:w-[420px] w-[calc(100vw-1.5rem)] max-w-[420px]`, bỏ avatar lặp lại ở từng tin nhắn, bong bóng shadcn/ui `bg-zinc-900/90 border-zinc-800/90`, lưới 2 cột `grid-cols-2` (`col-span-2` khi số thẻ lẻ), giữ `.scrollbar-none` và `0px border-radius`.
+- [x] Xây dựng RAG: `resources/knowledge/bmw_showroom_knowledge.json` (7 chunks), `ShowroomKnowledgeBaseService` (đọc JSON an toàn với `File::exists()` + `is_array()`, Hybrid Retrieval dùng chung `ShowroomCatalogMatcher`), `SearchKnowledgeBaseTool` (`search_knowledge_base`, tổng 4 Tools), tự động chèn `[TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC]` trong `buildPrompt()`.
+- [x] Mở rộng `tests/Feature/AiAssistantPhase22Test.php` (4 Tools + RAG + Sanitizer + Single-match compare + Widget shadcn/persistence), chạy `pint`, `optimize:clear`, `npm run build` (`app-BXsuYffs.css`, `app-B0NegWBV.js`), và `php artisan test --compact` (**124 passed, 1288 assertions**).

@@ -244,6 +244,10 @@
         border-radius: 0px;
     }
 
+    [data-ai-action-chip] {
+        border-radius: 0px;
+    }
+
     .ai-assistant-launcher {
         animation: ai-assistant-launcher-glow 3.2s ease-in-out infinite;
         border-radius: 0px;

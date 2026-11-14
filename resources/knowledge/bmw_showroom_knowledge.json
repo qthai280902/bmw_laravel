@@ -1,0 +1,194 @@
+[
+    {
+        "id": "warranty_policy",
+        "category": "Chính sách & Bảo hành",
+        "title": "Chính sách bảo hành chính hãng BMW Showroom",
+        "keywords": [
+            "bao hanh",
+            "bảo hành",
+            "warranty",
+            "3 nam",
+            "khong gioi han km",
+            "pin xe dien",
+            "bmw i",
+            "8 nam",
+            "phu kien",
+            "chinh hang"
+        ],
+        "content": "Xe ô tô BMW và mô tô BMW Motorrad phân phối chính hãng được áp dụng tiêu chuẩn bảo hành chính hãng 3 năm không giới hạn số km đối với lỗi vật liệu và sản xuất (kèm bảo hành ăn mòn thân xe theo tiêu chuẩn hãng). Bộ pin cao áp trên các dòng xe thuần điện BMW i được áp dụng chế độ bảo hành riêng 8 năm hoặc 160.000 km tùy điều kiện nào đến trước. Phụ kiện và phụ tùng chính hãng BMW thay thế tại xưởng dịch vụ được bảo hành 2 năm không giới hạn km. Để kiểm tra quyền lợi chi tiết theo từng dòng xe hoặc gia hạn bảo hành, Quý khách vui lòng đặt lịch tư vấn trực tiếp cùng chuyên viên showroom.",
+        "official_links": [
+            {
+                "label": "Đặt lịch tư vấn dịch vụ",
+                "url": "/booking?type=consult"
+            },
+            {
+                "label": "Xem phụ kiện chính hãng",
+                "url": "/accessories"
+            }
+        ]
+    },
+    {
+        "id": "maintenance_cbs",
+        "category": "Dịch vụ Hậu mãi & Bảo dưỡng",
+        "title": "Bảo dưỡng định kỳ & Công nghệ CBS (Condition Based Servicing)",
+        "keywords": [
+            "bao duong",
+            "bảo dưỡng",
+            "cbs",
+            "dinh ky",
+            "thay dau",
+            "nhot",
+            "ma phanh",
+            "hau mai",
+            "service",
+            "phu tung",
+            "xuong dich vu"
+        ],
+        "content": "BMW trang bị hệ thống bảo dưỡng thông minh theo tình trạng vận hành thực tế CBS (Condition Based Servicing). Cảm biến trên xe liên tục theo dõi chất lượng dầu động cơ, má phanh, dầu phanh, lọc gió và bugi để nhắc lịch bảo dưỡng chính xác theo điều kiện lái của từng chủ xe. Mọi hạng mục tại xưởng dịch vụ ủy quyền đều sử dụng 100% phụ tùng BMW Genuine Parts, dầu nhớt tiêu chuẩn BMW Longlife và đội ngũ kỹ thuật viên chứng chỉ quốc tế. Quý khách có thể đặt hẹn bảo dưỡng trước để được ưu tiên tiếp nhận.",
+        "official_links": [
+            {
+                "label": "Đặt lịch tư vấn bảo dưỡng",
+                "url": "/booking?type=consult"
+            }
+        ]
+    },
+    {
+        "id": "test_drive_rules",
+        "category": "Trải nghiệm & Lái thử",
+        "title": "Quy định & Thủ tục đăng ký lái thử xe BMW",
+        "keywords": [
+            "lai thu",
+            "lái thử",
+            "test drive",
+            "trai nghiem",
+            "bang lai",
+            "gplx",
+            "thu tuc",
+            "dang ky lai",
+            "chuyen vien di cung"
+        ],
+        "content": "Showroom tổ chức lái thử miễn phí các dòng ô tô BMW và mô tô BMW Motorrad hiện có trong đội xe trải nghiệm. Khách hàng cần mang theo Giấy phép lái xe bản gốc còn hiệu lực và đúng hạng xe trải nghiệm (hạng B trở lên đối với ô tô; hạng A/A2 hợp lệ đối với BMW Motorrad phân khối lớn). Chuyên viên BMW Product Genius sẽ đồng hành hướng dẫn tính năng an toàn, chế độ lái và lộ trình trải nghiệm thực tế. Quý khách đăng ký trực tiếp qua form bảo mật để chọn mẫu xe và khung giờ phù hợp.",
+        "official_links": [
+            {
+                "label": "Đặt lịch lái thử",
+                "url": "/booking?type=test_drive"
+            },
+            {
+                "label": "Khám phá danh mục xe",
+                "url": "/catalog"
+            }
+        ]
+    },
+    {
+        "id": "payment_and_deposit",
+        "category": "Tài chính & Đặt cọc",
+        "title": "Quy trình đặt cọc giữ xe, giá lăn bánh & Hỗ trợ trả góp",
+        "keywords": [
+            "dat coc",
+            "đặt cọc",
+            "thanh toan",
+            "tra gop",
+            "trả góp",
+            "ngan hang",
+            "lan banh",
+            "lăn bánh",
+            "phi truoc ba",
+            "tai chinh",
+            "bao gia"
+        ],
+        "content": "Website showroom niêm yết giá bán công khai theo từng phiên bản. Chi phí lăn bánh thực tế phụ thuộc vào lệ phí trước bạ, lệ phí đăng ký biển số theo từng tỉnh/thành và gói bảo hiểm vật chất tùy chọn. Khách hàng có thể đặt cọc giữ suất xe hoặc đăng ký gói vay mua xe BMW Financial Services với kỳ hạn linh hoạt qua các ngân hàng đối tác sau khi làm việc trực tiếp cùng chuyên viên tư vấn. Mọi thông tin đặt cọc và báo giá lăn bánh chi tiết được xác nhận trực tiếp qua form Yêu cầu báo giá để bảo mật thông tin khách hàng.",
+        "official_links": [
+            {
+                "label": "Nhận báo giá chi tiết",
+                "url": "/booking?type=quote"
+            },
+            {
+                "label": "Xem chương trình ưu đãi",
+                "url": "/offers"
+            }
+        ]
+    },
+    {
+        "id": "trade_in_program",
+        "category": "Chương trình Đổi xe",
+        "title": "Chương trình thu cũ đổi mới (BMW Trade-in / Premium Selection)",
+        "keywords": [
+            "thu cu doi moi",
+            "thu cũ đổi mới",
+            "trade in",
+            "trade-in",
+            "len doi xe",
+            "ban xe cu",
+            "dinh gia xe",
+            "bmw premium selection"
+        ],
+        "content": "Chương trình thu cũ đổi mới BMW Trade-in hỗ trợ chủ xe hiện hữu kiểm định kỹ thuật đa điểm, thẩm định giá trị xe đã qua sử dụng minh bạch tại showroom và nâng cấp trực tiếp lên các mẫu BMW thế hệ mới với quy trình sang tên trọn gói. Đội ngũ cố vấn sẽ đánh giá trực tiếp tình trạng thực tế, lịch sử bảo dưỡng và tư vấn phương án bù trừ tài chính tối ưu khi Quý khách đặt lịch hẹn tư vấn.",
+        "official_links": [
+            {
+                "label": "Đặt lịch tư vấn Trade-in",
+                "url": "/booking?type=consult"
+            },
+            {
+                "label": "Yêu cầu báo giá xe mới",
+                "url": "/booking?type=quote"
+            }
+        ]
+    },
+    {
+        "id": "motorrad_guide",
+        "category": "BMW Motorrad",
+        "title": "Hướng dẫn trải nghiệm & Tư vấn BMW Motorrad phân khối lớn",
+        "keywords": [
+            "motorrad",
+            "xe may",
+            "mo to",
+            "mô tô",
+            "pkl",
+            "phan khoi lon",
+            "s1000rr",
+            "r1250",
+            "gs",
+            "bao ho",
+            "bang a2"
+        ],
+        "content": "Phân khu BMW Motorrad cung cấp các dòng mô tô phân khối lớn chính hãng từ Sport, Roadster, Touring đến Adventure (GS) cùng trang bị bảo hộ và phụ kiện chính hãng cho rider. Khi tham gia lái thử hoặc trải nghiệm động cơ, khách hàng cần sở hữu bằng lái xe hạng A2 hợp lệ và tuân thủ trang phục bảo hộ tiêu chuẩn tại khu vực xuất phát. Danh mục chi tiết các mẫu BMW Motorrad đang kinh doanh và lịch trải nghiệm được cập nhật tại trang BMW Motorrad.",
+        "official_links": [
+            {
+                "label": "Xem danh mục BMW Motorrad",
+                "url": "/catalog?type=motorbike"
+            },
+            {
+                "label": "Đăng ký lái thử Motorrad",
+                "url": "/booking?type=test_drive"
+            }
+        ]
+    },
+    {
+        "id": "strict_boundaries",
+        "category": "Quy chuẩn Tư vấn & Bảo mật",
+        "title": "Phạm vi tư vấn công khai & Nguyên tắc bảo mật thông tin",
+        "keywords": [
+            "bao mat",
+            "bảo mật",
+            "thong tin ca nhan",
+            "so dien thoai",
+            "email",
+            "dia chi",
+            "chot don",
+            "giao xe",
+            "pham vi",
+            "chuyen vien"
+        ],
+        "content": "Trợ lý AI BMW chỉ tư vấn dựa trên dữ liệu công khai của showroom (giá niêm yết, thông số kỹ thuật, bài viết ưu đãi đã xuất bản và chính sách chính thức). Trợ lý tuyệt đối không yêu cầu hoặc ghi nhận số điện thoại, email, địa chỉ, CCCD hay thông tin thanh toán trong khung chat; không tự ý chốt đơn hàng, ấn định ngày giao xe hay đưa ra mức chiết khấu ngoài công bố. Với các yêu cầu báo giá lăn bánh cá nhân hóa, tồn kho theo màu ngoại thất/nội thất hoặc đặt lịch hẹn, Quý khách vui lòng thao tác qua form tư vấn chính thức để chuyên viên liên hệ bảo mật.",
+        "official_links": [
+            {
+                "label": "Đặt lịch tư vấn bảo mật",
+                "url": "/booking?type=consult"
+            },
+            {
+                "label": "Yêu cầu báo giá",
+                "url": "/booking?type=quote"
+            }
+        ]
+    }
+]
