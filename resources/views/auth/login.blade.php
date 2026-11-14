@@ -23,7 +23,7 @@
                        required 
                        autofocus 
                        autocomplete="username" 
-                       placeholder="admin@bmw.com"
+                       placeholder="Nhập email của bạn"
                        class="block w-full bg-zinc-900/90 border border-zinc-800 text-sm text-white px-3.5 py-2.5 placeholder-zinc-500 focus:outline-none focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]/50 transition-colors" />
             </div>
             <x-input-error :messages="$errors->get('email')" class="mt-1.5" />
@@ -47,7 +47,7 @@
                        name="password" 
                        required 
                        autocomplete="current-password" 
-                       placeholder="••••••••"
+                       placeholder="Nhập mật khẩu của bạn"
                        class="block w-full bg-zinc-900/90 border border-zinc-800 text-sm text-white px-3.5 py-2.5 placeholder-zinc-500 focus:outline-none focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]/50 transition-colors" />
             </div>
             <x-input-error :messages="$errors->get('password')" class="mt-1.5" />

@@ -84,14 +84,18 @@
                         <p class="text-[10px] font-black uppercase tracking-[0.25em] text-[#1C69D4]">{{ $order->product?->category?->name ?? 'Phụ kiện BMW' }}</p>
                         <h2 class="mt-3 text-2xl font-black uppercase leading-none text-white">{{ $order->product?->name ?? 'Sản phẩm đã xóa' }}</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-px bg-zinc-800">
+                    <div class="grid grid-cols-1 gap-px bg-zinc-800 sm:grid-cols-3">
                         <div class="bg-zinc-900 p-5">
                             <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Số lượng</p>
                             <p class="mt-2 text-xl font-black text-white">{{ $order->quantity }}</p>
                         </div>
                         <div class="bg-zinc-900 p-5">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Giá</p>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Đơn giá</p>
                             <p class="mt-2 text-xl font-black text-white">{{ $order->product ? number_format($order->product->price) : 'N/A' }}</p>
+                        </div>
+                        <div class="bg-zinc-900 p-5">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-[#70A7FF]">Tổng tiền</p>
+                            <p class="mt-2 text-xl font-black tabular-nums text-white">{{ number_format($order->total_amount) }} <span class="text-xs text-zinc-500">VNĐ</span></p>
                         </div>
                     </div>
                     <div>

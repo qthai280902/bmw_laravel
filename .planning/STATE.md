@@ -1,6 +1,39 @@
 # Project State
 
-Current phase: Phase 22.1 completed.
+Current phase: Phase 23 completed.
+
+## Phase 23: Kiểm Toán Chức Năng Người Dùng (Guest & Real User) & Kiểm Thử Logic E2E
+
+- Completion time: 2026-11-15 +07:00.
+- Scope:
+  - Audited all Guest, Authenticated Customer, and Admin RBAC boundaries across public catalog, vehicle comparison, 5-flow booking, accessory orders, editorial content/offers, AI assistant/RAG, and Admin CRM sync.
+  - Patched 5 edge-case logic gaps: blocked inactive accessories (`is_active = false`) in `AccessoryOrderController`; added keyword search (`search`/`keyword`/`q`) in `VehicleSearchService::search()` + 0px search input in `resources/views/products/index.blade.php`; standardized `service -> maintenance` alias, nullable `product_id` for `consult`/`advisor_meeting`, inactive/accessory boundary checks & phone regex in `StoreAppointmentRequest`; selective `strip_tags()` only on free-text fields (leaving `email`/`appointment_date` untouched); preserved `showroom` column, `trade_in`/`service` `meta_data`, and `Auth::user()` fallbacks in `AppointmentController`; added `AccessoryOrder::getTotalAmountAttribute()` with Zero N+1 eager-loading (`with(['product.category'])`) across Admin views and user pre-fill/fallback on `StoreAccessoryOrderRequest`.
+  - Created `tests/Feature/Phase23UserJourneyE2ETest.php` (6 E2E tests / 165 assertions covering all 6 user journey groups, mail queues, Zero N+1, RBAC, and Admin CRM sync).
+  - Documented Phase 23 across `.planning/phases/phase-23-e2e-user-journey-logic-audit/{PLAN.md,CHECKLIST.md,SUMMARY.md}`, `.planning/baocao/phase-reports/phase-23-report.md`, and conversation artifacts (`phase_23_plan.md`, `phase_23_report.md`).
+- Verification:
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`55 modules transformed`, `public/build/assets/app-B9LNB7Ih.css` 96.54 kB, `public/build/assets/app-B0NegWBV.js` 100.66 kB in 1.19s).
+  - Phase 23 E2E suite: `6 passed (165 assertions)` in 1.27s.
+  - Full test suite: `php artisan test --compact` pass, **130 passed (1453 assertions)** in 20.53s (100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-23-report.md`.
+- Result:
+  - PASS 100%.
+
+## Phase 22.2: Xuất Bản 3 Bài Viết Editorial Chuyên Sâu & Kiểm Chứng Hiển Thị / RAG AI
+
+- Completion time: 2026-11-14 +07:00.
+- Scope:
+  - Updated `database/seeders/ArticleSeeder.php` to support explicit `slug`, `seo_title`, and `seo_description` fields in `Article::updateOrCreate()` and added 3 in-depth editorial BMW articles (`bmw-i4-m60-gran-coupe-dna-duong-dua-m-thuan-dien`, `so-sanh-bmw-330i-sedan-va-bmw-530i-sedan-chon-xe-nao`, `bmw-x3-m50-xdrive-the-he-moi-chuan-muc-sav-hieu-nang-cao`) using verified real disk images under `public/images/cars/...` for `cover_image` and Markdown inline images.
+  - Kept seeder timestamps at `now()->subDays(3)->subHours(1..3)` to preserve `PublicHomepagePhase15Test` homepage top-3 assertions while setting `status = 'published'` and `published_at = now()` on the 3 new slugs in the runtime DB (`15` published articles total).
+  - Verified all cover/inline image files exist on disk (270 KB – 2.1 MB), `/tim-hieu-them/{slug}` and `/admin/articles/{slug}/edit` (`articleCanvasStudio`) return HTTP `200`, and both `SearchArticlesAndOffersTool` and `ShowroomKnowledgeBaseService::retrieveRelevantChunks()` accurately retrieve all 3 articles for `"i4 M60"`, `"so sánh 330i và 530i"`, and `"X3 M50"`.
+- Verification:
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Full test suite: `php artisan test --compact` pass, **124 passed (1288 assertions)** in 31.56s (100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-22-2-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 22.1: Hotfix UX/Markdown, Tái Thiết Kế UI shadcn/ui & Kiến Trúc RAG Showroom AI
 

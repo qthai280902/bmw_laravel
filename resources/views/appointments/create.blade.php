@@ -1,6 +1,9 @@
 <x-app-layout>
     @php
-        $currentTypeStr = old('type', request('type'));
+        $rawType = old('type', request('type'));
+        $currentTypeStr = $rawType === 'service'
+            ? \App\Enums\AppointmentType::Maintenance->value
+            : $rawType;
         $requestedType = \App\Enums\AppointmentType::tryFrom($currentTypeStr);
         $serviceTypes = [
             \App\Enums\AppointmentType::Maintenance->value,
@@ -116,8 +119,10 @@
                         </div>
 
                         <div>
-                            <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Chọn sản phẩm *</label>
-                            <select id="product_selector" name="product_id" required disabled class="w-full border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                            <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                                Chọn sản phẩm {{ in_array($currentTypeStr, ['consult', 'advisor_meeting'], true) ? '' : '*' }}
+                            </label>
+                            <select id="product_selector" name="product_id" {{ in_array($currentTypeStr, ['consult', 'advisor_meeting'], true) ? '' : 'required' }} disabled class="w-full border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                                 <option value="">-- Vui lòng chọn danh mục trước --</option>
                             </select>
                         </div>

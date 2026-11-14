@@ -42,6 +42,7 @@
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Khách hàng</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Sản phẩm</th>
                         <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">SL</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Tổng tiền</th>
                         <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Trạng thái</th>
                         <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Ngày tạo</th>
                         <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Thao tác</th>
@@ -60,6 +61,7 @@
                                 <p class="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-700">{{ $order->product?->category?->name ?? 'N/A' }}</p>
                             </td>
                             <td class="px-6 py-5 text-center text-sm font-black text-zinc-300">{{ $order->quantity }}</td>
+                            <td class="px-6 py-5 text-right text-sm font-black tabular-nums text-white">{{ number_format($order->total_amount) }} VNĐ</td>
                             <td class="px-6 py-5 text-center">
                                 <span class="border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] {{ $order->statusColorClass() }}">
                                     {{ $order->statusLabel() }}
@@ -74,7 +76,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10">
+                            <td colspan="8" class="px-6 py-10">
                                 <x-admin.empty-state
                                     title="Chưa có đơn phụ kiện"
                                     description="Đơn mới từ form public sẽ xuất hiện tại đây để admin xác nhận và ghi chú nội bộ."

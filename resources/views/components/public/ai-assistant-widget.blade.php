@@ -78,7 +78,7 @@
                 >
                     –
                 </button>
-                <button
+                <!-- <button
                     type="button"
                     data-ai-hide-side
                     class="flex h-9 w-9 items-center justify-center border border-[#1C69D4]/50 text-sm font-black text-[#70A7FF] transition-colors hover:border-[#70A7FF] hover:text-white"
@@ -87,7 +87,7 @@
                     title="Ẩn vào cạnh"
                 >
                     ›
-                </button>
+                </button> -->
             </div>
         </header>
 

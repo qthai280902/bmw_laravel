@@ -48,30 +48,31 @@ class AppointmentController extends Controller
         $data = $request->validated();
 
         if (Auth::check()) {
-            $data['user_id'] = Auth::id();
+            $user = Auth::user();
+            $data['user_id'] = $user->id;
+            $data['guest_name'] = ! empty($data['guest_name']) ? $data['guest_name'] : $user->name;
+            $data['guest_email'] = ! empty($data['guest_email']) ? $data['guest_email'] : $user->email;
         }
 
-        // Merge showroom vào meta_data nếu có
+        // Merge showroom vào meta_data nếu có (đồng thời giữ cột showroom)
         $meta = $data['meta_data'] ?? [];
 
         if (! empty($data['showroom'])) {
             $meta['showroom'] = $data['showroom'];
         }
 
-        // Merge Aftersales service fields vào meta_data
-        if (in_array($data['type'], ['maintenance', 'detailing', 'car_wash'])) {
-            if (! empty($data['customer_car_model'])) {
-                $meta['customer_car_model'] = $data['customer_car_model'];
-            }
-            if (! empty($data['customer_car_condition'])) {
-                $meta['customer_car_condition'] = $data['customer_car_condition'];
-            }
+        // Merge Aftersales service / Trade-in vehicle info vào meta_data nếu có
+        if (! empty($data['customer_car_model'])) {
+            $meta['customer_car_model'] = $data['customer_car_model'];
+        }
+        if (! empty($data['customer_car_condition'])) {
+            $meta['customer_car_condition'] = $data['customer_car_condition'];
         }
 
         $data['meta_data'] = ! empty($meta) ? $meta : null;
 
         // Xóa các trường không thuộc bảng appointments
-        unset($data['showroom'], $data['customer_car_model'], $data['customer_car_condition']);
+        unset($data['customer_car_model'], $data['customer_car_condition']);
 
         $appointment = Appointment::create($data);
 

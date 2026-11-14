@@ -45,7 +45,7 @@
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
                     <label for="customer_name" class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Họ và tên *</label>
-                    <input id="customer_name" name="customer_name" type="text" value="{{ old('customer_name') }}" required class="w-full border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    <input id="customer_name" name="customer_name" type="text" value="{{ old('customer_name', auth()->user()?->name) }}" required class="w-full border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                     @error('customer_name')
                         <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
                     @enderror
@@ -71,7 +71,7 @@
             <div class="grid grid-cols-1 gap-5 md:grid-cols-[1fr_150px]">
                 <div>
                     <label for="customer_email" class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Email</label>
-                    <input id="customer_email" name="customer_email" type="email" value="{{ old('customer_email') }}" class="w-full border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    <input id="customer_email" name="customer_email" type="email" value="{{ old('customer_email', auth()->user()?->email) }}" class="w-full border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                     @error('customer_email')
                         <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
                     @enderror

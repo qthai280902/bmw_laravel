@@ -24,7 +24,7 @@ class StoreAccessoryOrderRequest extends FormRequest
     {
         return [
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:30'],
+            'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+\s().-]{8,30}$/'],
             'customer_address' => ['required', 'string', 'max:500'],
             'customer_email' => ['nullable', 'email', 'max:255'],
             'ai_visitor_id' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z0-9._:-]+$/'],
@@ -35,8 +35,30 @@ class StoreAccessoryOrderRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $payload = [];
+
         if (! $this->has('quantity')) {
-            $this->merge(['quantity' => 1]);
+            $payload['quantity'] = 1;
+        }
+
+        $user = auth()->user();
+        if ($user) {
+            if (! $this->filled('customer_name') && filled($user->name)) {
+                $payload['customer_name'] = $user->name;
+            }
+            if (! $this->filled('customer_email') && filled($user->email)) {
+                $payload['customer_email'] = $user->email;
+            }
+        }
+
+        foreach (['customer_name', 'customer_address', 'notes'] as $field) {
+            if ($this->has($field) && is_string($this->input($field))) {
+                $payload[$field] = trim(strip_tags((string) $this->input($field)));
+            }
+        }
+
+        if ($payload !== []) {
+            $this->merge($payload);
         }
     }
 }

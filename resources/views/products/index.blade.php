@@ -62,6 +62,17 @@
                             <h2 class="mt-3 text-2xl font-bold tracking-tight text-white">
                                 {{ $isAccessoryCatalog ? 'Tìm phụ kiện' : 'Tìm mẫu xe' }}
                             </h2>
+                            <div class="mt-4">
+                                <label for="catalog-search-input" class="sr-only">Tìm theo tên hoặc từ khóa</label>
+                                <input
+                                    id="catalog-search-input"
+                                    type="text"
+                                    name="search"
+                                    value="{{ request('search') }}"
+                                    placeholder="{{ $isAccessoryCatalog ? 'Nhập tên phụ kiện...' : 'Nhập tên mẫu xe, dòng xe...' }}"
+                                    class="w-full rounded-none border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                >
+                            </div>
                         </div>
 
                         @unless($isAccessoryCatalog)

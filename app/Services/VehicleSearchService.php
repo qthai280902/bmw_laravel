@@ -17,6 +17,16 @@ class VehicleSearchService
             ->active()
             ->with(['category', 'primaryImage', 'images']);
 
+        // Filter by Keyword (search / keyword / q)
+        $keyword = trim((string) ($filters['search'] ?? $filters['keyword'] ?? $filters['q'] ?? ''));
+        if ($keyword !== '') {
+            $query->where(function ($subQuery) use ($keyword): void {
+                $subQuery->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('slug', 'like', "%{$keyword}%")
+                    ->orWhere('description', 'like', "%{$keyword}%");
+            });
+        }
+
         // Filter by Vehicle Type (Enum)
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);

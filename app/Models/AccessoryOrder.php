@@ -29,12 +29,19 @@ class AccessoryOrder extends Model
         'confirmed_at',
     ];
 
+    protected $appends = ['total_amount'];
+
     protected function casts(): array
     {
         return [
             'quantity' => 'integer',
             'confirmed_at' => 'datetime',
         ];
+    }
+
+    public function getTotalAmountAttribute(): int
+    {
+        return (int) ($this->product?->price ?? 0) * max(1, (int) $this->quantity);
     }
 
     public function product(): BelongsTo

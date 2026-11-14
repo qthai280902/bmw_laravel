@@ -14,7 +14,7 @@ class AccessoryOrderController extends Controller
 {
     public function create(Product $product): View
     {
-        abort_unless($product->canOrderAccessory(), 404);
+        abort_unless((bool) $product->is_active && $product->canOrderAccessory(), 404);
 
         $product->loadMissing(['category', 'primaryImage', 'images']);
 
@@ -28,7 +28,7 @@ class AccessoryOrderController extends Controller
         Product $product,
         AiConversationTracker $tracker
     ): RedirectResponse {
-        abort_unless($product->canOrderAccessory(), 404);
+        abort_unless((bool) $product->is_active && $product->canOrderAccessory(), 404);
 
         $data = $request->validated();
 
