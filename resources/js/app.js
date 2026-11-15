@@ -552,26 +552,45 @@ window.aiAssistantWidget = (config) => ({
         const actions = [];
         let cleanedText = String(text || '');
 
-        const addAction = (href, fallbackLabel = '') => {
+        const addAction = (href, fallbackLabel = '', overrides = null, preferOverrides = false) => {
             const url = this.internalLink(href);
 
             if (!url) {
                 return null;
             }
 
-            const label = this.actionLabel(url, fallbackLabel);
-            const key = `${label}|${url}`;
+            const canon = this.canonicalActionUrl(url);
+            const meta = this.actionMeta(url, fallbackLabel, overrides);
+            const existingIndex = actions.findIndex((action) => action.canon === canon);
 
-            if (!actions.some((action) => action.key === key || action.url === url)) {
-                actions.push({ key, label, url });
+            if (existingIndex !== -1) {
+                if (preferOverrides) {
+                    actions[existingIndex] = {
+                        canon,
+                        label: meta.label,
+                        subtitle: meta.subtitle,
+                        kind: meta.kind,
+                        url,
+                    };
+                }
+
+                return url;
             }
+
+            actions.push({
+                canon,
+                label: meta.label,
+                subtitle: meta.subtitle,
+                kind: meta.kind,
+                url,
+            });
 
             return url;
         };
 
         if (Array.isArray(restoredActions)) {
             restoredActions.forEach((action) => {
-                addAction(action?.url, action?.label || '');
+                addAction(action?.url, action?.label || '', action, true);
             });
         }
 
@@ -599,11 +618,11 @@ window.aiAssistantWidget = (config) => ({
         });
 
         suggestions.forEach((suggestion) => {
-            addAction(suggestion?.url, suggestion?.label);
+            addAction(suggestion?.url, suggestion?.label, suggestion, true);
         });
 
         const prioritizedActions = this.prioritizeAndLimitActions(
-            actions.map(({ label, url }) => this.actionMeta(url, label)),
+            actions.map(({ label, subtitle, kind, url }) => ({ label, subtitle, kind, url })),
             4,
         );
 
@@ -626,65 +645,97 @@ window.aiAssistantWidget = (config) => ({
         };
     },
 
-    actionMeta(url, fallbackLabel = '') {
+    actionMeta(url, fallbackLabel = '', overrides = null) {
         const value = String(url || '');
         const label = this.actionLabel(value, fallbackLabel);
+        const customSubtitle = String(overrides?.subtitle || '').trim();
+        const customKind = String(overrides?.kind || '').trim();
+
+        const make = (defaultSubtitle, defaultKind) => ({
+            label,
+            subtitle: customSubtitle || defaultSubtitle,
+            kind: customKind || defaultKind,
+            url: value,
+        });
 
         if (value.startsWith('/accessories/') && value.endsWith('/order')) {
-            return { label, subtitle: 'Đặt hàng chính hãng', kind: 'accessory', url: value };
+            return make('PHỤ KIỆN CHÍNH HÃNG', 'accessory');
         }
 
         if (value.startsWith('/booking')) {
             const type = new URL(value, window.location.origin).searchParams.get('type');
 
             if (type === 'test_drive' || type === 'test') {
-                return { label, subtitle: 'Trải nghiệm thực tế', kind: 'booking', url: value };
+                return make('Trải nghiệm thực tế', 'booking');
             }
 
             if (type === 'quote') {
-                return { label, subtitle: 'Tư vấn tài chính', kind: 'quote', url: value };
+                return make('Tư vấn tài chính', 'quote');
             }
 
-            return { label, subtitle: 'Showroom BMW', kind: 'booking', url: value };
+            return make('Showroom BMW', 'booking');
         }
 
         if (value.startsWith('/compare')) {
-            return { label, subtitle: 'Bảng đối chiếu thông số', kind: 'compare', url: value };
+            return make('Bảng đối chiếu thông số', 'compare');
         }
 
         if (value.startsWith('/tim-hieu-them/')) {
-            return { label, subtitle: 'Chuyên mục Showroom', kind: 'article', url: value };
+            return make('BÀI VIẾT & ƯU ĐÃI', 'article');
         }
 
         if (value.startsWith('/tim-hieu-them') || value.startsWith('/offers')) {
-            return { label, subtitle: 'Chương trình ưu đãi', kind: 'offer', url: value };
+            return make('Chương trình ưu đãi', 'offer');
         }
 
         if (value.startsWith('/catalog?type=motorbike')) {
-            return { label, subtitle: 'BMW Motorrad', kind: 'catalog', url: value };
+            return make('BMW Motorrad', 'catalog');
         }
 
         if (value.startsWith('/catalog/')) {
-            return { label, subtitle: 'Hồ sơ sản phẩm', kind: 'product', url: value };
+            return make('HỒ SƠ SẢN PHẨM', 'product');
         }
 
         if (value.startsWith('/accessories')) {
-            return { label, subtitle: 'Phụ kiện chính hãng', kind: 'accessory', url: value };
+            return make('Phụ kiện chính hãng', 'accessory');
         }
 
         if (value.startsWith('/catalog')) {
-            return { label, subtitle: 'Danh mục Showroom', kind: 'catalog', url: value };
+            return make('Danh mục Showroom', 'catalog');
         }
 
-        return { label, subtitle: 'Showroom BMW', kind: 'link', url: value };
+        return make('Showroom BMW', 'link');
     },
 
     actionLabel(url, fallbackLabel = '') {
         const value = String(url || '');
-        const fallback = String(fallbackLabel || '').trim();
+        const fallback = String(fallbackLabel || '').replace(/\s+/g, ' ').trim();
+        const genericLabels = [
+            'tại đây',
+            'tai day',
+            'ở đây',
+            'o day',
+            'xem chi tiết',
+            'xem chi tiet',
+            'chi tiết',
+            'chi tiet',
+            'đọc bài viết',
+            'doc bai viet',
+            'tìm hiểu thêm',
+            'tim hieu them',
+            'liên kết',
+            'lien ket',
+            'mở liên kết',
+            'mo lien ket',
+        ];
+        const isConcrete = (text) => Boolean(text) && !genericLabels.includes(text.toLowerCase());
 
         if (value.startsWith('/accessories/') && value.endsWith('/order')) {
-            return 'Đặt phụ kiện';
+            const cleanAccessory = fallback.replace(/^Đặt\s+phụ\s+kiện\s+/i, '').trim();
+
+            return isConcrete(cleanAccessory) && cleanAccessory.toLowerCase() !== 'đặt phụ kiện'
+                ? cleanAccessory
+                : 'Đặt phụ kiện';
         }
 
         if (value.startsWith('/booking')) {
@@ -702,11 +753,13 @@ window.aiAssistantWidget = (config) => ({
         }
 
         if (value.startsWith('/compare')) {
-            return 'So sánh xe';
+            return isConcrete(fallback) && fallback.toLowerCase() !== 'mở so sánh xe'
+                ? fallback
+                : 'So sánh xe';
         }
 
         if (value.startsWith('/tim-hieu-them/')) {
-            return 'Đọc bài viết';
+            return isConcrete(fallback) ? fallback : 'Đọc bài viết';
         }
 
         if (value.startsWith('/tim-hieu-them')) {
@@ -718,7 +771,9 @@ window.aiAssistantWidget = (config) => ({
         }
 
         if (value.startsWith('/catalog/')) {
-            return 'Xem chi tiết';
+            const cleanVehicle = fallback.replace(/^Xem\s+/i, '').trim();
+
+            return isConcrete(cleanVehicle) ? cleanVehicle : 'Xem chi tiết';
         }
 
         if (value.startsWith('/accessories')) {
@@ -730,6 +785,23 @@ window.aiAssistantWidget = (config) => ({
         }
 
         return fallback || 'Mở liên kết';
+    },
+
+    canonicalActionUrl(href) {
+        const value = String(href || '').trim();
+
+        if (!value || value === '/') {
+            return '/';
+        }
+
+        try {
+            const parsed = new URL(value, window.location.origin);
+            const cleanPath = parsed.pathname.replace(/\/+$/, '') || '/';
+
+            return `${cleanPath}${parsed.search}`;
+        } catch (error) {
+            return value.replace(/\/+$/, '') || '/';
+        }
     },
 
     internalLink(href) {
@@ -771,27 +843,31 @@ window.aiAssistantWidget = (config) => ({
             return 1;
         }
 
-        if (url.startsWith('/booking') && url.includes('type=test_drive')) {
+        if (url.startsWith('/compare')) {
             return 2;
         }
 
-        if (url.startsWith('/booking') && url.includes('type=quote')) {
+        if (url.startsWith('/booking') && url.includes('type=test_drive')) {
             return 3;
         }
 
-        if (url.startsWith('/compare')) {
+        if (url.startsWith('/booking') && url.includes('type=quote')) {
             return 4;
         }
 
-        if (url.startsWith('/offers') || url.startsWith('/tim-hieu-them')) {
+        if (url.startsWith('/tim-hieu-them/')) {
             return 5;
         }
 
-        if (url.startsWith('/booking')) {
+        if (url.startsWith('/offers') || url.startsWith('/tim-hieu-them')) {
             return 6;
         }
 
-        return 7;
+        if (url.startsWith('/booking')) {
+            return 7;
+        }
+
+        return 8;
     },
 
     prioritizeAndLimitActions(actions = [], limit = 4) {
@@ -811,15 +887,26 @@ window.aiAssistantWidget = (config) => ({
 
         items.forEach((item) => {
             const url = this.internalLink(item?.url);
+            const canon = url ? this.canonicalActionUrl(url) : null;
 
-            if (!url || unique.some((entry) => entry.url === url)) {
+            if (!url || unique.some((entry) => this.canonicalActionUrl(entry.url) === canon)) {
                 return;
             }
 
-            unique.push({
+            const normalized = {
                 label: String(item?.label || this.actionLabel(url)).trim(),
                 url,
-            });
+            };
+
+            if (item?.subtitle) {
+                normalized.subtitle = String(item.subtitle).trim();
+            }
+
+            if (item?.kind) {
+                normalized.kind = String(item.kind).trim();
+            }
+
+            unique.push(normalized);
         });
 
         return unique.slice(0, 6);
@@ -834,12 +921,13 @@ window.aiAssistantWidget = (config) => ({
 
         items.forEach((item) => {
             const url = this.internalLink(item?.url);
+            const canon = url ? this.canonicalActionUrl(url) : null;
 
-            if (!url || unique.some((entry) => entry.url === url)) {
+            if (!url || unique.some((entry) => this.canonicalActionUrl(entry.url) === canon)) {
                 return;
             }
 
-            const meta = this.actionMeta(url, item?.label || '');
+            const meta = this.actionMeta(url, item?.label || '', item);
             unique.push({
                 label: meta.label,
                 subtitle: String(item?.subtitle || meta.subtitle || 'BMW Showroom').trim(),

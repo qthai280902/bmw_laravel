@@ -201,7 +201,8 @@ class ShowroomAssistantService
         ?string $model,
         array $conversationMessages = [],
         ?string $pageContextSummary = null,
-        array $context = []
+        array $context = [],
+        string $message = ''
     ): array {
         $candidates = $this->geminiKeyPool->candidateSequence();
 
@@ -231,7 +232,7 @@ class ShowroomAssistantService
                     pageContextSummary: $pageContextSummary,
                 );
 
-                return $this->successfulResponse($response, $suggestions, $context);
+                return $this->successfulResponse($response, $suggestions, $context, $message);
             } catch (RateLimitedException $exception) {
                 $rateLimitedAttempts++;
                 $this->geminiKeyPool->markRateLimited($candidate);
@@ -351,16 +352,17 @@ class ShowroomAssistantService
     }
 
     /**
-     * @param  array<int, array{label: string, url: string}>  $suggestions
+     * @param  array<int, array{label: string, url: string, subtitle?: string, kind?: string}>  $suggestions
      * @param  array<string, mixed>  $context
-     * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string}
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string, subtitle?: string, kind?: string}>, status: string}
      */
-    private function successfulResponse(AgentResponse $response, array $suggestions, array $context = []): array
+    private function successfulResponse(AgentResponse $response, array $suggestions, array $context = [], string $message = ''): array
     {
         $answer = trim($response->text);
 
         if ($answer !== '') {
             $answer = $this->sanitizeAndRepairMarkdownLinks($answer, $context);
+            $suggestions = $this->suggestionsFor($message, $context, $answer);
         }
 
         return [
@@ -703,24 +705,32 @@ PROMPT;
 
     /**
      * @param  array<string, mixed>  $context
-     * @return array<int, array{label: string, url: string}>
+     * @return array<int, array{label: string, url: string, subtitle?: string, kind?: string}>
      */
-    private function suggestionsFor(string $message, array $context): array
+    private function suggestionsFor(string $message, array $context, ?string $answer = null): array
     {
-        $message = Str::lower($message);
-        $normalizedMessage = $this->matcher()->normalizeSearchText($message);
+        $loweredMessage = Str::lower($message);
+        $normalizedMessage = $this->matcher()->normalizeSearchText($loweredMessage);
         $products = collect($context['products']);
         $suggestions = [];
         $currentProduct = isset($context['current_product']) && is_array($context['current_product'])
             ? $context['current_product']
             : null;
+        $extractedEntities = $answer !== null ? $this->extractMentionedEntitySuggestions($answer) : [];
 
-        if ($currentProduct) {
+        $includeCurrentProduct = $currentProduct !== null && (
+            $answer === null
+            || $this->shouldIncludeCurrentProductSuggestion($message, $answer, $currentProduct, $extractedEntities)
+        );
+
+        if ($currentProduct && $includeCurrentProduct) {
             if (($currentProduct['is_accessory'] ?? false) === true) {
                 if (filled($currentProduct['accessory_order_url'] ?? null)) {
                     $suggestions[] = [
-                        'label' => 'Đặt phụ kiện '.$currentProduct['name'],
+                        'subtitle' => 'PHỤ KIỆN CHÍNH HÃNG',
+                        'label' => $currentProduct['name'],
                         'url' => $currentProduct['accessory_order_url'],
+                        'kind' => 'accessory',
                     ];
                 }
 
@@ -729,6 +739,13 @@ PROMPT;
                     'url' => route('accessories.index', [], false),
                 ];
             } else {
+                $suggestions[] = [
+                    'subtitle' => 'HỒ SƠ SẢN PHẨM',
+                    'label' => $currentProduct['name'],
+                    'url' => $currentProduct['url'],
+                    'kind' => 'product',
+                ];
+
                 if (filled($currentProduct['booking_url'] ?? null)) {
                     $suggestions[] = [
                         'label' => 'Đặt lịch lái thử',
@@ -742,28 +759,46 @@ PROMPT;
                         'url' => $currentProduct['quote_url'],
                     ];
                 }
-
-                $suggestions[] = [
-                    'label' => 'Xem '.$currentProduct['name'],
-                    'url' => $currentProduct['url'],
-                ];
             }
         }
 
         $matchedProducts = $products
-            ->filter(fn (array $product): bool => $this->contextProductMatches($product, $normalizedMessage))
+            ->filter(fn (array $product): bool => $extractedEntities !== []
+                ? $this->contextProductDirectMatch($product, $normalizedMessage)
+                : $this->contextProductMatches($product, $normalizedMessage))
             ->values();
         $matchedProduct = $matchedProducts->first();
 
-        if ($matchedProduct) {
+        if ($matchedProduct && (! $currentProduct || $includeCurrentProduct || ($matchedProduct['slug'] ?? null) !== ($currentProduct['slug'] ?? null))) {
             $suggestions[] = [
+                'subtitle' => ($matchedProduct['is_accessory'] ?? false) === true ? 'PHỤ KIỆN CHÍNH HÃNG' : 'HỒ SƠ SẢN PHẨM',
                 'label' => 'Xem '.$matchedProduct['name'],
                 'url' => $matchedProduct['url'],
+                'kind' => ($matchedProduct['is_accessory'] ?? false) === true ? 'accessory' : 'product',
+            ];
+        }
+
+        foreach ($extractedEntities as $entity) {
+            $suggestions[] = $entity;
+        }
+
+        $extractedVehicleIds = collect($extractedEntities)
+            ->filter(fn (array $entity): bool => ($entity['kind'] ?? null) === 'product' && isset($entity['product_id']))
+            ->pluck('product_id')
+            ->unique()
+            ->values();
+
+        if ($extractedVehicleIds->count() >= 2 && (! $currentProduct || ! $includeCurrentProduct)) {
+            $suggestions[] = [
+                'subtitle' => 'SO SÁNH TRỰC TIẾP',
+                'label' => 'So sánh '.$extractedVehicleIds->count().' mẫu xe',
+                'url' => route('products.compare', [], false).'?ids='.$extractedVehicleIds->take(4)->implode(','),
+                'kind' => 'compare',
             ];
         }
 
         $accessory = $products->first(fn (array $product): bool => filled($product['accessory_order_url']));
-        if ($accessory && Str::contains($message, ['phụ kiện', 'phu kien', 'thảm', 'tham', 'đặt hàng'])) {
+        if ($accessory && Str::contains($loweredMessage, ['phụ kiện', 'phu kien', 'thảm', 'tham', 'đặt hàng'])) {
             $suggestions[] = [
                 'label' => 'Đặt phụ kiện',
                 'url' => $accessory['accessory_order_url'],
@@ -771,7 +806,7 @@ PROMPT;
         }
 
         $vehicles = $products->filter(fn (array $product): bool => filled($product['compare_url']))->values();
-        if ($vehicles->count() >= 2 && Str::contains($message, ['so sánh', 'so sanh', 'khác gì', 'khac gi'])) {
+        if ($vehicles->count() >= 2 && Str::contains($loweredMessage, ['so sánh', 'so sanh', 'khác gì', 'khac gi'])) {
             $compareVehicles = $matchedProducts
                 ->filter(fn (array $product): bool => filled($product['compare_url']))
                 ->whenEmpty(fn () => $vehicles)
@@ -785,10 +820,17 @@ PROMPT;
             ];
         }
 
-        if (Str::contains($message, ['motorrad', 'xe máy', 'xe may', 'mô tô', 'mo to', 'pkl', 's1000', 's 1000'])) {
+        if (Str::contains($loweredMessage, ['motorrad', 'xe máy', 'xe may', 'mô tô', 'mo to', 'pkl', 's1000', 's 1000'])) {
             $suggestions[] = [
                 'label' => 'Xem BMW Motorrad',
                 'url' => route('products.index', ['type' => VehicleType::MOTORBIKE->value], false),
+            ];
+        }
+
+        if ($extractedEntities !== [] && (! $currentProduct || ! $includeCurrentProduct)) {
+            $suggestions[] = [
+                'label' => 'Đặt lịch lái thử',
+                'url' => route('appointments.create', ['type' => 'test_drive'], false),
             ];
         }
 
@@ -797,10 +839,305 @@ PROMPT;
         $suggestions[] = ['label' => 'Đọc ưu đãi & tin tức', 'url' => route('articles.index', [], false)];
 
         return collect($suggestions)
-            ->unique(fn (array $suggestion): string => $suggestion['label'].'|'.$suggestion['url'])
+            ->map(function (array $suggestion): array {
+                unset($suggestion['product_id']);
+
+                return $suggestion;
+            })
+            ->unique(fn (array $suggestion): string => $this->canonicalSuggestionUrl((string) $suggestion['url']))
             ->take(4)
             ->values()
             ->all();
+    }
+
+    /**
+     * Extract mentioned active products and published articles in exact narrative order.
+     *
+     * @return list<array{subtitle: string, label: string, url: string, kind: string, product_id?: int}>
+     */
+    private function extractMentionedEntitySuggestions(string $answer): array
+    {
+        $answer = trim($answer);
+        if ($answer === '') {
+            return [];
+        }
+
+        $products = Product::query()
+            ->active()
+            ->with('category')
+            ->get(['id', 'category_id', 'name', 'slug', 'type', 'is_active'])
+            ->sortByDesc(fn (Product $product): int => mb_strlen($product->name))
+            ->values();
+
+        $shortAliasesById = $this->uniqueShortProductAliases($products);
+        $entities = [];
+
+        foreach ($products as $product) {
+            $url = $product->isAccessory()
+                ? route('accessory-orders.create', $product->slug, false)
+                : route('products.show', $product->slug, false);
+
+            $position = $this->firstEntityMentionOffset($answer, $product->name, $url, $shortAliasesById[$product->id] ?? null);
+            if ($position === null) {
+                continue;
+            }
+
+            $entities[] = [
+                'pos' => $position,
+                'subtitle' => $product->isAccessory() ? 'PHỤ KIỆN CHÍNH HÃNG' : 'HỒ SƠ SẢN PHẨM',
+                'label' => $product->name,
+                'url' => $url,
+                'kind' => $product->isAccessory() ? 'accessory' : 'product',
+                'product_id' => $product->id,
+            ];
+        }
+
+        $articles = Article::query()
+            ->published()
+            ->get(['id', 'title', 'slug', 'category'])
+            ->sortByDesc(fn (Article $article): int => mb_strlen($article->title))
+            ->values();
+
+        foreach ($articles as $article) {
+            $url = route('articles.show', $article->slug, false);
+            $position = $this->firstEntityMentionOffset($answer, $article->title, $url);
+            if ($position === null) {
+                continue;
+            }
+
+            $entities[] = [
+                'pos' => $position,
+                'subtitle' => 'BÀI VIẾT & ƯU ĐÃI',
+                'label' => $article->title,
+                'url' => $url,
+                'kind' => 'article',
+            ];
+        }
+
+        usort($entities, fn (array $a, array $b): int => $a['pos'] <=> $b['pos']);
+
+        return array_map(function (array $entity): array {
+            unset($entity['pos']);
+
+            return $entity;
+        }, $entities);
+    }
+
+    /**
+     * @param  Collection<int, Product>  $products
+     * @return array<int, string>
+     */
+    private function uniqueShortProductAliases(Collection $products): array
+    {
+        $candidates = [];
+        $counts = [];
+
+        foreach ($products as $product) {
+            $shortName = trim((string) preg_replace(
+                '/(?:\s+(?:Sedan|Gran\s+Coupe|Roadster|Touring|Coupe|Convertible|xDrive\d*[a-z]*|M\s+Sport|LCI|Executive))+$/iu',
+                '',
+                trim($product->name)
+            ));
+
+            if ($shortName === '' || mb_strlen($shortName) >= mb_strlen(trim($product->name)) || mb_strlen($shortName) < 5) {
+                continue;
+            }
+
+            $key = Str::lower($shortName);
+            $candidates[$product->id] = $shortName;
+            $counts[$key] = ($counts[$key] ?? 0) + 1;
+        }
+
+        $unique = [];
+        foreach ($candidates as $productId => $shortName) {
+            if (($counts[Str::lower($shortName)] ?? 0) === 1) {
+                $unique[$productId] = $shortName;
+            }
+        }
+
+        return $unique;
+    }
+
+    private function firstEntityMentionOffset(string $answer, string $name, string $url, ?string $shortAlias = null): ?int
+    {
+        $offsets = [];
+
+        $urlPos = mb_strpos($answer, $url);
+        if ($urlPos !== false) {
+            $offsets[] = strlen(mb_substr($answer, 0, $urlPos));
+        }
+
+        $namePattern = '/(?<![\p{L}\p{N}])'.preg_quote(trim($name), '/').'(?![\p{L}\p{N}])/ui';
+        if (preg_match($namePattern, $answer, $matches, PREG_OFFSET_CAPTURE) === 1) {
+            $offsets[] = (int) $matches[0][1];
+        }
+
+        if ($shortAlias !== null && $shortAlias !== '') {
+            $aliasPattern = '/(?<![\p{L}\p{N}])'.preg_quote($shortAlias, '/').'(?![\p{L}\p{N}])/ui';
+            if (preg_match($aliasPattern, $answer, $matches, PREG_OFFSET_CAPTURE) === 1) {
+                $offsets[] = (int) $matches[0][1];
+            }
+        }
+
+        return $offsets !== [] ? min($offsets) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $currentProduct
+     * @param  list<array<string, mixed>>  $extractedEntities
+     */
+    private function shouldIncludeCurrentProductSuggestion(
+        string $message,
+        string $answer,
+        array $currentProduct,
+        array $extractedEntities,
+    ): bool {
+        $combined = $message."\n".$answer;
+        $productName = trim((string) ($currentProduct['name'] ?? ''));
+        $productUrl = trim((string) ($currentProduct['url'] ?? ''));
+
+        if ($productUrl !== '' && str_contains($answer, $productUrl)) {
+            return true;
+        }
+
+        if ($productName !== '') {
+            $namePattern = '/(?<![\p{L}\p{N}])'.preg_quote($productName, '/').'(?![\p{L}\p{N}])/ui';
+            if (preg_match($namePattern, $combined) === 1) {
+                return true;
+            }
+
+            $modelCode = $this->extractProductModelCode($productName);
+            if ($modelCode !== null) {
+                $codePattern = '/(?<![\p{L}\p{N}])'.preg_quote($modelCode, '/').'(?![\p{L}\p{N}])/ui';
+                if (preg_match($codePattern, $combined) === 1) {
+                    return true;
+                }
+            }
+        }
+
+        $lowerMessage = Str::lower($message);
+        $asciiMessage = Str::ascii($lowerMessage);
+        $demonstratives = [
+            'xe này',
+            'mẫu này',
+            'mẫu xe này',
+            'chiếc này',
+            'chiếc xe này',
+            'xe đang xem',
+            'chiếc đang xem',
+            'mẫu đang xem',
+            'sản phẩm này',
+            'lăn bánh',
+            'trả góp',
+            'đặt cọc',
+            'lái thử mẫu này',
+            'xe nay',
+            'mau nay',
+            'mau xe nay',
+            'chiec nay',
+            'chiec xe nay',
+            'xe dang xem',
+            'chiec dang xem',
+            'mau dang xem',
+            'san pham nay',
+            'lan banh',
+            'tra gop',
+            'dat coc',
+            'lai thu mau nay',
+        ];
+
+        if (Str::contains($lowerMessage, $demonstratives) || Str::contains($asciiMessage, $demonstratives)) {
+            return true;
+        }
+
+        return $extractedEntities === [] && ! $this->isGeneralPolicyQuestion($message);
+    }
+
+    /**
+     * @param  array<string, mixed>  $product
+     */
+    private function contextProductDirectMatch(array $product, string $normalizedMessage): bool
+    {
+        if ($normalizedMessage === '') {
+            return false;
+        }
+
+        $candidates = array_filter([
+            $this->matcher()->normalizeSearchText((string) ($product['name'] ?? '')),
+            $this->matcher()->normalizeSearchText((string) ($product['slug'] ?? '')),
+            $this->matcher()->normalizeSearchText((string) ($this->extractProductModelCode((string) ($product['name'] ?? '')) ?? '')),
+        ]);
+
+        foreach ($candidates as $candidate) {
+            if (strlen($candidate) >= 2 && Str::contains($normalizedMessage, $candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractProductModelCode(string $productName): ?string
+    {
+        $stripped = trim((string) preg_replace('/^bmw\s+/i', '', trim($productName)));
+        $stripped = trim((string) preg_replace(
+            '/(?:\s+(?:Sedan|Gran\s+Coupe|Roadster|Touring|Coupe|Convertible|xDrive\d*[a-z]*|M\s+Sport|LCI|Executive))+$/iu',
+            '',
+            $stripped
+        ));
+
+        if ($stripped === '' || mb_strlen($stripped) < 2) {
+            return null;
+        }
+
+        return $stripped;
+    }
+
+    private function isGeneralPolicyQuestion(string $message): bool
+    {
+        $lowerMessage = Str::lower($message);
+        $asciiMessage = Str::ascii($lowerMessage);
+        $policyKeywords = [
+            'bảo hành',
+            'bao hanh',
+            'pin xe điện',
+            'pin xe dien',
+            'chai pin',
+            'bảo dưỡng',
+            'bao duong',
+            'cbs',
+            'thu cũ đổi mới',
+            'thu cu doi moi',
+            'trade-in',
+            'trade in',
+            'bằng lái',
+            'bang lai',
+            'gplx',
+            'chính sách',
+            'chinh sach',
+            'quy định',
+            'quy dinh',
+            'thủ tục',
+            'thu tuc',
+        ];
+
+        return Str::contains($lowerMessage, $policyKeywords)
+            || Str::contains($asciiMessage, $policyKeywords);
+    }
+
+    private function canonicalSuggestionUrl(string $url): string
+    {
+        $trimmed = trim($url);
+        if ($trimmed === '' || $trimmed === '/') {
+            return '/';
+        }
+
+        $parts = parse_url($trimmed);
+        $path = rtrim((string) ($parts['path'] ?? $trimmed), '/');
+        $path = $path !== '' ? $path : '/';
+        $query = isset($parts['query']) && $parts['query'] !== '' ? '?'.$parts['query'] : '';
+
+        return $path.$query;
     }
 
     /**

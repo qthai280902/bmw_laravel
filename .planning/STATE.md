@@ -1,6 +1,24 @@
 # Project State
 
-Current phase: Phase 24 completed.
+Current phase: Phase 24.1 completed.
+
+## Phase 24.1: Hotfix Context-Aware Action Cards & Tự Động Trích Xuất Thực Thể Từ Câu Trả Lời AI
+
+- Completion time: 2026-11-16 +07:00.
+- Scope:
+  - Updated `App\Services\Ai\ShowroomAssistantService` to synthesize `suggestions` AFTER AI answer generation & markdown sanitization (`successfulResponse()`), auto-extracting active `Product` (full name, URL, unique short alias without ambiguous collisions) and published `Article` mentions in exact narrative order (`extractMentionedEntitySuggestions()`), dropping unrelated `current_product` on policy-only or other-vehicle queries (`shouldIncludeCurrentProductSuggestion()`), and auto-appending `/compare?ids=...` when >= 2 vehicles are suggested while keeping backward-compatible direct-query `'Xem ...'` labels for legacy tests.
+  - Updated `App\Ai\Agents\ShowroomAssistant::instructions()` to encourage standard `[Tên xe](/catalog/{slug})` and `[Tiêu đề bài viết](/tim-hieu-them/{slug})` markdown links.
+  - Updated `resources/js/app.js` (`actionLabel`, `actionMeta`, `extractActions`, `canonicalActionUrl`, `actionPriority`, `normalizeSuggestionList`, `normalizeActionList`) to strip redundant `'Xem '` prefixes cleanly, preserve backend `subtitle`/`kind` and concrete vehicle/article names, deduplicate canonical URLs, and limit to max 4 prioritized Action Cards.
+  - Added `test_action_cards_follow_ai_mentioned_vehicles_and_drop_unrelated_page_context_product` in `tests/Feature/Phase24SemanticRagEmbeddingTest.php`.
+- Verification:
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Vite production asset build: `npm run build` pass (`55 modules transformed`, `public/build/assets/app-y6mvR-xi.js`).
+  - AI cluster tests: `23 passed (284 assertions)`.
+  - Full test suite: `php artisan test --compact` pass (**135 passed (1539 assertions)** in 21.36s, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-24-1-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 24: Hybrid RAG Semantic Search Với Cloudflare Workers AI (`@cf/google/embeddinggemma-2`)
 

@@ -60,6 +60,7 @@ class ShowroomAssistant implements Agent, Conversational, HasTools
                 Nếu không có dữ liệu trong RAG hoặc dữ liệu public, nói rõ chưa có thông tin và mời Quý khách đặt lịch tư vấn qua {$consultUrl}.
                 Không thu thập thông tin nhạy cảm (SĐT, email, địa chỉ) trong chat.
                 Không tự tạo link rỗng `[]()` hay `(#)`, không viết câu dẫn link thừa kiểu "Quý khách có thể tìm hiểu thêm tại đây:" ở cuối tin nhắn vì Action Cards đã hiển thị sẵn ngay bên dưới.
+                Khi tư vấn, gợi ý hoặc liệt kê các mẫu xe hoặc bài viết cụ thể cho Quý khách, ưu tiên gắn kèm liên kết Markdown chuẩn `[Tên xe](/catalog/{slug})` hoặc `[Tiêu đề bài viết](/tim-hieu-them/{slug})` để Quý khách có thể bấm trực tiếp ngay trong nội dung câu trả lời lẫn trên Action Card bên dưới.
                 Không tạo booking hoặc đơn hàng thay người dùng; chỉ sử dụng đúng các liên kết nội bộ chính thức của showroom:
                 - Danh mục xe & chi tiết: {$catalogUrl} và /catalog/{slug}
                 - Bảng so sánh xe: {$compareUrl}?ids=...

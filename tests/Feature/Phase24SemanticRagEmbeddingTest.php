@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Ai\Agents\ShowroomAssistant;
 use App\Ai\Tools\SearchCatalogTool;
 use App\Ai\Tools\SearchKnowledgeBaseTool;
 use App\Enums\VehicleType;
@@ -435,5 +436,125 @@ class Phase24SemanticRagEmbeddingTest extends TestCase
         } finally {
             File::delete($cachePath);
         }
+    }
+
+    public function test_action_cards_follow_ai_mentioned_vehicles_and_drop_unrelated_page_context_product(): void
+    {
+        config([
+            'showroom_ai.enabled' => true,
+            'showroom_ai.provider' => 'gemini',
+            'showroom_ai.gemini_keys.primary' => 'AIzaPhase241ActionCardKey1234',
+        ]);
+
+        $sedanCategory = Category::factory()->create(['name' => 'Sedan', 'slug' => 'sedan']);
+
+        $car330i = Product::factory()->create([
+            'category_id' => $sedanCategory->id,
+            'name' => 'BMW 330i Sedan',
+            'slug' => 'bmw-330i-sedan',
+            'type' => VehicleType::CAR,
+            'price' => 1799000000,
+            'is_active' => true,
+        ]);
+
+        $car530i = Product::factory()->create([
+            'category_id' => $sedanCategory->id,
+            'name' => 'BMW 530i Sedan',
+            'slug' => 'bmw-530i-sedan',
+            'type' => VehicleType::CAR,
+            'price' => 3199000000,
+            'is_active' => true,
+        ]);
+
+        $car550e = Product::factory()->create([
+            'category_id' => $sedanCategory->id,
+            'name' => 'BMW 550e xDrive Sedan',
+            'slug' => 'bmw-550e-xdrive-sedan',
+            'type' => VehicleType::CAR,
+            'price' => 4299000000,
+            'is_active' => true,
+        ]);
+
+        $evArticle = Article::factory()->create([
+            'title' => 'Chính sách bảo hành pin BMW i chính hãng',
+            'slug' => 'chinh-sach-bao-hanh-pin-bmw-i',
+            'status' => Article::STATUS_PUBLISHED,
+            'published_at' => now()->subHour(),
+        ]);
+
+        ShowroomAssistant::fake([
+            // Scenario A: AI suggests 530i & 550e while user is browsing bmw-330i-sedan
+            'Với nhu cầu di chuyển êm ái và tiếp khách lịch lãm, Quý khách có thể cân nhắc BMW 530i Sedan hoặc BMW 550e xDrive Sedan.',
+            // Scenario B: AI mentions short unique alias "BMW 530i" (without "Sedan")
+            'Nếu ưu tiên không gian doanh nhân, BMW 530i là lựa chọn cân bằng tại showroom.',
+            // Scenario C: General EV battery policy question while user is browsing bmw-330i-sedan
+            'Pin cao áp trên các dòng xe thuần điện BMW i được bảo hành chính hãng 8 năm hoặc 160.000 km; tham khảo thêm Chính sách bảo hành pin BMW i chính hãng.',
+            // Scenario D: Question refers directly to the viewed car
+            'BMW 330i Sedan hiện có giá niêm yết công khai và hỗ trợ tư vấn giá lăn bánh chi tiết.',
+        ])->preventStrayPrompts();
+
+        // Scenario A: Switching to different vehicles drops 330i and adds 530i, 550e, and auto-compare
+        $responseA = $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Tôi muốn tìm một chiếc sedan êm ái, lịch lãm để tiếp khách',
+            'visitor_id' => 'phase241-visitor-01',
+            'page_url' => url('/catalog/'.$car330i->slug),
+            'product_slug' => $car330i->slug,
+            'product_name' => $car330i->name,
+        ])->assertOk();
+
+        $suggestionsA = collect($responseA->json('suggestions'));
+        $this->assertContains('BMW 530i Sedan', $suggestionsA->pluck('label')->all());
+        $this->assertContains('BMW 550e xDrive Sedan', $suggestionsA->pluck('label')->all());
+        $this->assertContains('/catalog/'.$car530i->slug, $suggestionsA->pluck('url')->all());
+        $this->assertContains('/catalog/'.$car550e->slug, $suggestionsA->pluck('url')->all());
+        $this->assertFalse($suggestionsA->contains(fn (array $item): bool => str_contains((string) $item['url'], $car330i->slug)));
+        $this->assertTrue($suggestionsA->contains(fn (array $item): bool => str_starts_with((string) $item['url'], '/compare?ids='.$car530i->id.','.$car550e->id)));
+
+        // Scenario B: Short unique alias "BMW 530i" resolves accurately to BMW 530i Sedan
+        $responseB = $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Gợi ý thêm dòng xe doanh nhân',
+            'visitor_id' => 'phase241-visitor-02',
+            'page_url' => url('/catalog/'.$car330i->slug),
+            'product_slug' => $car330i->slug,
+        ])->assertOk();
+
+        $suggestionsB = collect($responseB->json('suggestions'));
+        $this->assertTrue($suggestionsB->contains(
+            fn (array $item): bool => $item['url'] === '/catalog/'.$car530i->slug && $item['label'] === 'BMW 530i Sedan'
+        ));
+        $this->assertFalse($suggestionsB->contains(fn (array $item): bool => str_contains((string) $item['url'], $car330i->slug)));
+
+        // Scenario C: General EV battery policy question does NOT inject bmw-330i-sedan card
+        $responseC = $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Pin xe điện dùng vài năm bị chai thì hãng xử lý như thế nào?',
+            'visitor_id' => 'phase241-visitor-03',
+            'page_url' => url('/catalog/'.$car330i->slug),
+            'product_slug' => $car330i->slug,
+        ])->assertOk();
+
+        $suggestionsC = collect($responseC->json('suggestions'));
+        $this->assertTrue($suggestionsC->contains(
+            fn (array $item): bool => $item['url'] === '/tim-hieu-them/'.$evArticle->slug && $item['label'] === $evArticle->title
+        ));
+        $this->assertFalse($suggestionsC->contains(fn (array $item): bool => str_contains((string) $item['url'], $car330i->slug)));
+
+        // Scenario D: Demonstrative question about the currently viewed car keeps bmw-330i-sedan + quote CTA
+        $responseD = $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Mẫu xe này giá lăn bánh bao nhiêu?',
+            'visitor_id' => 'phase241-visitor-04',
+            'page_url' => url('/catalog/'.$car330i->slug),
+            'product_slug' => $car330i->slug,
+        ])->assertOk();
+
+        $suggestionsD = collect($responseD->json('suggestions'));
+        $this->assertTrue($suggestionsD->contains(
+            fn (array $item): bool => $item['url'] === '/catalog/'.$car330i->slug && $item['label'] === 'BMW 330i Sedan'
+        ));
+        $this->assertTrue($suggestionsD->contains(fn (array $item): bool => str_contains((string) $item['url'], '/booking?type=quote')));
+
+        // Frontend contract: actionLabel preserves specific vehicle/article labels instead of overwriting with "Xem chi tiết"
+        $appJs = file_get_contents(resource_path('js/app.js')) ?: '';
+        $this->assertStringContainsString('canonicalActionUrl(', $appJs);
+        $this->assertStringContainsString('cleanVehicle', $appJs);
     }
 }
