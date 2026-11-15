@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Article;
+use App\Models\Product;
+use App\Observers\ArticleObserver;
+use App\Observers\ProductObserver;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -22,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureHttpClientCertificateAuthority();
+
+        Product::observe(ProductObserver::class);
+        Article::observe(ArticleObserver::class);
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

@@ -32,6 +32,14 @@ class Product extends Model
     ];
 
     /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'embedding',
+        'embedding_hash',
+    ];
+
+    /**
      * Thông số kỹ thuật dịch sang Tiếng Việt.
      */
     public const SPEC_TRANSLATIONS = [
@@ -64,8 +72,10 @@ class Product extends Model
             'type' => VehicleType::class,
             'specifications' => 'array',
             'is_featured' => 'boolean',
+            'is_active' => 'boolean',
             'price' => 'integer',
             'deposit_amount' => 'integer',
+            'embedding' => 'array',
         ];
     }
 
@@ -294,5 +304,46 @@ class Product extends Model
         }
 
         return $translated;
+    }
+
+    /**
+     * Build structured title and content text for vector embedding generation.
+     *
+     * @return array{title: string, content: string}
+     */
+    public function toEmbeddingParts(): array
+    {
+        $this->loadMissing('category');
+
+        $line = match ($this->type) {
+            VehicleType::MOTORBIKE => 'BMW Motorrad (Xe mô tô phân khối lớn)',
+            VehicleType::ACCESSORY => 'Phụ kiện chính hãng BMW',
+            default => 'Ô tô BMW chính hãng',
+        };
+
+        $specsText = collect($this->translated_specs)
+            ->map(fn (mixed $value, string $label): string => $label.': '.(is_array($value) ? implode(', ', $value) : (string) $value))
+            ->implode('; ');
+
+        $priceText = $this->price !== null
+            ? number_format((int) $this->price, 0, ',', '.').' VNĐ'
+            : 'Liên hệ showroom';
+
+        $cleanDescription = filled($this->description)
+            ? Str::limit(preg_replace('/\s+/', ' ', strip_tags((string) $this->description)) ?? '', 1200)
+            : '';
+
+        $segments = array_filter([
+            "Dòng sản phẩm: {$line}",
+            $this->category?->name ? "Phân khúc: {$this->category->name}" : null,
+            "Giá niêm yết: {$priceText}",
+            $specsText !== '' ? "Thông số kỹ thuật: {$specsText}" : null,
+            $cleanDescription !== '' ? "Mô tả chi tiết: {$cleanDescription}" : null,
+        ]);
+
+        return [
+            'title' => trim((string) $this->name),
+            'content' => implode('. ', $segments),
+        ];
     }
 }

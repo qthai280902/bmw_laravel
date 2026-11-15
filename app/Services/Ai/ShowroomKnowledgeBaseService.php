@@ -53,6 +53,7 @@ class ShowroomKnowledgeBaseService
     public function __construct(
         private readonly ShowroomCatalogMatcher $matcher,
         private ?string $knowledgePath = null,
+        private ?CloudflareEmbeddingService $embeddingService = null,
     ) {}
 
     /**
@@ -138,7 +139,8 @@ class ShowroomKnowledgeBaseService
      *     title: string,
      *     content: string,
      *     official_links: array<int, array{label: string, url: string}>,
-     *     score: int
+     *     score: int,
+     *     semantic_score: int
      * }>
      */
     public function retrieveRelevantChunks(string $query, int $limit = 4, bool $includeCatalogRecords = true): array
@@ -146,10 +148,19 @@ class ShowroomKnowledgeBaseService
         $limit = max(1, min(10, $limit));
         $trimmedQuery = trim($query);
         $chunks = $this->knowledgeChunks();
+        $queryVector = $trimmedQuery !== '' ? $this->embeddingService()->embedQuery($trimmedQuery) : null;
+        $knowledgeEmbeddings = $queryVector !== null ? $this->loadKnowledgeEmbeddings() : [];
         $candidates = [];
 
         foreach ($chunks as $chunk) {
-            $score = $this->scoreKnowledgeChunk($chunk, $trimmedQuery);
+            $lexicalScore = $this->scoreKnowledgeChunk($chunk, $trimmedQuery);
+            $semanticScore = $chunk['id'] === 'strict_boundaries'
+                ? 0
+                : $this->computeSemanticScore(
+                    $queryVector,
+                    $knowledgeEmbeddings[$chunk['id']]['embedding'] ?? null
+                );
+            $score = $lexicalScore + $semanticScore;
 
             if ($score > 0) {
                 $candidates[] = [
@@ -160,16 +171,17 @@ class ShowroomKnowledgeBaseService
                     'content' => $chunk['content'],
                     'official_links' => $chunk['official_links'],
                     'score' => $score,
+                    'semantic_score' => $semanticScore,
                 ];
             }
         }
 
         if ($includeCatalogRecords && $trimmedQuery !== '') {
-            foreach ($this->retrieveCatalogCandidates($trimmedQuery) as $catalogCandidate) {
+            foreach ($this->retrieveCatalogCandidates($trimmedQuery, $queryVector) as $catalogCandidate) {
                 $candidates[] = $catalogCandidate;
             }
 
-            foreach ($this->retrieveArticleCandidates($trimmedQuery) as $articleCandidate) {
+            foreach ($this->retrieveArticleCandidates($trimmedQuery, $queryVector) as $articleCandidate) {
                 $candidates[] = $articleCandidate;
             }
         }
@@ -192,11 +204,87 @@ class ShowroomKnowledgeBaseService
                     'content' => $fallback['content'],
                     'official_links' => $fallback['official_links'],
                     'score' => 1,
+                    'semantic_score' => 0,
                 ]];
             }
         }
 
         return $ranked;
+    }
+
+    /**
+     * Build structured title and content for a static knowledge chunk.
+     *
+     * @param  array{
+     *     id: string,
+     *     category: string,
+     *     title: string,
+     *     keywords: array<int, string>,
+     *     content: string
+     * }  $chunk
+     * @return array{title: string, content: string}
+     */
+    public function chunkEmbeddingParts(array $chunk): array
+    {
+        $keywords = implode(', ', $chunk['keywords'] ?? []);
+        $content = implode('. ', array_filter([
+            'Chuyên mục: '.($chunk['category'] ?? 'Thông tin Showroom'),
+            $chunk['content'] ?? '',
+            $keywords !== '' ? 'Từ khóa liên quan: '.$keywords : null,
+        ]));
+
+        return [
+            'title' => trim((string) ($chunk['title'] ?? '')),
+            'content' => $content,
+        ];
+    }
+
+    public function knowledgeEmbeddingsPath(): string
+    {
+        $configured = config('showroom_ai.embeddings.knowledge_embeddings_path');
+
+        return is_string($configured) && trim($configured) !== ''
+            ? $configured
+            : storage_path('app/private/ai_knowledge_embeddings.json');
+    }
+
+    /**
+     * @return array<string, array{hash: string, embedding: list<float>}>
+     */
+    public function loadKnowledgeEmbeddings(): array
+    {
+        $path = $this->knowledgeEmbeddingsPath();
+
+        if (! File::exists($path) || ! File::isFile($path)) {
+            return [];
+        }
+
+        $decoded = json_decode(File::get($path), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function embeddingService(): CloudflareEmbeddingService
+    {
+        return $this->embeddingService ??= app(CloudflareEmbeddingService::class);
+    }
+
+    /**
+     * @param  list<float>|null  $queryVector
+     */
+    private function computeSemanticScore(?array $queryVector, mixed $itemEmbedding): int
+    {
+        if ($queryVector === null || ! is_array($itemEmbedding) || $itemEmbedding === []) {
+            return 0;
+        }
+
+        $similarity = CloudflareEmbeddingService::cosineSimilarity($queryVector, $itemEmbedding);
+
+        if ($similarity < $this->embeddingService()->minSimilarity()) {
+            return 0;
+        }
+
+        return (int) round($similarity * $this->embeddingService()->semanticWeight());
     }
 
     /**
@@ -278,6 +366,7 @@ class ShowroomKnowledgeBaseService
     }
 
     /**
+     * @param  list<float>|null  $queryVector
      * @return array<int, array{
      *     source: string,
      *     id: string,
@@ -285,30 +374,45 @@ class ShowroomKnowledgeBaseService
      *     title: string,
      *     content: string,
      *     official_links: array<int, array{label: string, url: string}>,
-     *     score: int
+     *     score: int,
+     *     semantic_score: int
      * }>
      */
-    private function retrieveCatalogCandidates(string $query): array
+    private function retrieveCatalogCandidates(string $query, ?array $queryVector = null): array
     {
+        $columns = [
+            'id',
+            'category_id',
+            'name',
+            'slug',
+            'type',
+            'price',
+            'deposit_amount',
+            'specifications',
+            'description',
+        ];
+
+        if ($queryVector !== null) {
+            $columns[] = 'embedding';
+        }
+
         return Product::query()
             ->active()
             ->with('category')
-            ->select([
-                'id',
-                'category_id',
-                'name',
-                'slug',
-                'type',
-                'price',
-                'deposit_amount',
-                'specifications',
-                'description',
-            ])
+            ->select($columns)
             ->get()
-            ->map(fn (Product $product): array => [
-                'product' => $product,
-                'score' => $this->matcher->scoreProductQuery($product, $query, false, true),
-            ])
+            ->map(function (Product $product) use ($query, $queryVector): array {
+                $lexicalScore = $this->matcher->scoreProductQuery($product, $query, false, true);
+                $semanticScore = $queryVector !== null
+                    ? $this->computeSemanticScore($queryVector, $product->embedding)
+                    : 0;
+
+                return [
+                    'product' => $product,
+                    'score' => $lexicalScore + $semanticScore,
+                    'semantic_score' => $semanticScore,
+                ];
+            })
             ->filter(fn (array $entry): bool => $entry['score'] >= 320)
             ->sortByDesc('score')
             ->take(2)
@@ -338,6 +442,7 @@ class ShowroomKnowledgeBaseService
                     'content' => trim("Giá niêm yết: {$priceText}. ".($specsText !== '' ? "Thông số chính: {$specsText}. " : '').($formatted['description'] ?? '')),
                     'official_links' => $links,
                     'score' => $entry['score'],
+                    'semantic_score' => $entry['semantic_score'],
                 ];
             })
             ->values()
@@ -345,6 +450,7 @@ class ShowroomKnowledgeBaseService
     }
 
     /**
+     * @param  list<float>|null  $queryVector
      * @return array<int, array{
      *     source: string,
      *     id: string,
@@ -352,20 +458,35 @@ class ShowroomKnowledgeBaseService
      *     title: string,
      *     content: string,
      *     official_links: array<int, array{label: string, url: string}>,
-     *     score: int
+     *     score: int,
+     *     semantic_score: int
      * }>
      */
-    private function retrieveArticleCandidates(string $query): array
+    private function retrieveArticleCandidates(string $query, ?array $queryVector = null): array
     {
+        $columns = ['id', 'title', 'slug', 'category', 'excerpt', 'body', 'published_at'];
+
+        if ($queryVector !== null) {
+            $columns[] = 'embedding';
+        }
+
         return Article::query()
             ->published()
-            ->select(['id', 'title', 'slug', 'category', 'excerpt', 'body', 'published_at'])
+            ->select($columns)
             ->latest('published_at')
             ->get()
-            ->map(fn (Article $article): array => [
-                'article' => $article,
-                'score' => $this->matcher->scoreArticleQuery($article, $query),
-            ])
+            ->map(function (Article $article) use ($query, $queryVector): array {
+                $lexicalScore = $this->matcher->scoreArticleQuery($article, $query);
+                $semanticScore = $queryVector !== null
+                    ? $this->computeSemanticScore($queryVector, $article->embedding)
+                    : 0;
+
+                return [
+                    'article' => $article,
+                    'score' => $lexicalScore + $semanticScore,
+                    'semantic_score' => $semanticScore,
+                ];
+            })
             ->filter(fn (array $entry): bool => $entry['score'] >= 300)
             ->sortByDesc('score')
             ->take(2)
@@ -383,6 +504,7 @@ class ShowroomKnowledgeBaseService
                         ['label' => 'Đọc bài viết', 'url' => route('articles.show', $article->slug, false)],
                     ],
                     'score' => $entry['score'],
+                    'semantic_score' => $entry['semantic_score'],
                 ];
             })
             ->values()

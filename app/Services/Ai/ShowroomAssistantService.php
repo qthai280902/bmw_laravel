@@ -65,6 +65,7 @@ class ShowroomAssistantService
                 conversationMessages: $conversationMessages,
                 pageContextSummary: $pageContextSummary,
                 context: $context,
+                message: $message,
             );
 
             return $this->withTrackerProduct($payload, $trackerProduct);
@@ -79,7 +80,7 @@ class ShowroomAssistantService
                 pageContextSummary: $pageContextSummary,
             );
 
-            return $this->withTrackerProduct($this->successfulResponse($response, $suggestions, $context), $trackerProduct);
+            return $this->withTrackerProduct($this->successfulResponse($response, $suggestions, $context, $message), $trackerProduct);
         } catch (Throwable $exception) {
             Log::warning('Showroom AI assistant request failed.', [
                 'reason' => 'provider_error',

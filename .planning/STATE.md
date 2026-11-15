@@ -1,6 +1,26 @@
 # Project State
 
-Current phase: Phase 23 completed.
+Current phase: Phase 24 completed.
+
+## Phase 24: Hybrid RAG Semantic Search Với Cloudflare Workers AI (`@cf/google/embeddinggemma-2`)
+
+- Completion time: 2026-11-16 +07:00.
+- Scope:
+  - Configured multi-account Cloudflare Workers AI rotation & automatic failover (`CLOUDFLARE_AI_ACCOUNTS`, `CLOUDFLARE_ACCOUNT_ID_1/2` + `CLOUDFLARE_API_TOKEN_1/2`, single-account backward compatibility) in `config/showroom_ai.php`, `.env`, `.env.example`, and test isolation `<env name="AI_EMBEDDINGS_ENABLED" value="false"/>` in `phpunit.xml`.
+  - Added migration `2026_11_15_000001_add_embedding_columns_to_products_and_articles_tables` (`embedding` JSON nullable, `embedding_hash` string(64) nullable) and updated `Product` & `Article` (`$hidden`, `casts()`, `toEmbeddingParts()` with `loadMissing('category')`).
+  - Built `App\Services\Ai\CloudflareEmbeddingService` with `@cf/google/embeddinggemma-2` payload (`input`, `dimensions: 768`), Task Prefixes (`title: ... | text: ...`, `task: search result | query: ...`), OpenAI-style `result.data[].embedding` + flat array response extraction, round-robin cooldown failover (`429`/`401`/`403`/`5xx`/network errors), 15-minute query cache, `cosineSimilarity()`, and `syncModel()`.
+  - Built `ProductObserver` & `ArticleObserver` (guarded by `$product->is_active === true` / `$article->isPublished()`, SHA-256 deduplication, `saveQuietly()`, `try/catch`) registered in `AppServiceProvider`, plus `php artisan ai:sync-embeddings {--force}` (`SyncAiEmbeddingsCommand`) writing `storage/app/private/ai_knowledge_embeddings.json`.
+  - Upgraded `ShowroomKnowledgeBaseService` to Hybrid Search (`lexicalScore + semanticScore`, excluding `strict_boundaries` from cosine scoring) and added semantic fallback inside `SearchCatalogTool`.
+  - Added `tests/Feature/Phase24SemanticRagEmbeddingTest.php` (4 tests / 68 assertions using `Http::fake()`).
+- Verification:
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Full test suite: `php artisan test --compact` pass, **134 passed (1521 assertions)** (100% PASS).
+  - Local migration: `2026_11_15_000001_add_embedding_columns_to_products_and_articles_tables` pass (`38.12ms`).
+  - Live vector sync (`php artisan ai:sync-embeddings`): **25/25 active products, 15/15 published articles, 7/7 FAQ chunks** synced (`0 failed`), `ai_knowledge_embeddings.json` (`137,597 bytes`); second run skipped all `25 / 15 / 7` unchanged records via SHA-256 deduplication.
+- Report: `.planning/baocao/phase-reports/phase-24-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 23: Kiểm Toán Chức Năng Người Dùng (Guest & Real User) & Kiểm Thử Logic E2E
 

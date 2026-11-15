@@ -44,10 +44,19 @@ class Article extends Model
         'seo_description',
     ];
 
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'embedding',
+        'embedding_hash',
+    ];
+
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
+            'embedding' => 'array',
         ];
     }
 
@@ -202,5 +211,28 @@ class Article extends Model
         }
 
         return $slug;
+    }
+
+    /**
+     * Build structured title and content text for vector embedding generation.
+     *
+     * @return array{title: string, content: string}
+     */
+    public function toEmbeddingParts(): array
+    {
+        $cleanBody = filled($this->body)
+            ? Str::limit(preg_replace('/\s+/', ' ', strip_tags(Str::markdown((string) $this->body))) ?? '', 1800)
+            : '';
+
+        $segments = array_filter([
+            'Chuyên mục: '.$this->categoryLabel(),
+            filled($this->excerpt) ? trim((string) $this->excerpt) : null,
+            $cleanBody !== '' ? $cleanBody : null,
+        ]);
+
+        return [
+            'title' => trim((string) $this->title),
+            'content' => implode('. ', $segments),
+        ];
     }
 }
