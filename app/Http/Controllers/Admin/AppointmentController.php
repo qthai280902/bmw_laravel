@@ -13,21 +13,9 @@ class AppointmentController extends Controller
     /**
      * Danh sách tất cả lịch hẹn.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $query = Appointment::with(['user', 'product'])->latest();
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
-        $appointments = $query->paginate(15)->withQueryString();
-
-        return view('admin.appointments.index', compact('appointments'));
+        return view('admin.appointments.index');
     }
 
     /**

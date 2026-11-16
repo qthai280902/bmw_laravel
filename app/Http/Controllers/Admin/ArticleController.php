@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreArticleRequest;
 use App\Http\Requests\UpdateArticleRequest;
 use App\Models\Article;
+use App\Services\Ai\ArticleEditorialAiService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -97,6 +99,23 @@ class ArticleController extends Controller
         return redirect()
             ->route('admin.articles.edit', $article)
             ->with('success', 'Bài viết đã được cập nhật.');
+    }
+
+    public function aiAssist(Request $request, ArticleEditorialAiService $editorialAi): JsonResponse
+    {
+        $validated = $request->validate([
+            'title' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'body' => ['required', 'string', 'min:20'],
+        ]);
+
+        $metadata = $editorialAi->generateMetadata(
+            title: (string) ($validated['title'] ?? ''),
+            category: (string) ($validated['category'] ?? Article::CATEGORY_SHOWROOM_NEWS),
+            body: (string) $validated['body'],
+        );
+
+        return response()->json($metadata);
     }
 
     public function destroy(Article $article): RedirectResponse

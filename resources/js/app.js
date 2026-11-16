@@ -1,10 +1,21 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 import collapse from '@alpinejs/collapse';
 
 Alpine.plugin(collapse);
 window.Alpine = Alpine;
+window.Livewire = Livewire;
+
+window.syncComparisonButtons = function () {
+    if (typeof window.getComparisonIds !== 'function') {
+        return;
+    }
+
+    window.dispatchEvent(new CustomEvent('comparison-updated', {
+        detail: window.getComparisonIds(),
+    }));
+};
 
 window.initScrollReveal = function (root = document) {
     if (!('IntersectionObserver' in window)) {
@@ -28,6 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.initScrollReveal();
 });
 
+document.addEventListener('livewire:navigated', () => {
+    window.initScrollReveal();
+    window.syncComparisonButtons();
+});
+
+Livewire.hook('morph.updated', () => {
+    window.requestAnimationFrame(() => {
+        window.initScrollReveal();
+        window.syncComparisonButtons();
+    });
+});
+
 window.aiAssistantWidget = (config) => ({
     config,
     panelOpen: false,
@@ -35,6 +58,12 @@ window.aiAssistantWidget = (config) => ({
     messages: [],
     input: '',
     loading: false,
+    streaming: false,
+    abortController: null,
+    selectedImage: null,
+    selectedImagePreview: null,
+    selectedImageName: null,
+    imageError: null,
     pageContextOverride: null,
     activePageContext: {
         product_slug: null,
@@ -174,40 +203,250 @@ window.aiAssistantWidget = (config) => ({
         this.send();
     },
 
-    async send() {
-        const message = this.input.trim();
+    openImagePicker() {
+        this.imageError = null;
+        this.$refs.imageInput?.click();
+    },
 
-        if (!message || this.loading) {
+    handleImageSelect(event) {
+        this.imageError = null;
+        const file = event?.target?.files?.[0];
+
+        if (!file) {
             return;
         }
 
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            this.imageError = 'Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP.';
+            this.clearSelectedImage();
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            this.imageError = 'Dung lượng ảnh tối đa 5MB.';
+            this.clearSelectedImage();
+            return;
+        }
+
+        if (this.selectedImagePreview) {
+            URL.revokeObjectURL(this.selectedImagePreview);
+        }
+
+        this.selectedImage = file;
+        this.selectedImageName = file.name;
+        this.selectedImagePreview = URL.createObjectURL(file);
+    },
+
+    clearSelectedImage() {
+        if (this.selectedImagePreview) {
+            URL.revokeObjectURL(this.selectedImagePreview);
+        }
+
+        this.selectedImage = null;
+        this.selectedImagePreview = null;
+        this.selectedImageName = null;
+
+        if (this.$refs.imageInput) {
+            this.$refs.imageInput.value = '';
+        }
+    },
+
+    abortStreaming() {
+        if (this.abortController) {
+            this.abortController.abort();
+        }
+    },
+
+    buildRequestOptions(message, imageFile, pageContext, acceptHeader = 'application/json') {
+        const visitorId = this.ensureVisitorId();
+
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('image', imageFile);
+            if (visitorId) formData.append('visitor_id', visitorId);
+            formData.append('page_url', window.location.href);
+            if (document.referrer) formData.append('referrer', document.referrer);
+            if (pageContext.product_slug) formData.append('product_slug', pageContext.product_slug);
+            if (pageContext.product_name) formData.append('product_name', pageContext.product_name);
+
+            return {
+                method: 'POST',
+                headers: {
+                    Accept: acceptHeader,
+                    'X-CSRF-TOKEN': config.csrf,
+                },
+                body: formData,
+            };
+        }
+
+        return {
+            method: 'POST',
+            headers: {
+                Accept: acceptHeader,
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': config.csrf,
+            },
+            body: JSON.stringify({
+                message,
+                visitor_id: visitorId,
+                page_url: window.location.href,
+                referrer: document.referrer || null,
+                product_slug: pageContext.product_slug,
+                product_name: pageContext.product_name,
+            }),
+        };
+    },
+
+    updateStreamingAssistantMessage(messageId, text, suggestions = [], finalize = false) {
+        const target = this.messages.find((item) => item.id === messageId);
+        if (!target) {
+            return;
+        }
+
+        const normalizedSuggestions = this.normalizeSuggestionList(suggestions);
+        const formatted = this.formatAssistantMessage(text, normalizedSuggestions, null);
+        const offsetState = this.assignPartOffsets(formatted.blocks);
+
+        target.text = String(text || '');
+        target.blocks = offsetState.blocks;
+        target.totalChars = offsetState.totalChars;
+        target.revealedChars = offsetState.totalChars;
+
+        if (finalize) {
+            target.suggestions = normalizedSuggestions;
+            target.actions = formatted.actions;
+        }
+    },
+
+    async send() {
+        const rawMessage = this.input.trim();
+        const imageFile = this.selectedImage;
+        const previewUrl = this.selectedImagePreview;
+        const imageName = this.selectedImageName;
+
+        if ((!rawMessage && !imageFile) || this.loading || this.streaming) {
+            return;
+        }
+
+        const displayMessage = rawMessage || 'Nhận diện hình ảnh BMW';
         const pageContext = this.detectPageContext();
         this.activePageContext = pageContext;
         this.stopProgressiveReveal();
+        this.imageError = null;
 
-        this.messages.push(this.createUserMessage(message));
+        this.messages.push(this.createUserMessage(displayMessage, previewUrl, imageName));
         this.input = '';
+        this.selectedImage = null;
+        this.selectedImagePreview = null;
+        this.selectedImageName = null;
+        if (this.$refs.imageInput) {
+            this.$refs.imageInput.value = '';
+        }
+
         this.loading = true;
+        this.streaming = false;
         this.persistState();
         this.scrollMessages();
 
+        let streamAssistantId = null;
+        let streamedText = '';
+
         try {
-            const response = await fetch(config.endpoint, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': config.csrf,
-                },
-                body: JSON.stringify({
-                    message,
-                    visitor_id: this.ensureVisitorId(),
-                    page_url: window.location.href,
-                    referrer: document.referrer || null,
-                    product_slug: pageContext.product_slug,
-                    product_name: pageContext.product_name,
-                }),
-            });
+            if (config.streamEndpoint) {
+                this.abortController = new AbortController();
+                const streamOptions = this.buildRequestOptions(rawMessage, imageFile, pageContext, 'text/event-stream');
+                streamOptions.signal = this.abortController.signal;
+
+                const streamResponse = await fetch(config.streamEndpoint, streamOptions);
+                const contentType = streamResponse.headers.get('content-type') || '';
+
+                if (streamResponse.ok && contentType.includes('text/event-stream') && streamResponse.body) {
+                    this.streaming = true;
+                    const reader = streamResponse.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buffer = '';
+                    let receivedDone = false;
+
+                    const processFrame = (frame) => {
+                        const lines = frame.split(/\r?\n/);
+                        let eventName = 'message';
+                        const dataLines = [];
+
+                        for (const line of lines) {
+                            if (line.startsWith('event:')) {
+                                eventName = line.slice(6).trim();
+                            } else if (line.startsWith('data:')) {
+                                dataLines.push(line.slice(5).trim());
+                            }
+                        }
+
+                        if (!dataLines.length) {
+                            return;
+                        }
+
+                        let data = {};
+                        try {
+                            data = JSON.parse(dataLines.join('\n'));
+                        } catch (e) {
+                            return;
+                        }
+
+                        if (eventName === 'chunk' && typeof data.delta === 'string') {
+                            if (!streamAssistantId) {
+                                const placeholder = this.createAssistantMessage('', [], false);
+                                this.messages.push(placeholder);
+                                streamAssistantId = placeholder.id;
+                                this.loading = false;
+                            }
+                            streamedText += data.delta;
+                            this.updateStreamingAssistantMessage(streamAssistantId, streamedText, [], false);
+                            this.scrollMessages();
+                        } else if (eventName === 'done') {
+                            receivedDone = true;
+                            const finalAnswer = data.answer || streamedText || config.fallback;
+                            const finalSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+
+                            if (!streamAssistantId) {
+                                this.appendAssistantMessage(finalAnswer, finalSuggestions, false);
+                            } else {
+                                this.updateStreamingAssistantMessage(streamAssistantId, finalAnswer, finalSuggestions, true);
+                            }
+
+                            this.loading = false;
+                            this.streaming = false;
+                            this.pruneMessages();
+                            this.persistState();
+                            this.scrollMessages();
+                        }
+                    };
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+                        buffer += decoder.decode(value, { stream: true });
+                        const frames = buffer.split(/\r?\n\r?\n/);
+                        buffer = frames.pop() || '';
+                        frames.forEach(processFrame);
+                    }
+
+                    if (buffer.trim()) {
+                        processFrame(buffer.trim());
+                    }
+
+                    if (receivedDone || streamAssistantId) {
+                        return;
+                    }
+                }
+            }
+
+            const response = await fetch(
+                config.endpoint,
+                this.buildRequestOptions(rawMessage, imageFile, pageContext, 'application/json'),
+            );
 
             const payload = await response.json().catch(() => ({}));
 
@@ -219,10 +458,18 @@ window.aiAssistantWidget = (config) => ({
             this.pruneMessages();
             this.persistState();
         } catch (error) {
-            this.appendAssistantMessage(config.fallback, [], true);
+            if (error?.name === 'AbortError') {
+                if (streamAssistantId && streamedText.trim()) {
+                    this.updateStreamingAssistantMessage(streamAssistantId, streamedText, [], true);
+                }
+            } else {
+                this.appendAssistantMessage(config.fallback, [], true);
+            }
         } finally {
-            this.pruneMessages();
+            this.abortController = null;
+            this.streaming = false;
             this.loading = false;
+            this.pruneMessages();
             this.persistState();
             this.scrollMessages();
         }
@@ -295,11 +542,13 @@ window.aiAssistantWidget = (config) => ({
         return text.slice(0, Math.max(0, limit - start));
     },
 
-    createUserMessage(text) {
+    createUserMessage(text, imagePreviewUrl = null, imageName = null) {
         return {
             id: this.messageId(),
             role: 'user',
             text: String(text || ''),
+            imagePreviewUrl: imagePreviewUrl || null,
+            imageName: imageName || null,
             blocks: [],
             actions: [],
         };
@@ -956,7 +1205,7 @@ window.aiAssistantWidget = (config) => ({
                     .slice(-this.maxStoredMessages)
                     .map((message) => {
                         if (message.role === 'user') {
-                            return this.createUserMessage(message.text);
+                            return this.createUserMessage(message.text, null, message.imageName || null);
                         }
 
                         const savedSuggestions = this.normalizeSuggestionList(message.suggestions || []);
@@ -986,6 +1235,7 @@ window.aiAssistantWidget = (config) => ({
                         return {
                             role: 'user',
                             text: this.safeStoredText(message.text),
+                            imageName: message.imageName ? String(message.imageName).slice(0, 80) : null,
                         };
                     }
 
@@ -1026,4 +1276,4 @@ window.aiAssistantWidget = (config) => ({
     },
 });
 
-Alpine.start();
+Livewire.start();

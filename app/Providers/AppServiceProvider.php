@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Appointment;
 use App\Models\Article;
 use App\Models\Product;
+use App\Observers\AppointmentObserver;
 use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
 use Illuminate\Support\Facades\Http;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
 
         Product::observe(ProductObserver::class);
         Article::observe(ArticleObserver::class);
+        Appointment::observe(AppointmentObserver::class);
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

@@ -62,9 +62,19 @@ Route::get('/booking/success', [AppointmentController::class, 'success'])->name(
 Route::post('/ai/showroom-assistant', ShowroomAssistantController::class)
     ->middleware('throttle:12,1')
     ->name('ai.showroom-assistant.ask');
+Route::post('/ai/showroom-assistant/stream', [ShowroomAssistantController::class, 'stream'])
+    ->middleware('throttle:12,1')
+    ->name('ai.showroom-assistant.stream');
 Route::post('/ai/showroom-assistant/reset', [ShowroomAssistantController::class, 'reset'])
     ->middleware('throttle:20,1')
     ->name('ai.showroom-assistant.reset');
+
+Route::post('/api/ai/assistant', ShowroomAssistantController::class)
+    ->middleware('throttle:12,1')
+    ->name('ai.api.assistant.ask');
+Route::post('/api/ai/assistant/stream', [ShowroomAssistantController::class, 'stream'])
+    ->middleware('throttle:12,1')
+    ->name('ai.api.assistant.stream');
 
 // Auth Dashboard & Appointments Mng
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -84,6 +94,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('products', AdminProductController::class);
         Route::resource('categories', CategoryController::class);
+        Route::post('articles/ai-assist', [AdminArticleController::class, 'aiAssist'])->name('articles.ai-assist');
         Route::resource('articles', AdminArticleController::class)->except(['show']);
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);

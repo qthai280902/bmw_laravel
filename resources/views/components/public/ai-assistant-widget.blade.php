@@ -14,6 +14,7 @@
     data-ai-assistant-widget
     x-data="aiAssistantWidget(@js([
         'endpoint' => route('ai.showroom-assistant.ask'),
+        'streamEndpoint' => route('ai.showroom-assistant.stream'),
         'resetEndpoint' => route('ai.showroom-assistant.reset'),
         'csrf' => csrf_token(),
         'fallback' => config('showroom_ai.fallback_message'),
@@ -149,7 +150,17 @@
                             :class="message.role === 'user' ? 'bg-[#1C69D4] text-white shadow-[#1C69D4]/15' : 'border border-zinc-800/90 bg-zinc-900/90 text-zinc-200 shadow-black/20'"
                         >
                             <template x-if="message.role === 'user'">
-                                <p class="whitespace-pre-wrap break-words" x-text="message.text"></p>
+                                <div class="space-y-2">
+                                    <template x-if="message.imagePreviewUrl">
+                                        <div class="overflow-hidden border border-white/25 bg-black/30">
+                                            <img :src="message.imagePreviewUrl" alt="Ảnh đính kèm" class="max-h-36 w-full object-cover">
+                                        </div>
+                                    </template>
+                                    <template x-if="!message.imagePreviewUrl && message.imageName">
+                                        <p class="inline-flex items-center gap-1.5 border border-white/25 bg-black/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/90" x-text="'📷 ' + message.imageName"></p>
+                                    </template>
+                                    <p class="whitespace-pre-wrap break-words" x-text="message.text"></p>
+                                </div>
                             </template>
 
                             <template x-if="message.role === 'assistant'">
@@ -241,8 +252,50 @@
         </div>
 
         <form class="border-t border-white/10 bg-black/35 p-3" @submit.prevent="send()">
+            <div x-show="imageError" class="mb-2 border border-rose-500/40 bg-rose-950/50 px-2.5 py-1.5 text-[11px] font-semibold text-rose-300" x-text="imageError"></div>
+
+            <div x-show="selectedImagePreview" class="mb-2 flex items-center justify-between gap-2 border border-white/15 bg-zinc-900/90 p-1.5">
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <img :src="selectedImagePreview" alt="Xem trước ảnh" class="h-10 w-10 shrink-0 border border-white/10 object-cover">
+                    <div class="min-w-0">
+                        <p class="truncate text-[11px] font-bold text-white" x-text="selectedImageName || 'Ảnh đính kèm'"></p>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF]">Sẵn sàng nhận diện</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    @click="clearSelectedImage()"
+                    class="flex h-7 w-7 shrink-0 items-center justify-center border border-zinc-700 text-xs font-black text-zinc-400 transition-colors hover:border-white hover:text-white"
+                    aria-label="Xóa ảnh đính kèm"
+                >
+                    ×
+                </button>
+            </div>
+
+            <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                x-ref="imageInput"
+                data-ai-image-input
+                class="hidden"
+                @change="handleImageSelect($event)"
+            >
+
             <label class="sr-only" for="ai-assistant-message">Nhập câu hỏi về BMW</label>
             <div class="flex items-end gap-2">
+                <button
+                    type="button"
+                    data-ai-attach-image
+                    @click="openImagePicker()"
+                    :disabled="loading || streaming"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center border border-zinc-800 bg-zinc-950/85 text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Đính kèm hình ảnh xe hoặc phụ kiện"
+                    title="Đính kèm hình ảnh"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                    </svg>
+                </button>
                 <textarea
                     id="ai-assistant-message"
                     data-ai-input
@@ -254,15 +307,28 @@
                     @keydown.enter.exact.prevent="send()"
                     @keydown.shift.enter.stop
                 ></textarea>
-                <button
-                    type="submit"
-                    data-ai-send
-                    class="flex h-11 w-11 shrink-0 items-center justify-center bg-[#1C69D4] text-sm font-black text-white transition-colors hover:bg-[#1554AA] disabled:cursor-not-allowed disabled:opacity-50"
-                    :disabled="loading || !input.trim()"
-                    aria-label="Gửi câu hỏi"
-                >
-                    →
-                </button>
+                <template x-if="streaming || loading">
+                    <button
+                        type="button"
+                        data-ai-stop
+                        @click="abortStreaming()"
+                        class="flex h-11 shrink-0 items-center justify-center border border-rose-500/50 bg-rose-950/50 px-3 text-[10px] font-black uppercase tracking-wider text-rose-300 transition-colors hover:bg-rose-600 hover:text-white"
+                        aria-label="Dừng phản hồi"
+                    >
+                        Dừng
+                    </button>
+                </template>
+                <template x-if="!streaming && !loading">
+                    <button
+                        type="submit"
+                        data-ai-send
+                        class="flex h-11 w-11 shrink-0 items-center justify-center bg-[#1C69D4] text-sm font-black text-white transition-colors hover:bg-[#1554AA] disabled:cursor-not-allowed disabled:opacity-50"
+                        :disabled="!input.trim() && !selectedImage"
+                        aria-label="Gửi câu hỏi"
+                    >
+                        →
+                    </button>
+                </template>
             </div>
         </form>
     </section>

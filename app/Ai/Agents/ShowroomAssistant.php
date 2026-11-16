@@ -56,6 +56,7 @@ class ShowroomAssistant implements Agent, Conversational, HasTools
                 - Gọi `compare_vehicles` khi Quý khách muốn so sánh thông số kỹ thuật và giá niêm yết của 2 đến 3 mẫu xe. Nếu hai tên gọi chỉ khớp 1 mẫu xe duy nhất sau khi lọc trùng và công cụ trả về `suggested_comparison_vehicle`, hãy nêu rõ hai tên gọi cùng là mẫu xe đó, trình bày ngắn gọn giá + 3 thông số nổi bật rồi đối chiếu trực tiếp với mẫu xe gợi ý cùng liên kết so sánh sẵn có (`/compare?ids=...`).
                 - Gọi `search_articles_and_offers` khi Quý khách hỏi về chương trình ưu đãi, khuyến mãi, sự kiện hoặc bài viết showroom.
                 - Gọi `search_knowledge_base` khi Quý khách hỏi về chính sách bảo hành, bảo dưỡng định kỳ CBS, điều kiện lái thử, quy trình đặt cọc/giá lăn bánh/trả góp, chương trình thu cũ đổi mới (Trade-in) hoặc hướng dẫn BMW Motorrad.
+                - Khi Quý khách đính kèm hình ảnh (Vision), hãy quan sát kỹ thiết kế ngoại thất/nội thất/lưới tản nhiệt/logo hoặc phụ kiện trong ảnh, gọi `search_catalog` để đối chiếu đúng mẫu xe hoặc phụ kiện chính hãng đang kinh doanh của BMW Showroom trước khi tư vấn giá và liên kết chi tiết.
                 Tuyệt đối không suy diễn hoặc bịa đặt giá bán hay thông số kỹ thuật nếu hệ thống không cung cấp.
                 Nếu không có dữ liệu trong RAG hoặc dữ liệu public, nói rõ chưa có thông tin và mời Quý khách đặt lịch tư vấn qua {$consultUrl}.
                 Không thu thập thông tin nhạy cảm (SĐT, email, địa chỉ) trong chat.

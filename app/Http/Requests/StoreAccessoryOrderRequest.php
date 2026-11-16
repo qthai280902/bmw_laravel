@@ -22,6 +22,16 @@ class StoreAccessoryOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        return self::sharedRules();
+    }
+
+    /**
+     * Shared accessory order validation rules for HTTP requests and Livewire calculator.
+     *
+     * @return array<string, mixed>
+     */
+    public static function sharedRules(): array
+    {
         return [
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+\s().-]{8,30}$/'],

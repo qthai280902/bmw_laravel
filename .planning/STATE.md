@@ -1,6 +1,45 @@
 # Project State
 
-Current phase: Phase 24.1 completed.
+Current phase: Phase 25.1 completed.
+
+## Phase 25.1: Nâng Cấp Toàn Diện Laravel AI SDK (Streaming SSE + Vision + Structured Output + Admin AI) & Laravel MCP Server
+
+- Completion time: 2026-11-16 +07:00.
+- Scope:
+  - Extracted unified `App\Services\Ai\GeminiAgentRunner` (`GeminiKeyPool` round-robin rotation, cooldown tracking & transient failover) for reuse across all AI agents; added test isolation flags (`AI_LEAD_CLASSIFICATION_ENABLED`, `AI_STRUCTURED_RECOMMENDATIONS_ENABLED`, `AI_ARTICLE_EDITORIAL_ENABLED`) in `config/showroom_ai.php` and `phpunit.xml`.
+  - Upgraded Showroom AI Assistant (`app/Ai/Agents/ShowroomAssistant.php`, `app/Services/Ai/ShowroomAssistantService.php`, `app/Http/Controllers/Ai/ShowroomAssistantController.php`): added real-time SSE streaming (`/ai/showroom-assistant/stream` & `/api/ai/assistant/stream` with unbuffered flush headers `Content-Type: text/event-stream; charset=UTF-8`, `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no`, lazy stream key rotation before first chunk & deterministic fallback), preserved `/ai/showroom-assistant` + added `/api/ai/assistant`, added multimodal image attachment via `Laravel\Ai\Files\Image::fromUpload()` (`jpeg|png|webp|max:5120`), and added quota-saving companion `App\Ai\Agents\ShowroomRecommendationExtractor` (`HasStructuredOutput`).
+  - Upgraded AI widget UI (`resources/views/components/public/ai-assistant-widget.blade.php` keeping zero `rounded-` classes per Phase 22 test contract & safe `x-text` rendering + `resources/js/app.js`): live `ReadableStream` SSE parsing (`chunk` & `done` events), `AbortController` stop button (`Dừng`), transparent JSON fallback, and 0px image upload picker + preview strip.
+  - Built Admin AI capabilities: `App\Ai\Agents\ArticleEditorialAgent` + `App\Services\Ai\ArticleEditorialAiService` + `POST /admin/articles/ai-assist` (`Admin\ArticleController::aiAssist`) + button `"AI Tóm Tắt & Tạo Mô Tả SEO"` in `resources/views/admin/articles/_form.blade.php`; migration `2026_11_16_000001_add_ai_lead_columns_to_appointments_table` (`lead_priority`, `lead_intent`, `ai_lead_note`), `App\Ai\Agents\AppointmentLeadClassifierAgent`, `App\Services\Ai\AppointmentLeadClassifier` (with rule-based fallback), `App\Observers\AppointmentObserver` registered in `AppServiceProvider`, and `HOT LEAD` / `TIỀM NĂNG` / `THAM KHẢO` badges + filter in `App\Livewire\Admin\AppointmentTable`.
+  - Integrated Laravel MCP Server (`laravel/mcp` `v0.6.7` in `composer.json`, `routes/ai.php` with `Mcp::web('/mcp/showroom', ...)` & `Mcp::local('bmw-showroom', ...)`): `App\Mcp\Servers\BmwShowroomServer` and 3 read-only tools (`SearchVehiclesMcpTool`, `GetVehicleDetailsMcpTool`, `SearchShowroomKnowledgeMcpTool`) reusing `VehicleSearchService` and `ShowroomKnowledgeBaseService`.
+  - Created `tests/Feature/Phase25_1AiSdkCapabilitiesTest.php` (5 tests / 49 assertions using `::fake()` and `BmwShowroomServer::tool()`).
+- Verification:
+  - Migration (`php artisan migrate --force`): `2026_11_16_000001_add_ai_lead_columns_to_appointments_table` pass (`535.42ms`).
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Vite production asset build (`npm run build`): pass (`55 modules transformed`, `public/build/assets/app-BHARmere.css` 98.03 kB, `public/build/assets/app-C9jVlp3q.js` 368.03 kB in 4.58s).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Phase 25.1 test suite: `5 passed (49 assertions)` in `5.18s`.
+  - Full test suite: `php artisan test --compact` pass (**146 passed (1686 assertions)** in **99.24s**, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-25-1-report.md`.
+- Result:
+  - PASS 100%.
+
+## Phase 25: Nâng Cấp Trải Nghiệm Tương Tác Thời Gian Thực Với Laravel Livewire
+
+- Completion time: 2026-11-16 +07:00.
+- Scope:
+  - Installed `livewire/livewire` (`v4.4.8`) and implemented Single-Alpine integration across `resources/js/app.js` (`import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm'`, `Alpine.plugin(collapse)`, `window.syncComparisonButtons()`, `livewire:navigated` & `Livewire.hook('morph.updated', ...)` syncing scroll reveal and `#comparison-bar` / `vehicle-card` comparison state, `Livewire.start()`), `resources/views/layouts/app.blade.php`, `resources/views/components/admin-layout.blade.php`, and `resources/views/layouts/guest.blade.php` (`@livewireStyles` + `@livewireScriptConfig`).
+  - Created shared traits & helpers: `App\Livewire\Concerns\WithBmwPagination` + `resources/views/livewire/pagination/bmw.blade.php` (`0px border-radius`, `rounded-none`, `#121215`, `border-white/10`, active `#1c69d4`), `App\Livewire\Concerns\AuthorizesAdminLivewire` + `App\Models\User::isAdmin()` shared with `AdminMiddleware`, `App\Models\AccessoryOrder::transitionToStatus()`, and `StoreAppointmentRequest::sharedRules()` / `StoreAccessoryOrderRequest::sharedRules()`.
+  - Built 6 Livewire components with Progressive Enhancement preserving all HTTP routes, input `name` contracts, and `ai_visitor_id` hooks: `App\Livewire\CatalogBrowser` (`/catalog` & locked `/accessories`), `App\Livewire\ArticleHub` (`/tim-hieu-them`), `App\Livewire\BookingFormWizard` (`/booking` with dynamic category-product cascade, URL `product_id` prefill, Flatpickr `wire:ignore` sync, and realtime validation), `App\Livewire\AccessoryOrderCalculator` (`/accessories/{product:slug}/order` with `-/+` quantity stepper, live subtotal, and realtime validation), `App\Livewire\Admin\AppointmentTable` (`/admin/appointments` with instant search/filter, inline status update, and `403` admin guard), and `App\Livewire\Admin\AccessoryOrderTable` (`/admin/accessory-orders` with `with(['product.category'])` single-query pagination keeping `<= 8` SQL queries, inline status update + `confirmed_at` sync, and `403` admin guard).
+  - Created `tests/Feature/Phase25LivewireInteractiveUxTest.php` (6 tests / 91 assertions).
+- Verification:
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Vite production asset build (`npm run build`): pass (`55 modules transformed`, `public/build/manifest.json` 0.27 kB, `public/build/assets/app-bzJvKkpC.css` 97.21 kB, `public/build/assets/app-CqDqJ2FY.js` 364.19 kB in 1.78s).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Phase 25 Livewire test suite: `6 passed (91 assertions)` in `0.83s`.
+  - Full test suite: `php artisan test --compact` pass (**141 passed (1637 assertions)** in **27.05s**, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-25-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 24.1: Hotfix Context-Aware Action Cards & Tự Động Trích Xuất Thực Thể Từ Câu Trả Lời AI
 

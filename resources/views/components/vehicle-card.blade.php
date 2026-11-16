@@ -17,6 +17,7 @@
             this.isSelected = isVehicleSelected({{ $vehicle->id }});
         }
     }"
+    @comparison-updated.window="isSelected = isVehicleSelected({{ $vehicle->id }})"
     class="bg-card-luxury group relative flex h-full flex-col overflow-hidden"
 >
     @if($vehicle->is_featured)

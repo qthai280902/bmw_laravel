@@ -17,7 +17,7 @@ class AdminMiddleware
     {
         // ĐƠN GIẢN HÓA: Kiểm tra email admin hoặc một thuộc tính role nếu có.
         // Ở đây chúng ta dùng logic email kết thúc bằng @bmw.com cho đơn giản.
-        if (! auth()->check() || ! str_ends_with(auth()->user()->email, '@bmw.com')) {
+        if (! $request->user()?->isAdmin()) {
             abort(403, 'Unauthorized access to BMW Admin Portal.');
         }
 

@@ -3,27 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ArticleController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $articles = Article::query()
-            ->published()
-            ->when(
-                $request->filled('category') && in_array($request->string('category')->toString(), Article::categoryValues(), true),
-                fn ($query) => $query->where('category', $request->string('category')->toString()),
-            )
-            ->latest('published_at')
-            ->paginate(9)
-            ->withQueryString();
-
-        return view('articles.index', [
-            'articles' => $articles,
-            'categories' => Article::categories(),
-        ]);
+        return view('articles.index');
     }
 
     public function show(Article $article): View

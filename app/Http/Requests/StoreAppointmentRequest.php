@@ -18,11 +18,23 @@ class StoreAppointmentRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $isGuest = ! auth()->check();
-        $type = $this->input('type');
+        $type = is_string($this->input('type')) ? $this->input('type') : null;
+
+        return self::sharedRules(! auth()->check(), $type);
+    }
+
+    /**
+     * Shared appointment validation rules for HTTP requests and Livewire wizard.
+     *
+     * @return array<string, mixed>
+     */
+    public static function sharedRules(bool $isGuest, ?string $type): array
+    {
         $isServiceType = in_array($type, ['maintenance', 'detailing', 'car_wash'], true);
         $isProductOptional = in_array($type, ['maintenance', 'detailing', 'car_wash', 'trade_in', 'consult', 'advisor_meeting'], true);
 

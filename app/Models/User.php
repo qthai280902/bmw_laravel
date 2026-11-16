@@ -54,4 +54,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Appointment::class);
     }
+
+    public function isAdmin(): bool
+    {
+        return str_ends_with((string) $this->email, '@bmw.com');
+    }
 }

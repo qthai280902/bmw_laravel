@@ -20,6 +20,9 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="AI_EMBEDDINGS_ENABLED" value="false"/>
+        <env name="AI_LEAD_CLASSIFICATION_ENABLED" value="false"/>
+        <env name="AI_STRUCTURED_RECOMMENDATIONS_ENABLED" value="false"/>
+        <env name="AI_ARTICLE_EDITORIAL_ENABLED" value="false"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>

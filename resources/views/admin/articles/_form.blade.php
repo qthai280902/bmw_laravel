@@ -4,12 +4,83 @@
     <div class="space-y-6">
         <!-- Article Basic Information Card -->
         <div class="bg-card-luxury p-6 relative">
-            <div class="mb-5 border-b border-zinc-800/80 pb-3 flex items-center justify-between">
+            <div class="mb-5 border-b border-zinc-800/80 pb-3 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider">Thông Tin Bài Viết</h3>
                     <p class="text-xs text-zinc-400 mt-0.5">Tiêu đề, đường dẫn thân thiện và tóm tắt hiển thị ngoài website</p>
                 </div>
-                <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-[#70A7FF] bg-blue-950/40 border border-blue-500/20">Metadata</span>
+                <div
+                    x-data="{
+                        aiLoading: false,
+                        aiNotice: '',
+                        async runEditorialAi() {
+                            const bodyEl = document.getElementById('body');
+                            const titleEl = document.getElementById('title');
+                            const categoryEl = document.getElementById('category');
+                            const bodyValue = bodyEl ? bodyEl.value : '';
+
+                            if (!bodyValue || bodyValue.trim().length < 20) {
+                                this.aiNotice = 'Vui lòng nhập nội dung bài viết (ít nhất 20 ký tự) trước khi gọi AI.';
+                                return;
+                            }
+
+                            this.aiLoading = true;
+                            this.aiNotice = '';
+
+                            try {
+                                const res = await fetch('{{ route('admin.articles.ai-assist') }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    },
+                                    body: JSON.stringify({
+                                        title: titleEl ? titleEl.value : '',
+                                        category: categoryEl ? categoryEl.value : '',
+                                        body: bodyValue
+                                    })
+                                });
+
+                                const payload = await res.json();
+                                if (!res.ok) {
+                                    this.aiNotice = payload.message || 'Không thể tạo gợi ý AI lúc này.';
+                                    return;
+                                }
+
+                                if (document.getElementById('excerpt') && payload.excerpt) {
+                                    document.getElementById('excerpt').value = payload.excerpt;
+                                }
+                                if (document.getElementById('seo_title') && payload.seo_title) {
+                                    document.getElementById('seo_title').value = payload.seo_title;
+                                }
+                                if (document.getElementById('seo_description') && payload.seo_description) {
+                                    document.getElementById('seo_description').value = payload.seo_description;
+                                }
+
+                                this.aiNotice = payload.source === 'ai'
+                                    ? 'Đã tạo tóm tắt & SEO bằng AI.'
+                                    : 'Đã tạo tóm tắt & SEO tự động.';
+                            } catch (e) {
+                                this.aiNotice = 'Lỗi kết nối khi gọi trợ lý biên tập AI.';
+                            } finally {
+                                this.aiLoading = false;
+                            }
+                        }
+                    }"
+                    class="flex flex-col items-end gap-1.5"
+                >
+                    <button
+                        type="button"
+                        @click="runEditorialAi()"
+                        :disabled="aiLoading"
+                        class="inline-flex items-center gap-2 rounded-none border border-[#1C69D4] bg-[#1C69D4]/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                    >
+                        <span x-show="!aiLoading">AI Tóm Tắt & Tạo Mô Tả SEO</span>
+                        <span x-show="aiLoading">Đang phân tích bài viết...</span>
+                    </button>
+                    <span x-show="aiNotice" x-text="aiNotice" class="text-[11px] font-medium text-[#70A7FF]"></span>
+                </div>
             </div>
 
             <div class="space-y-5">

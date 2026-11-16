@@ -6,7 +6,6 @@ use App\Events\AppointmentCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
-use App\Models\Product;
 use App\Services\Ai\AiConversationTracker;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,13 +30,7 @@ class AppointmentController extends Controller
      */
     public function create()
     {
-        $products = Product::query()
-            ->active()
-            ->vehicles()
-            ->orderBy('name')
-            ->get();
-
-        return view('appointments.create', compact('products'));
+        return view('appointments.create');
     }
 
     /**

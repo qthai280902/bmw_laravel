@@ -18,6 +18,7 @@
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
         <!-- Scripts -->
+        @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <script>
@@ -181,5 +182,6 @@
                 </div>
             </div>
         </div>
+        @livewireScriptConfig
     </body>
 </html>

@@ -84,4 +84,24 @@ class AccessoryOrder extends Model
             default => 'border-yellow-500/20 bg-yellow-500/5 text-yellow-500',
         };
     }
+
+    public function transitionToStatus(string $status, ?string $adminNotes = null, bool $updateNotes = false): void
+    {
+        $updates = [
+            'status' => $status,
+        ];
+
+        if ($updateNotes) {
+            $updates['admin_notes'] = $adminNotes;
+        }
+
+        if (
+            in_array($status, [self::STATUS_CONFIRMED, self::STATUS_COMPLETED], true)
+            && $this->confirmed_at === null
+        ) {
+            $updates['confirmed_at'] = now();
+        }
+
+        $this->update($updates);
+    }
 }

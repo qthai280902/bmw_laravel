@@ -3,25 +3,28 @@
 namespace App\Services\Ai;
 
 use App\Ai\Agents\ShowroomAssistant;
+use App\Ai\Agents\ShowroomRecommendationExtractor;
 use App\Enums\VehicleType;
 use App\Models\AiChatMessage;
 use App\Models\AiChatSession;
 use App\Models\Article;
 use App\Models\Product;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Arr;
+use Generator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Ai\AiManager;
-use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Exceptions\RateLimitedException;
+use Laravel\Ai\Files\Image;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Messages\MessageRole;
 use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\StreamableAgentResponse;
+use Laravel\Ai\Responses\StructuredAgentResponse;
+use Laravel\Ai\Streaming\Events\TextDelta;
 use Throwable;
 
 class ShowroomAssistantService
@@ -30,10 +33,11 @@ class ShowroomAssistantService
         private GeminiKeyPool $geminiKeyPool,
         private ?ShowroomCatalogMatcher $matcher = null,
         private ?ShowroomKnowledgeBaseService $knowledgeBase = null,
+        private ?GeminiAgentRunner $runner = null,
     ) {}
 
     /**
-     * @param  array{visitor_id?: string|null, page_url?: string|null, product_slug?: string|null, product_name?: string|null}  $options
+     * @param  array{visitor_id?: string|null, page_url?: string|null, product_slug?: string|null, product_name?: string|null, image?: UploadedFile|null}  $options
      * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string, reason?: string, current_product?: array<string, mixed>|null}
      */
     public function ask(string $message, array $options = []): array
@@ -41,14 +45,15 @@ class ShowroomAssistantService
         $pageContext = $this->resolvePageContext($options);
         $context = $this->publicContext($message, $pageContext);
         $suggestions = $this->suggestionsFor($message, $context);
-        $provider = $this->configuredProvider();
-        $model = $this->configuredModel();
+        $provider = $this->runner()->configuredProvider();
+        $model = $this->runner()->configuredModel();
         $prompt = $this->buildPrompt($message, $context);
         $conversationMessages = $this->recentConversationMessages($options['visitor_id'] ?? null);
         $pageContextSummary = $this->buildPageContextSummary($pageContext);
+        $attachments = $this->buildAttachments($options['image'] ?? null);
         $trackerProduct = $pageContext['tracker_product'] ?? null;
 
-        if ($configurationReason = $this->configurationFailureReason($provider)) {
+        if ($configurationReason = $this->runner()->configurationFailureReason($provider)) {
             Log::info('Showroom AI assistant skipped.', [
                 'reason' => $configurationReason,
                 'provider' => $provider,
@@ -64,6 +69,7 @@ class ShowroomAssistantService
                 model: $model,
                 conversationMessages: $conversationMessages,
                 pageContextSummary: $pageContextSummary,
+                attachments: $attachments,
                 context: $context,
                 message: $message,
             );
@@ -78,6 +84,7 @@ class ShowroomAssistantService
                 model: $model,
                 conversationMessages: $conversationMessages,
                 pageContextSummary: $pageContextSummary,
+                attachments: $attachments,
             );
 
             return $this->withTrackerProduct($this->successfulResponse($response, $suggestions, $context, $message), $trackerProduct);
@@ -90,6 +97,186 @@ class ShowroomAssistantService
 
             return $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct);
         }
+    }
+
+    /**
+     * Stream assistant response as chunk & done events with key rotation and fallback.
+     *
+     * @param  array{visitor_id?: string|null, page_url?: string|null, product_slug?: string|null, product_name?: string|null, image?: UploadedFile|null}  $options
+     * @return Generator<int, array{event: string, data: array<string, mixed>}>
+     */
+    public function stream(string $message, array $options = []): Generator
+    {
+        $pageContext = $this->resolvePageContext($options);
+        $context = $this->publicContext($message, $pageContext);
+        $suggestions = $this->suggestionsFor($message, $context);
+        $provider = $this->runner()->configuredProvider();
+        $model = $this->runner()->configuredModel();
+        $prompt = $this->buildPrompt($message, $context);
+        $conversationMessages = $this->recentConversationMessages($options['visitor_id'] ?? null);
+        $pageContextSummary = $this->buildPageContextSummary($pageContext);
+        $attachments = $this->buildAttachments($options['image'] ?? null);
+        $trackerProduct = $pageContext['tracker_product'] ?? null;
+
+        if ($configurationReason = $this->runner()->configurationFailureReason($provider)) {
+            Log::info('Showroom AI stream skipped.', [
+                'reason' => $configurationReason,
+                'provider' => $provider,
+            ]);
+
+            yield [
+                'event' => 'done',
+                'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'configuration'), $trackerProduct),
+            ];
+
+            return;
+        }
+
+        if ($provider !== 'gemini') {
+            try {
+                $stream = $this->streamAssistant(
+                    prompt: $prompt,
+                    provider: $provider,
+                    model: $model,
+                    conversationMessages: $conversationMessages,
+                    pageContextSummary: $pageContextSummary,
+                    attachments: $attachments,
+                );
+
+                $rawText = '';
+                foreach ($stream as $event) {
+                    if ($event instanceof TextDelta && $event->delta !== '') {
+                        $rawText .= $event->delta;
+                        yield ['event' => 'chunk', 'data' => ['delta' => $event->delta]];
+                    }
+                }
+
+                yield [
+                    'event' => 'done',
+                    'data' => $this->withTrackerProduct(
+                        $this->buildSuccessfulPayload($rawText, $suggestions, $context, $message),
+                        $trackerProduct,
+                    ),
+                ];
+
+                return;
+            } catch (Throwable $exception) {
+                Log::warning('Showroom AI stream failed on non-Gemini provider.', [
+                    'exception' => $exception::class,
+                    'provider' => $provider,
+                ]);
+
+                yield [
+                    'event' => 'done',
+                    'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct),
+                ];
+
+                return;
+            }
+        }
+
+        $candidates = $this->geminiKeyPool->candidateSequence();
+        if ($candidates === []) {
+            yield [
+                'event' => 'done',
+                'data' => $this->withTrackerProduct(
+                    $this->geminiKeyPool->hasKeys()
+                        ? $this->fallbackResponse($suggestions, 'rate_limited', $this->rateLimitFallbackMessage())
+                        : $this->fallbackResponse($suggestions, 'configuration'),
+                    $trackerProduct,
+                ),
+            ];
+
+            return;
+        }
+
+        $attempts = 0;
+        $rateLimitedAttempts = 0;
+
+        foreach ($candidates as $candidate) {
+            $attempts++;
+            $emittedChunk = false;
+            $rawText = '';
+            $providerName = $this->geminiKeyPool->providerNameFor($candidate);
+            $originalConfig = config("ai.providers.{$providerName}");
+            $baseConfig = config('ai.providers.gemini', []);
+
+            Config::set("ai.providers.{$providerName}", array_merge($baseConfig, [
+                'driver' => 'gemini',
+                'key' => $candidate['key'],
+            ]));
+
+            app(AiManager::class)->forgetInstance($providerName);
+
+            try {
+                $stream = $this->streamAssistant(
+                    prompt: $prompt,
+                    provider: $providerName,
+                    model: $model,
+                    conversationMessages: $conversationMessages,
+                    pageContextSummary: $pageContextSummary,
+                    attachments: $attachments,
+                );
+
+                foreach ($stream as $streamEvent) {
+                    if ($streamEvent instanceof TextDelta && $streamEvent->delta !== '') {
+                        $emittedChunk = true;
+                        $rawText .= $streamEvent->delta;
+                        yield ['event' => 'chunk', 'data' => ['delta' => $streamEvent->delta]];
+                    }
+                }
+
+                yield [
+                    'event' => 'done',
+                    'data' => $this->withTrackerProduct(
+                        $this->buildSuccessfulPayload($rawText, $suggestions, $context, $message),
+                        $trackerProduct,
+                    ),
+                ];
+
+                return;
+            } catch (RateLimitedException $exception) {
+                $rateLimitedAttempts++;
+                $this->geminiKeyPool->markRateLimited($candidate);
+                if ($emittedChunk) {
+                    break;
+                }
+            } catch (Throwable $exception) {
+                if (! $emittedChunk && $this->runner()->isTransientProviderException($exception)) {
+                    continue;
+                }
+
+                if ($emittedChunk && trim($rawText) !== '') {
+                    yield [
+                        'event' => 'done',
+                        'data' => $this->withTrackerProduct(
+                            $this->buildSuccessfulPayload($rawText, $suggestions, $context, $message),
+                            $trackerProduct,
+                        ),
+                    ];
+
+                    return;
+                }
+
+                yield [
+                    'event' => 'done',
+                    'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct),
+                ];
+
+                return;
+            } finally {
+                app(AiManager::class)->forgetInstance($providerName);
+                Config::set("ai.providers.{$providerName}", $originalConfig);
+            }
+        }
+
+        $reason = ($attempts > 0 && $rateLimitedAttempts === $attempts) ? 'rate_limited' : 'provider_error';
+        $fallbackAnswer = $reason === 'rate_limited' ? $this->rateLimitFallbackMessage() : null;
+
+        yield [
+            'event' => 'done',
+            'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, $reason, $fallbackAnswer), $trackerProduct),
+        ];
     }
 
     public function resetConversation(?string $visitorId): bool
@@ -192,6 +379,7 @@ class ShowroomAssistantService
     /**
      * @param  array<int, array{label: string, url: string}>  $suggestions
      * @param  array<int, Message>  $conversationMessages
+     * @param  array<int, mixed>  $attachments
      * @param  array<string, mixed>  $context
      * @return array{answer: string, suggestions: array<int, array{label: string, url: string}>, status: string, reason?: string}
      */
@@ -201,6 +389,7 @@ class ShowroomAssistantService
         ?string $model,
         array $conversationMessages = [],
         ?string $pageContextSummary = null,
+        array $attachments = [],
         array $context = [],
         string $message = ''
     ): array {
@@ -224,12 +413,16 @@ class ShowroomAssistantService
             $attempts++;
 
             try {
-                $response = $this->promptGeminiWithCandidate(
-                    candidate: $candidate,
-                    prompt: $prompt,
-                    model: $model,
-                    conversationMessages: $conversationMessages,
-                    pageContextSummary: $pageContextSummary,
+                $response = $this->runner()->withGeminiCandidate(
+                    $candidate,
+                    fn (string $providerName): AgentResponse => $this->promptAssistant(
+                        prompt: $prompt,
+                        provider: $providerName,
+                        model: $model,
+                        conversationMessages: $conversationMessages,
+                        pageContextSummary: $pageContextSummary,
+                        attachments: $attachments,
+                    ),
                 );
 
                 return $this->successfulResponse($response, $suggestions, $context, $message);
@@ -247,7 +440,7 @@ class ShowroomAssistantService
                     'configured_keys' => count($this->geminiKeyPool->keys()),
                 ]);
             } catch (Throwable $exception) {
-                if ($this->isTransientProviderException($exception)) {
+                if ($this->runner()->isTransientProviderException($exception)) {
                     Log::warning('Showroom AI assistant Gemini key attempt failed.', [
                         'reason' => 'provider_error',
                         'provider' => 'gemini',
@@ -295,60 +488,63 @@ class ShowroomAssistantService
     }
 
     /**
-     * @param  array{index: int, key: string, fingerprint: string}  $candidate
      * @param  array<int, Message>  $conversationMessages
-     */
-    private function promptGeminiWithCandidate(
-        array $candidate,
-        string $prompt,
-        ?string $model,
-        array $conversationMessages = [],
-        ?string $pageContextSummary = null
-    ): AgentResponse {
-        $providerName = $this->geminiKeyPool->providerNameFor($candidate);
-        $originalConfig = config("ai.providers.{$providerName}");
-        $baseConfig = config('ai.providers.gemini', []);
-
-        Config::set("ai.providers.{$providerName}", array_merge($baseConfig, [
-            'driver' => 'gemini',
-            'key' => $candidate['key'],
-        ]));
-
-        app(AiManager::class)->forgetInstance($providerName);
-
-        try {
-            return $this->promptAssistant(
-                prompt: $prompt,
-                provider: $providerName,
-                model: $model,
-                conversationMessages: $conversationMessages,
-                pageContextSummary: $pageContextSummary,
-            );
-        } finally {
-            app(AiManager::class)->forgetInstance($providerName);
-            Config::set("ai.providers.{$providerName}", $originalConfig);
-        }
-    }
-
-    /**
-     * @param  array<int, Message>  $conversationMessages
+     * @param  array<int, mixed>  $attachments
      */
     private function promptAssistant(
         string $prompt,
         string $provider,
         ?string $model,
         array $conversationMessages = [],
-        ?string $pageContextSummary = null
+        ?string $pageContextSummary = null,
+        array $attachments = []
     ): AgentResponse {
         return ShowroomAssistant::make(
             conversationMessages: $conversationMessages,
             pageContextSummary: $pageContextSummary,
         )->prompt(
             prompt: $prompt,
+            attachments: $attachments,
             provider: $provider,
             model: $model,
             timeout: max(10, (int) config('showroom_ai.timeout_seconds', 30)),
         );
+    }
+
+    /**
+     * @param  array<int, Message>  $conversationMessages
+     * @param  array<int, mixed>  $attachments
+     */
+    private function streamAssistant(
+        string $prompt,
+        string $provider,
+        ?string $model,
+        array $conversationMessages = [],
+        ?string $pageContextSummary = null,
+        array $attachments = []
+    ): StreamableAgentResponse {
+        return ShowroomAssistant::make(
+            conversationMessages: $conversationMessages,
+            pageContextSummary: $pageContextSummary,
+        )->stream(
+            prompt: $prompt,
+            attachments: $attachments,
+            provider: $provider,
+            model: $model,
+            timeout: max(10, (int) config('showroom_ai.timeout_seconds', 30)),
+        );
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function buildAttachments(mixed $image): array
+    {
+        if (! $image instanceof UploadedFile) {
+            return [];
+        }
+
+        return [Image::fromUpload($image)];
     }
 
     /**
@@ -358,7 +554,17 @@ class ShowroomAssistantService
      */
     private function successfulResponse(AgentResponse $response, array $suggestions, array $context = [], string $message = ''): array
     {
-        $answer = trim($response->text);
+        return $this->buildSuccessfulPayload($response->text, $suggestions, $context, $message);
+    }
+
+    /**
+     * @param  array<int, array{label: string, url: string, subtitle?: string, kind?: string}>  $suggestions
+     * @param  array<string, mixed>  $context
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string, subtitle?: string, kind?: string}>, status: string}
+     */
+    private function buildSuccessfulPayload(string $rawAnswer, array $suggestions, array $context = [], string $message = ''): array
+    {
+        $answer = trim($rawAnswer);
 
         if ($answer !== '') {
             $answer = $this->sanitizeAndRepairMarkdownLinks($answer, $context);
@@ -370,17 +576,6 @@ class ShowroomAssistantService
             'suggestions' => $suggestions,
             'status' => 'ok',
         ];
-    }
-
-    private function isTransientProviderException(Throwable $exception): bool
-    {
-        if ($exception instanceof ProviderOverloadedException || $exception instanceof ConnectionException) {
-            return true;
-        }
-
-        return $exception instanceof RequestException
-            && $exception->response !== null
-            && $exception->response->status() >= 500;
     }
 
     /**
@@ -717,6 +912,9 @@ PROMPT;
             ? $context['current_product']
             : null;
         $extractedEntities = $answer !== null ? $this->extractMentionedEntitySuggestions($answer) : [];
+        if ($answer !== null && $extractedEntities === []) {
+            $extractedEntities = $this->extractStructuredRecommendations($message, $answer, $context);
+        }
 
         $includeCurrentProduct = $currentProduct !== null && (
             $answer === null
@@ -1475,6 +1673,114 @@ PROMPT;
     private function knowledgeBase(): ShowroomKnowledgeBaseService
     {
         return $this->knowledgeBase ??= app(ShowroomKnowledgeBaseService::class);
+    }
+
+    private function runner(): GeminiAgentRunner
+    {
+        return $this->runner ??= app(GeminiAgentRunner::class);
+    }
+
+    /**
+     * Invoke structured entity extractor ONLY when prose lacks explicit entity matches and mentions buying/products.
+     *
+     * @param  array<string, mixed>  $context
+     * @return list<array<string, mixed>>
+     */
+    private function extractStructuredRecommendations(string $message, string $answer, array $context): array
+    {
+        $isFaked = app(AiManager::class)->hasFakeGatewayFor(ShowroomRecommendationExtractor::class);
+        $enabled = (bool) config('showroom_ai.structured_recommendations_enabled', false);
+
+        if (! $isFaked && ! $enabled) {
+            return [];
+        }
+
+        $lowerAnswer = Str::lower($message."\n".$answer);
+        $hasAdvisorySignal = Str::contains($lowerAnswer, ['bmw', 'mẫu xe', 'dòng xe', 'phụ kiện', 'báo giá', 'lái thử', 'mua xe', 'tư vấn']);
+        if (! $isFaked && ! $hasAdvisorySignal) {
+            return [];
+        }
+
+        $productCatalog = collect($context['products'] ?? [])
+            ->map(fn (array $p): string => ($p['slug'] ?? '').': '.($p['name'] ?? ''))
+            ->implode("\n");
+        $articleCatalog = collect($context['articles'] ?? [])
+            ->map(fn (array $a): string => basename((string) ($a['url'] ?? '')).': '.($a['title'] ?? ''))
+            ->implode("\n");
+
+        $prompt = "Câu hỏi khách: {$message}\nCâu trả lời AI: {$answer}\n\nSản phẩm hợp lệ:\n{$productCatalog}\n\nBài viết hợp lệ:\n{$articleCatalog}";
+
+        try {
+            $structured = null;
+
+            if ($isFaked) {
+                $fakeResponse = ShowroomRecommendationExtractor::make()->prompt($prompt);
+                if ($fakeResponse instanceof StructuredAgentResponse) {
+                    $structured = $fakeResponse->toArray();
+                }
+            } else {
+                $run = $this->runner()->run(
+                    fn (string $provider, ?string $model): mixed => ShowroomRecommendationExtractor::make()->prompt(
+                        prompt: $prompt,
+                        provider: $provider,
+                        model: $model,
+                        timeout: 12,
+                    ),
+                    operation: 'showroom_structured_recommendations',
+                );
+
+                if (($run['ok'] ?? false) === true && ($run['result'] ?? null) instanceof StructuredAgentResponse) {
+                    $structured = $run['result']->toArray();
+                }
+            }
+
+            if (! is_array($structured)) {
+                return [];
+            }
+
+            $results = [];
+            $productSlugs = collect($structured['recommended_product_slugs'] ?? [])->filter()->take(3)->values()->all();
+            if ($productSlugs !== []) {
+                $productsBySlug = Product::query()->active()->whereIn('slug', $productSlugs)->get()->keyBy('slug');
+                foreach ($productSlugs as $slug) {
+                    $product = $productsBySlug->get((string) $slug);
+                    if (! $product) {
+                        continue;
+                    }
+                    $isAccessory = $product->isAccessory();
+                    $results[] = [
+                        'product_id' => $product->id,
+                        'subtitle' => $isAccessory ? 'PHỤ KIỆN CHÍNH HÃNG' : 'HỒ SƠ SẢN PHẨM',
+                        'label' => $product->name,
+                        'url' => $isAccessory
+                            ? route('accessory-orders.create', $product->slug, false)
+                            : route('products.show', $product->slug, false),
+                        'kind' => $isAccessory ? 'accessory' : 'product',
+                    ];
+                }
+            }
+
+            $articleSlugs = collect($structured['recommended_article_slugs'] ?? [])->filter()->take(2)->values()->all();
+            if ($articleSlugs !== []) {
+                $articlesBySlug = Article::query()->published()->whereIn('slug', $articleSlugs)->get()->keyBy('slug');
+                foreach ($articleSlugs as $slug) {
+                    $article = $articlesBySlug->get((string) $slug);
+                    if (! $article) {
+                        continue;
+                    }
+                    $results[] = [
+                        'subtitle' => 'BÀI VIẾT & ƯU ĐÃI',
+                        'label' => $article->title,
+                        'url' => route('articles.show', $article->slug, false),
+                        'kind' => 'article',
+                    ];
+                }
+            }
+
+            return $results;
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     private function normalizeVisitorId(?string $visitorId): ?string

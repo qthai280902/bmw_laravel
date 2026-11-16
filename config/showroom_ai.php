@@ -42,4 +42,7 @@ return [
     ],
     'fallback_message' => 'Hiện tôi chưa thể phản hồi ngay. Quý khách có thể thử lại sau hoặc gửi yêu cầu tư vấn qua form.',
     'rate_limit_fallback_message' => 'Hiện trợ lý AI đang nhận nhiều yêu cầu. Quý khách vui lòng thử lại sau ít phút hoặc gửi yêu cầu tư vấn qua form.',
+    'structured_recommendations_enabled' => filter_var(env('AI_STRUCTURED_RECOMMENDATIONS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'lead_classification_enabled' => filter_var(env('AI_LEAD_CLASSIFICATION_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'article_editorial_enabled' => filter_var(env('AI_ARTICLE_EDITORIAL_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 ];
