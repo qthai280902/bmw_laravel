@@ -106,6 +106,11 @@
                                             {{ $appointment->leadPriorityLabel() }}
                                         </span>
                                     @endif
+                                    @if($appointment->ai_conversation_id || filled($appointment->ai_chat_summary))
+                                        <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-[#70A7FF]">
+                                            ĐÃ CHAT AI
+                                        </span>
+                                    @endif
                                 </div>
                                 <p class="mt-2 max-w-xs truncate text-xs font-black uppercase tracking-wider text-zinc-300">{{ $appointment->product?->name ?? 'Chưa gắn sản phẩm' }}</p>
                                 @if($appointment->ai_lead_note)
@@ -117,6 +122,33 @@
                                         {{ collect($appointment->meta_data)->filter()->take(2)->map(fn ($value, $key) => Str::headline($key).': '.(is_scalar($value) ? $value : json_encode($value)))->implode(' | ') }}
                                     </p>
                                 @endif
+                                @if(filled($appointment->ai_chat_summary))
+                                    <p class="mt-1 max-w-sm truncate text-[11px] font-medium text-[#70A7FF]/90">
+                                        {{ $appointment->ai_chat_summary }}
+                                    </p>
+                                @endif
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    @if($appointment->ai_conversation_id || filled($appointment->ai_visitor_id))
+                                        <button
+                                            type="button"
+                                            wire:click="inspectAiConversation({{ $appointment->id }})"
+                                            class="inline-flex items-center gap-1.5 rounded-none border border-white/15 bg-[#121215] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-zinc-200 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
+                                        >
+                                            Xem lịch sử chat AI
+                                        </button>
+                                    @endif
+
+                                    @if(filled($appointment->user?->email ?? $appointment->guest_email))
+                                        <a
+                                            href="{{ route('admin.mail-preview.appointment', $appointment) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="inline-flex items-center gap-1.5 rounded-none border border-zinc-800 bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
+                                        >
+                                            Xem mẫu Email xác nhận
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-5 text-center">
                                 <span class="rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] {{ $appointment->status->color() }}">
@@ -155,6 +187,127 @@
     @if($appointments->hasPages())
         <div class="mt-8">
             {{ $appointments->links() }}
+        </div>
+    @endif
+
+    @if($this->inspectedAppointment)
+        @php
+            $lead = $this->inspectedAppointment;
+            $chatSession = $this->inspectedAiSession;
+        @endphp
+        <div
+            class="fixed inset-0 z-[90] flex items-stretch justify-end bg-black/80 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Lịch sử trò chuyện AI của khách hàng"
+        >
+            <div class="fixed inset-0" wire:click="closeAiConversationModal"></div>
+
+            <div class="relative z-10 flex h-full w-full max-w-xl flex-col rounded-none border-l border-white/10 bg-[#09090b] text-white shadow-2xl">
+                <header class="flex items-start justify-between gap-4 border-b border-white/10 bg-[#121215] px-6 py-5">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
+                                BÀN GIAO NGỮ CẢNH AI
+                            </span>
+                            @if($lead->lead_priority)
+                                <span class="rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] {{ $lead->leadPriorityColorClass() }}">
+                                    {{ $lead->leadPriorityLabel() }}
+                                </span>
+                            @endif
+                        </div>
+                        <h3 class="mt-2 truncate text-lg font-black uppercase tracking-wider text-white">
+                            {{ $lead->user?->name ?? $lead->guest_name ?? 'Khách vãng lai' }}
+                        </h3>
+                        <p class="mt-1 text-xs text-zinc-400">
+                            {{ $lead->product?->name ?? 'Yêu cầu chung' }} · {{ $lead->type->label() }}
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        wire:click="closeAiConversationModal"
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-none border border-white/10 bg-black text-sm font-black text-zinc-400 transition-colors hover:border-white hover:text-white"
+                        aria-label="Đóng lịch sử chat AI"
+                    >
+                        ×
+                    </button>
+                </header>
+
+                @if(filled($lead->ai_chat_summary) || filled($lead->ai_lead_note))
+                    <div class="border-b border-white/10 bg-zinc-950 px-6 py-4 space-y-2">
+                        @if(filled($lead->ai_chat_summary))
+                            <p class="text-xs leading-relaxed text-zinc-300">
+                                <span class="font-black uppercase tracking-wider text-[#70A7FF]">Tóm tắt hội thoại:</span>
+                                {{ $lead->ai_chat_summary }}
+                            </p>
+                        @endif
+                        @if(filled($lead->ai_lead_note))
+                            <p class="text-xs leading-relaxed text-zinc-400">
+                                <span class="font-black uppercase tracking-wider text-zinc-300">Ghi chú AI Sales:</span>
+                                {{ $lead->ai_lead_note }}
+                            </p>
+                        @endif
+                    </div>
+                @endif
+
+                <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+                    @if($chatSession && $chatSession->messages->isNotEmpty())
+                        @foreach($chatSession->messages as $chatMessage)
+                            <div
+                                wire:key="crm-chat-msg-{{ $chatMessage->id }}"
+                                class="flex {{ $chatMessage->isUserMessage() ? 'justify-end' : 'justify-start' }}"
+                            >
+                                <div class="max-w-[88%] rounded-none border px-4 py-3 {{ $chatMessage->isUserMessage() ? 'border-[#1C69D4]/40 bg-[#1C69D4]/15 text-white' : 'border-white/10 bg-[#121215] text-zinc-200' }}">
+                                    <div class="mb-1 flex items-center justify-between gap-4 text-[9px] font-black uppercase tracking-[0.2em]">
+                                        <span class="{{ $chatMessage->isUserMessage() ? 'text-[#70A7FF]' : 'text-zinc-400' }}">
+                                            {{ $chatMessage->isUserMessage() ? 'Khách hàng' : 'BMW AI Assistant' }}
+                                        </span>
+                                        <span class="text-zinc-600">{{ $chatMessage->created_at?->format('d/m H:i') }}</span>
+                                    </div>
+                                    <p class="whitespace-pre-wrap text-xs leading-relaxed">{{ $chatMessage->content }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="rounded-none border border-white/10 bg-[#121215] p-6 text-center text-xs text-zinc-400">
+                            Chưa có bản ghi tin nhắn chi tiết cho lịch hẹn này.
+                        </div>
+                    @endif
+                </div>
+
+                <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#121215] px-6 py-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if($chatSession)
+                            <a
+                                href="{{ route('admin.ai-conversations.show', $chatSession) }}"
+                                class="rounded-none border border-[#1C69D4] bg-[#1C69D4]/15 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white"
+                            >
+                                Mở hồ sơ phiên AI đầy đủ
+                            </a>
+                        @endif
+
+                        @if(filled($lead->user?->email ?? $lead->guest_email))
+                            <a
+                                href="{{ route('admin.mail-preview.appointment', $lead) }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="rounded-none border border-white/15 bg-black px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
+                            >
+                                Xem mẫu Email xác nhận
+                            </a>
+                        @endif
+                    </div>
+
+                    <button
+                        type="button"
+                        wire:click="closeAiConversationModal"
+                        class="rounded-none border border-white/10 bg-black px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white hover:text-white"
+                    >
+                        Đóng
+                    </button>
+                </footer>
+            </div>
         </div>
     @endif
 </div>

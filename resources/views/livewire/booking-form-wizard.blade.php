@@ -24,6 +24,12 @@
 
     <form action="{{ route('appointments.store') }}" method="POST" class="space-y-8">
         @csrf
+        <input
+            type="hidden"
+            name="ai_visitor_id"
+            value="{{ old('ai_visitor_id', request()->cookie('bmw_ai_visitor_id', '')) }}"
+            data-ai-visitor-field="true"
+        >
 
         <section class="space-y-5">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">

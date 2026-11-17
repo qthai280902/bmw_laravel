@@ -1,6 +1,45 @@
 # Project State
 
-Current phase: Phase 25.1 completed.
+Current phase: Phase 26 completed.
+
+## Phase 26: Trung Tâm Thông Báo Admin, Email Showroom Kèm Brochure Xe, `Http::pool()` & `Laravel Context`
+
+- Completion time: 2026-11-17 +07:00.
+- Scope:
+  - Created `2026_11_17_000002_create_notifications_table`, `User::scopeAdmins()`, `App\Notifications\Admin\{NewAppointmentLeadNotification,NewAccessoryOrderNotification}`, `App\Services\Admin\AdminNotificationDispatcher`, hooked idempotently into `AppointmentObserver::created()` & `AccessoryOrderController::store()`.
+  - Built Livewire `App\Livewire\Admin\NotificationBell` (`resources/views/livewire/admin/notification-bell.blade.php`) embedded in `resources/views/components/admin-layout.blade.php` with `AuthorizesAdminLivewire`, `wire:poll.15s`, `Tất cả / Chưa đọc / HOT LEAD` filters, pulsing hot badge, `markAsRead()`, `markAllAsRead()`, and strict single-query `Cache::remember("admin_notifications_digest:{$userId}", 60, ...)` preserving `<= 8` SQL queries on `/admin/accessory-orders`.
+  - Upgraded `App\Mail\Customer\AppointmentConfirmationMail` (`ShouldQueue`, `$queue = 'notifications'`, `Attachment::fromData(...)` rendering dynamic `BMW-{slug}-Brochure.html` from `translated_specs`) & `emails/customer/appointment-confirmation.blade.php`; added `App\Mail\Admin\HotLeadAlertMail` (`tags: ['hot-lead']`, `metadata`, `ai_lead_note` & `ai_chat_summary`) via `SendAppointmentNotifications`; added `App\Mail\Customer\AccessoryOrderStatusMail` triggered on status transitions in `AccessoryOrder::transitionToStatus()` (`try/catch` guarded); opened `GET /admin/mail-preview/appointment/{appointment}` (`admin.mail-preview.appointment`) & preview links in `Admin\AppointmentTable`.
+  - Added concurrent `Http::pool()` `CloudflareEmbeddingService::embedBatch()` & `embedInputBatchesConcurrently()` with per-item account failover, `ShowroomKnowledgeBaseService::syncDatabaseEmbeddings()`, and `SyncAiEmbeddingsCommand` delegation while preserving `Phase24SemanticRagEmbeddingTest` batch counts (`3` / `6`); integrated `Context::add('ai_visitor_id', ...)` & `Context::add('gemini_key_slot', ...)`.
+  - Created `tests/Feature/Phase26RealtimeNotificationsMailAndPoolTest.php` (5 tests / 77 assertions).
+- Verification:
+  - Migration (`php artisan migrate --force`): `2026_11_17_000002_create_notifications_table` (`155.47ms DONE`).
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Vite production asset build (`npm run build`): pass (`55 modules transformed`, `public/build/assets/app-D-Z_VYqk.css` 99.29 kB, `public/build/assets/app-doQGNT_j.js` 370.25 kB in `2.10s`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Full test suite: `php artisan test --compact` pass (**156 passed (1830 assertions)** in **31.28s**, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-26-report.md`.
+- Result:
+  - PASS 100%.
+
+## Phase 25.2: Hybrid Persistent Guest Memory, Đồng Bộ Đa Tab, Bàn Giao Ngữ Cảnh Chat Sang Lead CRM & Tự Động Dọn Dẹp VPS
+
+- Completion time: 2026-11-17 +07:00.
+- Scope:
+  - Implemented Hybrid Persistent Guest Identity (`bmw_ai_visitor_id` 365-day `HttpOnly` `SameSite=Lax` cookie + unified `ShowroomAssistantController::resolveVisitorId()` across `__invoke`, `stream`, `history`, `reset`; `GET /ai/showroom-assistant/history` & `/api/ai/assistant/history`), DB-durable `reset_after_message_id` on `ai_chat_sessions` (`2026_11_17_000001_add_ai_handover_columns_to_appointments_table`), increased `showroom_ai.history_ttl_hours` default to `1440` (60 days) + shared `fetchActiveHistoryRecords()` & `getHistory()` in `ShowroomAssistantService`, and frontend automatic `rehydrateFromServer()` on lost `localStorage`.
+  - Implemented real-time cross-tab synchronization (`BroadcastChannel('bmw_ai_assistant_sync')` + `window.addEventListener('storage')` + `syncFromLocalStorage()` + `syncVisitorId()`) in `resources/js/app.js` while preserving all existing test string contracts (`AiAssistantPhase22Test`, `Phase17AiConversationTest`).
+  - Implemented idempotent CRM Handover (`appointments.ai_conversation_id`, `appointments.ai_chat_summary`, `AiConversationTracker::linkAppointment()` & `summarizeSession()`, `AppointmentObserver::created()` linking before `AppointmentLeadClassifier`, hidden cookie-hydrated `ai_visitor_id` on `booking-form-wizard.blade.php` & cookie fallback in `Client\AppointmentController@store`) preserving Phase 17 `ip_recent` single-session fallback, plus Livewire `Admin\AppointmentTable::inspectAiConversation()` (`ĐÃ CHAT AI` badge + 0px Dark Luxury Chat History Drawer/Modal), `navigation.blade.php` (`isAdmin()`) & discreet footer `Cổng quản trị` link.
+  - Built automated VPS cleanup Artisan command `php artisan ai:prune-conversations {--days=60}` (`App\Console\Commands\PruneAiConversationsCommand`) and scheduled `dailyAt('03:30')` in `routes/console.php`, pruning expired unlinked guest sessions while permanently preserving CRM Lead-linked conversations.
+  - Created `tests/Feature/Phase25_2HybridPersistentGuestAndCrmHandoverTest.php`.
+- Verification:
+  - Migration (`php artisan migrate --force`): `2026_11_17_000001_add_ai_handover_columns_to_appointments_table` (`151.70ms DONE`).
+  - Prune command (`php artisan ai:prune-conversations --days=60`): executed cleanly (`Đã dọn dẹp 0 phiên hội thoại vãng lai quá 60 ngày (0 tin nhắn). Bảo toàn 0 phiên hội thoại gắn với Lead CRM.`).
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Vite production asset build (`npm run build`): pass (`55 modules transformed`, `public/build/assets/app-B0B2lJgg.css` 98.19 kB, `public/build/assets/app-doQGNT_j.js` 370.25 kB in `1.63s`).
+  - Cache clearing: `php artisan optimize:clear` pass.
+  - Full test suite: `php artisan test --compact` pass (**151 passed (1750 assertions)** in **33.16s**, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-25-2-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 25.1: Nâng Cấp Toàn Diện Laravel AI SDK (Streaming SSE + Vision + Structured Output + Admin AI) & Laravel MCP Server
 

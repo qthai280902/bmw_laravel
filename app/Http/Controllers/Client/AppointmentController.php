@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Client;
 
 use App\Events\AppointmentCreated;
+use App\Http\Controllers\Ai\ShowroomAssistantController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
 use App\Services\Ai\AiConversationTracker;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Context;
 
 class AppointmentController extends Controller
 {
@@ -39,6 +41,17 @@ class AppointmentController extends Controller
     public function store(StoreAppointmentRequest $request, AiConversationTracker $tracker)
     {
         $data = $request->validated();
+
+        if (empty($data['ai_visitor_id'])) {
+            $cookieVisitorId = $request->cookie(ShowroomAssistantController::VISITOR_COOKIE_NAME);
+            if (is_string($cookieVisitorId) && preg_match('/^[A-Za-z0-9._:-]{6,80}$/', trim($cookieVisitorId)) === 1) {
+                $data['ai_visitor_id'] = trim($cookieVisitorId);
+            }
+        }
+
+        if (! empty($data['ai_visitor_id'])) {
+            Context::add('ai_visitor_id', $data['ai_visitor_id']);
+        }
 
         if (Auth::check()) {
             $user = Auth::user();

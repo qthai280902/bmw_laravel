@@ -3,8 +3,10 @@
 namespace App\Services\Ai;
 
 use App\Enums\VehicleType;
+use App\Http\Controllers\Ai\ShowroomAssistantController;
 use App\Models\AiChatMessage;
 use App\Models\AiChatSession;
+use App\Models\Appointment;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +101,61 @@ class AiConversationTracker
     }
 
     /**
+     * Idempotently link an Appointment with the customer's AI chat session and compute handover summary.
+     */
+    public function linkAppointment(Appointment $appointment, ?Request $request = null): ?AiChatSession
+    {
+        try {
+            return DB::transaction(function () use ($appointment, $request): ?AiChatSession {
+                $existingSession = $this->findAlreadyLinkedSession('appointment', $appointment->id, $appointment->ai_conversation_id);
+
+                if ($existingSession !== null) {
+                    return $this->syncSessionAndAppointmentHandover($existingSession, $appointment, $existingSession->link_confidence ?: 'visitor_id');
+                }
+
+                $visitorId = $this->normalizeVisitorId(
+                    $appointment->ai_visitor_id ?: $request?->cookie(ShowroomAssistantController::VISITOR_COOKIE_NAME)
+                );
+                $ipHash = $request ? $this->hashNullable($request->ip()) : null;
+
+                $session = null;
+                $confidence = 'visitor_id';
+
+                if ($visitorId !== null) {
+                    $session = AiChatSession::query()
+                        ->where('visitor_id', $visitorId)
+                        ->latest('last_seen_at')
+                        ->first();
+                } elseif ($ipHash !== null) {
+                    $confidence = 'ip_recent';
+                    $session = AiChatSession::query()
+                        ->where('ip_hash', $ipHash)
+                        ->where('last_seen_at', '>=', now()->subHours(24))
+                        ->where(function ($query): void {
+                            $query->whereNull('linked_source_type')
+                                ->orWhere('status', '!=', AiChatSession::STATUS_CONVERTED);
+                        })
+                        ->latest('last_seen_at')
+                        ->first();
+                }
+
+                if (! $session) {
+                    return null;
+                }
+
+                return $this->syncSessionAndAppointmentHandover($session, $appointment, $confidence);
+            });
+        } catch (Throwable $exception) {
+            Log::warning('Showroom AI appointment handover failed.', [
+                'appointment_id' => $appointment->id,
+                'exception' => $exception::class,
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
      * @param  array{name?: mixed, email?: mixed, phone?: mixed}  $customer
      */
     public function linkCustomerTouchpoint(
@@ -110,7 +167,14 @@ class AiConversationTracker
     ): ?AiChatSession {
         try {
             return DB::transaction(function () use ($request, $sourceType, $sourceId, $visitorId, $customer): ?AiChatSession {
-                $visitorId = $this->normalizeVisitorId($visitorId);
+                $alreadyLinked = $this->findAlreadyLinkedSession($sourceType, $sourceId);
+                if ($alreadyLinked !== null) {
+                    $this->applyCustomerDetailsToSession($alreadyLinked, $sourceType, $sourceId, $alreadyLinked->link_confidence ?: 'visitor_id', $customer);
+
+                    return $alreadyLinked;
+                }
+
+                $visitorId = $this->normalizeVisitorId($visitorId ?: $request->cookie(ShowroomAssistantController::VISITOR_COOKIE_NAME));
                 $ipHash = $this->hashNullable($request->ip());
                 $query = AiChatSession::query();
                 $confidence = 'visitor_id';
@@ -137,24 +201,12 @@ class AiConversationTracker
                     return null;
                 }
 
-                $name = $this->safeCustomerValue($customer['name'] ?? null);
-
-                $session->forceFill([
-                    'display_name' => $name ?: $session->display_name,
-                    'customer_name' => $name ?: $session->customer_name,
-                    'customer_email' => $this->safeCustomerValue($customer['email'] ?? null) ?: $session->customer_email,
-                    'customer_phone' => $this->safeCustomerValue($customer['phone'] ?? null) ?: $session->customer_phone,
-                    'linked_source_type' => $sourceType,
-                    'linked_source_id' => $sourceId,
-                    'link_confidence' => $confidence,
-                    'status' => AiChatSession::STATUS_CONVERTED,
-                    'last_seen_at' => now(),
-                ])->save();
+                $this->applyCustomerDetailsToSession($session, $sourceType, $sourceId, $confidence, $customer);
 
                 return $session;
             });
         } catch (Throwable $exception) {
-            Log::warning('Showroom AI conversation linking failed.', [
+            Log::warning('Showroom AI conversation logging/linking failed.', [
                 'reason' => 'conversation_linking_failed',
                 'exception' => $exception::class,
                 'source_type' => $sourceType,
@@ -163,6 +215,120 @@ class AiConversationTracker
 
             return null;
         }
+    }
+
+    public function summarizeSession(AiChatSession $session): string
+    {
+        $afterId = (int) ($session->reset_after_message_id ?? 0);
+
+        $userMessages = AiChatMessage::query()
+            ->where('ai_chat_session_id', $session->id)
+            ->where('role', 'user')
+            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
+            ->orderBy('id')
+            ->get(['content']);
+
+        if ($userMessages->isEmpty()) {
+            $userMessages = AiChatMessage::query()
+                ->where('ai_chat_session_id', $session->id)
+                ->where('role', 'user')
+                ->orderByDesc('id')
+                ->limit(4)
+                ->get(['content'])
+                ->reverse()
+                ->values();
+        }
+
+        $parts = [];
+
+        if (filled($session->contextProductLabel())) {
+            $parts[] = 'Sản phẩm: '.$session->contextProductLabel();
+        }
+
+        $questions = $userMessages
+            ->map(fn (AiChatMessage $message): string => Str::limit(trim(preg_replace('/\s+/u', ' ', $this->redactContactDetails((string) $message->content)) ?? ''), 120))
+            ->filter()
+            ->take(4)
+            ->values();
+
+        if ($questions->isNotEmpty()) {
+            $parts[] = 'Khách hỏi ('.$userMessages->count().' lượt): '.$questions->implode(' | ');
+        } elseif (filled($session->last_message_preview)) {
+            $parts[] = 'Nội dung gần nhất: '.Str::limit((string) $session->last_message_preview, 180);
+        }
+
+        return Str::limit(implode(' — ', $parts), 900);
+    }
+
+    private function findAlreadyLinkedSession(string $sourceType, int $sourceId, ?int $sessionId = null): ?AiChatSession
+    {
+        if ($sessionId !== null && $sessionId > 0) {
+            $byId = AiChatSession::query()->find($sessionId);
+            if ($byId !== null) {
+                return $byId;
+            }
+        }
+
+        return AiChatSession::query()
+            ->where('linked_source_type', $sourceType)
+            ->where('linked_source_id', $sourceId)
+            ->latest('last_seen_at')
+            ->first();
+    }
+
+    private function syncSessionAndAppointmentHandover(AiChatSession $session, Appointment $appointment, string $confidence): AiChatSession
+    {
+        $summary = filled($appointment->ai_chat_summary)
+            ? (string) $appointment->ai_chat_summary
+            : $this->summarizeSession($session);
+
+        $appointmentUpdates = [];
+        if ((int) ($appointment->ai_conversation_id ?? 0) !== $session->id) {
+            $appointmentUpdates['ai_conversation_id'] = $session->id;
+        }
+        if ($summary !== '' && $appointment->ai_chat_summary !== $summary) {
+            $appointmentUpdates['ai_chat_summary'] = $summary;
+        }
+        if (blank($appointment->ai_visitor_id) && filled($session->visitor_id)) {
+            $appointmentUpdates['ai_visitor_id'] = $session->visitor_id;
+        }
+
+        if ($appointmentUpdates !== []) {
+            $appointment->forceFill($appointmentUpdates)->saveQuietly();
+        }
+
+        $this->applyCustomerDetailsToSession($session, 'appointment', $appointment->id, $confidence, [
+            'name' => $appointment->guest_name ?? $appointment->user?->name,
+            'email' => $appointment->guest_email ?? $appointment->user?->email,
+            'phone' => $appointment->guest_phone,
+        ]);
+
+        return $session;
+    }
+
+    /**
+     * @param  array{name?: mixed, email?: mixed, phone?: mixed}  $customer
+     */
+    private function applyCustomerDetailsToSession(
+        AiChatSession $session,
+        string $sourceType,
+        int $sourceId,
+        string $confidence,
+        array $customer
+    ): void {
+        $name = $this->safeCustomerValue($customer['name'] ?? null);
+
+        $session->forceFill([
+            'display_name' => $name ?: $session->display_name,
+            'customer_name' => $name ?: $session->customer_name,
+            'customer_email' => $this->safeCustomerValue($customer['email'] ?? null) ?: $session->customer_email,
+            'customer_phone' => $this->safeCustomerValue($customer['phone'] ?? null) ?: $session->customer_phone,
+            'linked_source_type' => $sourceType,
+            'linked_source_id' => $sourceId,
+            'link_confidence' => $confidence,
+            'status' => AiChatSession::STATUS_CONVERTED,
+            'last_seen_at' => now(),
+        ])->save();
     }
 
     private function resolveSession(?string $visitorId, ?string $ipAddress, ?string $userAgent): AiChatSession

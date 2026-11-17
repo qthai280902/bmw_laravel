@@ -19,6 +19,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="ADMIN_EMAILS" value=""/>
         <env name="AI_EMBEDDINGS_ENABLED" value="false"/>
         <env name="AI_LEAD_CLASSIFICATION_ENABLED" value="false"/>
         <env name="AI_STRUCTURED_RECOMMENDATIONS_ENABLED" value="false"/>

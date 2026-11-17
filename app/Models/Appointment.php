@@ -31,6 +31,8 @@ class Appointment extends Model
         'meta_data',
         'showroom',
         'ai_visitor_id',
+        'ai_conversation_id',
+        'ai_chat_summary',
         'lead_priority',
         'lead_intent',
         'ai_lead_note',
@@ -54,6 +56,11 @@ class Appointment extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function aiChatSession(): BelongsTo
+    {
+        return $this->belongsTo(AiChatSession::class, 'ai_conversation_id');
     }
 
     public function leadPriorityLabel(): string

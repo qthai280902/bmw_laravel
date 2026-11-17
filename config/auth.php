@@ -114,4 +114,18 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Allowlisted Emails
+    |--------------------------------------------------------------------------
+    |
+    | Danh sách email ngoài tên miền @bmw.com được cấp quyền quản trị Showroom.
+    |
+    */
+
+    'admin_emails' => array_values(array_filter(array_map(
+        static fn (string $email): string => mb_strtolower(trim($email)),
+        explode(',', (string) env('ADMIN_EMAILS', ''))
+    ))),
+
 ];

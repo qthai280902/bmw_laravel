@@ -15,6 +15,7 @@
     x-data="aiAssistantWidget(@js([
         'endpoint' => route('ai.showroom-assistant.ask'),
         'streamEndpoint' => route('ai.showroom-assistant.stream'),
+        'historyEndpoint' => route('ai.showroom-assistant.history'),
         'resetEndpoint' => route('ai.showroom-assistant.reset'),
         'csrf' => csrf_token(),
         'fallback' => config('showroom_ai.fallback_message'),

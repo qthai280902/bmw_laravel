@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Ai\AiManager;
@@ -197,6 +198,7 @@ class ShowroomAssistantService
             $attempts++;
             $emittedChunk = false;
             $rawText = '';
+            Context::add('gemini_key_slot', $candidate['index']);
             $providerName = $this->geminiKeyPool->providerNameFor($candidate);
             $originalConfig = config("ai.providers.{$providerName}");
             $baseConfig = config('ai.providers.gemini', []);
@@ -291,16 +293,106 @@ class ShowroomAssistantService
             ->whereHas('session', fn ($query) => $query->where('visitor_id', $normalizedVisitorId))
             ->max('id') ?? 0);
 
+        AiChatSession::query()
+            ->where('visitor_id', $normalizedVisitorId)
+            ->update([
+                'reset_after_message_id' => $latestMessageId,
+            ]);
+
         Cache::put(
             $this->resetCacheKey($normalizedVisitorId),
             [
                 'after_id' => $latestMessageId,
                 'reset_at' => now()->toIso8601String(),
             ],
-            now()->addDays(7)
+            now()->addDays(60)
         );
 
         return true;
+    }
+
+    /**
+     * Re-hydrate recent guest conversation messages & Action Cards from database for lost localStorage recovery.
+     *
+     * @return array{
+     *     status: string,
+     *     visitor_id: string|null,
+     *     conversation_id: int|null,
+     *     restored: bool,
+     *     messages: array<int, array<string, mixed>>,
+     *     suggestions: array<int, array<string, mixed>>
+     * }
+     */
+    public function getHistory(?string $visitorId): array
+    {
+        $normalizedVisitorId = $this->normalizeVisitorId($visitorId);
+
+        if ($normalizedVisitorId === null) {
+            return [
+                'status' => 'ok',
+                'visitor_id' => null,
+                'conversation_id' => null,
+                'restored' => false,
+                'messages' => [],
+                'suggestions' => [],
+            ];
+        }
+
+        $history = $this->fetchActiveHistoryRecords($normalizedVisitorId);
+        if ($history === null || $history['records']->isEmpty()) {
+            return [
+                'status' => 'ok',
+                'visitor_id' => $normalizedVisitorId,
+                'conversation_id' => $history['session']->id ?? null,
+                'restored' => false,
+                'messages' => [],
+                'suggestions' => [],
+            ];
+        }
+
+        /** @var AiChatSession $session */
+        $session = $history['session'];
+        $context = $this->publicContext('', []);
+        $messages = [];
+        $latestSuggestions = [];
+
+        foreach ($history['records'] as $record) {
+            $content = trim((string) $record->content);
+            if ($content === '') {
+                continue;
+            }
+
+            if ($record->role === 'user') {
+                $messages[] = [
+                    'role' => 'user',
+                    'content' => $this->redactHistoryText($content),
+                    'created_at' => $record->created_at?->toIso8601String(),
+                ];
+
+                continue;
+            }
+
+            if ($record->role === 'assistant') {
+                $actions = $this->suggestionsFor('', $context, $content);
+                $latestSuggestions = $actions;
+
+                $messages[] = [
+                    'role' => 'assistant',
+                    'content' => $content,
+                    'actions' => $actions,
+                    'created_at' => $record->created_at?->toIso8601String(),
+                ];
+            }
+        }
+
+        return [
+            'status' => 'ok',
+            'visitor_id' => $normalizedVisitorId,
+            'conversation_id' => $session->id,
+            'restored' => $messages !== [],
+            'messages' => $messages,
+            'suggestions' => $latestSuggestions,
+        ];
     }
 
     /**
@@ -314,29 +406,13 @@ class ShowroomAssistantService
             return [];
         }
 
-        $session = AiChatSession::query()
-            ->where('visitor_id', $normalizedVisitorId)
-            ->latest('last_seen_at')
-            ->first();
-
-        if (! $session) {
+        $history = $this->fetchActiveHistoryRecords($normalizedVisitorId);
+        if ($history === null) {
             return [];
         }
 
         $maxMessages = max(2, (int) config('showroom_ai.max_history_messages', 14));
-        $ttlHours = max(1, (int) config('showroom_ai.history_ttl_hours', 6));
-        $resetMarker = Cache::get($this->resetCacheKey($normalizedVisitorId));
-        $afterId = is_array($resetMarker) ? (int) ($resetMarker['after_id'] ?? 0) : 0;
-
-        $records = AiChatMessage::query()
-            ->where('ai_chat_session_id', $session->id)
-            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
-            ->where('created_at', '>=', now()->subHours($ttlHours))
-            ->orderByDesc('id')
-            ->limit($maxMessages * 2)
-            ->get()
-            ->reverse()
-            ->values();
+        $records = $history['records'];
 
         $pairs = [];
         $pendingUserMessage = null;
@@ -374,6 +450,42 @@ class ShowroomAssistantService
         }
 
         return $messages;
+    }
+
+    /**
+     * @return array{session: AiChatSession, records: Collection<int, AiChatMessage>}|null
+     */
+    private function fetchActiveHistoryRecords(string $normalizedVisitorId): ?array
+    {
+        $session = AiChatSession::query()
+            ->where('visitor_id', $normalizedVisitorId)
+            ->latest('last_seen_at')
+            ->first();
+
+        if (! $session) {
+            return null;
+        }
+
+        $maxMessages = max(2, (int) config('showroom_ai.max_history_messages', 14));
+        $ttlHours = max(1, (int) config('showroom_ai.history_ttl_hours', 1440));
+        $resetMarker = Cache::get($this->resetCacheKey($normalizedVisitorId));
+        $cachedAfterId = is_array($resetMarker) ? (int) ($resetMarker['after_id'] ?? 0) : 0;
+        $afterId = max($cachedAfterId, (int) ($session->reset_after_message_id ?? 0));
+
+        $records = AiChatMessage::query()
+            ->where('ai_chat_session_id', $session->id)
+            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
+            ->where('created_at', '>=', now()->subHours($ttlHours))
+            ->orderByDesc('id')
+            ->limit($maxMessages * 2)
+            ->get()
+            ->reverse()
+            ->values();
+
+        return [
+            'session' => $session,
+            'records' => $records,
+        ];
     }
 
     /**

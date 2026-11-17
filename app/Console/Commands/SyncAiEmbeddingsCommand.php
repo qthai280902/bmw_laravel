@@ -2,13 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Article;
-use App\Models\Product;
 use App\Services\Ai\CloudflareEmbeddingService;
 use App\Services\Ai\ShowroomKnowledgeBaseService;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
 class SyncAiEmbeddingsCommand extends Command
@@ -37,112 +33,19 @@ class SyncAiEmbeddingsCommand extends Command
             count($embeddingService->accounts())
         ));
 
-        $products = Product::query()->active()->with('category')->orderBy('id')->get();
-        $productStats = $this->syncEloquentCollection(
-            $products,
-            fn (Product $product): array => $product->toEmbeddingParts(),
-            $embeddingService,
-            $force,
-        );
-
-        $articles = Article::query()->published()->orderBy('id')->get();
-        $articleStats = $this->syncEloquentCollection(
-            $articles,
-            fn (Article $article): array => $article->toEmbeddingParts(),
-            $embeddingService,
-            $force,
-        );
-
+        $databaseStats = $knowledgeBase->syncDatabaseEmbeddings($embeddingService, $force, self::BATCH_SIZE);
         $knowledgeStats = $this->syncKnowledgeChunks($knowledgeBase, $embeddingService, $force);
 
         $this->table(
             ['Nhóm dữ liệu', 'Tổng', 'Đã đồng bộ', 'Bỏ qua (không đổi)', 'Thất bại'],
             [
-                ['Sản phẩm active (products)', ...$productStats],
-                ['Bài viết published (articles)', ...$articleStats],
+                ['Sản phẩm active (products)', ...$databaseStats['products']],
+                ['Bài viết published (articles)', ...$databaseStats['articles']],
                 ['Tri thức tĩnh JSON (FAQ chunks)', ...$knowledgeStats],
             ]
         );
 
         return self::SUCCESS;
-    }
-
-    /**
-     * @template TModel of Model
-     *
-     * @param  Collection<int, TModel>  $records
-     * @param  callable(TModel): array{title: string, content: string}  $extractor
-     * @return array{0: int, 1: int, 2: int, 3: int}
-     */
-    private function syncEloquentCollection(
-        Collection $records,
-        callable $extractor,
-        CloudflareEmbeddingService $embeddingService,
-        bool $force,
-    ): array {
-        $total = $records->count();
-        $synced = 0;
-        $skipped = 0;
-        $failed = 0;
-        $pending = [];
-
-        foreach ($records as $record) {
-            $parts = $extractor($record);
-            $content = trim($parts['content'] ?? '');
-
-            if ($content === '') {
-                $skipped++;
-
-                continue;
-            }
-
-            $formatted = $embeddingService->formatDocumentInput($content, $parts['title'] ?? null);
-            $hash = $embeddingService->computeHash($formatted);
-            $existing = $record->getAttribute('embedding');
-
-            if (! $force
-                && $record->getAttribute('embedding_hash') === $hash
-                && is_array($existing)
-                && $existing !== []) {
-                $skipped++;
-
-                continue;
-            }
-
-            $pending[] = [
-                'model' => $record,
-                'title' => $parts['title'] ?? null,
-                'content' => $content,
-                'hash' => $hash,
-            ];
-        }
-
-        foreach (array_chunk($pending, self::BATCH_SIZE) as $batch) {
-            $vectors = $embeddingService->embedDocuments(
-                array_map(fn (array $item): array => [
-                    'title' => $item['title'],
-                    'content' => $item['content'],
-                ], $batch)
-            );
-
-            foreach ($batch as $index => $item) {
-                $vector = $vectors[$index] ?? null;
-
-                if (! is_array($vector) || $vector === []) {
-                    $failed++;
-
-                    continue;
-                }
-
-                $item['model']->forceFill([
-                    'embedding' => $vector,
-                    'embedding_hash' => $item['hash'],
-                ])->saveQuietly();
-                $synced++;
-            }
-        }
-
-        return [$total, $synced, $skipped, $failed];
     }
 
     /**
@@ -181,34 +84,41 @@ class SyncAiEmbeddingsCommand extends Command
 
             $pending[] = [
                 'id' => $id,
-                'title' => $parts['title'],
-                'content' => $parts['content'],
+                'formatted' => $formatted,
                 'hash' => $hash,
             ];
         }
 
-        foreach (array_chunk($pending, self::BATCH_SIZE) as $batch) {
-            $vectors = $embeddingService->embedDocuments(
-                array_map(fn (array $item): array => [
-                    'title' => $item['title'],
-                    'content' => $item['content'],
-                ], $batch)
-            );
+        if ($pending !== []) {
+            $batchMeta = [];
+            $inputBatches = [];
 
-            foreach ($batch as $index => $item) {
-                $vector = $vectors[$index] ?? null;
+            foreach (array_chunk($pending, self::BATCH_SIZE) as $chunkIndex => $batch) {
+                $batchKey = "faq:{$chunkIndex}";
+                $batchMeta[$batchKey] = $batch;
+                $inputBatches[$batchKey] = array_column($batch, 'formatted');
+            }
 
-                if (! is_array($vector) || $vector === []) {
-                    $failed++;
+            $pooledResults = $embeddingService->embedInputBatchesConcurrently($inputBatches);
 
-                    continue;
+            foreach ($batchMeta as $batchKey => $batch) {
+                $vectors = $pooledResults[$batchKey] ?? null;
+
+                foreach ($batch as $index => $item) {
+                    $vector = is_array($vectors) ? ($vectors[$index] ?? null) : null;
+
+                    if (! is_array($vector) || $vector === []) {
+                        $failed++;
+
+                        continue;
+                    }
+
+                    $nextCache[$item['id']] = [
+                        'hash' => $item['hash'],
+                        'embedding' => $vector,
+                    ];
+                    $synced++;
                 }
-
-                $nextCache[$item['id']] = [
-                    'hash' => $item['hash'],
-                    'embedding' => $vector,
-                ];
-                $synced++;
             }
         }
 

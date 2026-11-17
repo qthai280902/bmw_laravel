@@ -90,13 +90,18 @@ class AppointmentLeadClassifier
         $appointmentDate = $appointment->appointment_date?->format('d/m/Y H:i') ?? 'Chưa rõ';
         $notes = trim((string) ($appointment->notes ?? 'Không có ghi chú'));
         $showroom = trim((string) ($appointment->showroom ?? 'Showroom chính hãng'));
+        $aiChatSummary = trim((string) ($appointment->ai_chat_summary ?? ''));
+
+        $chatContextLine = $aiChatSummary !== ''
+            ? "\nTóm tắt lịch sử hỏi Trợ lý AI trước đó: {$aiChatSummary}"
+            : '';
 
         return <<<PROMPT
                 Loại lịch hẹn: {$typeLabel}
                 Mẫu xe quan tâm: {$productName}
                 Ngày hẹn mong muốn: {$appointmentDate}
                 Showroom: {$showroom}
-                Ghi chú của khách: {$notes}
+                Ghi chú của khách: {$notes}{$chatContextLine}
                 PROMPT;
     }
 
@@ -139,7 +144,8 @@ class AppointmentLeadClassifier
             ? $appointment->type
             : AppointmentType::tryFrom((string) $appointment->type);
 
-        $notesNormalized = Str::lower(Str::ascii((string) ($appointment->notes ?? '')));
+        $combinedText = trim(($appointment->notes ?? '').' '.($appointment->ai_chat_summary ?? ''));
+        $notesNormalized = Str::lower(Str::ascii($combinedText));
         $hasHotSignal = Str::contains($notesNormalized, [
             'mua ngay',
             'dat coc',

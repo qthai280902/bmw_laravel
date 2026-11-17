@@ -111,7 +111,7 @@
                     </div>
                     <div class="mt-16 flex flex-col gap-4 border-t border-zinc-800 pt-8 text-[10px] font-bold uppercase tracking-widest text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
                         <p>© {{ date('Y') }} BMW Group Vietnam. Bảo lưu mọi quyền.</p>
-                        <p><a href="{{ route('policy.privacy') }}" class="transition-colors hover:text-white">Chính sách bảo mật</a> | <a href="{{ route('contact.index') }}" class="transition-colors hover:text-white">Liên hệ chúng tôi</a></p>
+                        <p><a href="{{ route('policy.privacy') }}" class="transition-colors hover:text-white">Chính sách bảo mật</a> | <a href="{{ route('contact.index') }}" class="transition-colors hover:text-white">Liên hệ chúng tôi</a> | <a href="{{ auth()->check() && auth()->user()->isAdmin() ? route('dashboard') : route('login') }}" class="transition-colors hover:text-white">Cổng quản trị</a></p>
                     </div>
                 </div>
             </footer>

@@ -34,6 +34,7 @@ class AiChatSession extends Model
         'last_seen_at',
         'message_count',
         'last_message_preview',
+        'reset_after_message_id',
         'last_intent',
         'context_product_id',
         'context_product_name',
@@ -47,6 +48,7 @@ class AiChatSession extends Model
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'message_count' => 'integer',
+            'reset_after_message_id' => 'integer',
         ];
     }
 
@@ -63,6 +65,11 @@ class AiChatSession extends Model
     public function contextProduct(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'context_product_id');
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'ai_conversation_id');
     }
 
     public function contextProductLabel(): ?string

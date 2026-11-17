@@ -7,6 +7,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\AiManager;
 use Laravel\Ai\Exceptions\ProviderOverloadedException;
@@ -168,6 +169,8 @@ class GeminiAgentRunner
      */
     public function withGeminiCandidate(array $candidate, Closure $callback): mixed
     {
+        Context::add('gemini_key_slot', $candidate['index']);
+
         $providerName = $this->geminiKeyPool->providerNameFor($candidate);
         $originalConfig = config("ai.providers.{$providerName}");
         $baseConfig = config('ai.providers.gemini', []);

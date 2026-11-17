@@ -6,7 +6,9 @@ use App\Events\AccessoryOrderCreated;
 use App\Mail\Admin\AccessoryOrderAlertMail;
 use App\Mail\Customer\AccessoryOrderConfirmationMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class SendAccessoryOrderNotifications implements ShouldQueue
 {
@@ -19,10 +21,24 @@ class SendAccessoryOrderNotifications implements ShouldQueue
         $order = $event->order->loadMissing('product');
 
         if (! empty($order->customer_email)) {
-            Mail::to($order->customer_email)->send(new AccessoryOrderConfirmationMail($order));
+            try {
+                Mail::to($order->customer_email)->send(new AccessoryOrderConfirmationMail($order));
+            } catch (Throwable $exception) {
+                Log::warning('Failed sending accessory order confirmation email.', [
+                    'order_id' => $order->id,
+                    'exception' => $exception::class,
+                ]);
+            }
         }
 
-        Mail::to(config('mail.showroom_admin', 'advisor@bmw.com'))
-            ->send(new AccessoryOrderAlertMail($order));
+        try {
+            Mail::to(config('mail.showroom_admin', 'advisor@bmw.com'))
+                ->send(new AccessoryOrderAlertMail($order));
+        } catch (Throwable $exception) {
+            Log::warning('Failed sending admin accessory order alert email.', [
+                'order_id' => $order->id,
+                'exception' => $exception::class,
+            ]);
+        }
     }
 }

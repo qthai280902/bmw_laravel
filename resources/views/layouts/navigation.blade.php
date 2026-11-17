@@ -51,7 +51,7 @@
                         </x-slot>
 
                         <x-slot name="content">
-                            @if(auth()->user()->email === 'admin@bmw.com' || auth()->user()->email === 'quanly1@bmw.com')
+                            @if(auth()->user()->isAdmin())
                                 <x-dropdown-link :href="route('admin.products.index')">
                                     {{ __('Trang Quản trị') }}
                                 </x-dropdown-link>

@@ -3,6 +3,7 @@
 namespace App\Services\Ai;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -235,6 +236,159 @@ class CloudflareEmbeddingService
 
         foreach ($indexMap as $position => $originalIndex) {
             $results[$originalIndex] = $vectors[$position] ?? null;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Generate embeddings concurrently in pooled HTTP chunks while preserving keys and account failover.
+     *
+     * @param  array<array-key, string>  $texts
+     * @return array<array-key, list<float>|null>
+     */
+    public function embedBatch(array $texts, int $poolSize = 8): array
+    {
+        $results = [];
+        $singleItemBatches = [];
+
+        foreach ($texts as $key => $text) {
+            $results[$key] = null;
+            $trimmed = trim((string) $text);
+
+            if ($trimmed !== '') {
+                $singleItemBatches[$key] = [$trimmed];
+            }
+        }
+
+        if ($singleItemBatches === [] || ! $this->isEnabled()) {
+            return $results;
+        }
+
+        $batchResults = $this->embedInputBatchesConcurrently($singleItemBatches, $poolSize);
+
+        foreach ($batchResults as $key => $vectors) {
+            $results[$key] = $vectors[0] ?? null;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Send multiple formatted input batches concurrently using Http::pool() with per-item account failover.
+     *
+     * @param  array<array-key, list<string>>  $inputBatches
+     * @return array<array-key, list<list<float>|null>|null>
+     */
+    public function embedInputBatchesConcurrently(array $inputBatches, int $poolSize = 8): array
+    {
+        $results = [];
+        $pending = [];
+
+        foreach ($inputBatches as $key => $inputs) {
+            $results[$key] = null;
+            $cleanInputs = array_values(array_filter(
+                $inputs,
+                fn (mixed $item): bool => is_string($item) && trim($item) !== ''
+            ));
+
+            if ($cleanInputs !== []) {
+                $pending[$key] = $cleanInputs;
+            }
+        }
+
+        if ($pending === [] || ! $this->isEnabled()) {
+            return $results;
+        }
+
+        $model = $this->model();
+        $dimensions = $this->dimensions();
+        $timeout = max(1, (int) config('showroom_ai.embeddings.timeout_seconds', 8));
+
+        foreach (array_chunk($pending, max(1, $poolSize), true) as $chunk) {
+            $candidates = $this->candidateSequence();
+            if ($candidates === []) {
+                continue;
+            }
+
+            $primaryAccount = $candidates[0];
+            $endpoint = sprintf(
+                'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
+                $primaryAccount['account_id'],
+                $model
+            );
+
+            $poolKeyMap = [];
+            $indexedChunk = [];
+            $cursor = 0;
+
+            foreach ($chunk as $originalKey => $batchInputs) {
+                $poolAlias = 'batch_'.$cursor++;
+                $poolKeyMap[$poolAlias] = $originalKey;
+                $indexedChunk[$poolAlias] = $batchInputs;
+            }
+
+            $responses = Http::pool(function (Pool $pool) use ($indexedChunk, $endpoint, $primaryAccount, $dimensions, $timeout): array {
+                $requests = [];
+
+                foreach ($indexedChunk as $poolAlias => $batchInputs) {
+                    $requests[] = $pool->as($poolAlias)
+                        ->withToken($primaryAccount['api_token'])
+                        ->acceptJson()
+                        ->asJson()
+                        ->timeout($timeout)
+                        ->post($endpoint, [
+                            'input' => $batchInputs,
+                            'dimensions' => $dimensions,
+                        ]);
+                }
+
+                return $requests;
+            });
+
+            $markedCoolingDown = false;
+            $failedAliases = [];
+
+            foreach ($indexedChunk as $poolAlias => $batchInputs) {
+                $originalKey = $poolKeyMap[$poolAlias];
+                $response = $responses[$poolAlias] ?? null;
+
+                if ($response instanceof Response) {
+                    if ($this->shouldFailoverResponse($response)) {
+                        if (! $markedCoolingDown) {
+                            $this->markCoolingDown($primaryAccount['fingerprint']);
+                            $markedCoolingDown = true;
+                        }
+                        $failedAliases[$poolAlias] = $batchInputs;
+
+                        continue;
+                    }
+
+                    if ($response->successful()) {
+                        $parsed = $this->extractVectorsFromResponse($response, count($batchInputs));
+                        if ($parsed !== null) {
+                            $results[$originalKey] = $parsed;
+
+                            continue;
+                        }
+                    }
+
+                    $failedAliases[$poolAlias] = $batchInputs;
+
+                    continue;
+                }
+
+                if (! $markedCoolingDown) {
+                    $this->markCoolingDown($primaryAccount['fingerprint']);
+                    $markedCoolingDown = true;
+                }
+                $failedAliases[$poolAlias] = $batchInputs;
+            }
+
+            foreach ($failedAliases as $poolAlias => $batchInputs) {
+                $originalKey = $poolKeyMap[$poolAlias];
+                $results[$originalKey] = $this->requestEmbeddings($batchInputs);
+            }
         }
 
         return $results;

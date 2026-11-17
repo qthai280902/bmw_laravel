@@ -72,6 +72,8 @@ window.aiAssistantWidget = (config) => ({
     revealTimer: null,
     stateKey: 'bmw_ai_assistant_state_v4',
     visitorKey: 'bmw_ai_visitor_id',
+    syncChannelName: 'bmw_ai_assistant_sync',
+    syncChannel: null,
     visitorId: null,
     legacyStateKeys: [
         'bmw_ai_assistant_state_v2',
@@ -90,6 +92,10 @@ window.aiAssistantWidget = (config) => ({
         this.activePageContext = this.detectPageContext();
         this.attachVisitorIdToForms();
         this.restoreState();
+        this.setupCrossTabSync();
+        if (!this.messages.some((item) => item?.role === 'user')) {
+            this.rehydrateFromServer();
+        }
         this.scrollMessages();
 
         window.addEventListener('resize', () => {
@@ -103,6 +109,130 @@ window.aiAssistantWidget = (config) => ({
         });
 
         document.addEventListener('submit', () => this.attachVisitorIdToForms(), true);
+    },
+
+    setupCrossTabSync() {
+        window.addEventListener('storage', (event) => {
+            if (event.key === this.stateKey || event.key === this.visitorKey) {
+                this.syncFromLocalStorage();
+            }
+        });
+
+        if (typeof BroadcastChannel !== 'undefined') {
+            try {
+                this.syncChannel = new BroadcastChannel(this.syncChannelName);
+                this.syncChannel.onmessage = (event) => {
+                    if (event?.data?.type === 'sync') {
+                        this.syncFromLocalStorage();
+                    }
+                };
+            } catch (error) {
+                this.syncChannel = null;
+            }
+        }
+    },
+
+    broadcastSync() {
+        if (!this.syncChannel) {
+            return;
+        }
+
+        try {
+            this.syncChannel.postMessage({
+                type: 'sync',
+                visitorId: this.visitorId,
+                updatedAt: Date.now(),
+            });
+        } catch (error) {
+            void error;
+        }
+    },
+
+    syncVisitorId(nextVisitorId) {
+        if (!this.isValidVisitorId(nextVisitorId)) {
+            return;
+        }
+
+        this.visitorId = nextVisitorId;
+        try {
+            localStorage.setItem(this.visitorKey, nextVisitorId);
+        } catch (error) {
+            void error;
+        }
+        this.attachVisitorIdToForms();
+    },
+
+    syncFromLocalStorage() {
+        this.stopProgressiveReveal();
+
+        try {
+            const storedVisitor = localStorage.getItem(this.visitorKey);
+            if (this.isValidVisitorId(storedVisitor)) {
+                this.visitorId = storedVisitor;
+                this.attachVisitorIdToForms();
+            }
+        } catch (error) {
+            void error;
+        }
+
+        this.restoreState();
+        this.scrollMessages();
+    },
+
+    async rehydrateFromServer() {
+        const historyEndpoint = this.config.historyEndpoint || '/ai/showroom-assistant/history';
+        if (!historyEndpoint || typeof fetch !== 'function') {
+            return;
+        }
+
+        try {
+            const url = new URL(historyEndpoint, window.location.origin);
+            const currentVisitorId = this.ensureVisitorId();
+            if (currentVisitorId) {
+                url.searchParams.set('visitor_id', currentVisitorId);
+            }
+
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json().catch(() => null);
+            if (!payload || payload.restored !== true || !Array.isArray(payload.messages) || payload.messages.length === 0) {
+                return;
+            }
+
+            if (payload.visitor_id) {
+                this.syncVisitorId(payload.visitor_id);
+            }
+
+            const restoredMessages = payload.messages
+                .filter((msg) => ['user', 'assistant'].includes(msg?.role) && typeof msg?.content === 'string')
+                .slice(-this.maxStoredMessages)
+                .map((msg) => {
+                    if (msg.role === 'user') {
+                        return this.createUserMessage(msg.content);
+                    }
+
+                    const actions = Array.isArray(msg.actions) ? msg.actions : [];
+                    return this.createAssistantMessage(msg.content, actions, false, actions);
+                });
+
+            if (restoredMessages.length > 0 && !this.messages.some((item) => item?.role === 'user')) {
+                this.messages = restoredMessages;
+                this.pruneMessages();
+                this.persistState(false);
+                this.scrollMessages();
+            }
+        } catch (error) {
+            void error;
+        }
     },
 
     openPanel() {
@@ -127,7 +257,7 @@ window.aiAssistantWidget = (config) => ({
     clearConversation() {
         this.stopProgressiveReveal();
         this.messages = [];
-        this.persistState();
+        this.persistState(true);
         this.scrollMessages();
 
         const resetEndpoint = this.config.resetEndpoint || '/ai/showroom-assistant/reset';
@@ -331,6 +461,7 @@ window.aiAssistantWidget = (config) => ({
         }
 
         const displayMessage = rawMessage || 'Nhận diện hình ảnh BMW';
+        this.syncFromLocalStorage();
         const pageContext = this.detectPageContext();
         this.activePageContext = pageContext;
         this.stopProgressiveReveal();
@@ -347,7 +478,7 @@ window.aiAssistantWidget = (config) => ({
 
         this.loading = true;
         this.streaming = false;
-        this.persistState();
+        this.persistState(true);
         this.scrollMessages();
 
         let streamAssistantId = null;
@@ -405,6 +536,9 @@ window.aiAssistantWidget = (config) => ({
                             this.scrollMessages();
                         } else if (eventName === 'done') {
                             receivedDone = true;
+                            if (data.visitor_id) {
+                                this.syncVisitorId(data.visitor_id);
+                            }
                             const finalAnswer = data.answer || streamedText || config.fallback;
                             const finalSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
 
@@ -417,7 +551,7 @@ window.aiAssistantWidget = (config) => ({
                             this.loading = false;
                             this.streaming = false;
                             this.pruneMessages();
-                            this.persistState();
+                            this.persistState(true);
                             this.scrollMessages();
                         }
                     };
@@ -450,6 +584,10 @@ window.aiAssistantWidget = (config) => ({
 
             const payload = await response.json().catch(() => ({}));
 
+            if (payload.visitor_id) {
+                this.syncVisitorId(payload.visitor_id);
+            }
+
             this.appendAssistantMessage(
                 payload.answer || config.fallback,
                 Array.isArray(payload.suggestions) ? payload.suggestions : [],
@@ -470,7 +608,7 @@ window.aiAssistantWidget = (config) => ({
             this.streaming = false;
             this.loading = false;
             this.pruneMessages();
-            this.persistState();
+            this.persistState(true);
             this.scrollMessages();
         }
     },
@@ -1226,7 +1364,7 @@ window.aiAssistantWidget = (config) => ({
         }
     },
 
-    persistState() {
+    persistState(broadcast = true) {
         try {
             localStorage.setItem(this.stateKey, JSON.stringify({
                 mode: this.sideTabVisible ? 'hidden' : (this.panelOpen ? 'panel' : 'launcher'),
@@ -1247,6 +1385,10 @@ window.aiAssistantWidget = (config) => ({
                     };
                 }),
             }));
+
+            if (broadcast) {
+                this.broadcastSync();
+            }
         } catch (error) {
             void error;
         }

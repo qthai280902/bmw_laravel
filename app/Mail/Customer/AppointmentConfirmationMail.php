@@ -3,6 +3,7 @@
 namespace App\Mail\Customer;
 
 use App\Models\Appointment;
+use App\Models\Product;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -20,6 +21,7 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
+        $this->appointment->loadMissing(['product.category', 'user']);
         $typeLabel = $this->appointment->type?->label() ?? 'Lịch hẹn';
 
         return new Envelope(
@@ -29,6 +31,8 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $this->appointment->loadMissing(['product.category', 'user']);
+
         return new Content(
             view: 'emails.customer.appointment-confirmation',
         );
@@ -39,6 +43,87 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        return [];
+        $this->appointment->loadMissing(['product.category']);
+        $product = $this->appointment->product;
+
+        if (! $product instanceof Product) {
+            return [];
+        }
+
+        return [
+            Attachment::fromData(
+                fn (): string => $this->renderVehicleBrochureHtml($product),
+                'BMW-'.$product->slug.'-Brochure.html'
+            )->withMime('text/html'),
+        ];
+    }
+
+    public function renderVehicleBrochureHtml(Product $product): string
+    {
+        $product->loadMissing('category');
+
+        $productName = e((string) $product->name);
+        $categoryName = e((string) ($product->category?->name ?? 'BMW Chính hãng'));
+        $priceText = $product->price !== null
+            ? number_format((int) $product->price, 0, ',', '.').' VNĐ'
+            : 'Liên hệ Showroom';
+        $depositText = ((int) ($product->deposit_amount ?? 0)) > 0
+            ? number_format((int) $product->deposit_amount, 0, ',', '.').' VNĐ'
+            : 'Thỏa thuận tại Showroom';
+        $descriptionText = filled($product->description)
+            ? e(trim(strip_tags((string) $product->description)))
+            : 'Hồ sơ thông số kỹ thuật chính hãng được chuẩn hóa từ BMW Showroom Việt Nam.';
+
+        $specRowsHtml = '';
+        foreach ($product->translated_specs as $specLabel => $specValue) {
+            $valueString = is_array($specValue) ? implode(', ', $specValue) : (string) $specValue;
+            $specRowsHtml .= '<tr>'
+                .'<td style="padding:12px 16px;border-bottom:1px solid #27272a;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;width:42%;">'
+                .e((string) $specLabel)
+                .'</td>'
+                .'<td style="padding:12px 16px;border-bottom:1px solid #27272a;color:#ffffff;font-weight:700;font-size:13px;">'
+                .e($valueString)
+                .'</td>'
+                .'</tr>';
+        }
+
+        if ($specRowsHtml === '') {
+            $specRowsHtml = '<tr><td colspan="2" style="padding:14px 16px;color:#a1a1aa;font-size:13px;">Thông số kỹ thuật chi tiết sẽ được Cố vấn BMW bàn giao trực tiếp tại Showroom.</td></tr>';
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>BMW Brochure — {$productName}</title>
+</head>
+<body style="margin:0;padding:32px 16px;background-color:#09090b;color:#ffffff;font-family:'Be Vietnam Pro','Inter',Arial,sans-serif;">
+    <div style="max-width:680px;margin:0 auto;background-color:#121215;border:1px solid #27272a;border-radius:0px;">
+        <div style="padding:28px 32px;background-color:#09090b;border-bottom:1px solid #27272a;">
+            <div style="font-size:11px;font-weight:800;letter-spacing:0.3em;text-transform:uppercase;color:#1C69D4;">BMW TECHNICAL BROCHURE · {$categoryName}</div>
+            <h1 style="margin:10px 0 0 0;font-size:24px;font-weight:900;text-transform:uppercase;letter-spacing:0.08em;color:#ffffff;">{$productName}</h1>
+        </div>
+        <div style="padding:28px 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#09090b;border:1px solid #27272a;margin-bottom:24px;">
+                <tr>
+                    <td style="padding:12px 16px;border-bottom:1px solid #27272a;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;width:42%;">Giá niêm yết</td>
+                    <td style="padding:12px 16px;border-bottom:1px solid #27272a;color:#1C69D4;font-weight:900;font-size:15px;">{$priceText}</td>
+                </tr>
+                <tr>
+                    <td style="padding:12px 16px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Đặt cọc tham khảo</td>
+                    <td style="padding:12px 16px;color:#ffffff;font-weight:700;font-size:13px;">{$depositText}</td>
+                </tr>
+            </table>
+            <p style="margin:0 0 24px 0;color:#d4d4d8;font-size:14px;line-height:1.7;">{$descriptionText}</p>
+            <div style="font-size:11px;font-weight:800;letter-spacing:0.25em;text-transform:uppercase;color:#1C69D4;margin-bottom:10px;">BẢNG THÔNG SỐ KỸ THUẬT</div>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#09090b;border:1px solid #27272a;">
+                {$specRowsHtml}
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
     }
 }

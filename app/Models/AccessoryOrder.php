@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Mail\Customer\AccessoryOrderStatusMail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class AccessoryOrder extends Model
 {
@@ -87,6 +91,8 @@ class AccessoryOrder extends Model
 
     public function transitionToStatus(string $status, ?string $adminNotes = null, bool $updateNotes = false): void
     {
+        $previousStatus = (string) $this->status;
+
         $updates = [
             'status' => $status,
         ];
@@ -103,5 +109,18 @@ class AccessoryOrder extends Model
         }
 
         $this->update($updates);
+
+        if ($previousStatus !== $status && filled($this->customer_email)) {
+            try {
+                $this->loadMissing('product');
+                Mail::to($this->customer_email)->send(new AccessoryOrderStatusMail($this));
+            } catch (Throwable $exception) {
+                Log::warning('Failed sending accessory order status update email.', [
+                    'order_id' => $this->id,
+                    'status' => $status,
+                    'exception' => $exception::class,
+                ]);
+            }
+        }
     }
 }

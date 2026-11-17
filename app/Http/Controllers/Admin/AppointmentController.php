@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
+use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Rule;
@@ -32,5 +33,15 @@ class AppointmentController extends Controller
         ]);
 
         return back()->with('success', 'Đã cập nhật trạng thái lịch hẹn thành công.');
+    }
+
+    /**
+     * Xem trước mẫu email xác nhận lịch hẹn trực tiếp trên trình duyệt cho Admin.
+     */
+    public function previewMail(Appointment $appointment): AppointmentConfirmationMail
+    {
+        $appointment->loadMissing(['product.category', 'user']);
+
+        return new AppointmentConfirmationMail($appointment);
     }
 }

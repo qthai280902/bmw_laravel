@@ -4,6 +4,8 @@ namespace App\Services\Ai;
 
 use App\Models\Article;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
@@ -262,6 +264,123 @@ class ShowroomKnowledgeBaseService
         $decoded = json_decode(File::get($path), true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Synchronize embeddings for active Products and published Articles concurrently via Http::pool().
+     *
+     * @return array{
+     *     products: array{0: int, 1: int, 2: int, 3: int},
+     *     articles: array{0: int, 1: int, 2: int, 3: int}
+     * }
+     */
+    public function syncDatabaseEmbeddings(
+        ?CloudflareEmbeddingService $embeddingService = null,
+        bool $force = false,
+        int $batchSize = 10
+    ): array {
+        $service = $embeddingService ?? $this->embeddingService();
+
+        $groups = [
+            'products' => [
+                'records' => Product::query()->active()->with('category')->orderBy('id')->get(),
+                'extractor' => fn (Product $product): array => $product->toEmbeddingParts(),
+            ],
+            'articles' => [
+                'records' => Article::query()->published()->orderBy('id')->get(),
+                'extractor' => fn (Article $article): array => $article->toEmbeddingParts(),
+            ],
+        ];
+
+        $stats = [];
+        $batchMeta = [];
+        $inputBatches = [];
+
+        foreach ($groups as $groupKey => $group) {
+            /** @var Collection<int, Model> $records */
+            $records = $group['records'];
+            $extractor = $group['extractor'];
+
+            $total = $records->count();
+            $skipped = 0;
+            $pending = [];
+
+            foreach ($records as $record) {
+                $parts = $extractor($record);
+                $content = trim((string) ($parts['content'] ?? ''));
+
+                if ($content === '') {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $formatted = $service->formatDocumentInput($content, $parts['title'] ?? null);
+                $hash = $service->computeHash($formatted);
+                $existing = $record->getAttribute('embedding');
+
+                if (! $force
+                    && $record->getAttribute('embedding_hash') === $hash
+                    && is_array($existing)
+                    && $existing !== []) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $pending[] = [
+                    'model' => $record,
+                    'formatted' => $formatted,
+                    'hash' => $hash,
+                ];
+            }
+
+            $stats[$groupKey] = [$total, 0, $skipped, 0];
+
+            foreach (array_chunk($pending, max(1, $batchSize)) as $chunkIndex => $batchItems) {
+                $batchKey = "{$groupKey}:{$chunkIndex}";
+                $batchMeta[$batchKey] = [
+                    'group' => $groupKey,
+                    'items' => $batchItems,
+                ];
+                $inputBatches[$batchKey] = array_column($batchItems, 'formatted');
+            }
+        }
+
+        if (! $service->isEnabled() || $inputBatches === []) {
+            return [
+                'products' => $stats['products'],
+                'articles' => $stats['articles'],
+            ];
+        }
+
+        $pooledResults = $service->embedInputBatchesConcurrently($inputBatches);
+
+        foreach ($batchMeta as $batchKey => $meta) {
+            $groupKey = $meta['group'];
+            $vectors = $pooledResults[$batchKey] ?? null;
+
+            foreach ($meta['items'] as $index => $item) {
+                $vector = is_array($vectors) ? ($vectors[$index] ?? null) : null;
+
+                if (! is_array($vector) || $vector === []) {
+                    $stats[$groupKey][3]++;
+
+                    continue;
+                }
+
+                $item['model']->forceFill([
+                    'embedding' => $vector,
+                    'embedding_hash' => $item['hash'],
+                ])->saveQuietly();
+                $stats[$groupKey][1]++;
+            }
+        }
+
+        return [
+            'products' => $stats['products'],
+            'articles' => $stats['articles'],
+        ];
     }
 
     private function embeddingService(): CloudflareEmbeddingService

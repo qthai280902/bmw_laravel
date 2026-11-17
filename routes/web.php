@@ -65,6 +65,9 @@ Route::post('/ai/showroom-assistant', ShowroomAssistantController::class)
 Route::post('/ai/showroom-assistant/stream', [ShowroomAssistantController::class, 'stream'])
     ->middleware('throttle:12,1')
     ->name('ai.showroom-assistant.stream');
+Route::get('/ai/showroom-assistant/history', [ShowroomAssistantController::class, 'history'])
+    ->middleware('throttle:30,1')
+    ->name('ai.showroom-assistant.history');
 Route::post('/ai/showroom-assistant/reset', [ShowroomAssistantController::class, 'reset'])
     ->middleware('throttle:20,1')
     ->name('ai.showroom-assistant.reset');
@@ -75,6 +78,9 @@ Route::post('/api/ai/assistant', ShowroomAssistantController::class)
 Route::post('/api/ai/assistant/stream', [ShowroomAssistantController::class, 'stream'])
     ->middleware('throttle:12,1')
     ->name('ai.api.assistant.stream');
+Route::get('/api/ai/assistant/history', [ShowroomAssistantController::class, 'history'])
+    ->middleware('throttle:30,1')
+    ->name('ai.api.assistant.history');
 
 // Auth Dashboard & Appointments Mng
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -98,6 +104,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('articles', AdminArticleController::class)->except(['show']);
 
         Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
+        Route::get('mail-preview/appointment/{appointment}', [App\Http\Controllers\Admin\AppointmentController::class, 'previewMail'])
+            ->name('mail-preview.appointment');
         Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
         Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
         Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');

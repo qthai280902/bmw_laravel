@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Events\AccessoryOrderCreated;
+use App\Http\Controllers\Ai\ShowroomAssistantController;
 use App\Http\Requests\StoreAccessoryOrderRequest;
 use App\Models\AccessoryOrder;
 use App\Models\Product;
+use App\Services\Admin\AdminNotificationDispatcher;
 use App\Services\Ai\AiConversationTracker;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Context;
 use Illuminate\View\View;
 
 class AccessoryOrderController extends Controller
@@ -26,11 +29,23 @@ class AccessoryOrderController extends Controller
     public function store(
         StoreAccessoryOrderRequest $request,
         Product $product,
-        AiConversationTracker $tracker
+        AiConversationTracker $tracker,
+        AdminNotificationDispatcher $notificationDispatcher
     ): RedirectResponse {
         abort_unless((bool) $product->is_active && $product->canOrderAccessory(), 404);
 
         $data = $request->validated();
+
+        if (empty($data['ai_visitor_id'])) {
+            $cookieVisitorId = $request->cookie(ShowroomAssistantController::VISITOR_COOKIE_NAME);
+            if (is_string($cookieVisitorId) && preg_match('/^[A-Za-z0-9._:-]{6,80}$/', trim($cookieVisitorId)) === 1) {
+                $data['ai_visitor_id'] = trim($cookieVisitorId);
+            }
+        }
+
+        if (! empty($data['ai_visitor_id'])) {
+            Context::add('ai_visitor_id', $data['ai_visitor_id']);
+        }
 
         $order = AccessoryOrder::create([
             ...$data,
@@ -42,6 +57,8 @@ class AccessoryOrderController extends Controller
             'email' => $order->customer_email,
             'phone' => $order->customer_phone,
         ]);
+
+        $notificationDispatcher->dispatchNewAccessoryOrder($order);
 
         event(new AccessoryOrderCreated($order));
 

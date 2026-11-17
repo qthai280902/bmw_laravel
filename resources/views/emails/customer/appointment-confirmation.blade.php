@@ -79,6 +79,18 @@
     </table>
 
     <div style="text-align: left;">
+        @if($appointment->product)
+            <div style="background-color: #09090b; border: 1px solid #1C69D4; border-radius: 0px; padding: 16px; margin-bottom: 20px;">
+                <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #70A7FF; margin-bottom: 6px;">
+                    HỒ SƠ KỸ THUẬT ĐÍNH KÈM
+                </div>
+                <div style="font-size: 13px; color: #e4e4e7; line-height: 1.6;">
+                    Tài liệu thông số chi tiết <strong style="color: #ffffff;">BMW-{{ $appointment->product->slug }}-Brochure.html</strong>
+                    ({{ number_format((int) $appointment->product->price, 0, ',', '.') }} VNĐ) đã được đính kèm cùng email này để Quý khách tiện tham khảo.
+                </div>
+            </div>
+        @endif
+
         <a href="{{ route('products.index') }}" style="display: inline-block; background-color: #1C69D4; color: #ffffff; text-decoration: none; padding: 14px 28px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.25em; border-radius: 0px;">
             KHÁM PHÁ CÁC DÒNG XE BMW
         </a>

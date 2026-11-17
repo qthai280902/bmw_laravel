@@ -6,10 +6,12 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
+use App\Models\AiChatSession;
 use App\Models\Appointment;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -29,6 +31,8 @@ class AppointmentTable extends Component
 
     #[Url(as: 'priority', except: '')]
     public string $leadPriority = '';
+
+    public ?int $inspectedAppointmentId = null;
 
     public ?string $flashMessage = null;
 
@@ -81,6 +85,53 @@ class AppointmentTable extends Component
         ]);
 
         $this->flashMessage = "Đã cập nhật trạng thái lịch hẹn #{$appointment->id} thành công.";
+    }
+
+    public function inspectAiConversation(int $appointmentId): void
+    {
+        $this->authorizeAdmin();
+
+        $this->inspectedAppointmentId = $appointmentId;
+    }
+
+    public function closeAiConversationModal(): void
+    {
+        $this->inspectedAppointmentId = null;
+    }
+
+    #[Computed]
+    public function inspectedAppointment(): ?Appointment
+    {
+        if ($this->inspectedAppointmentId === null) {
+            return null;
+        }
+
+        return Appointment::query()
+            ->with(['user', 'product', 'aiChatSession.messages'])
+            ->find($this->inspectedAppointmentId);
+    }
+
+    #[Computed]
+    public function inspectedAiSession(): ?AiChatSession
+    {
+        $appointment = $this->inspectedAppointment;
+        if (! $appointment) {
+            return null;
+        }
+
+        if ($appointment->aiChatSession) {
+            return $appointment->aiChatSession;
+        }
+
+        if (filled($appointment->ai_visitor_id)) {
+            return AiChatSession::query()
+                ->with('messages')
+                ->where('visitor_id', $appointment->ai_visitor_id)
+                ->latest('last_seen_at')
+                ->first();
+        }
+
+        return null;
     }
 
     public function render(): View
