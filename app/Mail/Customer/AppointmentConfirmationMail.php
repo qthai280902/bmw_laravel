@@ -18,17 +18,34 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 {
     use SerializesModels;
 
+    public const MODE_SYSTEM_RECEIVED = 'system_received';
+
+    public const MODE_ADMIN_CONFIRMED = 'admin_confirmed';
+
     public string $queue = 'notifications';
 
-    public function __construct(public Appointment $appointment) {}
+    public function __construct(
+        public Appointment $appointment,
+        public string $mode = self::MODE_SYSTEM_RECEIVED,
+        public ?string $confirmedByName = null,
+        public ?string $confirmedByRole = null,
+    ) {}
+
+    public function isAdminConfirmed(): bool
+    {
+        return $this->mode === self::MODE_ADMIN_CONFIRMED;
+    }
 
     public function envelope(): Envelope
     {
         $this->appointment->loadMissing(['product.category', 'user']);
-        $typeLabel = $this->appointment->type?->label() ?? 'Lịch hẹn';
+
+        $subject = $this->isAdminConfirmed()
+            ? "[BMW Concierge] XÁC NHẬN CHÍNH THỨC lịch hẹn #{$this->appointment->id} — Sẵn sàng đón tiếp Quý khách"
+            : "[BMW Showroom] Đã tiếp nhận yêu cầu đặt lịch #{$this->appointment->id} — Chờ chuyên viên xác nhận";
 
         return new Envelope(
-            subject: "[BMW Showroom] Xác nhận yêu cầu {$typeLabel} — Mã hẹn #{$this->appointment->id}",
+            subject: $subject,
             replyTo: [self::salesReplyToAddress()],
         );
     }
@@ -41,6 +58,10 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
             view: 'emails.customer.appointment-confirmation',
             text: 'emails.customer.appointment-confirmation-text',
             with: [
+                'mode' => $this->mode,
+                'isAdminConfirmed' => $this->isAdminConfirmed(),
+                'confirmedByName' => $this->confirmedByName,
+                'confirmedByRole' => $this->confirmedByRole,
                 'inlineImagePath' => $this->appointment->product?->localImagePath(),
                 'fallbackBadgePng' => self::fallbackBadgePngBytes(),
             ],
@@ -72,6 +93,7 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
         return new Headers(
             text: [
                 'X-BMW-Mail-Kind' => 'appointment_confirmation',
+                'X-BMW-Mail-Mode' => $this->mode,
                 'X-BMW-Appointment-ID' => (string) $this->appointment->id,
             ],
         );

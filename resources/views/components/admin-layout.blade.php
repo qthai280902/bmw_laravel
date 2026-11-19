@@ -198,45 +198,45 @@
             </aside>
 
             <!-- Main Layout Shell -->
-            <div class="lg:pl-72">
-                <header class="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
-                    <div class="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                        <div class="flex min-w-0 items-center gap-4">
-                            <button type="button" class="border border-zinc-800 p-2 text-zinc-400 transition-colors hover:text-white lg:hidden" @click="sidebarOpen = true" aria-label="Mở menu">
+            <div class="flex min-h-screen flex-col lg:pl-72">
+                <header class="sticky top-0 z-30 shrink-0 border-b border-[#1E2533] bg-[#050505]/95 backdrop-blur-md">
+                    <div class="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+                        <div class="flex min-w-0 items-center gap-3.5">
+                            <button type="button" class="rounded-none border border-[#242B38] bg-[#0B0F17] p-2 text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-white lg:hidden cursor-pointer" @click="sidebarOpen = true" aria-label="Mở menu">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
 
                             <div class="min-w-0">
-                                <p class="text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF]">Cổng Quản Trị</p>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-[#70A7FF]">Cổng Quản Trị</p>
                                 <p class="mt-0.5 truncate text-sm font-bold text-zinc-100">
                                     {{ $currentSection ? ($sectionLabels[$currentSection] ?? Str::headline($currentSection)) : 'Tổng quan CRM' }}
                                 </p>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-3">
+                        <div class="flex shrink-0 items-center gap-2.5">
                             @if(Auth::user()?->canAccessCrm())
                                 <livewire:admin.notification-bell />
                             @endif
 
-                            <a href="{{ route('home') }}" class="hidden items-center gap-1.5 border border-zinc-800 bg-[#121215] px-3.5 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white sm:inline-flex">
-                                <svg class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <a href="{{ route('home') }}" class="hidden items-center gap-1.5 rounded-none border border-[#242B38] bg-[#0B0F17] px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-white sm:inline-flex">
+                                <svg class="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                 </svg>
-                                Xem Trang Chủ
+                                Trang Chủ
                             </a>
-                            <div class="flex items-center gap-2 border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5">
+                            <div class="hidden items-center gap-2 rounded-none border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 md:flex">
                                 <span class="h-1.5 w-1.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Hệ Thống Trực Tuyến</span>
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Online</span>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <main class="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
-                    <div class="mx-auto max-w-[1500px]">
+                <main class="relative z-10 flex-1 max-w-full overflow-x-hidden px-4 pt-8 pb-12 sm:px-6 lg:px-8">
+                    <div class="mx-auto max-w-[1440px]">
                         @if (session('success'))
                             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition class="fixed bottom-6 right-6 z-[100] w-[calc(100%-3rem)] max-w-md">
                                 <div class="border border-emerald-500/30 bg-zinc-950 p-4 shadow-2xl">

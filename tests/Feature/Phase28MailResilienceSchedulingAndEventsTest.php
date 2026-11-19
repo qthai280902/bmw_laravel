@@ -15,6 +15,8 @@ use App\Listeners\SyncCatalogEmbeddingListener;
 use App\Livewire\Admin\AppointmentTable;
 use App\Livewire\Admin\NotificationBell;
 use App\Livewire\Admin\ServiceBookingTable;
+use App\Livewire\BookingFormWizard;
+use App\Livewire\CatalogBrowser;
 use App\Mail\Admin\HotLeadAlertMail;
 use App\Mail\Admin\ShowroomDailySummaryMail;
 use App\Mail\AppointmentReminderMail;
@@ -574,5 +576,160 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
             ->assertSee('sales.audit@bmw.com')
             ->assertSee('marketing.audit@bmw.com')
             ->assertSee('whitespace-nowrap', false);
+    }
+
+    public function test_end_to_end_consultation_flow_ai_chat_booking_custom_select_signed_url_crm_and_followup(): void
+    {
+        Mail::fake();
+        Cache::flush();
+
+        $admin = User::factory()->create(['email' => 'director.consult@bmw.com', 'role' => User::ROLE_ADMIN]);
+        $sales = User::factory()->sales()->create(['email' => 'sales.consult@bmw.com']);
+        $marketing = User::factory()->marketing()->create(['email' => 'marketing.consult@bmw.com']);
+
+        $category = Category::factory()->create(['id' => 42, 'name' => 'BMW 3 Series', 'slug' => 'bmw-3-series-e2e']);
+        $car = Product::factory()->for($category)->create([
+            'id' => 77,
+            'name' => 'BMW 330i M Sport',
+            'slug' => 'bmw-330i-m-sport-e2e',
+            'type' => VehicleType::CAR,
+            'price' => 2499000000,
+            'is_active' => true,
+        ]);
+
+        // 1. AI Chat consultation queries (normal + hot buying intent) persist session & return booking suggestion
+        $visitorId = 'visitor-consult-e2e-77';
+        $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Tư vấn cho tôi mẫu BMW 330i và chi phí lăn bánh',
+            'visitor_id' => $visitorId,
+        ])->assertOk()
+            ->assertJsonStructure(['answer', 'suggestions', 'visitor_id']);
+
+        $this->postJson(route('ai.showroom-assistant.ask'), [
+            'message' => 'Tôi muốn mua ngay BMW 330i trong tuần này, đặt lịch tư vấn giúp tôi',
+            'visitor_id' => $visitorId,
+        ])->assertOk()
+            ->assertJsonPath('visitor_id', $visitorId);
+
+        // 2. BookingFormWizard preserves REAL DB product IDs (77, NOT re-indexed 0!) and normalizes consultation alias
+        $this->get(route('appointments.create', ['type' => 'consultation']))
+            ->assertOk()
+            ->assertSee('Tư vấn trực tiếp');
+
+        Livewire::test(BookingFormWizard::class)
+            ->set('type', 'consultation')
+            ->assertSet('type', AppointmentType::Consult->value)
+            ->set('categoryType', 'oto')
+            ->assertSee('&quot;value&quot;:&quot;77&quot;', false)
+            ->assertDontSee('&quot;value&quot;:&quot;0&quot;,&quot;label&quot;:&quot;BMW 330i M Sport&quot;', false);
+
+        // Catalog custom-select options also preserve real DB IDs (42)
+        Livewire::test(CatalogBrowser::class)
+            ->assertSee('&quot;value&quot;:&quot;42&quot;', false);
+
+        // 3. Guest (unauthenticated) submits HOT LEAD consultation booking linked with AI visitor_id
+        $this->post(route('appointments.store'), [
+            'guest_name' => 'Phạm Minh Tư Vấn',
+            'guest_phone' => '0912345678',
+            'guest_email' => 'minh.consult@example.com',
+            'product_id' => $car->id,
+            'type' => 'consultation',
+            'appointment_date' => now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i'),
+            'ai_visitor_id' => $visitorId,
+            'notes' => 'Tôi muốn mua ngay và đặt cọc BMW 330i trong tuần này.',
+        ])->assertRedirect(route('appointments.success'));
+
+        $consultAppointment = Appointment::query()
+            ->where('guest_email', 'minh.consult@example.com')
+            ->firstOrFail();
+
+        $this->assertSame(AppointmentType::Consult, $consultAppointment->type);
+        $this->assertSame(77, (int) $consultAppointment->product_id);
+        $this->assertSame(Appointment::LEAD_PRIORITY_HOT, $consultAppointment->lead_priority);
+        $this->assertNotNull($consultAppointment->ai_conversation_id);
+        $this->assertNotEmpty($consultAppointment->ai_chat_summary);
+
+        Mail::assertQueued(AppointmentConfirmationMail::class);
+        Mail::assertSent(HotLeadAlertMail::class);
+
+        // 4. Guest Signed URL: view -> confirm -> reschedule via new_date & new_time -> cancel on a product-less consultation
+        $this->get($consultAppointment->temporaryManageUrl())
+            ->assertOk()
+            ->assertSee('Phạm Minh Tư Vấn')
+            ->assertSee('id="new_date"', false)
+            ->assertSee('id="new_time"', false);
+
+        $this->post($consultAppointment->temporaryManageUpdateUrl(), [
+            'action' => 'confirm',
+        ])->assertRedirect();
+        $this->assertSame(AppointmentStatus::Confirmed, $consultAppointment->fresh()->status);
+
+        $newDateStr = now()->addDays(5)->format('Y-m-d');
+        $this->post($consultAppointment->temporaryManageUpdateUrl(), [
+            'action' => 'reschedule',
+            'new_date' => $newDateStr,
+            'new_time' => '15:30',
+            'reason' => 'Đổi sang chiều cuối tuần để tiện trao đổi báo giá.',
+        ])->assertRedirect();
+        $this->assertSame($newDateStr.' 15:30', $consultAppointment->fresh()->appointment_date->format('Y-m-d H:i'));
+
+        // Product-less consultation (no product_id) -> confirm cancel & also verify followup renders cleanly without price
+        $this->post(route('appointments.store'), [
+            'guest_name' => 'Nguyễn Tư Vấn Chung',
+            'guest_phone' => '0987654321',
+            'guest_email' => 'general.consult@example.com',
+            'type' => 'consult',
+            'appointment_date' => now()->addDays(3)->setTime(14, 0)->format('Y-m-d H:i'),
+            'notes' => 'Cần tư vấn tổng quan các dòng BMW đang có ưu đãi.',
+        ])->assertRedirect(route('appointments.success'));
+
+        $generalConsult = Appointment::query()
+            ->where('guest_email', 'general.consult@example.com')
+            ->firstOrFail();
+
+        $this->assertNull($generalConsult->product_id);
+
+        // 5. CRM orchestration: Admin/Sales verify customers product_id filter preserves real ID (77), complete consultations & check Mail preview
+        $this->actingAs($admin)
+            ->get(route('admin.customers.index'))
+            ->assertOk()
+            ->assertSee('&quot;value&quot;:&quot;77&quot;', false);
+
+        $this->actingAs($sales)->get(route('admin.ai-conversations.index'))->assertOk();
+        $this->actingAs($marketing)->get(route('admin.ai-conversations.index'))->assertForbidden();
+        $this->actingAs($sales)
+            ->get(route('admin.mail-preview.appointment', $consultAppointment))
+            ->assertOk()
+            ->assertSee('BMW 330i M Sport');
+
+        Livewire::actingAs($sales)
+            ->test(AppointmentTable::class)
+            ->call('updateStatus', $consultAppointment->id, AppointmentStatus::Completed->value)
+            ->call('updateStatus', $generalConsult->id, AppointmentStatus::Completed->value)
+            ->assertHasNoErrors();
+
+        Mail::assertQueued(PostTestDriveFollowupMail::class, 2);
+        Mail::assertQueued(PostTestDriveFollowupMail::class, function (PostTestDriveFollowupMail $mail): bool {
+            if (! $mail->hasTo('general.consult@example.com')) {
+                return false;
+            }
+
+            // Product-less consultation renders HTML & plain-text safely without installment table
+            $html = $mail->render();
+            $this->assertStringContainsString('Nguyễn Tư Vấn Chung', $html);
+            $this->assertStringNotContainsString('BẢNG ƯỚC TÍNH TÀI CHÍNH', $html);
+            $mail->assertSeeInText('Nguyễn Tư Vấn Chung');
+
+            return true;
+        });
+
+        // System/null actor status transition still logs safely to admin_activity_logs
+        $consultAppointment->transitionStatusWithAutomation(AppointmentStatus::Cancelled, null);
+        $this->assertTrue(
+            AdminActivityLog::query()
+                ->where('action', 'appointment.status_changed')
+                ->where('user_email', 'sales.consult@bmw.com')
+                ->exists()
+        );
     }
 }

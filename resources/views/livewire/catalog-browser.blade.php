@@ -113,7 +113,7 @@
                                 <x-ui.custom-select
                                     name="category_id"
                                     :value="$categoryId"
-                                    :options="array_merge(['' => 'Tất cả'], $categories->pluck('name', 'id')->all())"
+                                    :options="['' => 'Tất cả'] + $categories->pluck('name', 'id')->all()"
                                     wire-model="categoryId"
                                 />
                             </div>

@@ -49,7 +49,7 @@
                     id="category_id"
                     name="category_id"
                     :value="(string) request('category_id', '')"
-                    :options="array_merge(['' => 'Tất cả'], $categories->pluck('name', 'id')->all())"
+                    :options="['' => 'Tất cả'] + $categories->pluck('name', 'id')->all()"
                 />
             </x-admin.form-field>
 

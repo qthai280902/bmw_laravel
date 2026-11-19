@@ -117,18 +117,54 @@
             </footer>
         </div>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initialize Flatpickr
-                flatpickr(".flatpickr-input", {
-                    enableTime: true,
-                    dateFormat: "Y-m-d H:i",
-                    altInput: true,
-                    altFormat: "d/m/Y H:i",
-                    allowInput: true,
-                    minDate: "today",
-                    time_24hr: true
+            window.initBmwFlatpickr = function () {
+                if (typeof window.flatpickr !== 'function') {
+                    return;
+                }
+
+                document.querySelectorAll('.flatpickr-input').forEach(function (el) {
+                    if (el._flatpickr || el.classList.contains('flatpickr-alt-input')) {
+                        return;
+                    }
+
+                    const wasRequired = el.hasAttribute('required');
+                    el.removeAttribute('required');
+                    el.setAttribute('autocomplete', 'off');
+                    el.setAttribute('data-lpignore', 'true');
+
+                    if (el.value && !/^\d{4}-\d{2}-\d{2}/.test(el.value.trim())) {
+                        el.value = '';
+                    }
+
+                    const fp = window.flatpickr(el, {
+                        enableTime: true,
+                        dateFormat: 'Y-m-d H:i',
+                        altInput: true,
+                        altInputClass: el.className + ' flatpickr-alt-input',
+                        altFormat: 'd/m/Y H:i',
+                        allowInput: false,
+                        minDate: 'today',
+                        time_24hr: true,
+                        onChange: function (_selectedDates, dateStr, instance) {
+                            instance.input.value = dateStr;
+                            instance.input.dispatchEvent(new Event('change', { bubbles: true }));
+                        },
+                    });
+
+                    if (fp && fp.altInput) {
+                        fp.altInput.setAttribute('autocomplete', 'off');
+                        fp.altInput.setAttribute('data-lpignore', 'true');
+                        fp.altInput.setAttribute('data-form-type', 'other');
+                        fp.altInput.setAttribute('name', 'bmw_date_display_' + Math.random().toString(36).slice(2));
+                        if (wasRequired) {
+                            fp.altInput.setAttribute('required', 'required');
+                        }
+                    }
                 });
-            });
+            };
+
+            document.addEventListener('DOMContentLoaded', window.initBmwFlatpickr);
+            document.addEventListener('livewire:navigated', window.initBmwFlatpickr);
         </script>
 
         <x-public.ai-assistant-widget />

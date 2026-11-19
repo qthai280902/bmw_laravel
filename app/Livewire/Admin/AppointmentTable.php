@@ -6,18 +6,14 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
-use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Models\AiChatSession;
 use App\Models\Appointment;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use Throwable;
 
 class AppointmentTable extends Component
 {
@@ -35,6 +31,9 @@ class AppointmentTable extends Component
 
     #[Url(as: 'priority', except: '')]
     public string $leadPriority = '';
+
+    #[Url(as: 'today', except: false)]
+    public bool $onlyToday = false;
 
     public ?int $inspectedAppointmentId = null;
 
@@ -65,12 +64,60 @@ class AppointmentTable extends Component
         $this->resetPage();
     }
 
+    public function applyQuickFilter(string $preset): void
+    {
+        $this->authorizeCrm();
+
+        if ($preset === 'pending') {
+            $isActive = $this->status === AppointmentStatus::Pending->value && $this->leadPriority === '' && ! $this->onlyToday;
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->status = AppointmentStatus::Pending->value;
+            }
+
+            return;
+        }
+
+        if ($preset === 'hot') {
+            $isActive = $this->leadPriority === Appointment::LEAD_PRIORITY_HOT && $this->status === '' && ! $this->onlyToday;
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->leadPriority = Appointment::LEAD_PRIORITY_HOT;
+            }
+
+            return;
+        }
+
+        if ($preset === 'today') {
+            $isActive = $this->onlyToday && $this->status === '' && $this->leadPriority === '';
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->onlyToday = true;
+            }
+
+            return;
+        }
+
+        if ($preset === 'completed') {
+            $isActive = $this->status === AppointmentStatus::Completed->value && $this->leadPriority === '' && ! $this->onlyToday;
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->status = AppointmentStatus::Completed->value;
+            }
+
+            return;
+        }
+
+        $this->resetFilters();
+    }
+
     public function resetFilters(): void
     {
         $this->search = '';
         $this->status = '';
         $this->type = '';
         $this->leadPriority = '';
+        $this->onlyToday = false;
         $this->resetPage();
     }
 
@@ -103,34 +150,38 @@ class AppointmentTable extends Component
         $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
         if ($recipientEmail === '') {
-            $this->flashMessage = "Lịch hẹn #{$appointment->id} chưa có địa chỉ email để gửi lại.";
+            $this->flashMessage = "Lịch hẹn #{$appointment->id} chưa có địa chỉ email để gửi thư xác nhận.";
 
             return;
         }
 
-        try {
-            Mail::to($recipientEmail)->send(new AppointmentConfirmationMail($appointment));
-            $this->flashMessage = "Đã gửi lại email xác nhận tới {$recipientEmail} cho lịch hẹn #{$appointment->id}.";
-        } catch (Throwable $exception) {
-            Log::warning('Failed resending appointment confirmation email from CRM.', [
-                'appointment_id' => $appointment->id,
-                'exception' => $exception::class,
-            ]);
-
-            $this->flashMessage = "Không thể gửi lại email xác nhận cho lịch hẹn #{$appointment->id}.";
+        if ($appointment->sendOfficialConfirmationEmail(auth()->user())) {
+            $this->flashMessage = "Đã gửi thư Xác nhận chính thức từ Showroom tới {$recipientEmail} cho lịch hẹn #{$appointment->id}.";
+        } else {
+            $this->flashMessage = "Không thể gửi thư xác nhận chính thức cho lịch hẹn #{$appointment->id}.";
         }
     }
 
-    public function inspectAiConversation(int $appointmentId): void
+    public function inspectAppointment(int $appointmentId): void
     {
         $this->authorizeCrm();
 
         $this->inspectedAppointmentId = $appointmentId;
     }
 
+    public function inspectAiConversation(int $appointmentId): void
+    {
+        $this->inspectAppointment($appointmentId);
+    }
+
     public function closeAiConversationModal(): void
     {
         $this->inspectedAppointmentId = null;
+    }
+
+    public function closeInspector(): void
+    {
+        $this->closeAiConversationModal();
     }
 
     #[Computed]
@@ -171,6 +222,26 @@ class AppointmentTable extends Component
     public function render(): View
     {
         $keyword = trim($this->search);
+        $todayStart = now()->startOfDay()->toDateTimeString();
+        $todayEnd = now()->endOfDay()->toDateTimeString();
+
+        // Single aggregate SQL query for contextual quick-filter strip (keeps <= 8 total queries)
+        $statsRow = Appointment::query()
+            ->toBase()
+            ->selectRaw(
+                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count,
+                 SUM(CASE WHEN lead_priority = ? THEN 1 ELSE 0 END) as hot_count,
+                 SUM(CASE WHEN appointment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
+                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed_count',
+                [
+                    AppointmentStatus::Pending->value,
+                    Appointment::LEAD_PRIORITY_HOT,
+                    $todayStart,
+                    $todayEnd,
+                    AppointmentStatus::Completed->value,
+                ]
+            )
+            ->first();
 
         $appointments = Appointment::query()
             ->with(['user', 'product'])
@@ -185,6 +256,10 @@ class AppointmentTable extends Component
             ->when(
                 in_array($this->leadPriority, [Appointment::LEAD_PRIORITY_HOT, Appointment::LEAD_PRIORITY_WARM, Appointment::LEAD_PRIORITY_NORMAL], true),
                 fn ($query) => $query->where('lead_priority', $this->leadPriority),
+            )
+            ->when(
+                $this->onlyToday,
+                fn ($query) => $query->whereBetween('appointment_date', [$todayStart, $todayEnd]),
             )
             ->when(
                 $keyword !== '',
@@ -205,6 +280,12 @@ class AppointmentTable extends Component
             'appointments' => $appointments,
             'statuses' => AppointmentStatus::cases(),
             'types' => AppointmentType::cases(),
+            'quickStats' => [
+                'pending' => (int) ($statsRow->pending_count ?? 0),
+                'hot' => (int) ($statsRow->hot_count ?? 0),
+                'today' => (int) ($statsRow->today_count ?? 0),
+                'completed' => (int) ($statsRow->completed_count ?? 0),
+            ],
         ]);
     }
 }

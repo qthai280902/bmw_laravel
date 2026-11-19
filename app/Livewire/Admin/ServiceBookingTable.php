@@ -6,17 +6,14 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
-use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Models\Appointment;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use Throwable;
 
 class ServiceBookingTable extends Component
 {
@@ -31,6 +28,11 @@ class ServiceBookingTable extends Component
 
     #[Url(as: 'service_type', except: '')]
     public string $serviceType = '';
+
+    #[Url(as: 'today', except: false)]
+    public bool $onlyToday = false;
+
+    public ?int $inspectedBookingId = null;
 
     public ?string $flashMessage = null;
 
@@ -54,11 +56,59 @@ class ServiceBookingTable extends Component
         $this->resetPage();
     }
 
+    public function applyQuickFilter(string $preset): void
+    {
+        $this->authorizeCrm();
+
+        if ($preset === 'pending') {
+            $isActive = $this->status === AppointmentStatus::Pending->value && ! $this->onlyToday;
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->status = AppointmentStatus::Pending->value;
+            }
+
+            return;
+        }
+
+        if ($preset === 'confirmed') {
+            $isActive = $this->status === AppointmentStatus::Confirmed->value && ! $this->onlyToday;
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->status = AppointmentStatus::Confirmed->value;
+            }
+
+            return;
+        }
+
+        if ($preset === 'today') {
+            $isActive = $this->onlyToday && $this->status === '';
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->onlyToday = true;
+            }
+
+            return;
+        }
+
+        if ($preset === 'completed') {
+            $isActive = $this->status === AppointmentStatus::Completed->value && ! $this->onlyToday;
+            $this->resetFilters();
+            if (! $isActive) {
+                $this->status = AppointmentStatus::Completed->value;
+            }
+
+            return;
+        }
+
+        $this->resetFilters();
+    }
+
     public function resetFilters(): void
     {
         $this->search = '';
         $this->status = '';
         $this->serviceType = '';
+        $this->onlyToday = false;
         $this->resetPage();
     }
 
@@ -95,22 +145,41 @@ class ServiceBookingTable extends Component
         $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
         if ($recipientEmail === '') {
-            $this->flashMessage = "Lịch chăm sóc xe #{$appointment->id} chưa có địa chỉ email để gửi lại.";
+            $this->flashMessage = "Lịch chăm sóc xe #{$appointment->id} chưa có địa chỉ email để gửi thư xác nhận.";
 
             return;
         }
 
-        try {
-            Mail::to($recipientEmail)->send(new AppointmentConfirmationMail($appointment));
-            $this->flashMessage = "Đã gửi lại email xác nhận tới {$recipientEmail} cho lịch chăm sóc xe #{$appointment->id}.";
-        } catch (Throwable $exception) {
-            Log::warning('Failed resending service booking confirmation email from CRM.', [
-                'appointment_id' => $appointment->id,
-                'exception' => $exception::class,
-            ]);
-
-            $this->flashMessage = "Không thể gửi lại email xác nhận cho lịch chăm sóc xe #{$appointment->id}.";
+        if ($appointment->sendOfficialConfirmationEmail(auth()->user())) {
+            $this->flashMessage = "Đã gửi thư Xác nhận chính thức tới {$recipientEmail} cho lịch chăm sóc xe #{$appointment->id}.";
+        } else {
+            $this->flashMessage = "Không thể gửi thư xác nhận chính thức cho lịch chăm sóc xe #{$appointment->id}.";
         }
+    }
+
+    public function inspectBooking(int $bookingId): void
+    {
+        $this->authorizeCrm();
+
+        $this->inspectedBookingId = $bookingId;
+    }
+
+    public function closeInspector(): void
+    {
+        $this->inspectedBookingId = null;
+    }
+
+    #[Computed]
+    public function inspectedBooking(): ?Appointment
+    {
+        if ($this->inspectedBookingId === null) {
+            return null;
+        }
+
+        return Appointment::query()
+            ->with(['product', 'user'])
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->find($this->inspectedBookingId);
     }
 
     public function render(): View
@@ -118,6 +187,27 @@ class ServiceBookingTable extends Component
         $this->authorizeCrm();
 
         $serviceTypeValues = $this->allowedServiceTypeValues();
+        $todayStart = now()->startOfDay()->toDateTimeString();
+        $todayEnd = now()->endOfDay()->toDateTimeString();
+
+        $statsRow = Appointment::query()
+            ->toBase()
+            ->whereIn('type', $serviceTypeValues)
+            ->selectRaw(
+                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count,
+                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as confirmed_count,
+                 SUM(CASE WHEN appointment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
+                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed_count',
+                [
+                    AppointmentStatus::Pending->value,
+                    AppointmentStatus::Confirmed->value,
+                    $todayStart,
+                    $todayEnd,
+                    AppointmentStatus::Completed->value,
+                ]
+            )
+            ->first();
+
         $query = Appointment::query()
             ->with(['product', 'user'])
             ->whereIn('type', $serviceTypeValues);
@@ -128,6 +218,10 @@ class ServiceBookingTable extends Component
 
         if (in_array($this->serviceType, $serviceTypeValues, true)) {
             $query->where('type', $this->serviceType);
+        }
+
+        if ($this->onlyToday) {
+            $query->whereBetween('appointment_date', [$todayStart, $todayEnd]);
         }
 
         $search = trim($this->search);
@@ -156,6 +250,12 @@ class ServiceBookingTable extends Component
                 AppointmentType::Maintenance,
                 AppointmentType::Detailing,
                 AppointmentType::CarWash,
+            ],
+            'quickStats' => [
+                'pending' => (int) ($statsRow->pending_count ?? 0),
+                'confirmed' => (int) ($statsRow->confirmed_count ?? 0),
+                'today' => (int) ($statsRow->today_count ?? 0),
+                'completed' => (int) ($statsRow->completed_count ?? 0),
             ],
         ]);
     }

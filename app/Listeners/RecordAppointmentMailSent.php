@@ -32,9 +32,24 @@ class RecordAppointmentMailSent
 
         $headers = $originalMessage->getHeaders();
         $mailKind = $headers->get('X-BMW-Mail-Kind')?->getBodyAsString();
+        $mailMode = $headers->get('X-BMW-Mail-Mode')?->getBodyAsString();
         $appointmentId = (int) ($headers->get('X-BMW-Appointment-ID')?->getBodyAsString() ?? 0);
 
         if ($mailKind !== 'appointment_confirmation' || $appointmentId <= 0) {
+            return;
+        }
+
+        if ($mailMode === 'admin_confirmed') {
+            $appointment = Appointment::query()->find($appointmentId);
+            if ($appointment) {
+                $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+                $meta['official_confirmation_sent_at'] = now()->toIso8601String();
+                $appointment->forceFill([
+                    'confirmation_email_sent_at' => $appointment->confirmation_email_sent_at ?? now(),
+                    'meta_data' => $meta,
+                ])->saveQuietly();
+            }
+
             return;
         }
 

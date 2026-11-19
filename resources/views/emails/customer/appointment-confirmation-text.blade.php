@@ -1,12 +1,27 @@
 @php
     $car = $car ?? $appointment->product;
+    $officialMode = (bool) ($isAdminConfirmed ?? (($mode ?? 'system_received') === 'admin_confirmed'));
+    $advisorName = filled($confirmedByName ?? null) ? trim((string) $confirmedByName) : 'Đội ngũ Chuyên viên BMW Concierge';
+    $advisorRole = filled($confirmedByRole ?? null) ? trim((string) $confirmedByRole) : 'BMW Showroom Vietnam';
 @endphp
-BMW SHOWROOM VIETNAM — CONCIERGE & CLIENT RELATIONS
-===================================================
+@if($officialMode)
+BMW CONCIERGE — XÁC NHẬN CHÍNH THỨC LỊCH HẸN (VIP CONCIERGE PASS)
+=================================================================
 
 Kính chào Quý khách {{ $appointment->customer_name }},
 
-BMW Showroom Vietnam trân trọng xác nhận đã tiếp nhận yêu cầu đặt lịch {{ $appointment->typeLabel() }} của Quý khách.
+Lịch hẹn của Quý khách đã được Chuyên viên BMW xác nhận chính thức.
+- Chuyên viên phụ trách: {{ $advisorName }} ({{ $advisorRole }})
+- Hotline đón tiếp trực tiếp: 1900 123 456
+- Chuẩn bị đón tiếp tại Showroom: Khu vực đỗ xe VIP, xe mẫu và kỹ thuật viên đã được giữ suất đúng khung giờ hẹn của Quý khách.
+@else
+BMW SHOWROOM VIETNAM — ĐÃ TIẾP NHẬN YÊU CẦU ĐẶT LỊCH (CHỜ XÁC NHẬN)
+===================================================================
+
+Kính chào Quý khách {{ $appointment->customer_name }},
+
+Yêu cầu của Quý khách đã được Hệ thống ghi nhận. Chuyên viên tư vấn BMW đang kiểm tra khung giờ trống và sẽ gửi thư xác nhận chính thức kèm liên hệ trong thời gian sớm nhất.
+@endif
 
 THÔNG TIN LỊCH HẸN
 - Mã lịch hẹn: #BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
@@ -24,7 +39,6 @@ THÔNG TIN LỊCH HẸN
 - Địa điểm đón tiếp: BMW Showroom Flagship — 123 Nguyễn Văn Linh, Quận 7, TP.HCM
 
 QUẢN LÝ LỊCH HẸN TRỰC TUYẾN (SIGNED URL)
-Xác nhận tham dự, dời lịch hoặc hủy lịch hẹn tại liên kết sau:
 {{ $appointment->temporaryManageUrl() }}
 
 @if($car)
@@ -33,7 +47,7 @@ Hồ sơ kỹ thuật BMW-{{ $car->slug }}-Brochure.html và tệp lịch hẹn 
 Tệp lịch hẹn (.ics) đã được đính kèm trong email này để Quý khách thêm nhanh vào Lịch cá nhân.
 @endif
 
-Để trao đổi trực tiếp với Chuyên viên Tư vấn, Quý khách có thể bấm Trả lời (Reply) trực tiếp email này hoặc gọi Hotline Concierge: 1900 123 456.
+Quý khách có thể bấm Trả lời (Reply) trực tiếp email này hoặc gọi Hotline Concierge: 1900 123 456.
 
 Trân trọng,
 BMW Showroom Vietnam

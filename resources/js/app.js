@@ -1513,6 +1513,8 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
 window.bmwCustomSelect = (initialConfig = null) => ({
     open: false,
     selected: initialConfig?.initial !== undefined && initialConfig?.initial !== null ? String(initialConfig.initial) : '',
+    optionsList: [],
+    disabledState: false,
     wireModel: initialConfig?.wireModel || null,
     wireLive: initialConfig?.wireLive !== false,
     wireAction: initialConfig?.wireAction || null,
@@ -1520,6 +1522,7 @@ window.bmwCustomSelect = (initialConfig = null) => ({
     autoSubmit: Boolean(initialConfig?.autoSubmit),
     placeholder: initialConfig?.placeholder || 'Chọn một mục...',
     panelStyle: 'top: 0px; left: 0px; width: 220px;',
+    _observer: null,
 
     init() {
         if (!initialConfig && this.$root?.dataset?.config) {
@@ -1539,6 +1542,27 @@ window.bmwCustomSelect = (initialConfig = null) => ({
             }
         }
 
+        this.syncFromDataset();
+
+        if (typeof MutationObserver !== 'undefined' && this.$root) {
+            this._observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    if (mutation.attributeName === 'data-options' || mutation.attributeName === 'data-disabled') {
+                        this.syncFromDataset();
+                    } else if (mutation.attributeName === 'data-value' && !this.wireModel) {
+                        const nextVal = this.$root?.dataset?.value;
+                        if (nextVal !== undefined && String(nextVal) !== String(this.selected)) {
+                            this.selected = String(nextVal);
+                        }
+                    }
+                }
+            });
+            this._observer.observe(this.$root, {
+                attributes: true,
+                attributeFilter: ['data-options', 'data-disabled', 'data-value'],
+            });
+        }
+
         if (this.wireModel && this.$wire) {
             const currentWireVal = this.$wire.get(this.wireModel);
             if (currentWireVal !== undefined && currentWireVal !== null) {
@@ -1555,25 +1579,36 @@ window.bmwCustomSelect = (initialConfig = null) => ({
 
     destroy() {
         this.open = false;
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
     },
 
-    get groups() {
+    syncFromDataset() {
+        this.disabledState = this.$root?.dataset?.disabled === 'true';
+
         const raw = this.$root?.dataset?.options;
         if (!raw) {
-            return [];
+            this.optionsList = [];
+            return;
         }
 
         try {
             const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : [];
+            this.optionsList = Array.isArray(parsed) ? parsed : [];
         } catch {
-            return [];
+            this.optionsList = [];
         }
+    },
+
+    get groups() {
+        return this.optionsList;
     },
 
     get flatOptions() {
         const list = [];
-        for (const item of this.groups) {
+        for (const item of this.optionsList) {
             if (item && item.type === 'group' && Array.isArray(item.options)) {
                 for (const sub of item.options) {
                     list.push({
@@ -1603,10 +1638,12 @@ window.bmwCustomSelect = (initialConfig = null) => ({
     },
 
     isDisabled() {
-        return this.$root?.dataset?.disabled === 'true';
+        return this.disabledState;
     },
 
     toggle() {
+        this.syncFromDataset();
+
         if (this.isDisabled()) {
             return;
         }

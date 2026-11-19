@@ -106,6 +106,7 @@
     x-modelable="selected"
     data-config="{{ $initConfigJson }}"
     data-options="{{ $optionsJson }}"
+    data-value="{{ $initialValue }}"
     data-disabled="{{ $disabled ? 'true' : 'false' }}"
     @keydown.escape.window="close()"
     @scroll.window="if (open) updatePosition()"
@@ -130,6 +131,7 @@
         aria-haspopup="listbox"
         :aria-expanded="open ? 'true' : 'false'"
         @if($disabled) disabled @endif
+        :disabled="disabledState"
         @click="toggle()"
         class="flex w-full items-center justify-between gap-2.5 rounded-none border border-[#242B38] bg-[#0B0F17] text-left text-zinc-100 transition-colors hover:border-[#1C69D4] focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {{ $triggerSizeClasses }}"
         :class="open ? 'border-[#1C69D4] ring-1 ring-[#1C69D4]' : ''"

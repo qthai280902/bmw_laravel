@@ -158,6 +158,8 @@
                                         x-ref="dateInput"
                                         type="date"
                                         name="new_date"
+                                        autocomplete="off"
+                                        data-lpignore="true"
                                         x-model="newDate"
                                         value="{{ $initialDate }}"
                                         min="{{ now()->format('Y-m-d') }}"

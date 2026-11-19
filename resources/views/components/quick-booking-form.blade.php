@@ -87,18 +87,18 @@
 
                     {{-- Chọn sản phẩm --}}
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Sản phẩm quan tâm *</label>
+                        <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Sản phẩm quan tâm</label>
                         <x-ui.custom-select
                             name="product_id"
                             value=""
-                            :options="array_merge(['' => '-- Chọn sản phẩm --'], $bookableProducts->pluck('name', 'id')->all())"
+                            :options="['' => '-- Chọn sản phẩm --'] + $bookableProducts->pluck('name', 'id')->all()"
                         />
                     </div>
 
                     {{-- Ngày hẹn --}}
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Ngày hẹn *</label>
-                        <input type="text" name="appointment_date" required
+                        <input type="text" name="appointment_date" autocomplete="off" data-lpignore="true" required
                             class="flatpickr-input w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                             placeholder="Chọn ngày và giờ">
                     </div>

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Events\AppointmentStatusChanged;
+use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -306,6 +307,44 @@ class Appointment extends Model implements Attachable
         }
     }
 
+    public function sendOfficialConfirmationEmail(?User $actor = null): bool
+    {
+        $this->loadMissing(['product.category', 'user']);
+
+        $recipientEmail = trim((string) ($this->user?->email ?? $this->guest_email ?? ''));
+
+        if ($recipientEmail === '' || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        try {
+            Mail::to($recipientEmail)->send(new AppointmentConfirmationMail(
+                appointment: $this,
+                mode: AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED,
+                confirmedByName: $actor?->name,
+                confirmedByRole: $actor?->roleLabel(),
+            ));
+
+            $meta = is_array($this->meta_data) ? $this->meta_data : [];
+            $meta['official_confirmation_sent_at'] = now()->toIso8601String();
+            if ($actor) {
+                $meta['confirmed_by_name'] = $actor->name;
+            }
+            $this->forceFill([
+                'meta_data' => $meta,
+            ])->saveQuietly();
+
+            return true;
+        } catch (Throwable $exception) {
+            Log::warning('Failed sending official admin confirmation email.', [
+                'appointment_id' => $this->id,
+                'exception' => $exception::class,
+            ]);
+
+            return false;
+        }
+    }
+
     public function transitionStatusWithAutomation(AppointmentStatus $newStatus, ?User $actor = null): void
     {
         $oldStatus = $this->status instanceof AppointmentStatus
@@ -323,6 +362,10 @@ class Appointment extends Model implements Attachable
                 newStatus: $newStatus->value,
                 actor: $actor,
             ));
+        }
+
+        if ($newStatus === AppointmentStatus::Confirmed && $oldStatus !== AppointmentStatus::Confirmed->value && $actor !== null) {
+            $this->sendOfficialConfirmationEmail($actor);
         }
 
         if ($newStatus === AppointmentStatus::Completed) {

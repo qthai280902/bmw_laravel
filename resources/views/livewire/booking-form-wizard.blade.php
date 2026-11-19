@@ -56,10 +56,7 @@
 
             $productSelectOptions = $categoryType === ''
                 ? ['' => '-- Vui lòng chọn danh mục trước --']
-                : array_merge(
-                    ['' => '-- Chọn sản phẩm --'],
-                    $this->availableProducts->pluck('name', 'id')->all()
-                );
+                : ['' => '-- Chọn sản phẩm --'] + $this->availableProducts->pluck('name', 'id')->all();
         @endphp
 
         <section class="space-y-5">
@@ -243,6 +240,8 @@
                     type="text"
                     name="appointment_date"
                     value="{{ $appointmentDate }}"
+                    autocomplete="off"
+                    data-lpignore="true"
                     x-on:change="$wire.set('appointmentDate', $event.target.value)"
                     required
                     class="flatpickr-input w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"

@@ -37,12 +37,22 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Xem trước mẫu email xác nhận lịch hẹn trực tiếp trên trình duyệt cho Admin.
+     * Xem trước mẫu email tiếp nhận / xác nhận chính thức trực tiếp trên trình duyệt cho Admin.
      */
-    public function previewMail(Appointment $appointment): AppointmentConfirmationMail
+    public function previewMail(Request $request, Appointment $appointment): AppointmentConfirmationMail
     {
         $appointment->loadMissing(['product.category', 'user']);
 
-        return new AppointmentConfirmationMail($appointment);
+        $requestedMode = trim((string) $request->query('mode', AppointmentConfirmationMail::MODE_SYSTEM_RECEIVED));
+        $mode = $requestedMode === AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED
+            ? AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED
+            : AppointmentConfirmationMail::MODE_SYSTEM_RECEIVED;
+
+        return new AppointmentConfirmationMail(
+            appointment: $appointment,
+            mode: $mode,
+            confirmedByName: $request->user()?->name,
+            confirmedByRole: $request->user()?->roleLabel(),
+        );
     }
 }

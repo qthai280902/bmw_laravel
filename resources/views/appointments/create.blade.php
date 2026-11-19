@@ -1,9 +1,11 @@
 <x-app-layout>
     @php
         $rawType = old('type', request('type'));
-        $currentTypeStr = $rawType === 'service'
-            ? \App\Enums\AppointmentType::Maintenance->value
-            : $rawType;
+        $currentTypeStr = match ($rawType) {
+            'service' => \App\Enums\AppointmentType::Maintenance->value,
+            'consultation' => \App\Enums\AppointmentType::Consult->value,
+            default => $rawType,
+        };
         $requestedType = \App\Enums\AppointmentType::tryFrom((string) $currentTypeStr);
         $isService = in_array($currentTypeStr, [
             \App\Enums\AppointmentType::Maintenance->value,

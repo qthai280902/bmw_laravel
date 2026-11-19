@@ -60,9 +60,11 @@ class BookingFormWizard extends Component
     public function mount(): void
     {
         $rawType = old('type', request('type', $this->type));
-        $normalizedType = $rawType === 'service'
-            ? AppointmentType::Maintenance->value
-            : (string) $rawType;
+        $normalizedType = match ($rawType) {
+            'service' => AppointmentType::Maintenance->value,
+            'consultation' => AppointmentType::Consult->value,
+            default => (string) $rawType,
+        };
 
         if (AppointmentType::tryFrom($normalizedType) !== null) {
             $this->type = $normalizedType;
@@ -102,6 +104,8 @@ class BookingFormWizard extends Component
     {
         if ($value === 'service') {
             $this->type = AppointmentType::Maintenance->value;
+        } elseif ($value === 'consultation') {
+            $this->type = AppointmentType::Consult->value;
         }
 
         $this->resetValidation(['productId', 'customerCarModel']);
@@ -125,6 +129,8 @@ class BookingFormWizard extends Component
         $validator = Validator::make(
             [$field => $this->formData()[$field] ?? null],
             [$field => $rules[$field]],
+            StoreAppointmentRequest::sharedMessages(),
+            StoreAppointmentRequest::sharedAttributes(),
         );
 
         if ($validator->fails()) {

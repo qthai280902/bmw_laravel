@@ -8,10 +8,15 @@
     <title>@yield('title', 'BMW Showroom Vietnam — Concierge & Client Relations')</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0B0E14; color: #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    @php
+        $accentColor = trim($__env->yieldContent('accent_color', '#1C69D4'));
+        $headerSubtitle = trim($__env->yieldContent('header_subtitle', 'CONCIERGE & CLIENT RELATIONS'));
+        $headerSubtitleColor = trim($__env->yieldContent('header_subtitle_color', '#60A5FA'));
+    @endphp
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0B0E14; padding: 36px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         <tr>
             <td align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #121620; border: 1px solid #222938; border-top: 3px solid #1C69D4; border-radius: 0px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #121620; border: 1px solid #222938; border-top: 4px solid {{ $accentColor }}; border-radius: 0px;">
                     {{-- Header --}}
                     <tr>
                         <td style="padding: 24px 32px; background-color: #0E121B; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
@@ -21,7 +26,7 @@
                                         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                                             <tr>
                                                 <td valign="middle" style="padding-right: 14px;">
-                                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="38" height="38" style="width: 38px; height: 38px; border: 2px solid #1C69D4; background-color: #0B0E14;">
+                                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="38" height="38" style="width: 38px; height: 38px; border: 2px solid {{ $accentColor }}; background-color: #0B0E14;">
                                                         <tr>
                                                             <td align="center" valign="middle" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #F8FAFC;">
                                                                 BMW
@@ -33,8 +38,8 @@
                                                     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2.5px; color: #F8FAFC; text-transform: uppercase;">
                                                         BMW SHOWROOM VIETNAM
                                                     </div>
-                                                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-top: 3px;">
-                                                        CONCIERGE &amp; CLIENT RELATIONS
+                                                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2px; color: {{ $headerSubtitleColor }}; text-transform: uppercase; margin-top: 3px;">
+                                                        {{ $headerSubtitle }}
                                                     </div>
                                                 </td>
                                             </tr>

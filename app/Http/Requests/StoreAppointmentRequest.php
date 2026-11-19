@@ -56,6 +56,67 @@ class StoreAppointmentRequest extends FormRequest
         ];
     }
 
+    /**
+     * Vietnamese human-friendly field labels for validation messages.
+     *
+     * @return array<string, string>
+     */
+    public static function sharedAttributes(): array
+    {
+        return [
+            'guest_name' => 'họ và tên',
+            'customer_name' => 'họ và tên',
+            'guest_phone' => 'số điện thoại',
+            'customer_phone' => 'số điện thoại',
+            'guest_email' => 'email',
+            'customer_email' => 'email',
+            'product_id' => 'mẫu xe quan tâm',
+            'type' => 'loại yêu cầu',
+            'appointment_date' => 'ngày và giờ dự kiến',
+            'notes' => 'ghi chú thêm',
+            'showroom' => 'chi nhánh showroom',
+            'customer_car_model' => 'dòng xe hiện tại',
+            'customer_car_condition' => 'biển số / tình trạng xe',
+            'service_package' => 'gói dịch vụ chăm sóc xe',
+        ];
+    }
+
+    /**
+     * Natural Vietnamese validation messages for booking forms.
+     *
+     * @return array<string, string>
+     */
+    public static function sharedMessages(): array
+    {
+        return [
+            'appointment_date.required' => 'Vui lòng chọn ngày và giờ dự kiến.',
+            'appointment_date.date' => 'Ngày và giờ dự kiến chưa đúng định dạng hợp lệ.',
+            'appointment_date.after' => 'Ngày và giờ dự kiến phải sau thời điểm hiện tại.',
+            'guest_name.required' => 'Vui lòng nhập họ và tên của Quý khách.',
+            'guest_phone.required' => 'Vui lòng nhập số điện thoại liên hệ.',
+            'guest_phone.regex' => 'Số điện thoại liên hệ chưa đúng định dạng hợp lệ.',
+            'guest_email.email' => 'Địa chỉ email chưa đúng định dạng hợp lệ.',
+            'product_id.required' => 'Vui lòng chọn mẫu xe quan tâm.',
+            'customer_car_model.required' => 'Vui lòng nhập tên dòng xe Quý khách cần chăm sóc.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return self::sharedAttributes();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return self::sharedMessages();
+    }
+
     protected function prepareForValidation(): void
     {
         $meta = $this->input('meta_data');
@@ -75,6 +136,8 @@ class StoreAppointmentRequest extends FormRequest
         if ($type === 'service') {
             $type = 'maintenance';
             $sanitizedMeta['service_type'] = $sanitizedMeta['service_type'] ?? 'service';
+        } elseif ($type === 'consultation') {
+            $type = 'consult';
         }
 
         if ($this->filled('service_package') && is_string($this->input('service_package'))) {

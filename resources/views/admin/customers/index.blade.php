@@ -53,7 +53,7 @@
                             id="customer-filter-product"
                             name="product_id"
                             :value="(string) ($productIdFilter ?? '')"
-                            :options="array_merge(['' => 'Tất cả dòng xe'], $products->pluck('name', 'id')->all())"
+                            :options="['' => 'Tất cả dòng xe'] + $products->pluck('name', 'id')->all()"
                             :auto-submit="true"
                         />
                     </div>
@@ -252,7 +252,7 @@
                                         x-model="productId"
                                         @change="onProductChange()"
                                         :value="(string) old('product_id', '')"
-                                        :options="array_merge(['' => 'Tất cả dòng xe BMW'], $products->pluck('name', 'id')->all())"
+                                        :options="['' => 'Tất cả dòng xe BMW'] + $products->pluck('name', 'id')->all()"
                                     />
                                 </x-admin.form-field>
 
