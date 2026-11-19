@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -28,15 +29,41 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
         return new Envelope(
             subject: "[BMW Showroom] Xác nhận yêu cầu {$typeLabel} — Mã hẹn #{$this->appointment->id}",
+            replyTo: [self::salesReplyToAddress()],
         );
     }
 
     public function content(): Content
     {
-        $this->appointment->loadMissing(['product.category', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user']);
 
         return new Content(
             view: 'emails.customer.appointment-confirmation',
+            text: 'emails.customer.appointment-confirmation-text',
+            with: [
+                'inlineImagePath' => $this->appointment->product?->localImagePath(),
+                'fallbackBadgePng' => self::fallbackBadgePngBytes(),
+            ],
+        );
+    }
+
+    public static function salesReplyToAddress(): Address
+    {
+        $address = (string) (
+            config('mail.showroom_admins.0')
+            ?: config('mail.reply_to.address')
+            ?: config('mail.from.address', 'advisor@bmw.com')
+        );
+        $name = (string) config('mail.reply_to.name', 'BMW Showroom Tư Vấn');
+
+        return new Address($address, $name);
+    }
+
+    public static function fallbackBadgePngBytes(): string
+    {
+        return (string) base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            true
         );
     }
 

@@ -84,9 +84,10 @@ class AppointmentTable extends Component
         )->validate();
 
         $appointment = Appointment::query()->findOrFail($appointmentId);
-        $appointment->update([
-            'status' => $validated['status'],
-        ]);
+        $appointment->transitionStatusWithAutomation(
+            AppointmentStatus::from($validated['status']),
+            auth()->user()
+        );
 
         $this->flashMessage = "Đã cập nhật trạng thái lịch hẹn #{$appointment->id} thành công.";
     }

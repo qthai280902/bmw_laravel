@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\CatalogEmbeddingSyncRequested;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreArticleRequest;
 use App\Http\Requests\UpdateArticleRequest;
 use App\Models\Article;
+use App\Observers\ArticleObserver;
 use App\Services\Ai\ArticleEditorialAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -69,7 +71,11 @@ class ArticleController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('articles', 'public');
         }
 
-        $article = Article::create($data);
+        $article = ArticleObserver::withoutImmediateSync(
+            fn (): Article => Article::create($data)
+        );
+
+        CatalogEmbeddingSyncRequested::dispatch('article', (int) $article->id);
 
         return redirect()
             ->route('admin.articles.edit', $article)
@@ -94,7 +100,11 @@ class ArticleController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('articles', 'public');
         }
 
-        $article->update($data);
+        ArticleObserver::withoutImmediateSync(
+            fn (): bool => $article->update($data)
+        );
+
+        CatalogEmbeddingSyncRequested::dispatch('article', (int) $article->id);
 
         return redirect()
             ->route('admin.articles.edit', $article)

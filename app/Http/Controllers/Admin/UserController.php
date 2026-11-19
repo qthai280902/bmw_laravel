@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\StaffAccountUpdated;
 use App\Http\Controllers\Controller;
+use App\Models\AdminActivityLog;
 use App\Models\User;
 use App\Services\Admin\AdminNotificationDispatcher;
 use Illuminate\Http\RedirectResponse;
@@ -14,15 +16,20 @@ use Illuminate\View\View;
 class UserController extends Controller
 {
     /**
-     * Danh sách nhân sự nội bộ Showroom.
+     * Danh sách nhân sự nội bộ Showroom & Nhật ký hoạt động gần đây.
      */
     public function index(): View
     {
         $users = User::query()->latest()->paginate(20);
+        $activityLogs = AdminActivityLog::query()
+            ->latest('id')
+            ->limit(15)
+            ->get();
 
         return view('admin.users.index', [
             'users' => $users,
             'roles' => User::roles(),
+            'activityLogs' => $activityLogs,
         ]);
     }
 
@@ -47,6 +54,13 @@ class UserController extends Controller
             'email_verified_at' => now(),
         ]);
 
+        StaffAccountUpdated::dispatch(
+            $user,
+            'staff.created',
+            "Tạo nhân sự mới {$user->name} ({$user->email}) với vai trò {$user->roleLabel()}.",
+            $request->user()
+        );
+
         return back()->with('success', "Đã tạo nhân sự {$user->name} ({$user->roleLabel()}).");
     }
 
@@ -66,11 +80,20 @@ class UserController extends Controller
                 ->with('error', 'Không thể tự hạ vai trò Quản Lý của chính mình xuống Sales hoặc Marketing.');
         }
 
+        $oldRoleLabel = $user->roleLabel();
+
         $user->update([
             'role' => $validated['role'],
         ]);
 
         $dispatcher->forgetDigestCache((int) $user->id);
+
+        StaffAccountUpdated::dispatch(
+            $user->fresh() ?? $user,
+            'staff.role_updated',
+            "Đổi vai trò nhân sự {$user->name} ({$user->email}) từ {$oldRoleLabel} sang {$user->roleLabel()}.",
+            $actingUser
+        );
 
         return back()->with('success', "Đã cập nhật vai trò cho {$user->name} thành {$user->roleLabel()}.");
     }

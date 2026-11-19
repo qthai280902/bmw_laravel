@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Products\CreateProductAction;
 use App\Actions\Products\UpdateProductAction;
+use App\Events\CatalogEmbeddingSyncRequested;
+use App\Events\CatalogProductUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Observers\ProductObserver;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -53,10 +56,14 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request, CreateProductAction $action)
     {
-        $product = $action->execute(
-            $request->validated(),
-            $request->file('new_images') ?? []
+        $product = ProductObserver::withoutImmediateSync(
+            fn (): Product => $action->execute(
+                $request->validated(),
+                $request->file('new_images') ?? []
+            )
         );
+
+        CatalogEmbeddingSyncRequested::dispatch('product', (int) $product->id);
 
         return redirect()
             ->route('admin.products.index')
@@ -79,11 +86,34 @@ class ProductController extends Controller
      */
     public function update(ProductRequest $request, Product $product, UpdateProductAction $action)
     {
-        $updatedProduct = $action->execute(
-            $product,
-            $request->validated(),
-            $request->file('new_images') ?? []
+        $oldPrice = (int) $product->price;
+        $oldActive = (bool) $product->is_active;
+
+        $updatedProduct = ProductObserver::withoutImmediateSync(
+            fn (): Product => $action->execute(
+                $product,
+                $request->validated(),
+                $request->file('new_images') ?? []
+            )
         );
+
+        CatalogEmbeddingSyncRequested::dispatch('product', (int) $updatedProduct->id);
+
+        $changes = [];
+        if ($oldPrice !== (int) $updatedProduct->price) {
+            $changes[] = 'giá bán từ '.number_format($oldPrice, 0, ',', '.').' VNĐ thành '.number_format((int) $updatedProduct->price, 0, ',', '.').' VNĐ';
+        }
+        if ($oldActive !== (bool) $updatedProduct->is_active) {
+            $changes[] = 'trạng thái hiển thị sang '.($updatedProduct->is_active ? 'Đang hiển thị' : 'Tạm ẩn');
+        }
+
+        if ($changes !== []) {
+            CatalogProductUpdated::dispatch(
+                $updatedProduct,
+                "Cập nhật sản phẩm {$updatedProduct->name}: ".implode('; ', $changes).'.',
+                $request->user()
+            );
+        }
 
         return redirect()
             ->route('admin.products.index')

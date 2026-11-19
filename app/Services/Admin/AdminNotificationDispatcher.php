@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Notifications\Admin\MailDeliveryFailureNotification;
 use App\Notifications\Admin\NewAccessoryOrderNotification;
 use App\Notifications\Admin\NewAppointmentLeadNotification;
 use Illuminate\Notifications\Notification as BaseNotification;
@@ -103,6 +104,19 @@ class AdminNotificationDispatcher
             new NewAccessoryOrderNotification($order),
             'accessory_order',
             (int) $order->id
+        );
+    }
+
+    public function notifyMailDeliveryFailure(string $recipientEmail, string $mailContext, string $errorMessage): void
+    {
+        $this->sendToAdmins(
+            new MailDeliveryFailureNotification(
+                recipientEmail: trim($recipientEmail) !== '' ? trim($recipientEmail) : 'unknown',
+                mailContext: trim($mailContext) !== '' ? trim($mailContext) : 'Showroom Mailer',
+                errorMessage: trim($errorMessage) !== '' ? trim($errorMessage) : 'Không thể phát email qua kênh chính.',
+            ),
+            'mail_delivery_failure',
+            0
         );
     }
 

@@ -4,12 +4,17 @@ namespace App\Models;
 
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
+use App\Events\AppointmentStatusChanged;
+use App\Mail\Customer\PostTestDriveFollowupMail;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Throwable;
 
 class Appointment extends Model implements Attachable
 {
@@ -41,6 +46,7 @@ class Appointment extends Model implements Attachable
         'ai_lead_note',
         'confirmation_email_sent_at',
         'reminder_sent_at',
+        'followup_email_sent_at',
     ];
 
     protected function casts(): array
@@ -52,6 +58,7 @@ class Appointment extends Model implements Attachable
             'meta_data' => 'array',
             'confirmation_email_sent_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
+            'followup_email_sent_at' => 'datetime',
         ];
     }
 
@@ -215,6 +222,112 @@ class Appointment extends Model implements Attachable
             now()->addDays(14),
             ['appointment' => $this->id]
         );
+    }
+
+    /**
+     * Calculate reference installment plan (20% down, 80% loan, 60 months, 8.5%/year).
+     *
+     * @return array{
+     *     price: int,
+     *     down_payment_percent: int,
+     *     down_payment: int,
+     *     loan_percent: int,
+     *     loan_amount: int,
+     *     term_months: int,
+     *     annual_interest_rate: float,
+     *     monthly_payment: int
+     * }|null
+     */
+    public function financialEstimate(): ?array
+    {
+        $this->loadMissing('product');
+
+        $price = (int) ($this->product?->price ?? 0);
+
+        if ($price <= 0) {
+            return null;
+        }
+
+        $downPaymentPercent = 20;
+        $loanPercent = 80;
+        $termMonths = 60;
+        $annualRate = 8.5;
+
+        $downPayment = (int) round($price * ($downPaymentPercent / 100));
+        $loanAmount = max(0, $price - $downPayment);
+        $monthlyRate = ($annualRate / 100) / 12;
+        $factor = pow(1 + $monthlyRate, $termMonths);
+        $monthlyPayment = $factor > 1
+            ? (int) round($loanAmount * ($monthlyRate * $factor) / ($factor - 1))
+            : (int) round($loanAmount / $termMonths);
+
+        return [
+            'price' => $price,
+            'down_payment_percent' => $downPaymentPercent,
+            'down_payment' => $downPayment,
+            'loan_percent' => $loanPercent,
+            'loan_amount' => $loanAmount,
+            'term_months' => $termMonths,
+            'annual_interest_rate' => $annualRate,
+            'monthly_payment' => $monthlyPayment,
+        ];
+    }
+
+    public function schedulePostTestDriveFollowup(): bool
+    {
+        $this->loadMissing(['product.category', 'user']);
+
+        if ($this->followup_email_sent_at !== null) {
+            return false;
+        }
+
+        $recipientEmail = trim((string) ($this->user?->email ?? $this->guest_email ?? ''));
+
+        if ($recipientEmail === '' || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        try {
+            $sendAt = now()->addHours(2);
+            $mail = (new PostTestDriveFollowupMail($this))->delay($sendAt);
+
+            Mail::to($recipientEmail)->later($sendAt, $mail);
+
+            $this->forceFill(['followup_email_sent_at' => now()])->saveQuietly();
+
+            return true;
+        } catch (Throwable $exception) {
+            Log::warning('Failed scheduling post-test-drive followup email.', [
+                'appointment_id' => $this->id,
+                'exception' => $exception::class,
+            ]);
+
+            return false;
+        }
+    }
+
+    public function transitionStatusWithAutomation(AppointmentStatus $newStatus, ?User $actor = null): void
+    {
+        $oldStatus = $this->status instanceof AppointmentStatus
+            ? $this->status->value
+            : (string) $this->status;
+
+        $this->update([
+            'status' => $newStatus->value,
+        ]);
+
+        if ($oldStatus !== $newStatus->value) {
+            event(new AppointmentStatusChanged(
+                appointment: $this->fresh(['product', 'user']) ?? $this,
+                oldStatus: $oldStatus,
+                newStatus: $newStatus->value,
+                actor: $actor,
+            ));
+        }
+
+        if ($newStatus === AppointmentStatus::Completed) {
+            $this->schedulePostTestDriveFollowup();
+        }
     }
 
     private function escapeIcsText(string $value): string

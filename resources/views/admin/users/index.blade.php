@@ -161,4 +161,67 @@
             {{ $users->links() }}
         </div>
     @endif
+
+    <!-- Recent Staff Activity Audit Log -->
+    <div class="mt-10">
+        <div class="mb-4 flex items-end justify-between gap-4">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.26em] text-[#70A7FF]">Audit Trail &middot; 3 Vai Trò Nội Bộ</p>
+                <h3 class="mt-1 text-lg font-black uppercase tracking-wider text-white">Nhật Ký Hoạt Động Nhân Sự Gần Đây</h3>
+            </div>
+            <span class="whitespace-nowrap border border-zinc-800 bg-[#0B0F17] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
+                15 bản ghi mới nhất
+            </span>
+        </div>
+
+        <x-admin.card class="!p-0 border-zinc-800 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[920px] border-collapse text-left">
+                    <thead>
+                        <tr class="border-b border-zinc-800 bg-zinc-900/50">
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Thời gian</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Nhân sự</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Vai trò</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Hành động</th>
+                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Mô tả chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-900">
+                        @forelse(($activityLogs ?? collect()) as $log)
+                            <tr class="transition-colors hover:bg-zinc-800/30">
+                                <td class="whitespace-nowrap px-6 py-4 text-[11px] font-semibold tabular-nums text-zinc-400">
+                                    {{ $log->created_at?->format('H:i:s · d/m/Y') }}
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <p class="text-xs font-bold text-white">{{ $log->user_email }}</p>
+                                    @if($log->ip_address)
+                                        <p class="mt-0.5 text-[10px] text-zinc-500">IP: {{ $log->ip_address }}</p>
+                                    @endif
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <span class="inline-block rounded-none border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] {{ $log->user_role === 'admin' ? 'border-[#1C69D4]/50 bg-[#1C69D4]/15 text-[#70A7FF]' : ($log->user_role === 'sales' ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-amber-500/40 bg-amber-500/15 text-amber-300') }}">
+                                        {{ $log->roleLabel() }}
+                                    </span>
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <span class="inline-block rounded-none border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-200">
+                                        {{ $log->actionLabel() }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-xs leading-relaxed text-zinc-300">
+                                    {{ $log->description }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                                    Chưa có nhật ký hoạt động nào được ghi nhận.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-admin.card>
+    </div>
 </x-admin-layout>

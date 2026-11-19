@@ -11,6 +11,16 @@
 @section('content')
     @php
         $car = $car ?? $appointment->product;
+        $resolvedInlinePath = $inlineImagePath ?? $car?->localImagePath();
+        $resolvedFallbackPng = $fallbackBadgePng ?? \App\Mail\Customer\AppointmentConfirmationMail::fallbackBadgePngBytes();
+        $inlineSrc = null;
+        if (isset($message) && method_exists($message, 'embed') && method_exists($message, 'embedData')) {
+            if (is_string($resolvedInlinePath) && $resolvedInlinePath !== '' && is_file($resolvedInlinePath)) {
+                $inlineSrc = $message->embed($resolvedInlinePath);
+            } else {
+                $inlineSrc = $message->embedData($resolvedFallbackPng, 'bmw-showroom-badge.png', 'image/png');
+            }
+        }
     @endphp
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-bottom: 8px;">
         XÁC NHẬN ĐẶT LỊCH TẠI BMW SHOWROOM
@@ -18,6 +28,12 @@
     <h1 style="margin: 0 0 18px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">
         Kính chào Quý khách {{ $appointment->customer_name }},
     </h1>
+
+    @if($inlineSrc)
+        <div style="margin: 0 0 20px 0; border: 1px solid #1E2533; background-color: #0E121B;">
+            <img src="{{ $inlineSrc }}" alt="{{ $car ? $car->name : 'BMW Showroom Vietnam' }}" style="display: block; width: 100%; max-height: 220px; object-fit: cover; border: 0;" />
+        </div>
+    @endif
 
     <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: #CBD5E1; line-height: 1.65;">
         BMW Showroom Vietnam trân trọng xác nhận đã tiếp nhận yêu cầu đặt lịch <strong style="color: #F8FAFC; font-weight: 600;">{{ $appointment->typeLabel() }}</strong> của Quý khách. Đội ngũ Chuyên viên Tư vấn (BMW Genius) đang chuẩn bị sẵn sàng để đón tiếp Quý khách chu đáo nhất.

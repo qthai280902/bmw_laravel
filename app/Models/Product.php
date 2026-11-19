@@ -256,6 +256,42 @@ class Product extends Model
     }
 
     /**
+     * Resolve a verified local filesystem image path for inline email embedding ($message->embed()).
+     */
+    public function localImagePath(): ?string
+    {
+        $this->loadMissing(['primaryImage', 'images']);
+
+        $rawPath = $this->primaryImage?->path ?? $this->images->first()?->path;
+
+        if (! is_string($rawPath) || trim($rawPath) === '') {
+            return null;
+        }
+
+        $trimmed = trim($rawPath);
+
+        if (Str::startsWith($trimmed, ['http://', 'https://'])) {
+            return null;
+        }
+
+        $normalized = ltrim($trimmed, '/');
+        $candidates = [
+            public_path($normalized),
+            public_path('images/'.$normalized),
+            public_path('storage/'.$normalized),
+            storage_path('app/public/'.$normalized),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate) && is_readable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Scope a query to only include active products.
      */
     public function scopeActive($query)

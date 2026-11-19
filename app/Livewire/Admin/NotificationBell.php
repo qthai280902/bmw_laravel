@@ -143,9 +143,11 @@ class NotificationBell extends Component
     {
         $data = is_array($item->data) ? $item->data : [];
         $kind = (string) ($data['kind'] ?? 'appointment_lead');
-        $subtitle = $kind === 'accessory_order'
-            ? 'Đơn phụ kiện #'.($data['order_id'] ?? '').' · SL: '.($data['quantity'] ?? 1).' · '.number_format((int) ($data['total_amount'] ?? 0), 0, ',', '.').' VNĐ'
-            : (($data['appointment_type'] ?? 'Lịch hẹn').(! empty($data['appointment_date']) ? ' · '.$data['appointment_date'] : ''));
+        $subtitle = match ($kind) {
+            'accessory_order' => 'Đơn phụ kiện #'.($data['order_id'] ?? '').' · SL: '.($data['quantity'] ?? 1).' · '.number_format((int) ($data['total_amount'] ?? 0), 0, ',', '.').' VNĐ',
+            'mail_delivery_failure' => 'Người nhận: '.($data['recipient_email'] ?? 'N/A').' · '.($data['error_message'] ?? 'Lỗi gửi email'),
+            default => (($data['appointment_type'] ?? 'Lịch hẹn').(! empty($data['appointment_date']) ? ' · '.$data['appointment_date'] : '')),
+        };
 
         return [
             'id' => (string) $item->id,

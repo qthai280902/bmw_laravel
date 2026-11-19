@@ -78,7 +78,11 @@
                 >
                     <div class="flex items-center justify-between gap-2">
                         <div class="flex flex-wrap items-center gap-1.5">
-                            @if($item['kind'] === 'accessory_order')
+                            @if($item['kind'] === 'mail_delivery_failure')
+                                <span class="rounded-none border border-rose-500/40 bg-rose-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-rose-300">
+                                    CẢNH BÁO MAIL
+                                </span>
+                            @elseif($item['kind'] === 'accessory_order')
                                 <span class="rounded-none border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-amber-300">
                                     ĐƠN PHỤ KIỆN
                                 </span>

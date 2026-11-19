@@ -28,9 +28,10 @@ class AppointmentController extends Controller
             'status' => ['required', Rule::enum(AppointmentStatus::class)],
         ]);
 
-        $appointment->update([
-            'status' => $validated['status'],
-        ]);
+        $appointment->transitionStatusWithAutomation(
+            AppointmentStatus::from($validated['status']),
+            $request->user()
+        );
 
         return back()->with('success', 'Đã cập nhật trạng thái lịch hẹn thành công.');
     }

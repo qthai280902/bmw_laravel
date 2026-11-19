@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Symfony\Component\Mime\Email;
 
 class HotLeadAlertMail extends Mailable
 {
@@ -33,6 +34,11 @@ class HotLeadAlertMail extends Mailable
             metadata: [
                 'appointment_id' => (string) $this->appointment->id,
                 'lead_priority' => (string) ($this->appointment->lead_priority ?? Appointment::LEAD_PRIORITY_HOT),
+            ],
+            using: [
+                function (Email $message): void {
+                    $message->priority(Email::PRIORITY_HIGH);
+                },
             ],
         );
     }

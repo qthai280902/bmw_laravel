@@ -114,6 +114,11 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    'reply_to' => [
+        'address' => trim(explode(',', (string) env('MAIL_REPLY_TO_ADDRESS', env('MAIL_SHOWROOM_ADMIN', 'advisor@bmw.com')))[0]) ?: 'advisor@bmw.com',
+        'name' => env('MAIL_REPLY_TO_NAME', 'BMW Showroom Tư Vấn'),
+    ],
+
     'showroom_admin' => env('MAIL_SHOWROOM_ADMIN', 'advisor@bmw.com'),
 
     'showroom_admins' => array_values(array_unique(array_filter(array_map(

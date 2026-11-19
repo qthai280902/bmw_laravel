@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\AdminActivitySubscriber;
 use App\Models\Appointment;
 use App\Models\Article;
 use App\Models\Product;
@@ -10,6 +11,7 @@ use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -51,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
         Product::observe(ProductObserver::class);
         Article::observe(ArticleObserver::class);
         Appointment::observe(AppointmentObserver::class);
+
+        Event::subscribe(AdminActivitySubscriber::class);
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

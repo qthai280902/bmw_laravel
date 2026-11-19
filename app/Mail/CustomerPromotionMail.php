@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Customer\AppointmentConfirmationMail;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -23,6 +24,7 @@ class CustomerPromotionMail extends Mailable
     {
         return new Envelope(
             subject: "[BMW Showroom] {$this->offerTitle}",
+            replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
             tags: ['promotion-campaign'],
         );
     }
@@ -31,6 +33,7 @@ class CustomerPromotionMail extends Mailable
     {
         return new Content(
             view: 'mail.promotions.offer',
+            text: 'mail.promotions.offer-text',
         );
     }
 

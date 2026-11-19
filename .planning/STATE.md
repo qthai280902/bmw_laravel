@@ -1,6 +1,25 @@
 # Project State
 
-Current phase: Phase 27 completed.
+Current phase: Phase 28 completed.
+
+## Phase 28: Độ Chịu Lỗi Email (`Mail Resilience`), Tự Động Hóa Vận Hành Showroom (`Task Scheduling`) & Điều Phối Sự Kiện Nâng Cao (`Events`, `ShouldBeEncrypted`, Debounced AI Sync, `AdminActivitySubscriber`)
+
+- Completion time: 2026-11-20 +07:00.
+- Scope:
+  - **Nhóm A (Mail Resilience)**: Updated `config/mail.php` (`failover` reading `MAIL_FAILOVER_MAILERS` default `smtp,log` + `retry_after: 60`, global single-address `reply_to`); upgraded `RecordAppointmentMailSent` to safely detect `failover` fallback to `log` (no-op under `array` / `Mail::fake()`) and alert `admin` + `sales` via `AdminNotificationDispatcher::notifyMailDeliveryFailure()`; added 2-way sales `replyTo` + plain-text `text:` views (`appointment-confirmation-text`, `reminder-text`, `offer-text` without `$message`) + safe inline `$message->embed()` / `$message->embedData()` image embedding (`Product::localImagePath()` + PNG badge fallback) on `AppointmentConfirmationMail` & `AppointmentReminderMail`; set `Symfony\Component\Mime\Email::PRIORITY_HIGH` on `HotLeadAlertMail::envelope()`.
+  - **Nhóm B (Task Scheduling & Follow-up)**: Added migration `2026_11_20_000001_add_followup_email_sent_at_to_appointments_table`, `Appointment::financialEstimate()` (`20%` down, `80%` loan, `60` months, `8.5%/year`), `Appointment::schedulePostTestDriveFollowup()` (queued 2h `later()`), and `Appointment::transitionStatusWithAutomation()` wired across `Admin\AppointmentTable`, `Admin\ServiceBookingTable`, and `Admin\AppointmentController`; created `PostTestDriveFollowupMail` (`mail/appointments/followup.blade.php` + `followup-text.blade.php`, extending `bmw-concierge`), `Isolatable` `appointments:cleanup-and-followup` (`CleanupAndFollowupAppointmentsCommand`), `ShowroomDailySummaryMail` (`emails/admin/daily-summary.blade.php` + `daily-summary-text.blade.php`), and `Isolatable` `showroom:daily-summary` (`SendShowroomDailySummaryCommand`); centralized all `Asia/Ho_Chi_Minh` schedules in `routes/console.php` (`ai:prune-conversations`, `appointments:send-reminders`, `appointments:cleanup-and-followup`, `showroom:daily-summary`, `ai:sync-embeddings`, weekly `prune-read-admin-notifications` & `queue:prune-failed --hours=168`); added `queue` & `scheduler` services (`restart: unless-stopped`, shared `x-app-common`) to `docker-compose.yml`.
+  - **Nhóm C (Advanced Events & 3-Role Audit Trail)**: Upgraded `SendPromotionCampaignEmails` (`ShouldBeEncrypted`, `InteractsWithQueue`, `$tries = 3`, `backoff(): [10, 60, 180]`, `failed()` CRM alert via `MailDeliveryFailureNotification` + `NotificationBell` `CẢNH BÁO MAIL` badge for `admin`/`sales` only); built `CatalogEmbeddingSyncRequested` (`ShouldDispatchAfterCommit`) + `SyncCatalogEmbeddingListener` (`ShouldQueue`, `debounceId()`, `withDelay()` 30s / `maxWait` 120s + Cache token dedupe, wired in `Admin\ProductController` & `Admin\ArticleController` with `ProductObserver::withoutImmediateSync()` / `ArticleObserver::withoutImmediateSync()` preserving `Phase24SemanticRagEmbeddingTest`); added migration `2026_11_20_000002_create_admin_activity_logs_table`, `AdminActivityLog`, domain events (`AppointmentStatusChanged`, `StaffAccountUpdated`, `CatalogProductUpdated`), `AdminActivitySubscriber` (`Event::subscribe()` with `on*` methods avoiding double discovery), and **"Nhật Ký Hoạt Động Nhân Sự Gần Đây"** (15 latest records, `whitespace-nowrap`, BMW Dark Luxury `0px`) on `/admin/users`.
+  - Created `tests/Feature/Phase28MailResilienceSchedulingAndEventsTest.php` (5 tests / 102 assertions).
+- Verification:
+  - Migrations (`php artisan migrate --force`): `2026_11_20_000001_add_followup_email_sent_at_to_appointments_table` (`34.43ms DONE`) & `2026_11_20_000002_create_admin_activity_logs_table` (`31.38ms DONE`).
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Vite production asset build (`npm run build`): pass (`55 modules transformed`, `public/build/manifest.json` `0.27 kB`, `public/build/assets/app-Bd4mQXiL.css` 105.42 kB, `public/build/assets/app-6-NfUb3n.js` 374.80 kB in `2.57s`).
+  - Cache clearing, schedules & events: `php artisan optimize:clear`, `php artisan schedule:list` (7 scheduled entries verified), and `php artisan event:list` (zero duplicate listener registrations verified).
+  - Phase 28 feature test suite: **5 passed (102 assertions)** in **1.66s**.
+  - Full test suite: `php artisan test --compact` pass (**173 passed (2273 assertions)** in **33.27s**, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-28-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 27: Tự Động Hóa Vòng Đời Lịch Hẹn & Email Showroom (`.ics`, Signed URLs, Nhắc Lịch 24h, Chiến Dịch Khuyến Mãi, Rate Limiting & Phân Quyền 3 Vai Trò `admin` / `sales` / `marketing`)
 
