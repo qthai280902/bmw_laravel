@@ -34,6 +34,38 @@ class AdminNotificationDispatcher
         Cache::forget($this->digestCacheKey($userId));
     }
 
+    /**
+     * Resolve Showroom admin notification email list supporting comma-separated values.
+     *
+     * @return list<string>
+     */
+    public static function showroomAdminEmails(): array
+    {
+        $parseEmails = static function (mixed $raw): array {
+            $parts = is_array($raw)
+                ? $raw
+                : (is_string($raw) ? explode(',', $raw) : []);
+
+            return array_values(array_unique(array_filter(array_map(
+                static fn (mixed $item): string => mb_strtolower(trim((string) $item)),
+                $parts
+            ), static fn (string $email): bool => $email !== '')));
+        };
+
+        $fromSingle = $parseEmails(config('mail.showroom_admin', 'advisor@bmw.com'));
+        $fromArray = $parseEmails(config('mail.showroom_admins', []));
+
+        if ($fromSingle === $fromArray && $fromArray !== []) {
+            return $fromArray;
+        }
+
+        if ($fromSingle === ['advisor@bmw.com'] && $fromArray !== []) {
+            return $fromArray;
+        }
+
+        return $fromSingle !== [] ? $fromSingle : ($fromArray !== [] ? $fromArray : ['advisor@bmw.com']);
+    }
+
     public function dispatchNewAppointmentLead(Appointment $appointment): void
     {
         if (! $appointment->exists) {
@@ -78,9 +110,9 @@ class AdminNotificationDispatcher
     {
         try {
             $admins = User::query()
-                ->admins()
+                ->salesAndAdmins()
                 ->get()
-                ->filter(fn (User $user): bool => $user->isAdmin())
+                ->filter(fn (User $user): bool => $user->canAccessCrm())
                 ->values();
 
             if ($admins->isEmpty()) {

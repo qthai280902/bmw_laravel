@@ -1418,4 +1418,269 @@ window.aiAssistantWidget = (config) => ({
     },
 });
 
+window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config') => {
+    let parsed = {};
+    const configEl = document.getElementById(configScriptId);
+
+    if (configEl) {
+        try {
+            parsed = JSON.parse(configEl.textContent || '{}');
+        } catch {
+            parsed = {};
+        }
+    }
+
+    const initialAudience = parsed.audience || 'all';
+    const initialOnlyCompleted = initialAudience === 'completed' || Boolean(parsed.onlyCompleted);
+
+    return {
+        audience: initialAudience,
+        productId: parsed.productId ? String(parsed.productId) : '',
+        onlyCompleted: initialOnlyCompleted,
+        records: Array.isArray(parsed.records) ? parsed.records : [],
+
+        onAudienceChange() {
+            if (this.audience === 'completed') {
+                this.onlyCompleted = true;
+            } else if (this.audience === 'all') {
+                this.onlyCompleted = false;
+            }
+        },
+
+        onProductChange() {
+            if (this.productId !== '' && this.audience === 'all') {
+                this.audience = 'by_product';
+            } else if (this.productId === '' && this.audience === 'by_product') {
+                this.audience = this.onlyCompleted ? 'completed' : 'all';
+            }
+        },
+
+        onOnlyCompletedChange() {
+            if (!this.onlyCompleted && this.audience === 'completed') {
+                this.audience = this.productId !== '' ? 'by_product' : 'all';
+            }
+        },
+
+        get requireCompleted() {
+            return this.audience === 'completed' || this.onlyCompleted;
+        },
+
+        get matchedRecipients() {
+            if (this.audience === 'by_product' && !this.productId) {
+                return [];
+            }
+
+            const selectedProduct = this.productId !== '' ? Number(this.productId) : null;
+            const seenKeys = new Set();
+            const matched = [];
+
+            for (const row of this.records) {
+                if (this.requireCompleted && !row.completed) {
+                    continue;
+                }
+
+                if (selectedProduct !== null && Number(row.product_id) !== selectedProduct) {
+                    continue;
+                }
+
+                if (seenKeys.has(row.key)) {
+                    continue;
+                }
+
+                seenKeys.add(row.key);
+                matched.push({
+                    key: row.key,
+                    name: row.name || 'Quý khách',
+                    email: row.email || '',
+                    vehicle: row.vehicle || 'Các dòng xe BMW',
+                    completed: Boolean(row.completed),
+                });
+            }
+
+            return matched;
+        },
+
+        get matchedCount() {
+            return this.matchedRecipients.length;
+        },
+
+        get previewRecipients() {
+            return this.matchedRecipients.slice(0, 5);
+        },
+    };
+};
+
+window.bmwCustomSelect = (initialConfig = null) => ({
+    open: false,
+    selected: initialConfig?.initial !== undefined && initialConfig?.initial !== null ? String(initialConfig.initial) : '',
+    wireModel: initialConfig?.wireModel || null,
+    wireLive: initialConfig?.wireLive !== false,
+    wireAction: initialConfig?.wireAction || null,
+    wireRecordId: initialConfig?.wireRecordId ?? null,
+    autoSubmit: Boolean(initialConfig?.autoSubmit),
+    placeholder: initialConfig?.placeholder || 'Chọn một mục...',
+    panelStyle: 'top: 0px; left: 0px; width: 220px;',
+
+    init() {
+        if (!initialConfig && this.$root?.dataset?.config) {
+            try {
+                const cfg = JSON.parse(this.$root.dataset.config);
+                if (cfg.initial !== undefined && cfg.initial !== null) {
+                    this.selected = String(cfg.initial);
+                }
+                this.wireModel = cfg.wireModel || null;
+                this.wireLive = cfg.wireLive !== false;
+                this.wireAction = cfg.wireAction || null;
+                this.wireRecordId = cfg.wireRecordId ?? null;
+                this.autoSubmit = Boolean(cfg.autoSubmit);
+                this.placeholder = cfg.placeholder || 'Chọn một mục...';
+            } catch {
+                // Ignore invalid dataset config
+            }
+        }
+
+        if (this.wireModel && this.$wire) {
+            const currentWireVal = this.$wire.get(this.wireModel);
+            if (currentWireVal !== undefined && currentWireVal !== null) {
+                this.selected = String(currentWireVal);
+            }
+
+            if (typeof this.$wire.$watch === 'function') {
+                this.$wire.$watch(this.wireModel, (newVal) => {
+                    this.selected = newVal !== undefined && newVal !== null ? String(newVal) : '';
+                });
+            }
+        }
+    },
+
+    destroy() {
+        this.open = false;
+    },
+
+    get groups() {
+        const raw = this.$root?.dataset?.options;
+        if (!raw) {
+            return [];
+        }
+
+        try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    },
+
+    get flatOptions() {
+        const list = [];
+        for (const item of this.groups) {
+            if (item && item.type === 'group' && Array.isArray(item.options)) {
+                for (const sub of item.options) {
+                    list.push({
+                        value: String(sub.value ?? ''),
+                        label: String(sub.label ?? ''),
+                    });
+                }
+            } else if (item) {
+                list.push({
+                    value: String(item.value ?? ''),
+                    label: String(item.label ?? ''),
+                });
+            }
+        }
+        return list;
+    },
+
+    get selectedLabel() {
+        const current = String(this.selected ?? '');
+        const found = this.flatOptions.find((opt) => opt.value === current);
+        if (found) {
+            return found.label;
+        }
+
+        const emptyFound = this.flatOptions.find((opt) => opt.value === '');
+        return emptyFound ? emptyFound.label : this.placeholder;
+    },
+
+    isDisabled() {
+        return this.$root?.dataset?.disabled === 'true';
+    },
+
+    toggle() {
+        if (this.isDisabled()) {
+            return;
+        }
+
+        if (this.open) {
+            this.open = false;
+            return;
+        }
+
+        this.updatePosition();
+        this.open = true;
+    },
+
+    close() {
+        this.open = false;
+    },
+
+    updatePosition() {
+        const trigger = this.$refs.trigger;
+        if (!trigger) {
+            return;
+        }
+
+        const rect = trigger.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const estimatedHeight = Math.min(248, Math.max(120, this.flatOptions.length * 38 + 8));
+        const openUpward = spaceBelow < estimatedHeight && rect.top > spaceBelow;
+        const top = openUpward ? Math.max(8, rect.top - estimatedHeight - 4) : rect.bottom + 4;
+        const width = Math.max(rect.width, 160);
+        const maxLeft = Math.max(8, (window.innerWidth || document.documentElement.clientWidth) - width - 8);
+        const left = Math.min(Math.max(8, rect.left), maxLeft);
+
+        this.panelStyle = `top: ${Math.round(top)}px; left: ${Math.round(left)}px; width: ${Math.round(width)}px;`;
+    },
+
+    choose(val) {
+        if (this.isDisabled()) {
+            return;
+        }
+
+        const stringVal = String(val ?? '');
+        this.selected = stringVal;
+        // Close dropdown FIRST before any Livewire / form side effects to avoid orphaned body nodes
+        this.open = false;
+
+        this.$nextTick(() => {
+            this.$root?.dispatchEvent(new CustomEvent('change', {
+                detail: { value: stringVal },
+                bubbles: true,
+            }));
+
+            if (this.wireAction && this.$wire && typeof this.$wire[this.wireAction] === 'function') {
+                if (this.wireRecordId !== null && this.wireRecordId !== undefined) {
+                    this.$wire[this.wireAction](this.wireRecordId, stringVal);
+                } else {
+                    this.$wire[this.wireAction](stringVal);
+                }
+                return;
+            }
+
+            if (this.wireModel && this.$wire) {
+                this.$wire.set(this.wireModel, stringVal, this.wireLive);
+                return;
+            }
+
+            if (this.autoSubmit) {
+                const form = this.$root?.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    },
+});
+
 Livewire.start();

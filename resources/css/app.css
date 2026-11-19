@@ -225,6 +225,27 @@
         display: none;
     }
 
+    .sidebar-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(113, 113, 122, 0.45) transparent;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(113, 113, 122, 0.45);
+    }
+
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: #1C69D4;
+    }
+
     .ai-assistant-idle {
         animation: ai-assistant-idle 1.8s ease-in-out infinite;
         transform-origin: center bottom;
@@ -388,23 +409,120 @@
 }
 
 .article-content ul,
-.article-content ol {
+.prose ul {
     margin: 1.5rem 0;
-    padding-left: 1.5rem;
+    padding-left: 0;
+    list-style: none;
     color: #d4d4d8;
     line-height: 1.8;
 }
 
-.article-content ul {
-    list-style-type: disc;
+.article-content ul > li,
+.prose ul > li {
+    position: relative;
+    padding-left: 1.35rem;
+    margin-bottom: 0.65rem;
 }
 
-.article-content ol {
-    list-style-type: decimal;
+.article-content ul > li::before,
+.prose ul > li::before {
+    content: '';
+    position: absolute;
+    left: 0.15rem;
+    top: 0.68em;
+    width: 6px;
+    height: 6px;
+    background-color: #1C69D4;
+    transform: rotate(45deg);
 }
 
-.article-content li {
-    margin-bottom: 0.5rem;
+.article-content ol,
+.prose ol {
+    margin: 1.5rem 0;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: bmw-ol-counter;
+    color: #d4d4d8;
+    line-height: 1.8;
+}
+
+.article-content ol > li,
+.prose ol > li {
+    position: relative;
+    counter-increment: bmw-ol-counter;
+    padding-left: 1.75rem;
+    margin-bottom: 0.65rem;
+}
+
+.article-content ol > li::before,
+.prose ol > li::before {
+    content: counter(bmw-ol-counter, decimal-leading-zero) '.';
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 0.78em;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #70A7FF;
+}
+
+.bmw-checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bmw-checklist > li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.55rem;
+    color: #d4d4d8;
+    font-size: 0.8125rem;
+    line-height: 1.65;
+}
+
+.bmw-checklist > li:last-child {
+    margin-bottom: 0;
+}
+
+.bmw-checklist > li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 8px;
+    height: 2px;
+    background-color: #1C69D4;
+}
+
+.bmw-spec-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bmw-spec-list > li {
+    position: relative;
+    padding: 0.65rem 0 0.65rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #e4e4e7;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+}
+
+.bmw-spec-list > li:last-child {
+    border-bottom: 0;
+}
+
+.bmw-spec-list > li::before {
+    content: '';
+    position: absolute;
+    left: 0.1rem;
+    top: 1.15rem;
+    width: 5px;
+    height: 5px;
+    background-color: #1C69D4;
+    transform: rotate(45deg);
 }
 
 .article-content img {

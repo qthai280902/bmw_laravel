@@ -26,55 +26,70 @@
     </div>
 
     <x-admin.card class="mb-6 !p-5">
-        <form method="GET" action="{{ route('admin.ai-conversations.index') }}" class="grid grid-cols-1 gap-4 xl:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
+        <form method="GET" action="{{ route('admin.ai-conversations.index') }}" class="grid grid-cols-1 gap-3 xl:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm">
                 <input
                     id="search"
                     name="search"
                     value="{{ request('search') }}"
-                    class="w-full border border-zinc-800 bg-black/60 px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-none border border-zinc-800 bg-black/60 px-3.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                     placeholder="Tên, IP, visitor, 330i, S1000RR..."
                 >
             </x-admin.form-field>
 
             <x-admin.form-field name="identity" label="Nhận diện">
-                <select id="identity" name="identity" class="w-full border border-zinc-800 bg-black/60 px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả</option>
-                    <option value="linked" @selected(request('identity') === 'linked')>Đã linked</option>
-                    <option value="unknown" @selected(request('identity') === 'unknown')>Chưa biết khách</option>
-                </select>
+                <x-ui.custom-select
+                    id="identity"
+                    name="identity"
+                    :value="(string) request('identity', '')"
+                    :options="[
+                        '' => 'Tất cả',
+                        'linked' => 'Đã linked',
+                        'unknown' => 'Chưa biết khách',
+                    ]"
+                />
             </x-admin.form-field>
 
             <x-admin.form-field name="interest" label="Intent">
-                <select id="interest" name="interest" class="w-full border border-zinc-800 bg-black/60 px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả</option>
-                    <option value="product" @selected(request('interest') === 'product')>Có hỏi sản phẩm</option>
-                </select>
+                <x-ui.custom-select
+                    id="interest"
+                    name="interest"
+                    :value="(string) request('interest', '')"
+                    :options="[
+                        '' => 'Tất cả',
+                        'product' => 'Có hỏi sản phẩm',
+                    ]"
+                />
             </x-admin.form-field>
 
             <x-admin.form-field name="range" label="Thời gian">
-                <select id="range" name="range" class="w-full border border-zinc-800 bg-black/60 px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả</option>
-                    <option value="today" @selected(request('range') === 'today')>Hôm nay</option>
-                    <option value="7d" @selected(request('range') === '7d')>7 ngày</option>
-                    <option value="30d" @selected(request('range') === '30d')>30 ngày</option>
-                </select>
+                <x-ui.custom-select
+                    id="range"
+                    name="range"
+                    :value="(string) request('range', '')"
+                    :options="[
+                        '' => 'Tất cả',
+                        'today' => 'Hôm nay',
+                        '7d' => '7 ngày',
+                        '30d' => '30 ngày',
+                    ]"
+                />
             </x-admin.form-field>
 
             <x-admin.form-field name="status" label="Trạng thái">
-                <select id="status" name="status" class="w-full border border-zinc-800 bg-black/60 px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả</option>
-                    @foreach ($statusOptions as $value => $label)
-                        <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <x-ui.custom-select
+                    id="status"
+                    name="status"
+                    :value="(string) request('status', '')"
+                    :options="array_merge(['' => 'Tất cả'], $statusOptions)"
+                />
             </x-admin.form-field>
 
-            <div class="grid grid-cols-2 gap-2">
-                <button type="submit" class="bg-[#1C69D4] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-white hover:text-black">
+            <div class="flex items-center gap-2">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-none bg-[#1C69D4] px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-black cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.ai-conversations.index') }}" class="border border-zinc-800 px-5 py-3 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+                <a href="{{ route('admin.ai-conversations.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-none border border-zinc-800 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:border-white hover:text-white">
                     Reset
                 </a>
             </div>
@@ -126,12 +141,12 @@
                                     <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-600">{{ $session->link_confidence }}</p>
                                 @endif
                             </td>
-                            <td class="px-5 py-5 align-top">
-                                <span class="inline-flex border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] {{ $session->statusColorClass() }}">
+                            <td class="whitespace-nowrap px-5 py-5 align-top">
+                                <span class="inline-flex whitespace-nowrap rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] {{ $session->statusColorClass() }}">
                                     {{ $session->statusLabel() }}
                                 </span>
                             </td>
-                            <td class="px-5 py-5 text-right align-top">
+                            <td class="whitespace-nowrap px-5 py-5 text-right align-top">
                                 <a href="{{ route('admin.ai-conversations.show', $session) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-[#70A7FF] transition-colors hover:text-white">
                                     Xem chi tiết
                                 </a>

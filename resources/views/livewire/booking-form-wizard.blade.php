@@ -31,32 +31,52 @@
             data-ai-visitor-field="true"
         >
 
+        @php
+            $typeGroupedOptions = [
+                [
+                    'group' => 'Trải nghiệm & Mua xe',
+                    'options' => collect($salesTypes)->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all(),
+                ],
+                [
+                    'group' => 'Dịch vụ & Chăm sóc xe',
+                    'options' => collect($serviceTypes)->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all(),
+                ],
+            ];
+
+            $servicePackageSelectOptions = array_merge(
+                ['' => '-- Chọn gói dịch vụ chăm sóc xe --'],
+                $servicePackageOptions ?? \App\Models\Appointment::servicePackageOptions()
+            );
+
+            $categoryTypeOptions = [
+                '' => '-- Chọn danh mục --',
+                'oto' => 'BMW Ô tô',
+                'xe_may' => 'BMW Motorrad',
+            ];
+
+            $productSelectOptions = $categoryType === ''
+                ? ['' => '-- Vui lòng chọn danh mục trước --']
+                : array_merge(
+                    ['' => '-- Chọn sản phẩm --'],
+                    $this->availableProducts->pluck('name', 'id')->all()
+                );
+        @endphp
+
         <section class="space-y-5">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 class="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-500">Bạn cần hỗ trợ gì?</h3>
-                <span wire:loading wire:target="type,categoryType,productId" class="text-[10px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
+                <span wire:loading wire:target="type,categoryType,productId,servicePackage" class="text-[10px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
                     Đang cập nhật...
                 </span>
             </div>
 
-            <select
+            <x-ui.custom-select
                 id="type-select"
                 name="type"
-                wire:model.live="type"
-                required
-                class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-            >
-                <optgroup label="Trải nghiệm & Mua xe" class="bg-zinc-950 text-zinc-400">
-                    @foreach($salesTypes as $saleType)
-                        <option value="{{ $saleType->value }}">{{ $saleType->label() }}</option>
-                    @endforeach
-                </optgroup>
-                <optgroup label="Dịch vụ & Chăm sóc xe" class="bg-zinc-950 text-zinc-400">
-                    @foreach($serviceTypes as $serviceType)
-                        <option value="{{ $serviceType->value }}">{{ $serviceType->label() }}</option>
-                    @endforeach
-                </optgroup>
-            </select>
+                :value="$type"
+                :options="$typeGroupedOptions"
+                wire-model="type"
+            />
         </section>
 
         <section class="space-y-5">
@@ -114,7 +134,21 @@
 
         @if($this->isService)
             <section class="space-y-5" wire:key="booking-service-section">
-                <h3 class="border-b border-white/10 pb-3 text-[10px] font-black uppercase tracking-[0.26em] text-zinc-500">Xe của bạn</h3>
+                <h3 class="border-b border-white/10 pb-3 text-[10px] font-black uppercase tracking-[0.26em] text-zinc-500">Xe & Gói chăm sóc của bạn</h3>
+
+                <div>
+                    <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Gói dịch vụ chăm sóc xe chính hãng</label>
+                    <x-ui.custom-select
+                        id="service_package_selector"
+                        name="service_package"
+                        :value="$servicePackage"
+                        :options="$servicePackageSelectOptions"
+                        wire-model="servicePackage"
+                    />
+                    @error('servicePackage')
+                        <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
+                    @enderror
+                </div>
 
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                     <div>
@@ -153,38 +187,26 @@
                         <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
                             Danh mục {{ $this->isProductOptional ? '' : '*' }}
                         </label>
-                        <select
+                        <x-ui.custom-select
                             id="category_selector"
-                            wire:model.live="categoryType"
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                        >
-                            <option value="">-- Chọn danh mục --</option>
-                            <option value="oto">BMW Ô tô</option>
-                            <option value="xe_may">BMW Motorrad</option>
-                        </select>
+                            :value="$categoryType"
+                            :options="$categoryTypeOptions"
+                            wire-model="categoryType"
+                        />
                     </div>
 
                     <div>
                         <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
                             Chọn sản phẩm {{ $this->isProductOptional ? '' : '*' }}
                         </label>
-                        <select
+                        <x-ui.custom-select
                             id="product_selector"
                             name="product_id"
-                            wire:model.live="productId"
-                            {{ $this->isProductOptional ? '' : 'required' }}
-                            @disabled($categoryType === '')
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                        >
-                            @if($categoryType === '')
-                                <option value="">-- Vui lòng chọn danh mục trước --</option>
-                            @else
-                                <option value="">-- Chọn sản phẩm --</option>
-                                @foreach($this->availableProducts as $availableProduct)
-                                    <option value="{{ $availableProduct->id }}">{{ $availableProduct->name }}</option>
-                                @endforeach
-                            @endif
-                        </select>
+                            :value="$productId"
+                            :options="$productSelectOptions"
+                            :disabled="$categoryType === ''"
+                            wire-model="productId"
+                        />
                         @error('productId')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
                         @enderror

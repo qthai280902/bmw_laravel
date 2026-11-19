@@ -58,11 +58,11 @@
                     {{-- Loại yêu cầu --}}
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Loại yêu cầu *</label>
-                        <select name="type" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors uppercase text-xs font-black tracking-widest">
-                            @foreach([\App\Enums\AppointmentType::TestDrive, \App\Enums\AppointmentType::Viewing, \App\Enums\AppointmentType::Quote, \App\Enums\AppointmentType::Consult, \App\Enums\AppointmentType::AdvisorMeeting] as $type)
-                                <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                            @endforeach
-                        </select>
+                        <x-ui.custom-select
+                            name="type"
+                            value="test_drive"
+                            :options="collect([\App\Enums\AppointmentType::TestDrive, \App\Enums\AppointmentType::Viewing, \App\Enums\AppointmentType::Quote, \App\Enums\AppointmentType::Consult, \App\Enums\AppointmentType::AdvisorMeeting])->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all()"
+                        />
                     </div>
 
                     {{-- Thông tin khách hàng --}}
@@ -88,12 +88,11 @@
                     {{-- Chọn sản phẩm --}}
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Sản phẩm quan tâm *</label>
-                        <select name="product_id" required class="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
-                            <option value="">-- Chọn sản phẩm --</option>
-                            @foreach($bookableProducts as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-ui.custom-select
+                            name="product_id"
+                            value=""
+                            :options="array_merge(['' => '-- Chọn sản phẩm --'], $bookableProducts->pluck('name', 'id')->all())"
+                        />
                     </div>
 
                     {{-- Ngày hẹn --}}

@@ -21,7 +21,7 @@
     @endif
 
     <x-admin.card class="mb-6 !p-5">
-        <form action="{{ route('admin.accessory-orders.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-4 md:grid-cols-[1.2fr_minmax(0,320px)_auto] md:items-end">
+        <form action="{{ route('admin.accessory-orders.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_minmax(0,300px)_auto] md:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm mã đơn / khách hàng / phụ kiện">
                 <input
                     id="search"
@@ -29,24 +29,25 @@
                     name="search"
                     wire:model.live.debounce.350ms="search"
                     placeholder="#12, tên khách, SĐT hoặc phụ kiện..."
-                    class="w-full rounded-none border-zinc-800 bg-black px-4 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-none border-zinc-800 bg-black px-3.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
             <x-admin.form-field name="status" label="Trạng thái">
-                <select id="status" name="status" wire:model.live="status" class="w-full rounded-none border-zinc-800 bg-black px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả trạng thái</option>
-                    @foreach($statusOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
+                <x-ui.custom-select
+                    id="status"
+                    name="status"
+                    :value="$status"
+                    :options="array_merge(['' => 'Tất cả trạng thái'], $statusOptions)"
+                    wire-model="status"
+                />
             </x-admin.form-field>
 
-            <div class="grid grid-cols-2 gap-3">
-                <button type="submit" class="rounded-none border border-zinc-700 bg-zinc-900 px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]">
+            <div class="flex items-center gap-2">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-none border border-zinc-700 bg-zinc-900 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer">
                     Lọc
                 </button>
-                <button type="button" wire:click="resetFilters" class="rounded-none border border-zinc-800 px-5 py-3 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:text-white">
+                <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-none border border-zinc-800 px-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white cursor-pointer">
                     Xóa
                 </button>
             </div>
@@ -58,48 +59,49 @@
             <table class="w-full min-w-[1140px] text-left">
                 <thead>
                     <tr class="border-b border-zinc-800 bg-black/60">
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Mã đơn</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Khách hàng</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Sản phẩm</th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">SL</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Tổng tiền</th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Trạng thái</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Ngày tạo</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Thao tác</th>
+                        <th class="px-5 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Mã đơn</th>
+                        <th class="px-5 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Khách hàng</th>
+                        <th class="px-5 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Sản phẩm</th>
+                        <th class="px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">SL</th>
+                        <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tổng tiền</th>
+                        <th class="min-w-[135px] px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Trạng thái</th>
+                        <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Ngày tạo</th>
+                        <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-900">
                     @forelse($orders as $order)
                         <tr wire:key="admin-accessory-order-{{ $order->id }}" class="group transition-colors hover:bg-zinc-900/60">
-                            <td class="px-6 py-5 text-sm font-black uppercase tracking-widest text-white">#{{ $order->id }}</td>
-                            <td class="px-6 py-5">
+                            <td class="whitespace-nowrap px-5 py-5 text-sm font-black uppercase tracking-widest tabular-nums text-white">#{{ $order->id }}</td>
+                            <td class="px-5 py-5">
                                 <p class="text-sm font-black uppercase tracking-wider text-white">{{ $order->customer_name }}</p>
-                                <p class="mt-1 text-xs font-medium text-zinc-500">{{ $order->customer_phone }}</p>
+                                <p class="mt-1 whitespace-nowrap text-xs font-medium tabular-nums text-zinc-400">{{ $order->customer_phone }}</p>
                             </td>
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-5">
                                 <p class="max-w-xs truncate text-xs font-black uppercase tracking-wider text-[#70A7FF]">{{ $order->product?->name ?? 'Sản phẩm đã xóa' }}</p>
-                                <p class="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-700">{{ $order->product?->category?->name ?? 'N/A' }}</p>
+                                <p class="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ $order->product?->category?->name ?? 'N/A' }}</p>
                             </td>
-                            <td class="px-6 py-5 text-center text-sm font-black text-zinc-300">{{ $order->quantity }}</td>
-                            <td class="px-6 py-5 text-right text-sm font-black tabular-nums text-white">{{ number_format($order->total_amount) }} VNĐ</td>
-                            <td class="px-6 py-5 text-center">
-                                <span class="rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] {{ $order->statusColorClass() }}">
+                            <td class="whitespace-nowrap px-5 py-5 text-center text-sm font-black tabular-nums text-zinc-300">{{ $order->quantity }}</td>
+                            <td class="whitespace-nowrap px-5 py-5 text-right text-sm font-black tabular-nums text-white">{{ number_format($order->total_amount) }} VNĐ</td>
+                            <td class="min-w-[135px] whitespace-nowrap px-5 py-5 text-center">
+                                <span class="inline-flex items-center justify-center whitespace-nowrap rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] {{ $order->statusColorClass() }}">
                                     {{ $order->statusLabel() }}
                                 </span>
                             </td>
-                            <td class="px-6 py-5 text-right text-xs font-bold uppercase tracking-widest text-zinc-500">{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                            <td class="px-6 py-5 text-right">
+                            <td class="whitespace-nowrap px-5 py-5 text-right text-xs font-bold uppercase tracking-wider tabular-nums text-zinc-400">{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="whitespace-nowrap px-5 py-5 text-right">
                                 <div class="inline-flex items-center gap-3">
-                                    <select
-                                        aria-label="Cập nhật trạng thái đơn #{{ $order->id }}"
-                                        wire:change="updateStatus({{ $order->id }}, $event.target.value)"
-                                        class="rounded-none border-zinc-800 bg-black px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.16em] text-zinc-400 transition-colors hover:text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                                    >
-                                        @foreach($statusOptions as $value => $label)
-                                            <option value="{{ $value }}" @selected($order->status === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                    <a href="{{ route('admin.accessory-orders.show', $order) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-white">
+                                    <div class="w-40">
+                                        <x-ui.custom-select
+                                            compact
+                                            aria-label="Cập nhật trạng thái đơn #{{ $order->id }}"
+                                            :value="$order->status"
+                                            :options="$statusOptions"
+                                            wire-action="updateStatus"
+                                            :wire-record-id="$order->id"
+                                        />
+                                    </div>
+                                    <a href="{{ route('admin.accessory-orders.show', $order) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-white">
                                         Xem
                                     </a>
                                 </div>

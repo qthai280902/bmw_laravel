@@ -28,7 +28,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.products.index', absolute: false));
+        $defaultRoute = $request->user()?->isSales()
+            ? route('admin.appointments.index', absolute: false)
+            : route('admin.products.index', absolute: false);
+
+        return redirect()->intended($defaultRoute);
     }
 
     /**

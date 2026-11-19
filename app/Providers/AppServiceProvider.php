@@ -8,7 +8,10 @@ use App\Models\Product;
 use App\Observers\AppointmentObserver;
 use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,6 +31,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureHttpClientCertificateAuthority();
+
+        RateLimiter::for('showroom-booking', function (Request $request): Limit {
+            $maxAttempts = max(1, (int) config('mail.booking_rate_limit_per_minute', 5));
+
+            return Limit::perMinute($maxAttempts)
+                ->by((string) ($request->ip() ?: 'booking-ip'))
+                ->response(function (Request $request, array $headers) {
+                    $message = 'Quý khách gửi yêu cầu đặt lịch quá nhanh. Vui lòng thử lại sau ít phút.';
+
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => $message], 429, $headers);
+                    }
+
+                    return response($message, 429, $headers);
+                });
+        });
 
         Product::observe(ProductObserver::class);
         Article::observe(ArticleObserver::class);

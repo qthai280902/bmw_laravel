@@ -47,14 +47,12 @@
 
                     <div>
                         <label class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Trạng thái</label>
-                        <select name="status" class="w-full border-zinc-800 bg-zinc-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-zinc-300 focus:border-zinc-500 focus:ring-0">
-                            @foreach($statusOptions as $value => $label)
-                                <option value="{{ $value }}" {{ old('status', $order->status) === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('status')
-                            <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
-                        @enderror
+                        <x-ui.custom-select
+                            name="status"
+                            :value="(string) old('status', $order->status)"
+                            :options="$statusOptions"
+                            :show-error="true"
+                        />
                     </div>
 
                     <div>

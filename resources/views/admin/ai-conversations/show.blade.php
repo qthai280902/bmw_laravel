@@ -143,12 +143,12 @@
                 <form method="POST" action="{{ route('admin.ai-conversations.update-status', $session) }}" class="mt-5 space-y-4">
                     @csrf
                     @method('PATCH')
-                    <select name="status" class="w-full border border-zinc-800 bg-black/60 px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                        @foreach ($statusOptions as $value => $label)
-                            <option value="{{ $value }}" @selected($session->status === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    <button type="submit" class="w-full border border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white">
+                    <x-ui.custom-select
+                        name="status"
+                        :value="$session->status"
+                        :options="$statusOptions"
+                    />
+                    <button type="submit" class="w-full border border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white cursor-pointer">
                         Cập nhật
                     </button>
                 </form>

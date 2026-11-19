@@ -81,10 +81,11 @@ return [
 
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            'mailers' => array_values(array_filter(array_map(
+                static fn (string $mailer): string => trim($mailer),
+                explode(',', (string) env('MAIL_FAILOVER_MAILERS', 'smtp,log'))
+            ), static fn (string $mailer): bool => $mailer !== '')) ?: ['smtp', 'log'],
+            'retry_after' => 60,
         ],
 
         'roundrobin' => [
@@ -114,5 +115,12 @@ return [
     ],
 
     'showroom_admin' => env('MAIL_SHOWROOM_ADMIN', 'advisor@bmw.com'),
+
+    'showroom_admins' => array_values(array_unique(array_filter(array_map(
+        static fn (string $email): string => mb_strtolower(trim($email)),
+        explode(',', (string) env('MAIL_SHOWROOM_ADMIN', 'advisor@bmw.com'))
+    ), static fn (string $email): bool => $email !== ''))),
+
+    'booking_rate_limit_per_minute' => (int) env('BOOKING_RATE_LIMIT_PER_MINUTE', 5),
 
 ];

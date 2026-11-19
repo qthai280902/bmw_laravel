@@ -1,3 +1,24 @@
+@php
+    $statusFilterOptions = ['' => 'Tất cả trạng thái'];
+    $statusActionOptions = [];
+    foreach ($statuses as $statusOption) {
+        $statusFilterOptions[$statusOption->value] = $statusOption->label();
+        $statusActionOptions[$statusOption->value] = $statusOption->label();
+    }
+
+    $typeFilterOptions = ['' => 'Tất cả loại'];
+    foreach ($types as $typeOption) {
+        $typeFilterOptions[$typeOption->value] = $typeOption->label();
+    }
+
+    $priorityFilterOptions = [
+        '' => 'Tất cả mức độ',
+        'hot' => 'HOT LEAD',
+        'warm' => 'TIỀM NĂNG',
+        'normal' => 'THAM KHẢO',
+    ];
+@endphp
+
 <div>
     <x-admin.page-header
         eyebrow="CRM pipeline"
@@ -21,7 +42,7 @@
     @endif
 
     <x-admin.card class="mb-6 !p-5">
-        <form action="{{ route('admin.appointments.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr_1fr_1fr_auto] lg:items-end">
+        <form action="{{ route('admin.appointments.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-3 lg:grid-cols-[1.35fr_1fr_1fr_1fr_auto] lg:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm khách hàng / xe">
                 <input
                     id="search"
@@ -29,46 +50,45 @@
                     name="search"
                     wire:model.live.debounce.350ms="search"
                     placeholder="Tên, SĐT, email hoặc mẫu xe..."
-                    class="w-full rounded-none border-zinc-800 bg-black px-4 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-none border-zinc-800 bg-black px-3.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
             <x-admin.form-field name="status" label="Trạng thái">
-                <select id="status" name="status" wire:model.live="status" class="w-full rounded-none border-zinc-800 bg-black px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả trạng thái</option>
-                    @foreach($statuses as $statusOption)
-                        <option value="{{ $statusOption->value }}">
-                            {{ $statusOption->label() }}
-                        </option>
-                    @endforeach
-                </select>
+                <x-ui.custom-select
+                    id="status"
+                    name="status"
+                    :value="$status"
+                    :options="$statusFilterOptions"
+                    wire-model="status"
+                />
             </x-admin.form-field>
 
             <x-admin.form-field name="type" label="Loại yêu cầu">
-                <select id="type" name="type" wire:model.live="type" class="w-full rounded-none border-zinc-800 bg-black px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả loại</option>
-                    @foreach($types as $typeOption)
-                        <option value="{{ $typeOption->value }}">
-                            {{ $typeOption->label() }}
-                        </option>
-                    @endforeach
-                </select>
+                <x-ui.custom-select
+                    id="type"
+                    name="type"
+                    :value="$type"
+                    :options="$typeFilterOptions"
+                    wire-model="type"
+                />
             </x-admin.form-field>
 
             <x-admin.form-field name="leadPriority" label="Phân loại Lead AI">
-                <select id="leadPriority" name="priority" wire:model.live="leadPriority" class="w-full rounded-none border-zinc-800 bg-black px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả mức độ</option>
-                    <option value="hot">HOT LEAD</option>
-                    <option value="warm">TIỀM NĂNG</option>
-                    <option value="normal">THAM KHẢO</option>
-                </select>
+                <x-ui.custom-select
+                    id="leadPriority"
+                    name="priority"
+                    :value="$leadPriority"
+                    :options="$priorityFilterOptions"
+                    wire-model="leadPriority"
+                />
             </x-admin.form-field>
 
-            <div class="grid grid-cols-2 gap-3">
-                <button type="submit" class="rounded-none border border-zinc-700 bg-zinc-900 px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]">
+            <div class="flex items-center gap-2">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-none border border-zinc-700 bg-zinc-900 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer">
                     Lọc
                 </button>
-                <button type="button" wire:click="resetFilters" class="rounded-none border border-zinc-800 px-5 py-3 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:text-white">
+                <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-none border border-zinc-800 px-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white cursor-pointer">
                     Xóa
                 </button>
             </div>
@@ -77,96 +97,126 @@
 
     <x-admin.card class="!p-0 overflow-hidden">
         <div class="overflow-x-auto" wire:loading.class="opacity-60">
-            <table class="w-full min-w-[1120px] text-left">
+            <table class="w-full min-w-[1140px] text-left">
                 <thead>
                     <tr class="border-b border-zinc-800 bg-black/60">
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Thời điểm</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Khách hàng</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Nhu cầu</th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Trạng thái</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Điều phối</th>
+                        <th class="px-5 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Thời điểm</th>
+                        <th class="px-5 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Khách hàng</th>
+                        <th class="px-5 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Nhu cầu</th>
+                        <th class="min-w-[140px] px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Trạng thái</th>
+                        <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Điều phối</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-900">
                     @forelse($appointments as $appointment)
-                        <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group transition-colors hover:bg-zinc-900/60">
-                            <td class="px-6 py-5">
-                                <p class="text-sm font-black uppercase tracking-widest text-white">{{ $appointment->appointment_date->format('d/m/Y') }}</p>
-                                <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">{{ $appointment->appointment_date->format('H:i') }}</p>
+                        <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group align-top transition-colors hover:bg-zinc-900/60">
+                            <td class="whitespace-nowrap px-5 py-5">
+                                <p class="text-sm font-black tabular-nums tracking-wider text-white">{{ $appointment->appointment_date->format('d/m/Y') }}</p>
+                                <p class="mt-1 text-[11px] font-bold tabular-nums tracking-wider text-zinc-500">{{ $appointment->appointment_date->format('H:i') }}</p>
                             </td>
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-5">
                                 <p class="text-sm font-black uppercase tracking-wider text-white">{{ $appointment->user?->name ?? $appointment->guest_name ?? 'Khách vãng lai' }}</p>
-                                <p class="mt-1 text-xs font-medium text-zinc-500">{{ $appointment->user?->email ?? $appointment->guest_email ?? $appointment->guest_phone ?? 'Chưa có liên hệ' }}</p>
+                                <p class="mt-1 text-xs font-medium text-zinc-400">{{ $appointment->user?->email ?? $appointment->guest_email ?? $appointment->guest_phone ?? 'Chưa có liên hệ' }}</p>
+                                @if(filled($appointment->guest_phone) && filled($appointment->user?->email ?? $appointment->guest_email))
+                                    <p class="mt-0.5 text-[11px] tabular-nums text-zinc-500">{{ $appointment->guest_phone }}</p>
+                                @endif
                             </td>
-                            <td class="px-6 py-5">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">{{ $appointment->type->label() }}</p>
-                                    @if($appointment->lead_priority)
-                                        <span class="rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] {{ $appointment->leadPriorityColorClass() }}">
-                                            {{ $appointment->leadPriorityLabel() }}
+                            <td class="px-5 py-5">
+                                <div class="space-y-2">
+                                    <!-- Dòng 1: Tên xe nổi bật + Loại lịch hẹn & Phân loại AI -->
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-xs font-bold uppercase tracking-wider text-white">
+                                            {{ $appointment->product?->name ?? 'Chưa gắn sản phẩm' }}
                                         </span>
-                                    @endif
-                                    @if($appointment->ai_conversation_id || filled($appointment->ai_chat_summary))
-                                        <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-[#70A7FF]">
-                                            ĐÃ CHAT AI
+                                        <span class="whitespace-nowrap rounded-none border border-[#1C69D4]/30 bg-[#1C69D4]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-[#70A7FF]">
+                                            {{ $appointment->type->label() }}
                                         </span>
-                                    @endif
-                                </div>
-                                <p class="mt-2 max-w-xs truncate text-xs font-black uppercase tracking-wider text-zinc-300">{{ $appointment->product?->name ?? 'Chưa gắn sản phẩm' }}</p>
-                                @if($appointment->ai_lead_note)
-                                    <p class="mt-1.5 max-w-sm truncate text-[11px] font-medium text-zinc-400">
-                                        AI: {{ $appointment->ai_lead_note }}
-                                    </p>
-                                @elseif($appointment->meta_data)
-                                    <p class="mt-2 max-w-sm truncate text-[10px] font-medium text-zinc-600">
-                                        {{ collect($appointment->meta_data)->filter()->take(2)->map(fn ($value, $key) => Str::headline($key).': '.(is_scalar($value) ? $value : json_encode($value)))->implode(' | ') }}
-                                    </p>
-                                @endif
-                                @if(filled($appointment->ai_chat_summary))
-                                    <p class="mt-1 max-w-sm truncate text-[11px] font-medium text-[#70A7FF]/90">
-                                        {{ $appointment->ai_chat_summary }}
-                                    </p>
-                                @endif
-                                <div class="mt-2 flex flex-wrap items-center gap-2">
-                                    @if($appointment->ai_conversation_id || filled($appointment->ai_visitor_id))
-                                        <button
-                                            type="button"
-                                            wire:click="inspectAiConversation({{ $appointment->id }})"
-                                            class="inline-flex items-center gap-1.5 rounded-none border border-white/15 bg-[#121215] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-zinc-200 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
-                                        >
-                                            Xem lịch sử chat AI
-                                        </button>
+                                        @if($appointment->lead_priority)
+                                            <span class="whitespace-nowrap rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] {{ $appointment->leadPriorityColorClass() }}">
+                                                {{ $appointment->leadPriorityLabel() }}
+                                            </span>
+                                        @endif
+                                        @if($appointment->ai_conversation_id || filled($appointment->ai_chat_summary))
+                                            <span class="whitespace-nowrap rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-[#70A7FF]">
+                                                ĐÃ CHAT AI
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Dòng 2: Tóm tắt AI / ghi chú 1-2 dòng -->
+                                    @php
+                                        $summaryLine = filled($appointment->ai_chat_summary)
+                                            ? $appointment->ai_chat_summary
+                                            : ($appointment->ai_lead_note ? 'AI: '.$appointment->ai_lead_note : null);
+                                    @endphp
+                                    @if($summaryLine)
+                                        <p class="line-clamp-2 max-w-lg text-xs leading-relaxed text-zinc-400">
+                                            {{ $summaryLine }}
+                                        </p>
+                                    @elseif($appointment->meta_data)
+                                        <p class="line-clamp-1 max-w-lg text-[11px] text-zinc-500">
+                                            {{ collect($appointment->meta_data)->filter()->take(2)->map(fn ($value, $key) => Str::headline($key).': '.(is_scalar($value) ? $value : json_encode($value)))->implode(' · ') }}
+                                        </p>
                                     @endif
 
-                                    @if(filled($appointment->user?->email ?? $appointment->guest_email))
-                                        <a
-                                            href="{{ route('admin.mail-preview.appointment', $appointment) }}"
-                                            target="_blank"
-                                            rel="noopener"
-                                            class="inline-flex items-center gap-1.5 rounded-none border border-zinc-800 bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
-                                        >
-                                            Xem mẫu Email xác nhận
-                                        </a>
-                                    @endif
+                                    <!-- Dòng 3: Badge trạng thái email + thanh hành động gọn trên 1 hàng -->
+                                    <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                                        @if($appointment->confirmation_email_sent_at)
+                                            <span class="whitespace-nowrap rounded-none border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-300">
+                                                ĐÃ GỬI MAIL XÁC NHẬN · {{ $appointment->confirmation_email_sent_at->format('H:i d/m') }}
+                                            </span>
+                                        @else
+                                            <span class="whitespace-nowrap rounded-none border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-zinc-500">
+                                                CHƯA GỬI MAIL
+                                            </span>
+                                        @endif
+
+                                        @if($appointment->ai_conversation_id || filled($appointment->ai_visitor_id))
+                                            <button
+                                                type="button"
+                                                wire:click="inspectAiConversation({{ $appointment->id }})"
+                                                class="whitespace-nowrap rounded-none border border-white/10 bg-zinc-950 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer"
+                                            >
+                                                Xem lịch sử chat AI
+                                            </button>
+                                        @endif
+
+                                        @if(filled($appointment->user?->email ?? $appointment->guest_email))
+                                            <a
+                                                href="{{ route('admin.mail-preview.appointment', $appointment) }}"
+                                                target="_blank"
+                                                rel="noopener"
+                                                class="whitespace-nowrap rounded-none border border-zinc-800 bg-black px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
+                                            >
+                                                Xem mẫu Email xác nhận
+                                            </a>
+                                            <button
+                                                type="button"
+                                                wire:click="resendConfirmationEmail({{ $appointment->id }})"
+                                                class="whitespace-nowrap rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white cursor-pointer"
+                                            >
+                                                Gửi lại Email xác nhận
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-5 text-center">
-                                <span class="rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] {{ $appointment->status->color() }}">
+                            <td class="min-w-[140px] whitespace-nowrap px-5 py-5 text-center">
+                                <span class="inline-flex items-center justify-center whitespace-nowrap rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] {{ $appointment->status->color() }}">
                                     {{ $appointment->status->label() }}
                                 </span>
                             </td>
-                            <td class="px-6 py-5 text-right">
-                                <select
-                                    aria-label="Cập nhật trạng thái lịch hẹn #{{ $appointment->id }}"
-                                    wire:change="updateStatus({{ $appointment->id }}, $event.target.value)"
-                                    class="rounded-none border-zinc-800 bg-black px-3 py-2 text-[9px] font-black uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                                >
-                                    @foreach($statuses as $statusOption)
-                                        <option value="{{ $statusOption->value }}" @selected($appointment->status === $statusOption)>
-                                            {{ $statusOption->label() }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                            <td class="min-w-[170px] whitespace-nowrap px-5 py-5 text-right">
+                                <div class="ml-auto w-40">
+                                    <x-ui.custom-select
+                                        compact
+                                        aria-label="Cập nhật trạng thái lịch hẹn #{{ $appointment->id }}"
+                                        :value="$appointment->status->value"
+                                        :options="$statusActionOptions"
+                                        wire-action="updateStatus"
+                                        :wire-record-id="$appointment->id"
+                                    />
+                                </div>
                             </td>
                         </tr>
                     @empty

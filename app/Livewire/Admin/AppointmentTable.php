@@ -6,14 +6,18 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
+use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Models\AiChatSession;
 use App\Models\Appointment;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Throwable;
 
 class AppointmentTable extends Component
 {
@@ -38,7 +42,7 @@ class AppointmentTable extends Component
 
     public function mount(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
     }
 
     public function updatedSearch(): void
@@ -72,7 +76,7 @@ class AppointmentTable extends Component
 
     public function updateStatus(int $appointmentId, string $status): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
 
         $validated = Validator::make(
             ['status' => $status],
@@ -87,9 +91,38 @@ class AppointmentTable extends Component
         $this->flashMessage = "Đã cập nhật trạng thái lịch hẹn #{$appointment->id} thành công.";
     }
 
+    public function resendConfirmationEmail(int $appointmentId): void
+    {
+        $this->authorizeCrm();
+
+        $appointment = Appointment::query()
+            ->with(['product.category', 'user'])
+            ->findOrFail($appointmentId);
+
+        $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
+
+        if ($recipientEmail === '') {
+            $this->flashMessage = "Lịch hẹn #{$appointment->id} chưa có địa chỉ email để gửi lại.";
+
+            return;
+        }
+
+        try {
+            Mail::to($recipientEmail)->send(new AppointmentConfirmationMail($appointment));
+            $this->flashMessage = "Đã gửi lại email xác nhận tới {$recipientEmail} cho lịch hẹn #{$appointment->id}.";
+        } catch (Throwable $exception) {
+            Log::warning('Failed resending appointment confirmation email from CRM.', [
+                'appointment_id' => $appointment->id,
+                'exception' => $exception::class,
+            ]);
+
+            $this->flashMessage = "Không thể gửi lại email xác nhận cho lịch hẹn #{$appointment->id}.";
+        }
+    }
+
     public function inspectAiConversation(int $appointmentId): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
 
         $this->inspectedAppointmentId = $appointmentId;
     }

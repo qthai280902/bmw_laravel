@@ -26,7 +26,7 @@ class AccessoryOrderTable extends Component
 
     public function mount(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
     }
 
     public function updatedSearch(): void
@@ -48,7 +48,7 @@ class AccessoryOrderTable extends Component
 
     public function updateStatus(int $orderId, string $status): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
 
         $validated = Validator::make(
             ['status' => $status],

@@ -72,10 +72,10 @@
                 </label>
 
                 <div class="grid grid-cols-1 gap-4 border-t border-zinc-800 pt-8 sm:grid-cols-[1fr_auto]">
-                    <button type="submit" class="bg-[#1C69D4] px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+                    <button type="submit" class="h-12 whitespace-nowrap rounded-none bg-[#1C69D4] px-8 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black cursor-pointer">
                         Lưu thiết lập
                     </button>
-                    <a href="{{ route('appointments.create', ['type' => 'consult']) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center border border-zinc-700 px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-300 transition-all hover:border-white hover:text-white">
+                    <a href="{{ route('appointments.create', ['type' => 'consult']) }}" target="_blank" rel="noopener" class="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-none border border-zinc-700 px-8 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-300 transition-all hover:border-white hover:text-white">
                         Xem form public
                     </a>
                 </div>

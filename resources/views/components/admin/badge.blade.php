@@ -10,6 +10,6 @@
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-flex items-center border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] '.$classes]) }}>
+<span {{ $attributes->merge(['class' => 'inline-flex items-center whitespace-nowrap rounded-none border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] '.$classes]) }}>
     {{ $slot }}
 </span>

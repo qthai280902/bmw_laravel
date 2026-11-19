@@ -110,16 +110,12 @@
                         </button>
                         <div x-show="open" x-collapse>
                             <div class="pt-4">
-                                <select
+                                <x-ui.custom-select
                                     name="category_id"
-                                    wire:model.live="categoryId"
-                                    class="w-full rounded-none border border-zinc-800 bg-zinc-900 p-4 text-xs font-bold uppercase tracking-wider text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                                >
-                                    <option value="">Tất cả</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
+                                    :value="$categoryId"
+                                    :options="array_merge(['' => 'Tất cả'], $categories->pluck('name', 'id')->all())"
+                                    wire-model="categoryId"
+                                />
                             </div>
                         </div>
                     </div>
@@ -184,16 +180,18 @@
                         </span>
                     </div>
 
-                    <select
-                        name="sort"
-                        form="filterForm"
-                        wire:model.live="sort"
-                        class="rounded-none border border-zinc-800 bg-zinc-950 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
-                    >
-                        <option value="latest" class="bg-zinc-950">Mới nhất</option>
-                        <option value="price_low" class="bg-zinc-950">Giá thấp đến cao</option>
-                        <option value="price_high" class="bg-zinc-950">Giá cao đến thấp</option>
-                    </select>
+                    <div class="w-full sm:w-56">
+                        <x-ui.custom-select
+                            name="sort"
+                            :value="$sort"
+                            :options="[
+                                'latest' => 'Mới nhất',
+                                'price_low' => 'Giá thấp đến cao',
+                                'price_high' => 'Giá cao đến thấp',
+                            ]"
+                            wire-model="sort"
+                        />
+                    </div>
                 </div>
 
                 <div wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-200">

@@ -4,11 +4,13 @@ namespace App\Mail\Customer;
 
 use App\Models\Appointment;
 use App\Models\Product;
+use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class AppointmentConfirmationMail extends Mailable implements ShouldQueue
@@ -38,24 +40,34 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
         );
     }
 
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-BMW-Mail-Kind' => 'appointment_confirmation',
+                'X-BMW-Appointment-ID' => (string) $this->appointment->id,
+            ],
+        );
+    }
+
     /**
-     * @return array<int, Attachment>
+     * @return array<int, Attachment|Attachable>
      */
     public function attachments(): array
     {
         $this->appointment->loadMissing(['product.category']);
+
+        $attachments = [$this->appointment];
         $product = $this->appointment->product;
 
-        if (! $product instanceof Product) {
-            return [];
-        }
-
-        return [
-            Attachment::fromData(
+        if ($product instanceof Product) {
+            $attachments[] = Attachment::fromData(
                 fn (): string => $this->renderVehicleBrochureHtml($product),
                 'BMW-'.$product->slug.'-Brochure.html'
-            )->withMime('text/html'),
-        ];
+            )->withMime('text/html');
+        }
+
+        return $attachments;
     }
 
     public function renderVehicleBrochureHtml(Product $product): string

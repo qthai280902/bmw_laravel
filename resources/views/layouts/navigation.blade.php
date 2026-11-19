@@ -52,14 +52,16 @@
 
                         <x-slot name="content">
                             @if(auth()->user()->isAdmin())
-                                <x-dropdown-link :href="route('admin.products.index')">
+                                <x-dropdown-link :href="auth()->user()->isSales() ? route('admin.appointments.index') : route('admin.products.index')">
                                     {{ __('Trang Quản trị') }}
                                 </x-dropdown-link>
                             @endif
 
-                            <x-dropdown-link :href="route('dashboard')">
-                                {{ __('Garage của tôi') }}
-                            </x-dropdown-link>
+                            @if(auth()->user()->canAccessCrm())
+                                <x-dropdown-link :href="route('dashboard')">
+                                    {{ __('Garage của tôi') }}
+                                </x-dropdown-link>
+                            @endif
 
                             <x-dropdown-link :href="route('profile.edit')">
                                 {{ __('Cài đặt tài khoản') }}

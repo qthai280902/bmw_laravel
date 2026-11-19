@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('ai:prune-conversations')->dailyAt('03:30');
+Schedule::command('appointments:send-reminders')->hourly()->withoutOverlapping();

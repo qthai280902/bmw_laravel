@@ -34,21 +34,25 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Dòng xe (BMW Line)</label>
-                                <select name="category_id" required 
-                                        class="w-full bg-zinc-950 border-zinc-800 text-white text-sm px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all">
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
+                                <x-ui.custom-select
+                                    name="category_id"
+                                    :value="(string) old('category_id', $product->category_id)"
+                                    :options="$categories->pluck('name', 'id')->toArray()"
+                                    :show-error="true"
+                                />
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Phân loại phương tiện</label>
-                                <select name="type" required 
-                                        class="w-full bg-zinc-950 border-zinc-800 text-white text-sm px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all">
-                                    <option value="car" {{ old('type', $product->type->value) == 'car' ? 'selected' : '' }}>Ô tô (Automobile)</option>
-                                    <option value="motorbike" {{ old('type', $product->type->value) == 'motorbike' ? 'selected' : '' }}>Xe máy (Motorrad)</option>
-                                    <option value="accessory" {{ old('type', $product->type->value) == 'accessory' ? 'selected' : '' }}>Phụ kiện chính hãng</option>
-                                </select>
+                                <x-ui.custom-select
+                                    name="type"
+                                    :value="old('type', $product->type->value)"
+                                    :options="[
+                                        'car' => 'Ô tô (Automobile)',
+                                        'motorbike' => 'Xe máy (Motorrad)',
+                                        'accessory' => 'Phụ kiện chính hãng',
+                                    ]"
+                                    :show-error="true"
+                                />
                             </div>
                         </div>
 

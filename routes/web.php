@@ -8,11 +8,13 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ServiceBookingController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Ai\ShowroomAssistantController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Client\AppointmentController;
+use App\Http\Controllers\Client\GuestAppointmentManageController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -56,8 +58,16 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact.index'
 
 // Public Booking Routes
 Route::get('/booking', [AppointmentController::class, 'create'])->name('appointments.create');
-Route::post('/booking', [AppointmentController::class, 'store'])->name('appointments.store');
+Route::post('/booking', [AppointmentController::class, 'store'])
+    ->middleware('throttle:showroom-booking')
+    ->name('appointments.store');
 Route::get('/booking/success', [AppointmentController::class, 'success'])->name('appointments.success');
+Route::get('/appointments/{appointment}/manage', [GuestAppointmentManageController::class, 'show'])
+    ->middleware('signed')
+    ->name('appointments.guest.manage');
+Route::post('/appointments/{appointment}/manage', [GuestAppointmentManageController::class, 'update'])
+    ->middleware('signed')
+    ->name('appointments.guest.update');
 
 Route::post('/ai/showroom-assistant', ShowroomAssistantController::class)
     ->middleware('throttle:12,1')
@@ -85,7 +95,7 @@ Route::get('/api/ai/assistant/history', [ShowroomAssistantController::class, 'hi
 // Auth Dashboard & Appointments Mng
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->middleware('admin')
+        ->middleware(['admin', 'role:admin,sales'])
         ->name('dashboard');
     // Appointments list
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
@@ -98,32 +108,51 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::resource('products', AdminProductController::class);
-        Route::resource('categories', CategoryController::class);
-        Route::post('articles/ai-assist', [AdminArticleController::class, 'aiAssist'])->name('articles.ai-assist');
-        Route::resource('articles', AdminArticleController::class)->except(['show']);
-
-        Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
-        Route::get('mail-preview/appointment/{appointment}', [App\Http\Controllers\Admin\AppointmentController::class, 'previewMail'])
-            ->name('mail-preview.appointment');
-        Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
-        Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
-        Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');
-        Route::middleware('verified')->group(function () {
-            Route::get('ai-conversations', [AdminAiConversationController::class, 'index'])->name('ai-conversations.index');
-            Route::get('ai-conversations/{session}', [AdminAiConversationController::class, 'show'])->name('ai-conversations.show');
-            Route::patch('ai-conversations/{session}/status', [AdminAiConversationController::class, 'updateStatus'])->name('ai-conversations.update-status');
+        // Content & Marketing Portal (admin + marketing)
+        Route::middleware('role:admin,marketing')->group(function () {
+            Route::resource('products', AdminProductController::class);
+            Route::resource('categories', CategoryController::class);
+            Route::post('articles/ai-assist', [AdminArticleController::class, 'aiAssist'])->name('articles.ai-assist');
+            Route::resource('articles', AdminArticleController::class)->except(['show']);
+            Route::post('customers/promotions', [CustomerController::class, 'sendPromotions'])->name('customers.promotions.store');
         });
-        Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
-        Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
-        Route::resource('users', UserController::class)->only(['index']);
-        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+
+        // CRM & Sales Operations Portal (admin + sales)
+        Route::middleware('role:admin,sales')->group(function () {
+            Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
+            Route::get('service-bookings', [ServiceBookingController::class, 'index'])
+                ->name('service-bookings.index');
+            Route::get('mail-preview/appointment/{appointment}', [App\Http\Controllers\Admin\AppointmentController::class, 'previewMail'])
+                ->name('mail-preview.appointment');
+            Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
+            Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
+            Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');
+            Route::middleware('verified')->group(function () {
+                Route::get('ai-conversations', [AdminAiConversationController::class, 'index'])->name('ai-conversations.index');
+                Route::get('ai-conversations/{session}', [AdminAiConversationController::class, 'show'])->name('ai-conversations.show');
+                Route::patch('ai-conversations/{session}/status', [AdminAiConversationController::class, 'updateStatus'])->name('ai-conversations.update-status');
+            });
+        });
+
+        // Shared Customer Intelligence Read Access (admin + sales + marketing)
+        Route::get('customers', [CustomerController::class, 'index'])
+            ->middleware('role:admin,sales,marketing')
+            ->name('customers.index');
+
+        // System & Staff Management (admin only)
+        Route::middleware('role:admin')->group(function () {
+            Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
+            Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
+            Route::resource('users', UserController::class)->only(['index', 'store']);
+            Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+        });
     });
 });
 
 require __DIR__.'/auth.php';
 // Services & Experiences Routes
 Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+Route::get('/dich-vu', [ServiceController::class, 'index'])->name('services.dich-vu');
 Route::get('/experiences', [ServiceController::class, 'experiences'])->name('experiences.index');
 
 // API for cascading dropdowns

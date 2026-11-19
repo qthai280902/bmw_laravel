@@ -298,11 +298,11 @@
                                     {{ $appointment->product?->name ?? 'Chưa gắn sản phẩm' }}
                                 </p>
                             </td>
-                            <td class="px-6 py-4 text-xs tabular-nums text-zinc-400">
+                            <td class="whitespace-nowrap px-6 py-4 text-xs tabular-nums text-zinc-400">
                                 {{ $appointment->appointment_date->format('d/m/Y H:i') }}
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider {{ $appointment->status->color() }}">
+                            <td class="min-w-[140px] whitespace-nowrap px-6 py-4 text-center">
+                                <span class="inline-flex whitespace-nowrap rounded-none border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider {{ $appointment->status->color() }}">
                                     {{ $appointment->status->label() }}
                                 </span>
                             </td>

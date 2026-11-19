@@ -16,6 +16,12 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_SALES = 'sales';
+
+    public const ROLE_MARKETING = 'marketing';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -24,7 +30,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'role',
         'password',
+        'email_verified_at',
     ];
 
     /**
@@ -99,6 +107,49 @@ class User extends Authenticatable
         });
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public static function roles(): array
+    {
+        return [
+            self::ROLE_ADMIN => 'Quản Lý',
+            self::ROLE_SALES => 'Tư Vấn Bán Hàng',
+            self::ROLE_MARKETING => 'Marketing',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function roleValues(): array
+    {
+        return array_keys(self::roles());
+    }
+
+    public function normalizedRole(): string
+    {
+        $role = mb_strtolower(trim((string) $this->role));
+
+        return in_array($role, self::roleValues(), true) ? $role : self::ROLE_ADMIN;
+    }
+
+    public function roleLabel(): string
+    {
+        return self::roles()[$this->normalizedRole()] ?? 'Quản Lý';
+    }
+
+    /**
+     * Scope query to Showroom Admin and Sales accounts for CRM alerts & HOT LEAD emails.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeSalesAndAdmins(Builder $query): Builder
+    {
+        return $query->admins()->whereIn('role', [self::ROLE_ADMIN, self::ROLE_SALES]);
+    }
+
     public function isAdmin(): bool
     {
         $email = mb_strtolower(trim((string) $this->email));
@@ -109,5 +160,35 @@ class User extends Authenticatable
 
         return str_ends_with($email, '@bmw.com')
             || in_array($email, static::configuredAdminEmails(), true);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->isAdmin() && $this->normalizedRole() === self::ROLE_ADMIN;
+    }
+
+    public function isSales(): bool
+    {
+        return $this->isAdmin() && $this->normalizedRole() === self::ROLE_SALES;
+    }
+
+    public function isMarketing(): bool
+    {
+        return $this->isAdmin() && $this->normalizedRole() === self::ROLE_MARKETING;
+    }
+
+    public function canAccessCrm(): bool
+    {
+        return $this->isSuperAdmin() || $this->isSales();
+    }
+
+    public function canAccessContent(): bool
+    {
+        return $this->isSuperAdmin() || $this->isMarketing();
+    }
+
+    public function canManageSystem(): bool
+    {
+        return $this->isSuperAdmin();
     }
 }

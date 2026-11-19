@@ -20,24 +20,24 @@ class NotificationBell extends Component
 
     public function mount(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
     }
 
     public function refreshDigest(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
     }
 
     public function setFilter(string $filter): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
 
         $this->filter = in_array($filter, ['all', 'unread', 'hot'], true) ? $filter : 'all';
     }
 
     public function markAsRead(string $notificationId): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
 
         /** @var User|null $user */
         $user = auth()->user();
@@ -54,7 +54,7 @@ class NotificationBell extends Component
 
     public function markAllAsRead(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeCrm();
 
         /** @var User|null $user */
         $user = auth()->user();

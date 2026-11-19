@@ -8,6 +8,7 @@ use App\Mail\Admin\HotLeadAlertMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Services\Admin\AdminNotificationDispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -36,8 +37,10 @@ class SendAppointmentNotifications implements ShouldQueue
             }
         }
 
+        $showroomAdmins = AdminNotificationDispatcher::showroomAdminEmails();
+
         try {
-            Mail::to(config('mail.showroom_admin', 'advisor@bmw.com'))
+            Mail::to($showroomAdmins)
                 ->send(new AppointmentAlertMail($appointment));
         } catch (Throwable $exception) {
             Log::warning('Failed sending admin appointment alert email.', [
@@ -55,16 +58,16 @@ class SendAppointmentNotifications implements ShouldQueue
     {
         try {
             $adminEmails = User::query()
-                ->admins()
+                ->salesAndAdmins()
                 ->get()
-                ->filter(fn (User $user): bool => $user->isAdmin())
+                ->filter(fn (User $user): bool => $user->canAccessCrm())
                 ->pluck('email')
                 ->all();
 
             $recipients = collect($adminEmails)
-                ->push(config('mail.showroom_admin', 'advisor@bmw.com'))
+                ->merge(AdminNotificationDispatcher::showroomAdminEmails())
                 ->filter(fn (mixed $email): bool => is_string($email) && trim($email) !== '')
-                ->map(fn (string $email): string => trim($email))
+                ->map(fn (string $email): string => mb_strtolower(trim($email)))
                 ->unique()
                 ->values()
                 ->all();

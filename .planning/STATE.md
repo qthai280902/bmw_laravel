@@ -1,6 +1,26 @@
 # Project State
 
-Current phase: Phase 26 completed.
+Current phase: Phase 27 completed.
+
+## Phase 27: Tự Động Hóa Vòng Đời Lịch Hẹn & Email Showroom (`.ics`, Signed URLs, Nhắc Lịch 24h, Chiến Dịch Khuyến Mãi, Rate Limiting & Phân Quyền 3 Vai Trò `admin` / `sales` / `marketing`)
+
+- Completion time: 2026-11-18 +07:00.
+- Scope:
+  - Added 3-role showroom RBAC (`admin`, `sales`, `marketing`) preserving the `User::isAdmin()` allowlist gate: migration `2026_11_18_000001_add_role_to_users_table`, `User` role helpers (`isSuperAdmin`, `isSales`, `isMarketing`, `canAccessCrm`, `canAccessContent`, `canManageSystem`, `scopeSalesAndAdmins`) + `UserFactory` states, `EnsureUserHasRole` (`role` alias in `bootstrap/app.php`), `AuthorizesAdminLivewire` scoped authorization, role-based login redirects (`sales` -> `admin.appointments.index`), role-filtered sidebar & `NotificationBell` gating in `admin-layout.blade.php`, staff creation & role assignment in `Admin\UserController` (including self-demotion protection), and `salesAndAdmins()` filtering for CRM notifications and `HotLeadAlertMail`.
+  - Implemented `Illuminate\Contracts\Mail\Attachable` on `App\Models\Appointment` (`toMailAttachment()`, `toIcsContent()` generating RFC 5545 `BMW-Appointment-{$id}.ics` `text/calendar`), attached alongside `BMW-{$slug}-Brochure.html` in `AppointmentConfirmationMail` and in `AppointmentReminderMail`.
+  - Built Signed URL Guest Appointment Portal (`appointments.guest.manage` & `appointments.guest.update` under `signed` middleware, `Appointment::temporaryManageUrl()` / `temporaryManageUpdateUrl()`, `Client\GuestAppointmentManageController`, and `appointments/guest-manage.blade.php`) enabling guest `confirm`, `reschedule` (resetting `reminder_sent_at`), and `cancel` without user accounts.
+  - Added email delivery tracking (`2026_11_18_000002_add_email_tracking_columns_to_appointments_table`, `AppointmentConfirmationMail::headers()`, `RecordAppointmentMailSent` on `MessageSent`, status badges & `resendConfirmationEmail()` in `Admin\AppointmentTable`) and hourly `Isolatable` reminder command `appointments:send-reminders` (`SendAppointmentRemindersCommand` scheduled `hourly()` in `routes/console.php`) sending single `.ics` reminder within `(now(), now()->addHours(24)]`.
+  - Built Customer Promotion Campaign dispatch: `PromotionCampaignDispatched` (`ShouldDispatchAfterCommit`), `SendPromotionCampaignEmails` (`ShouldQueue`, `ShouldBeUnique`), `CustomerPromotionMail` (`mail/promotions/offer.blade.php`), and audience-filtered form/dispatch (`all`, `completed`, `by_product`, `only_completed`) in `Admin\CustomerController` & `admin/customers/index.blade.php` restricted to `admin` + `marketing`.
+  - Added `RateLimiter::for('showroom-booking')` (`BOOKING_RATE_LIMIT_PER_MINUTE`, default `5`, `60` in `phpunit.xml`), `defer(...)` for non-blocking touchpoint linking & `AppointmentCreated` dispatch in `Client\AppointmentController`, comma-separated `MAIL_SHOWROOM_ADMIN` support in `AdminNotificationDispatcher::showroomAdminEmails()`, and `tests/Feature/Phase27ShowroomAutomationAndRolesTest.php` (6 tests / 170 assertions).
+- Verification:
+  - Migration (`php artisan migrate --force`): `2026_11_18_000001_add_role_to_users_table` (`181.11ms DONE`) & `2026_11_18_000002_add_email_tracking_columns_to_appointments_table` (`23.45ms DONE`).
+  - Pint style check (`vendor\bin\pint --dirty --format agent`): pass (`{"tool":"pint","result":"passed"}`).
+  - Vite production asset build (`npm run build`): pass (`55 modules transformed`, `public/build/manifest.json` `0.27 kB`, `public/build/assets/app-MZFuK-5S.css` 99.85 kB, `public/build/assets/app-doQGNT_j.js` 370.25 kB in `5.59s`).
+  - Cache clearing & schedules: `php artisan optimize:clear` pass; `php artisan schedule:list` confirms `0  * * * *  php artisan appointments:send-reminders` and `30 3 * * *  php artisan ai:prune-conversations`.
+  - Full test suite: `php artisan test --compact` pass (**166 passed (2020 assertions)** in **36.15s**, 100% PASS).
+- Report: `.planning/baocao/phase-reports/phase-27-report.md`.
+- Result:
+  - PASS 100%.
 
 ## Phase 26: Trung Tâm Thông Báo Admin, Email Showroom Kèm Brochure Xe, `Http::pool()` & `Laravel Context`
 

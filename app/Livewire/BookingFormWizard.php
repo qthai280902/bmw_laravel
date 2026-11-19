@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\AppointmentType;
 use App\Enums\VehicleType;
 use App\Http\Requests\StoreAppointmentRequest;
+use App\Models\Appointment;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -33,6 +34,9 @@ class BookingFormWizard extends Component
 
     public string $customerCarCondition = '';
 
+    #[Url(as: 'service_package', except: '')]
+    public string $servicePackage = '';
+
     public string $appointmentDate = '';
 
     public string $notes = '';
@@ -48,6 +52,7 @@ class BookingFormWizard extends Component
         'guestEmail' => 'guest_email',
         'customerCarModel' => 'customer_car_model',
         'customerCarCondition' => 'customer_car_condition',
+        'servicePackage' => 'service_package',
         'appointmentDate' => 'appointment_date',
         'notes' => 'notes',
     ];
@@ -68,6 +73,7 @@ class BookingFormWizard extends Component
         $this->guestEmail = (string) old('guest_email', '');
         $this->customerCarModel = (string) old('customer_car_model', '');
         $this->customerCarCondition = (string) old('customer_car_condition', '');
+        $this->servicePackage = (string) old('service_package', request('service_package', $this->servicePackage));
         $this->appointmentDate = (string) old('appointment_date', '');
         $this->notes = (string) old('notes', '');
 
@@ -193,6 +199,7 @@ class BookingFormWizard extends Component
 
         return view('livewire.booking-form-wizard', [
             'requestedType' => $requestedType,
+            'servicePackageOptions' => Appointment::servicePackageOptions(),
             'salesTypes' => [
                 AppointmentType::TestDrive,
                 AppointmentType::Viewing,
@@ -222,6 +229,7 @@ class BookingFormWizard extends Component
             'guest_email' => $this->guestEmail !== '' ? $this->guestEmail : null,
             'customer_car_model' => $this->customerCarModel,
             'customer_car_condition' => $this->customerCarCondition,
+            'service_package' => $this->servicePackage !== '' ? $this->servicePackage : null,
             'appointment_date' => $this->appointmentDate,
             'notes' => $this->notes,
         ];

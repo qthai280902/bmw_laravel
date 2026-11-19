@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Events\AccessoryOrderCreated;
 use App\Mail\Admin\AccessoryOrderAlertMail;
 use App\Mail\Customer\AccessoryOrderConfirmationMail;
+use App\Services\Admin\AdminNotificationDispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -32,7 +33,7 @@ class SendAccessoryOrderNotifications implements ShouldQueue
         }
 
         try {
-            Mail::to(config('mail.showroom_admin', 'advisor@bmw.com'))
+            Mail::to(AdminNotificationDispatcher::showroomAdminEmails())
                 ->send(new AccessoryOrderAlertMail($order));
         } catch (Throwable $exception) {
             Log::warning('Failed sending admin accessory order alert email.', [

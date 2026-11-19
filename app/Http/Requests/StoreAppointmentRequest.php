@@ -52,6 +52,7 @@ class StoreAppointmentRequest extends FormRequest
             'ai_visitor_id' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z0-9._:-]+$/'],
             'customer_car_model' => [$isServiceType ? 'required' : 'nullable', 'string', 'max:255'],
             'customer_car_condition' => ['nullable', 'string', 'max:500'],
+            'service_package' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -76,17 +77,24 @@ class StoreAppointmentRequest extends FormRequest
             $sanitizedMeta['service_type'] = $sanitizedMeta['service_type'] ?? 'service';
         }
 
+        if ($this->filled('service_package') && is_string($this->input('service_package'))) {
+            $cleanPackage = trim(strip_tags((string) $this->input('service_package')));
+            if ($cleanPackage !== '') {
+                $sanitizedMeta['service_package'] = $cleanPackage;
+            }
+        }
+
         $payload = [];
 
         if ($type !== null) {
             $payload['type'] = $type;
         }
 
-        if (is_array($meta) || $this->input('type') === 'service') {
+        if (is_array($meta) || $this->input('type') === 'service' || isset($sanitizedMeta['service_package'])) {
             $payload['meta_data'] = $sanitizedMeta;
         }
 
-        foreach (['guest_name', 'notes', 'showroom', 'customer_car_model', 'customer_car_condition'] as $field) {
+        foreach (['guest_name', 'notes', 'showroom', 'customer_car_model', 'customer_car_condition', 'service_package'] as $field) {
             if ($this->has($field) && is_string($this->input($field))) {
                 $payload[$field] = trim(strip_tags((string) $this->input($field)));
             }

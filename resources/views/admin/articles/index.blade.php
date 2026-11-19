@@ -18,7 +18,7 @@
     </x-admin.page-header>
 
     <div class="mb-6 bg-card-luxury p-5">
-        <form method="GET" action="{{ route('admin.articles.index') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto] lg:items-end">
+        <form method="GET" action="{{ route('admin.articles.index') }}" class="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto] lg:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm">
                 <input
                     id="search"
@@ -26,33 +26,33 @@
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Tiêu đề hoặc tóm tắt..."
-                    class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-none border-zinc-800 bg-zinc-950 px-3.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
             <x-admin.form-field name="category" label="Chuyên mục">
-                <select id="category" name="category" class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs font-medium text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả chuyên mục</option>
-                    @foreach($categories as $value => $label)
-                        <option value="{{ $value }}" {{ request('category') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <x-ui.custom-select
+                    id="category"
+                    name="category"
+                    :value="(string) request('category', '')"
+                    :options="array_merge(['' => 'Tất cả chuyên mục'], $categories)"
+                />
             </x-admin.form-field>
 
             <x-admin.form-field name="status" label="Trạng thái">
-                <select id="status" name="status" class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs font-medium text-zinc-300 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                    <option value="">Tất cả trạng thái</option>
-                    @foreach($statuses as $value => $label)
-                        <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <x-ui.custom-select
+                    id="status"
+                    name="status"
+                    :value="(string) request('status', '')"
+                    :options="array_merge(['' => 'Tất cả trạng thái'], $statuses)"
+                />
             </x-admin.form-field>
 
-            <div class="grid grid-cols-2 gap-2.5">
-                <button type="submit" class="border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer">
+            <div class="flex items-center gap-2">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-none border border-zinc-700 bg-zinc-900 px-4 text-xs font-semibold text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.articles.index') }}" class="border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-center text-xs font-medium text-zinc-400 transition-colors hover:text-white">
+                <a href="{{ route('admin.articles.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-none border border-zinc-800 bg-zinc-950 px-4 text-xs font-medium text-zinc-400 transition-colors hover:text-white">
                     Xóa
                 </a>
             </div>
@@ -111,13 +111,13 @@
                             </span>
                         </td>
                         <!-- Cột Trạng thái: 12% -->
-                        <td class="px-6 py-4">
-                            <span class="inline-block border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider {{ $article->statusColorClass() }}">
+                        <td class="whitespace-nowrap px-6 py-4">
+                            <span class="inline-flex whitespace-nowrap rounded-none border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider {{ $article->statusColorClass() }}">
                                 {{ $article->statusLabel() }}
                             </span>
                         </td>
                         <!-- Cột Xuất bản: 14% -->
-                        <td class="px-6 py-4 text-xs tabular-nums text-zinc-400">
+                        <td class="whitespace-nowrap px-6 py-4 text-xs tabular-nums text-zinc-400">
                             {{ $article->published_at?->format('d/m/Y H:i') ?? 'Chưa xuất bản' }}
                         </td>
                         <!-- Cột Thao tác: 14% -->

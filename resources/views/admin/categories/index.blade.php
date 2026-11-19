@@ -39,15 +39,15 @@
                                     {{ $category->description ?? 'Chưa có mô tả cho dòng sản phẩm này.' }}
                                 </p>
                             </td>
-                            <td class="px-6 py-5">
-                                <div class="flex items-center justify-end gap-5">
-                                    <a href="{{ route('admin.categories.edit', $category) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-white">
+                            <td class="whitespace-nowrap px-6 py-5">
+                                <div class="flex items-center justify-end gap-4">
+                                    <a href="{{ route('admin.categories.edit', $category) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-white">
                                         Sửa
                                     </a>
-                                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" class="admin-delete-form" data-confirm-message="Xóa dòng xe này có thể ảnh hưởng đến sản phẩm liên quan. Tiếp tục?">
+                                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" class="admin-delete-form inline" data-confirm-message="Xóa dòng xe này có thể ảnh hưởng đến sản phẩm liên quan. Tiếp tục?">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 transition-colors hover:text-rose-400">
+                                        <button type="submit" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-rose-400 cursor-pointer">
                                             Xóa
                                         </button>
                                     </form>

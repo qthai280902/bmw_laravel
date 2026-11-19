@@ -74,21 +74,28 @@ class AppointmentController extends Controller
         if (! empty($data['customer_car_condition'])) {
             $meta['customer_car_condition'] = $data['customer_car_condition'];
         }
+        if (! empty($data['service_package'])) {
+            $meta['service_package'] = $data['service_package'];
+        }
 
         $data['meta_data'] = ! empty($meta) ? $meta : null;
 
         // Xóa các trường không thuộc bảng appointments
-        unset($data['customer_car_model'], $data['customer_car_condition']);
+        unset($data['customer_car_model'], $data['customer_car_condition'], $data['service_package']);
 
         $appointment = Appointment::create($data);
 
-        $tracker->linkCustomerTouchpoint($request, 'appointment', $appointment->id, $data['ai_visitor_id'] ?? null, [
+        $visitorId = $data['ai_visitor_id'] ?? null;
+        $touchpointCustomer = [
             'name' => $appointment->guest_name ?? Auth::user()?->name,
             'email' => $appointment->guest_email ?? Auth::user()?->email,
             'phone' => $appointment->guest_phone,
-        ]);
+        ];
 
-        event(new AppointmentCreated($appointment));
+        defer(function () use ($tracker, $request, $appointment, $visitorId, $touchpointCustomer): void {
+            $tracker->linkCustomerTouchpoint($request, 'appointment', $appointment->id, $visitorId, $touchpointCustomer);
+            event(new AppointmentCreated($appointment));
+        });
 
         return redirect()->route('appointments.success')->with('success', 'Bạn đã đặt lịch hẹn thành công. Chúng tôi sẽ sớm liên hệ xác nhận.');
     }
