@@ -21,6 +21,7 @@
         <env name="APP_ENV" value="testing"/>
         <env name="ADMIN_EMAILS" value=""/>
         <env name="BOOKING_RATE_LIMIT_PER_MINUTE" value="60"/>
+        <env name="AI_CHAT_RATE_LIMIT_PER_MINUTE" value="12"/>
         <env name="AI_EMBEDDINGS_ENABLED" value="false"/>
         <env name="AI_LEAD_CLASSIFICATION_ENABLED" value="false"/>
         <env name="AI_STRUCTURED_RECOMMENDATIONS_ENABLED" value="false"/>

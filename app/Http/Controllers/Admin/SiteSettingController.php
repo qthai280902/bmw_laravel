@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
+use App\Services\Cache\ShowroomCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -34,6 +35,7 @@ class SiteSettingController extends Controller
         if ($request->boolean('remove_public_form_background_image')) {
             $this->deleteStoredImage($currentPath);
             SiteSetting::setValue(SiteSetting::PUBLIC_FORM_BACKGROUND_IMAGE, null, 'image');
+            app(ShowroomCacheService::class)->flushCatalog();
 
             return redirect()
                 ->route('admin.site-settings.edit')
@@ -46,6 +48,7 @@ class SiteSettingController extends Controller
             $this->deleteStoredImage($currentPath);
 
             SiteSetting::setValue(SiteSetting::PUBLIC_FORM_BACKGROUND_IMAGE, $path, 'image');
+            app(ShowroomCacheService::class)->flushCatalog();
 
             return redirect()
                 ->route('admin.site-settings.edit')

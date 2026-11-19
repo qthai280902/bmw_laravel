@@ -9,6 +9,8 @@ use App\Models\AiChatMessage;
 use App\Models\AiChatSession;
 use App\Models\Article;
 use App\Models\Product;
+use App\Services\Ai\Dto\ShowroomStructuredReply;
+use App\Services\Concurrency\ShowroomConcurrency;
 use Generator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -35,6 +37,8 @@ class ShowroomAssistantService
         private ?ShowroomCatalogMatcher $matcher = null,
         private ?ShowroomKnowledgeBaseService $knowledgeBase = null,
         private ?GeminiAgentRunner $runner = null,
+        private ?ShowroomAiToolkit $toolkit = null,
+        private ?StructuredOutputParser $structuredParser = null,
     ) {}
 
     /**
@@ -662,31 +666,50 @@ class ShowroomAssistantService
     /**
      * @param  array<int, array{label: string, url: string, subtitle?: string, kind?: string}>  $suggestions
      * @param  array<string, mixed>  $context
-     * @return array{answer: string, suggestions: array<int, array{label: string, url: string, subtitle?: string, kind?: string}>, status: string}
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string, subtitle?: string, kind?: string}>, status: string, structured?: array<string, mixed>, tool_calls?: list<string>}
      */
     private function successfulResponse(AgentResponse $response, array $suggestions, array $context = [], string $message = ''): array
     {
-        return $this->buildSuccessfulPayload($response->text, $suggestions, $context, $message);
+        $responseToolCalls = [];
+        if (isset($response->toolCalls) && is_iterable($response->toolCalls)) {
+            foreach ($response->toolCalls as $toolCall) {
+                $name = is_object($toolCall) ? ($toolCall->name ?? null) : (is_array($toolCall) ? ($toolCall['name'] ?? null) : null);
+                if (is_string($name) && trim($name) !== '') {
+                    $responseToolCalls[] = trim($name);
+                }
+            }
+        }
+
+        return $this->buildSuccessfulPayload($response->text, $suggestions, $context, $message, $responseToolCalls);
     }
 
     /**
      * @param  array<int, array{label: string, url: string, subtitle?: string, kind?: string}>  $suggestions
      * @param  array<string, mixed>  $context
-     * @return array{answer: string, suggestions: array<int, array{label: string, url: string, subtitle?: string, kind?: string}>, status: string}
+     * @param  list<string>  $agentToolCalls
+     * @return array{answer: string, suggestions: array<int, array{label: string, url: string, subtitle?: string, kind?: string}>, status: string, structured: array<string, mixed>, tool_calls: list<string>}
      */
-    private function buildSuccessfulPayload(string $rawAnswer, array $suggestions, array $context = [], string $message = ''): array
+    private function buildSuccessfulPayload(string $rawAnswer, array $suggestions, array $context = [], string $message = '', array $agentToolCalls = []): array
     {
-        $answer = trim($rawAnswer);
+        $structured = $this->structuredParser()->parse($rawAnswer, $message, $context);
+        $answer = trim($structured->replyMarkdown);
 
         if ($answer !== '') {
             $answer = $this->sanitizeAndRepairMarkdownLinks($answer, $context);
-            $suggestions = $this->suggestionsFor($message, $context, $answer);
+            $suggestions = $this->suggestionsFor($message, $context, $answer, $structured);
         }
+
+        $toolCalls = array_values(array_unique(array_filter(array_merge(
+            is_array($context['_tool_calls'] ?? null) ? $context['_tool_calls'] : [],
+            $agentToolCalls,
+        ), static fn (mixed $item): bool => is_string($item) && trim($item) !== '')));
 
         return [
             'answer' => $answer !== '' ? $answer : $this->fallbackMessage(),
             'suggestions' => $suggestions,
             'status' => 'ok',
+            'structured' => $structured->toArray(),
+            'tool_calls' => $toolCalls,
         ];
     }
 
@@ -697,33 +720,92 @@ class ShowroomAssistantService
      *     articles: array<int, array<string, mixed>>,
      *     routes: array<string, string>,
      *     current_product?: array<string, mixed>,
-     *     current_article?: array<string, mixed>
+     *     current_article?: array<string, mixed>,
+     *     _rag_chunks?: array<int, array<string, mixed>>,
+     *     _tool_calls?: list<string>
      * }
      */
     public function publicContext(?string $message = null, array $pageContext = []): array
     {
         /** @var Product|null $currentProductModel */
         $currentProductModel = $pageContext['product_model'] ?? null;
+        $currentProductId = $currentProductModel instanceof Product ? (int) $currentProductModel->id : null;
+        $messageStr = trim((string) ($message ?? ''));
+        $maxProducts = max(30, (int) config('showroom_ai.max_context_products', 30));
+        $maxArticles = (int) config('showroom_ai.max_context_articles', 5);
 
-        $products = $this->contextProducts($message, $currentProductModel)
+        $parallel = ShowroomConcurrency::run([
+            'catalog_and_articles' => static function () use ($messageStr, $currentProductId, $maxProducts, $maxArticles): array {
+                $matcher = app(ShowroomCatalogMatcher::class);
+                $normalizedMessage = $matcher->normalizeSearchText($messageStr);
+
+                $products = Product::query()
+                    ->active()
+                    ->with('category')
+                    ->select([
+                        'id',
+                        'category_id',
+                        'name',
+                        'slug',
+                        'type',
+                        'price',
+                        'deposit_amount',
+                        'specifications',
+                        'description',
+                    ])
+                    ->orderBy('id')
+                    ->get()
+                    ->sortByDesc(static function (Product $product) use ($matcher, $normalizedMessage, $currentProductId): int {
+                        $score = $matcher->scoreMessageRelevance($product, $normalizedMessage);
+
+                        if ($currentProductId !== null && $product->id === $currentProductId) {
+                            $score += 1000;
+                        }
+
+                        return $score;
+                    })
+                    ->take($maxProducts)
+                    ->values()
+                    ->all();
+
+                $articles = Article::query()
+                    ->published()
+                    ->select(['title', 'slug', 'category', 'excerpt', 'published_at'])
+                    ->latest('published_at')
+                    ->limit($maxArticles)
+                    ->get()
+                    ->map(static fn (Article $article): array => [
+                        'title' => $article->title,
+                        'category' => $article->categoryLabel(),
+                        'excerpt' => $matcher->compactText($article->excerpt),
+                        'url' => route('articles.show', $article->slug, false),
+                    ])
+                    ->values()
+                    ->all();
+
+                return [
+                    'products' => $products,
+                    'articles' => $articles,
+                ];
+            },
+            'rag_knowledge' => static function () use ($messageStr): array {
+                if ($messageStr === '') {
+                    return [];
+                }
+
+                return app(ShowroomKnowledgeBaseService::class)->retrieveRelevantChunks($messageStr, 3, false);
+            },
+        ]);
+
+        $catalogPayload = is_array($parallel['catalog_and_articles'] ?? null) ? $parallel['catalog_and_articles'] : [];
+        $rawProducts = $catalogPayload['products'] ?? [];
+        $products = collect($rawProducts)
             ->map(fn (Product $product): array => $this->productContext($product))
             ->values()
             ->all();
 
-        $articles = Article::query()
-            ->published()
-            ->select(['title', 'slug', 'category', 'excerpt', 'published_at'])
-            ->latest('published_at')
-            ->limit((int) config('showroom_ai.max_context_articles', 5))
-            ->get()
-            ->map(fn (Article $article): array => [
-                'title' => $article->title,
-                'category' => $article->categoryLabel(),
-                'excerpt' => $this->matcher()->compactText($article->excerpt),
-                'url' => route('articles.show', $article->slug, false),
-            ])
-            ->values()
-            ->all();
+        $articles = is_array($catalogPayload['articles'] ?? null) ? $catalogPayload['articles'] : [];
+        $ragChunks = is_array($parallel['rag_knowledge'] ?? null) ? $parallel['rag_knowledge'] : [];
 
         $context = [
             'products' => $products,
@@ -736,6 +818,7 @@ class ShowroomAssistantService
                 'quote' => route('appointments.create', ['type' => 'quote'], false),
                 'articles' => route('articles.index', [], false),
             ],
+            '_rag_chunks' => $ragChunks,
         ];
 
         if ($currentProductModel instanceof Product) {
@@ -746,6 +829,12 @@ class ShowroomAssistantService
             $context['current_article'] = $pageContext['current_article'];
         }
 
+        $grounding = $messageStr !== ''
+            ? $this->toolkit()->executeGroundingForMessage($messageStr, $context)
+            : ['tool_calls' => [], 'results' => []];
+        $context['_tool_calls'] = $grounding['tool_calls'];
+        $context['_toolkit_results'] = $grounding['results'];
+
         return $context;
     }
 
@@ -754,15 +843,20 @@ class ShowroomAssistantService
      */
     public function buildPrompt(string $message, array $context): string
     {
+        $cleanContext = $context;
+        $preloadedRagChunks = $cleanContext['_rag_chunks'] ?? null;
+        $toolkitResults = $cleanContext['_toolkit_results'] ?? null;
+        unset($cleanContext['_rag_chunks'], $cleanContext['_tool_calls'], $cleanContext['_toolkit_results']);
+
         $encodedContext = json_encode(
-            $context,
+            $cleanContext,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
         );
 
         $pageContextBlock = '';
 
-        if (isset($context['current_product']) && is_array($context['current_product'])) {
-            $currentProduct = $context['current_product'];
+        if (isset($cleanContext['current_product']) && is_array($cleanContext['current_product'])) {
+            $currentProduct = $cleanContext['current_product'];
             $priceText = $currentProduct['price'] ?? 'Liên hệ showroom';
             $pageContextBlock = <<<CONTEXT
 
@@ -771,8 +865,8 @@ Ngữ cảnh trang hiện tại:
 - Nếu Quý khách dùng đại từ như "xe này", "mẫu này", "chiếc này", "sản phẩm này" mà không nêu tên cụ thể, mặc định là đang hỏi về {$currentProduct['name']}.
 
 CONTEXT;
-        } elseif (isset($context['current_article']) && is_array($context['current_article'])) {
-            $currentArticle = $context['current_article'];
+        } elseif (isset($cleanContext['current_article']) && is_array($cleanContext['current_article'])) {
+            $currentArticle = $cleanContext['current_article'];
             $pageContextBlock = <<<CONTEXT
 
 Ngữ cảnh trang hiện tại:
@@ -781,7 +875,9 @@ Ngữ cảnh trang hiện tại:
 CONTEXT;
         }
 
-        $ragChunks = $this->knowledgeBase()->retrieveRelevantChunks($message, 3, false);
+        $ragChunks = is_array($preloadedRagChunks)
+            ? $preloadedRagChunks
+            : $this->knowledgeBase()->retrieveRelevantChunks($message, 3, false);
         $ragBlock = '';
 
         if ($ragChunks !== []) {
@@ -798,6 +894,21 @@ CONTEXT;
 RAG;
         }
 
+        $toolkitBlock = '';
+        if (is_array($toolkitResults) && $toolkitResults !== []) {
+            $encodedToolkit = json_encode(
+                $toolkitResults,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
+            );
+
+            $toolkitBlock = <<<TOOLKIT
+
+[DỮ LIỆU ĐỐI CHIẾU CÔNG CỤ THỜI GIAN THỰC]
+{$encodedToolkit}
+
+TOOLKIT;
+        }
+
         return <<<PROMPT
 BMW showroom gồm ô tô BMW, BMW Motorrad, phụ kiện, ưu đãi và dịch vụ showroom.
 Bạn là Chuyên viên Tư vấn Trực tuyến Cao cấp của BMW Showroom Vietnam.
@@ -805,16 +916,16 @@ Phong cách giao tiếp: Tinh tế, súc tích, chuẩn chuyên gia; gọi khác
 
 Dữ liệu public của showroom BMW:
 {$encodedContext}
-{$pageContextBlock}{$ragBlock}
+{$pageContextBlock}{$ragBlock}{$toolkitBlock}
 Nguyên tắc trả lời:
-- CHỈ sử dụng dữ liệu public ở trên, tài liệu trong mục [TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC] và kết quả từ các công cụ (`search_catalog`, `compare_vehicles`, `search_articles_and_offers`, `search_knowledge_base`).
-- Khi cần tra cứu chi tiết theo ngân sách, phân khúc (SUV/SAV, xe điện, xe máy/mô tô PKL), so sánh 2–3 mẫu xe, tìm ưu đãi/bài viết hoặc chính sách bảo hành/bảo dưỡng/lái thử/trả góp/thu cũ đổi mới, chủ động gọi công cụ tương ứng.
-- Tuyệt đối KHÔNG suy diễn hoặc bịa đặt giá bán, thông số kỹ thuật hay chính sách nếu không có trong RAG hoặc dữ liệu public trên. Nếu thiếu thông tin, nói rõ chưa có thông tin và mời Quý khách đặt lịch tư vấn qua [Tư vấn trực tiếp]({$context['routes']['booking_consult']}).
+- CHỈ sử dụng dữ liệu public ở trên, tài liệu trong mục [TÀI LIỆU TRI THỨC RAG ĐƯỢC XÁC THỰC] và kết quả từ các công cụ (`search_catalog`, `compare_vehicles`, `search_articles_and_offers`, `search_knowledge_base`, `calculate_financial_estimate`, `check_accessory_stock`, `list_service_packages`).
+- Khi cần tra cứu chi tiết theo ngân sách, phân khúc (SUV/SAV, xe điện, xe máy/mô tô PKL), so sánh 2–3 mẫu xe, tính trả góp, kiểm tra tồn kho phụ kiện hoặc 4 gói chăm sóc xe, chủ động sử dụng số liệu từ công cụ tương ứng.
+- Tuyệt đối KHÔNG suy diễn hoặc bịa đặt giá bán, thông số kỹ thuật hay chính sách nếu không có trong RAG hoặc dữ liệu public trên. Nếu thiếu thông tin, nói rõ chưa có thông tin và mời Quý khách đặt lịch tư vấn qua [Tư vấn trực tiếp]({$cleanContext['routes']['booking_consult']}).
 - Tuyệt đối KHÔNG xuất markdown link rỗng `[]()` hoặc `(#)`, và KHÔNG viết câu dẫn link thừa kiểu "Quý khách có thể tìm hiểu thêm tại đây:" ở cuối câu trả lời vì Action Cards đã hiển thị sẵn bên dưới.
 - Khi Quý khách quan tâm mua xe, nhận báo giá chi tiết, đăng ký lái thử hoặc bảo dưỡng dịch vụ: Luôn sử dụng đúng liên kết chính thức:
-  * Đăng ký lái thử xe: [Đăng ký lái thử]({$context['routes']['booking_test_drive']})
-  * Nhận báo giá & tư vấn: [Yêu cầu báo giá]({$context['routes']['quote']}) hoặc [Tư vấn trực tiếp]({$context['routes']['booking_consult']})
-  * Phụ kiện chính hãng: [Xem phụ kiện]({$context['routes']['accessories']})
+  * Đăng ký lái thử xe: [Đăng ký lái thử]({$cleanContext['routes']['booking_test_drive']})
+  * Nhận báo giá & tư vấn: [Yêu cầu báo giá]({$cleanContext['routes']['quote']}) hoặc [Tư vấn trực tiếp]({$cleanContext['routes']['booking_consult']})
+  * Phụ kiện chính hãng: [Xem phụ kiện]({$cleanContext['routes']['accessories']})
 - Không hỏi hoặc ghi nhận số điện thoại, email, địa chỉ hay thông tin riêng tư trong đoạn chat; hướng dẫn Quý khách điền vào form bảo mật tương ứng.
 - Không tự tạo booking hoặc đơn hàng; chỉ dẫn tới link/form phù hợp.
 - Trả lời súc tích, chuyên nghiệp, làm nổi bật cảm giác lái thuần chất và đẳng cấp công nghệ BMW.
@@ -1014,7 +1125,7 @@ PROMPT;
      * @param  array<string, mixed>  $context
      * @return array<int, array{label: string, url: string, subtitle?: string, kind?: string}>
      */
-    private function suggestionsFor(string $message, array $context, ?string $answer = null): array
+    private function suggestionsFor(string $message, array $context, ?string $answer = null, ?ShowroomStructuredReply $structured = null): array
     {
         $loweredMessage = Str::lower($message);
         $normalizedMessage = $this->matcher()->normalizeSearchText($loweredMessage);
@@ -1024,6 +1135,9 @@ PROMPT;
             ? $context['current_product']
             : null;
         $extractedEntities = $answer !== null ? $this->extractMentionedEntitySuggestions($answer) : [];
+        if ($answer !== null && $extractedEntities === [] && $structured && $structured->recommendedProductIds !== []) {
+            $extractedEntities = $this->resolveStructuredProductSuggestions($structured->recommendedProductIds);
+        }
         if ($answer !== null && $extractedEntities === []) {
             $extractedEntities = $this->extractStructuredRecommendations($message, $answer, $context);
         }
@@ -1790,6 +1904,55 @@ PROMPT;
     private function runner(): GeminiAgentRunner
     {
         return $this->runner ??= app(GeminiAgentRunner::class);
+    }
+
+    private function toolkit(): ShowroomAiToolkit
+    {
+        return $this->toolkit ??= app(ShowroomAiToolkit::class);
+    }
+
+    private function structuredParser(): StructuredOutputParser
+    {
+        return $this->structuredParser ??= app(StructuredOutputParser::class);
+    }
+
+    /**
+     * @param  list<int>  $productIds
+     * @return list<array<string, mixed>>
+     */
+    private function resolveStructuredProductSuggestions(array $productIds): array
+    {
+        if ($productIds === []) {
+            return [];
+        }
+
+        $productsById = Product::query()
+            ->active()
+            ->with('category')
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
+
+        $suggestions = [];
+        foreach ($productIds as $id) {
+            $product = $productsById->get($id);
+            if (! $product) {
+                continue;
+            }
+
+            $isAccessory = $product->isAccessory();
+            $suggestions[] = [
+                'product_id' => (int) $product->id,
+                'subtitle' => $isAccessory ? 'PHỤ KIỆN CHÍNH HÃNG' : 'HỒ SƠ SẢN PHẨM',
+                'label' => $product->name,
+                'url' => $isAccessory
+                    ? route('accessory-orders.create', $product->slug, false)
+                    : route('products.show', $product->slug, false),
+                'kind' => $isAccessory ? 'accessory' : 'product',
+            ];
+        }
+
+        return $suggestions;
     }
 
     /**

@@ -20,10 +20,9 @@ class AppointmentReminderMail extends Mailable
     public function envelope(): Envelope
     {
         $this->appointment->loadMissing(['product', 'user']);
-        $typeLabel = $this->appointment->type?->label() ?? 'Lịch hẹn';
 
         return new Envelope(
-            subject: "[BMW Showroom] Nhắc lịch {$typeLabel} sắp diễn ra — Mã hẹn #{$this->appointment->id}",
+            subject: "[BMW Nhắc Lịch] Còn 24 giờ tới lịch hẹn #{$this->appointment->id} tại Showroom",
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
         );
     }

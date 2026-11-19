@@ -41,8 +41,8 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
         $this->appointment->loadMissing(['product.category', 'user']);
 
         $subject = $this->isAdminConfirmed()
-            ? "[BMW Concierge] XÁC NHẬN CHÍNH THỨC lịch hẹn #{$this->appointment->id} — Sẵn sàng đón tiếp Quý khách"
-            : "[BMW Showroom] Đã tiếp nhận yêu cầu đặt lịch #{$this->appointment->id} — Chờ chuyên viên xác nhận";
+            ? "[BMW Concierge] XÁC NHẬN CHÍNH THỨC lịch hẹn #{$this->appointment->id} — Thẻ đón tiếp VIP"
+            : "[BMW Hệ Thống] Đã ghi nhận yêu cầu #{$this->appointment->id} — Chờ chuyên viên xác nhận";
 
         return new Envelope(
             subject: $subject,

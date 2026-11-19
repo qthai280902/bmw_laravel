@@ -8,6 +8,7 @@ use App\Mail\Admin\ShowroomDailySummaryMail;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Services\Admin\AdminNotificationDispatcher;
+use App\Services\Concurrency\ShowroomConcurrency;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Isolatable;
 use Illuminate\Support\Facades\Mail;
@@ -20,46 +21,66 @@ class SendShowroomDailySummaryCommand extends Command implements Isolatable
 
     public function handle(): int
     {
-        $startOfDay = now()->copy()->startOfDay();
-        $endOfDay = now()->copy()->endOfDay();
+        $startStr = now()->copy()->startOfDay()->toDateTimeString();
+        $endStr = now()->copy()->endOfDay()->toDateTimeString();
 
-        $todayAppointments = Appointment::query()
-            ->whereBetween('created_at', [$startOfDay, $endOfDay])
-            ->get(['id', 'type', 'status', 'lead_priority']);
+        $results = ShowroomConcurrency::run([
+            'appointments' => static function () use ($startStr, $endStr): array {
+                $todayAppointments = Appointment::query()
+                    ->whereBetween('created_at', [$startStr, $endStr])
+                    ->get(['id', 'type', 'status', 'lead_priority']);
 
-        $serviceTypes = [
-            AppointmentType::Maintenance->value,
-            AppointmentType::Detailing->value,
-            AppointmentType::CarWash->value,
-        ];
+                $serviceTypes = [
+                    AppointmentType::Maintenance->value,
+                    AppointmentType::Detailing->value,
+                    AppointmentType::CarWash->value,
+                ];
 
-        $todayOrders = AccessoryOrder::query()
-            ->with('product:id,price')
-            ->whereBetween('created_at', [$startOfDay, $endOfDay])
-            ->get(['id', 'product_id', 'quantity']);
+                return [
+                    'total_appointments' => $todayAppointments->count(),
+                    'hot_leads' => $todayAppointments->where('lead_priority', Appointment::LEAD_PRIORITY_HOT)->count(),
+                    'service_bookings' => $todayAppointments->filter(
+                        static fn (Appointment $item): bool => in_array(
+                            $item->type instanceof AppointmentType ? $item->type->value : (string) $item->type,
+                            $serviceTypes,
+                            true
+                        )
+                    )->count(),
+                    'confirmed_or_completed' => $todayAppointments->filter(
+                        static fn (Appointment $item): bool => in_array(
+                            $item->status instanceof AppointmentStatus ? $item->status->value : (string) $item->status,
+                            [AppointmentStatus::Confirmed->value, AppointmentStatus::Completed->value],
+                            true
+                        )
+                    )->count(),
+                ];
+            },
+            'accessory_orders' => static function () use ($startStr, $endStr): array {
+                $todayOrders = AccessoryOrder::query()
+                    ->with('product:id,price')
+                    ->whereBetween('created_at', [$startStr, $endStr])
+                    ->get(['id', 'product_id', 'quantity']);
+
+                return [
+                    'accessory_orders_count' => $todayOrders->count(),
+                    'accessory_orders_value' => (int) $todayOrders->sum(
+                        static fn (AccessoryOrder $order): int => $order->total_amount
+                    ),
+                ];
+            },
+        ]);
+
+        $appointmentStats = is_array($results['appointments'] ?? null) ? $results['appointments'] : [];
+        $orderStats = is_array($results['accessory_orders'] ?? null) ? $results['accessory_orders'] : [];
 
         $summary = [
             'date_label' => now()->format('d/m/Y'),
-            'total_appointments' => $todayAppointments->count(),
-            'hot_leads' => $todayAppointments->where('lead_priority', Appointment::LEAD_PRIORITY_HOT)->count(),
-            'service_bookings' => $todayAppointments->filter(
-                static fn (Appointment $item): bool => in_array(
-                    $item->type instanceof AppointmentType ? $item->type->value : (string) $item->type,
-                    $serviceTypes,
-                    true
-                )
-            )->count(),
-            'confirmed_or_completed' => $todayAppointments->filter(
-                static fn (Appointment $item): bool => in_array(
-                    $item->status instanceof AppointmentStatus ? $item->status->value : (string) $item->status,
-                    [AppointmentStatus::Confirmed->value, AppointmentStatus::Completed->value],
-                    true
-                )
-            )->count(),
-            'accessory_orders_count' => $todayOrders->count(),
-            'accessory_orders_value' => (int) $todayOrders->sum(
-                static fn (AccessoryOrder $order): int => $order->total_amount
-            ),
+            'total_appointments' => (int) ($appointmentStats['total_appointments'] ?? 0),
+            'hot_leads' => (int) ($appointmentStats['hot_leads'] ?? 0),
+            'service_bookings' => (int) ($appointmentStats['service_bookings'] ?? 0),
+            'confirmed_or_completed' => (int) ($appointmentStats['confirmed_or_completed'] ?? 0),
+            'accessory_orders_count' => (int) ($orderStats['accessory_orders_count'] ?? 0),
+            'accessory_orders_value' => (int) ($orderStats['accessory_orders_value'] ?? 0),
         ];
 
         $recipients = AdminNotificationDispatcher::showroomAdminEmails();

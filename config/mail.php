@@ -128,4 +128,8 @@ return [
 
     'booking_rate_limit_per_minute' => (int) env('BOOKING_RATE_LIMIT_PER_MINUTE', 5),
 
+    'campaign_rate_per_minute' => (int) env('MAIL_CAMPAIGN_RATE_PER_MINUTE', 20),
+
+    'daily_soft_limit' => (int) env('MAIL_DAILY_SOFT_LIMIT', 420),
+
 ];

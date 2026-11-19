@@ -1,10 +1,13 @@
 @extends('emails.layouts.bmw-concierge')
 
-@section('title', '[HOT LEAD AI] Khách hàng tiềm năng cao | BMW Showroom')
+@section('title', '[CRM NỘI BỘ · HOT LEAD] Khách hàng tiềm năng cao | BMW Showroom')
+@section('accent_color', '#EF4444')
+@section('header_subtitle', 'INTERNAL CRM ALERT · STAFF ONLY')
+@section('header_subtitle_color', '#FCA5A5')
 
 @section('badge')
-    <span style="display: inline-block; padding: 5px 12px; background-color: #3B1219; border: 1px solid #E11D48; color: #FDA4AF; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-        HOT LEAD AI
+    <span style="display: inline-block; padding: 5px 12px; background-color: #3B1219; border: 1px solid #EF4444; color: #FCA5A5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
+        CẢNH BÁO NỘI BỘ CRM &middot; CHỈ DÀNH CHO NHÂN SỰ
     </span>
 @endsection
 

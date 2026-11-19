@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Isolatable;
 use Illuminate\Support\Collection;
@@ -31,6 +32,14 @@ class CleanupAndFollowupAppointmentsCommand extends Command implements Isolatabl
                     $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
                     $meta['auto_cancelled_reason'] = 'Tự động hủy do quá hạn 24 giờ chưa xác nhận';
                     $meta['auto_cancelled_at'] = now()->toIso8601String();
+                    $meta = InteractionTimelineRecorder::appendToMeta(
+                        meta: $meta,
+                        actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                        actorLabel: 'Hệ thống tự động',
+                        title: 'Tự động hủy lịch treo quá hạn 24 giờ',
+                        detail: $meta['auto_cancelled_reason'],
+                        channel: 'CRM',
+                    );
 
                     $appointment->forceFill([
                         'status' => AppointmentStatus::Cancelled->value,

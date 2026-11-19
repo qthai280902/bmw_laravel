@@ -1,10 +1,13 @@
 @extends('emails.layouts.bmw-concierge')
 
 @section('title', 'Nhắc Lịch Hẹn 24h | BMW Showroom Vietnam')
+@section('accent_color', '#6366F1')
+@section('header_subtitle', 'AUTOMATED 24-HOUR REMINDER')
+@section('header_subtitle_color', '#A5B4FC')
 
 @section('badge')
-    <span style="display: inline-block; padding: 5px 12px; background-color: #16243D; border: 1px solid #1C69D4; color: #60A5FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-        24H REMINDER
+    <span style="display: inline-block; padding: 5px 12px; background-color: #1E1B4B; border: 1px solid #6366F1; color: #C7D2FE; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
+        NHẮC LỊCH TỰ ĐỘNG &middot; CÒN 24 GIỜ
     </span>
 @endsection
 
@@ -22,12 +25,32 @@
             }
         }
     @endphp
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-bottom: 8px;">
-        NHẮC LỊCH HẸN TRƯỚC 24 GIỜ
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #A5B4FC; text-transform: uppercase; margin-bottom: 8px;">
+        ĐẾM NGƯỢC 24 GIỜ TỚI LỊCH HẸN TẠI SHOWROOM
     </div>
     <h1 style="margin: 0 0 18px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">
         Kính chào Quý khách {{ $appointment->customer_name }},
     </h1>
+
+    {{-- Khối đồng hồ đếm ngược 24h & Giấy tờ cần mang theo --}}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #14132C; border: 1px solid #4F46E5; border-left: 4px solid #6366F1; margin-bottom: 22px;">
+        <tr>
+            <td style="padding: 16px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: #A5B4FC; text-transform: uppercase; margin-bottom: 6px;">
+                    CÒN KHOẢNG 24 GIỜ NỮA &mdash; CHUẨN BỊ TRƯỚC KHI ĐẾN SHOWROOM
+                </div>
+                <p style="margin: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 700; color: #FFFFFF;">
+                    Khung giờ hẹn: {{ $appointment->appointment_date?->format('H:i — d/m/Y') }}
+                </p>
+                <p style="margin: 0 0 4px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #E0E7FF; line-height: 1.6;">
+                    &bull; <strong>Giấy tờ cần mang theo:</strong> CMND/CCCD còn hiệu lực; <strong>Bằng lái xe hạng B còn hạn</strong> (bắt buộc nếu Quý khách tham gia lái thử).
+                </p>
+                <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #E0E7FF; line-height: 1.6;">
+                    &bull; <strong>Lộ trình di chuyển:</strong> BMW Showroom Flagship &mdash; 123 Nguyễn Văn Linh, Quận 7, TP.HCM (vui lòng đến trước 10 phút để làm thủ tục đón tiếp VIP).
+                </p>
+            </td>
+        </tr>
+    </table>
 
     @if($inlineSrc)
         <div style="margin: 0 0 20px 0; border: 1px solid #1E2533; background-color: #0E121B;">

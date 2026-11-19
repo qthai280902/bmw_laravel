@@ -5,6 +5,12 @@
         </div>
     @endif
 
+    @if (session('error'))
+        <div class="mb-8 rounded-none border border-rose-500/30 bg-rose-500/10 p-5 text-sm font-bold text-rose-300">
+            {{ session('error') }}
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="mb-8 rounded-none border border-rose-500/20 bg-rose-500/5 p-5 text-sm font-bold text-rose-300">
             Vui lòng kiểm tra lại thông tin đặt hàng.

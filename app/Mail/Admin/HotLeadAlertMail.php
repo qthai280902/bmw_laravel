@@ -29,8 +29,8 @@ class HotLeadAlertMail extends Mailable
             ?? 'Khách hàng';
 
         return new Envelope(
-            subject: "[HOT LEAD] Yêu cầu {$typeLabel} khẩn từ {$customerName} — #{$this->appointment->id}",
-            tags: ['hot-lead'],
+            subject: "[CRM NỘI BỘ] [HOT LEAD] Yêu cầu {$typeLabel} khẩn từ {$customerName} — #{$this->appointment->id}",
+            tags: ['hot-lead', 'internal-crm'],
             metadata: [
                 'appointment_id' => (string) $this->appointment->id,
                 'lead_priority' => (string) ($this->appointment->lead_priority ?? Appointment::LEAD_PRIORITY_HOT),

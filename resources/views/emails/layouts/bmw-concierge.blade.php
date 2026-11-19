@@ -10,7 +10,6 @@
 <body style="margin: 0; padding: 0; background-color: #0B0E14; color: #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     @php
         $accentColor = trim($__env->yieldContent('accent_color', '#1C69D4'));
-        $headerSubtitle = trim($__env->yieldContent('header_subtitle', 'CONCIERGE & CLIENT RELATIONS'));
         $headerSubtitleColor = trim($__env->yieldContent('header_subtitle_color', '#60A5FA'));
     @endphp
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0B0E14; padding: 36px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
@@ -39,7 +38,7 @@
                                                         BMW SHOWROOM VIETNAM
                                                     </div>
                                                     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2px; color: {{ $headerSubtitleColor }}; text-transform: uppercase; margin-top: 3px;">
-                                                        {{ $headerSubtitle }}
+                                                        CONCIERGE &amp; CLIENT RELATIONS
                                                     </div>
                                                 </td>
                                             </tr>

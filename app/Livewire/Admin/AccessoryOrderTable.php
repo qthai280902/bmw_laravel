@@ -110,7 +110,7 @@ class AccessoryOrderTable extends Component
         )->validate();
 
         $order = AccessoryOrder::query()->findOrFail($orderId);
-        $order->transitionToStatus($validated['status']);
+        $order->transitionToStatus($validated['status'], null, false, auth()->user());
 
         $this->flashMessage = "Đơn phụ kiện #{$order->id} đã được cập nhật trạng thái.";
     }

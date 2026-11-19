@@ -301,11 +301,11 @@ class Phase28_5UiPolishAndDistinctMailsTest extends TestCase
         );
 
         $this->assertSame(
-            "[BMW Showroom] Đã tiếp nhận yêu cầu đặt lịch #{$appointment->id} — Chờ chuyên viên xác nhận",
+            "[BMW Hệ Thống] Đã ghi nhận yêu cầu #{$appointment->id} — Chờ chuyên viên xác nhận",
             $systemMail->envelope()->subject
         );
         $this->assertSame(
-            "[BMW Concierge] XÁC NHẬN CHÍNH THỨC lịch hẹn #{$appointment->id} — Sẵn sàng đón tiếp Quý khách",
+            "[BMW Concierge] XÁC NHẬN CHÍNH THỨC lịch hẹn #{$appointment->id} — Thẻ đón tiếp VIP",
             $officialMail->envelope()->subject
         );
         $this->assertSame(

@@ -1,10 +1,13 @@
 @extends('emails.layouts.bmw-concierge')
 
 @section('title', 'Cảm Ơn & Dự Toán Tài Chính | BMW Showroom Vietnam')
+@section('accent_color', '#D97706')
+@section('header_subtitle', 'POST-EXPERIENCE CONCIERGE & FINANCING')
+@section('header_subtitle_color', '#FBBF24')
 
 @section('badge')
-    <span style="display: inline-block; padding: 5px 12px; background-color: #16243D; border: 1px solid #1C69D4; color: #60A5FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-        CLIENT FOLLOW-UP
+    <span style="display: inline-block; padding: 5px 12px; background-color: #2A1D0A; border: 1px solid #D97706; color: #FDE68A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
+        CHĂM SÓC HẬU MÃI &middot; DỰ TOÁN TÀI CHÍNH
     </span>
 @endsection
 
@@ -13,7 +16,7 @@
         $car = $car ?? $appointment->product;
         $estimate = $estimate ?? $appointment->financialEstimate();
     @endphp
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-bottom: 8px;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #FBBF24; text-transform: uppercase; margin-bottom: 8px;">
         CẢM ƠN &amp; CHĂM SÓC HẬU MÃI SAU TRẢI NGHIỆM
     </div>
     <h1 style="margin: 0 0 18px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">

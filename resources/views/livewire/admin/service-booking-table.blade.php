@@ -232,7 +232,7 @@
         </div>
     @endif
 
-    <!-- Service Booking Quick Inspector Drawer -->
+    <!-- Service Booking Quick Inspector Drawer (Teleported to body, Z-100/101, Independent Scroll & 2-Way Timeline) -->
     @if($this->inspectedBooking)
         @php
             $booking = $this->inspectedBooking;
@@ -240,149 +240,196 @@
             $bookingCar = $booking->product?->name ?? ($booking->meta_data['customer_car_model'] ?? 'Xe BMW của khách');
             $bookingCondition = is_array($booking->meta_data) ? ($booking->meta_data['customer_car_condition'] ?? null) : null;
             $officialSentAt = is_array($booking->meta_data) ? ($booking->meta_data['official_confirmation_sent_at'] ?? null) : null;
+            $timelineEvents = \App\Services\Crm\InteractionTimelineRecorder::timelineForAppointment($booking);
         @endphp
         <div
-            class="fixed inset-0 z-[90] flex items-stretch justify-end bg-black/80 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Hồ sơ Dịch vụ & Tác vụ"
+            wire:key="service-booking-inspector-drawer-{{ $booking->id }}"
+            x-data="{
+                init() { document.body.classList.add('overflow-hidden'); },
+                destroy() { document.body.classList.remove('overflow-hidden'); },
+                close() {
+                    document.body.classList.remove('overflow-hidden');
+                    $wire.closeInspector();
+                }
+            }"
+            @keydown.escape.window="close()"
         >
-            <div class="fixed inset-0" wire:click="closeInspector"></div>
+            <template x-teleport="body">
+                <div
+                    class="fixed inset-0 z-[100]"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Hồ sơ Dịch vụ &amp; Tác vụ"
+                >
+                    <div
+                        class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+                        @click="close()"
+                    ></div>
 
-            <div class="relative z-10 flex h-full w-full max-w-xl flex-col rounded-none border-l-2 border-[#1C69D4] bg-[#0B0F17] text-white shadow-2xl">
-                <header class="flex items-start justify-between gap-4 border-b border-[#242B38] bg-[#050505] px-6 py-5">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
-                                DỊCH VỤ CHĂM SÓC XE #{{ $booking->id }}
-                            </span>
-                            <span class="rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] {{ $booking->status->color() }}">
-                                {{ $booking->status->label() }}
-                            </span>
-                        </div>
-                        <h3 class="mt-2 truncate text-lg font-black uppercase tracking-wider text-white">
-                            {{ $booking->user?->name ?? $booking->guest_name ?? 'Khách vãng lai' }}
-                        </h3>
-                        <p class="mt-0.5 text-xs text-zinc-400">
-                            {{ $bookingCar }} · {{ $booking->type->label() }} · {{ $booking->appointment_date?->format('H:i — d/m/Y') }}
-                        </p>
-                    </div>
+                    <div class="fixed inset-y-0 right-0 z-[101] flex h-dvh w-full max-w-xl flex-col rounded-none border-l border-[#1C69D4] bg-[#0B0F17] text-white shadow-2xl">
+                        <header class="shrink-0 flex items-start justify-between gap-4 border-b border-[#242B38] bg-[#050505] px-6 py-5">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
+                                        DỊCH VỤ CHĂM SÓC XE #{{ $booking->id }}
+                                    </span>
+                                    <span class="rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] {{ $booking->status->color() }}">
+                                        {{ $booking->status->label() }}
+                                    </span>
+                                </div>
+                                <h3 class="mt-2 truncate text-lg font-black uppercase tracking-wider text-white">
+                                    {{ $booking->user?->name ?? $booking->guest_name ?? 'Khách vãng lai' }}
+                                </h3>
+                                <p class="mt-0.5 text-xs text-zinc-400">
+                                    {{ $bookingCar }} · {{ $booking->type->label() }} · {{ $booking->appointment_date?->format('H:i — d/m/Y') }}
+                                </p>
+                            </div>
 
-                    <button
-                        type="button"
-                        wire:click="closeInspector"
-                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-none border border-[#242B38] bg-[#0B0F17] text-sm font-black text-zinc-400 transition-colors hover:border-white hover:text-white cursor-pointer"
-                        aria-label="Đóng hồ sơ dịch vụ"
-                    >
-                        ×
-                    </button>
-                </header>
+                            <button
+                                type="button"
+                                @click="close()"
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-[#242B38] bg-[#0B0F17] text-lg font-black text-zinc-300 transition-colors hover:border-white hover:bg-[#1C69D4] hover:text-white cursor-pointer"
+                                aria-label="Đóng hồ sơ dịch vụ"
+                            >
+                                ×
+                            </button>
+                        </header>
 
-                <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-                    <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">1. Thông tin khách hàng &amp; Gói dịch vụ</p>
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Số điện thoại</p>
-                                <div class="mt-1 flex items-center gap-2" x-data="{ copied: false }">
-                                    <span class="font-bold tabular-nums text-white">{{ $booking->guest_phone ?: 'Chưa cung cấp' }}</span>
-                                    @if(filled($booking->guest_phone))
-                                        <a href="tel:{{ $booking->guest_phone }}" class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-400 hover:border-emerald-500">Gọi</a>
-                                        <button
-                                            type="button"
-                                            @click="navigator.clipboard?.writeText('{{ $booking->guest_phone }}'); copied = true; setTimeout(() => copied = false, 1500)"
-                                            class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-zinc-300 hover:border-[#1C69D4] cursor-pointer"
-                                            x-text="copied ? 'Đã copy' : 'Copy'"
-                                        ></button>
+                        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
+                            <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">1. Thông tin khách hàng &amp; Gói dịch vụ</p>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs">
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Số điện thoại</p>
+                                        <div class="mt-1 flex items-center gap-2" x-data="{ copied: false }">
+                                            <span class="font-bold tabular-nums text-white">{{ $booking->guest_phone ?: 'Chưa cung cấp' }}</span>
+                                            @if(filled($booking->guest_phone))
+                                                <a href="tel:{{ $booking->guest_phone }}" class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-400 hover:border-emerald-500">Gọi</a>
+                                                <button
+                                                    type="button"
+                                                    @click="navigator.clipboard?.writeText('{{ $booking->guest_phone }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                                                    class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-zinc-300 hover:border-[#1C69D4] cursor-pointer"
+                                                    x-text="copied ? 'Đã copy' : 'Copy'"
+                                                ></button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Email</p>
+                                        <p class="mt-1 truncate font-semibold text-zinc-200">{{ $bookingEmail ?: 'Chưa cung cấp' }}</p>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Gói chăm sóc xe đã chọn</p>
+                                        <p class="mt-1 font-bold text-emerald-400">{{ $booking->servicePackageLabel() ?: $booking->type->label() }}</p>
+                                    </div>
+                                    @if($bookingCondition)
+                                        <div class="sm:col-span-2">
+                                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Biển số / Tình trạng xe</p>
+                                            <p class="mt-1 text-zinc-300">{{ $bookingCondition }}</p>
+                                        </div>
+                                    @endif
+                                    @if(filled($booking->notes))
+                                        <div class="sm:col-span-2">
+                                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Ghi chú thêm</p>
+                                            <p class="mt-1 text-zinc-300">{{ $booking->notes }}</p>
+                                        </div>
                                     @endif
                                 </div>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Email</p>
-                                <p class="mt-1 truncate font-semibold text-zinc-200">{{ $bookingEmail ?: 'Chưa cung cấp' }}</p>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Gói chăm sóc xe đã chọn</p>
-                                <p class="mt-1 font-bold text-emerald-400">{{ $booking->servicePackageLabel() ?: $booking->type->label() }}</p>
-                            </div>
-                            @if($bookingCondition)
-                                <div class="sm:col-span-2">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Biển số / Tình trạng xe</p>
-                                    <p class="mt-1 text-zinc-300">{{ $bookingCondition }}</p>
-                                </div>
-                            @endif
-                            @if(filled($booking->notes))
-                                <div class="sm:col-span-2">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Ghi chú thêm</p>
-                                    <p class="mt-1 text-zinc-300">{{ $booking->notes }}</p>
-                                </div>
-                            @endif
-                        </div>
-                    </section>
+                            </section>
 
-                    <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-2.5">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">2. Trạng thái Email &amp; Hậu mãi</p>
-                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 text-xs">
-                            <div class="border border-white/5 bg-[#0B0F17] p-3">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Thư tiếp nhận hệ thống</p>
-                                <p class="mt-1 font-bold {{ $booking->confirmation_email_sent_at ? 'text-emerald-400' : 'text-zinc-500' }}">
-                                    {{ $booking->confirmation_email_sent_at ? $booking->confirmation_email_sent_at->format('H:i · d/m/Y') : 'Chưa ghi nhận' }}
-                                </p>
-                            </div>
-                            <div class="border border-white/5 bg-[#0B0F17] p-3">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Thư xác nhận chính thức</p>
-                                <p class="mt-1 font-bold {{ $officialSentAt ? 'text-emerald-400' : 'text-zinc-500' }}">
-                                    {{ $officialSentAt ? \Illuminate\Support\Carbon::parse($officialSentAt)->format('H:i · d/m/Y') : 'Chưa gửi từ Showroom' }}
-                                </p>
-                            </div>
-                        </div>
-                    </section>
+                            <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-2.5">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">2. Trạng thái Email &amp; Hậu mãi</p>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 text-xs">
+                                    <div class="border border-white/5 bg-[#0B0F17] p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Thư tiếp nhận hệ thống</p>
+                                        <p class="mt-1 font-bold {{ $booking->confirmation_email_sent_at ? 'text-emerald-400' : 'text-zinc-500' }}">
+                                            {{ $booking->confirmation_email_sent_at ? $booking->confirmation_email_sent_at->format('H:i · d/m/Y') : 'Chưa ghi nhận' }}
+                                        </p>
+                                    </div>
+                                    <div class="border border-white/5 bg-[#0B0F17] p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Thư xác nhận chính thức</p>
+                                        <p class="mt-1 font-bold {{ $officialSentAt ? 'text-emerald-400' : 'text-zinc-500' }}">
+                                            {{ $officialSentAt ? \Illuminate\Support\Carbon::parse($officialSentAt)->format('H:i · d/m/Y') : 'Chưa gửi từ Showroom' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
 
-                    <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">3. Trung tâm Thao tác nhanh (Action Hub)</p>
-                        @if(filled($bookingEmail))
-                            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                                <button
-                                    type="button"
-                                    wire:click="resendConfirmationEmail({{ $booking->id }})"
-                                    class="sm:col-span-2 flex items-center justify-center rounded-none border border-emerald-500/60 bg-emerald-600/20 px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300 transition-colors hover:bg-emerald-600 hover:text-white cursor-pointer"
-                                >
-                                    Gửi thư Xác nhận chính thức từ Showroom
-                                </button>
-                                <a
-                                    href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'system_received']) }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="flex items-center justify-center rounded-none border border-[#242B38] bg-[#0B0F17] px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF]"
-                                >
-                                    Xem mẫu Email Tiếp nhận
-                                </a>
-                                <a
-                                    href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'admin_confirmed']) }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="flex items-center justify-center rounded-none border border-emerald-500/35 bg-[#0B0F17] px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300 transition-colors hover:border-emerald-400 hover:text-white"
-                                >
-                                    Xem mẫu Email Xác nhận VIP
-                                </a>
-                            </div>
-                        @else
-                            <p class="text-xs text-zinc-500">Khách hàng chưa cung cấp email — vui lòng liên hệ trực tiếp qua số điện thoại.</p>
-                        @endif
-                    </section>
+                            <x-admin.interaction-timeline
+                                :events="$timelineEvents"
+                                heading="3. Lịch sử tương tác Khách hàng ↔ Hệ thống"
+                            />
+
+                            <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">4. Trung tâm Thao tác &amp; Xem trước Email</p>
+                                <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                    @if(filled($bookingEmail))
+                                        <button
+                                            type="button"
+                                            @click="$wire.resendConfirmationEmail({{ $booking->id }})"
+                                            class="sm:col-span-2 flex items-center justify-center rounded-none border border-emerald-500/60 bg-emerald-600/20 px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300 transition-colors hover:bg-emerald-600 hover:text-white cursor-pointer"
+                                        >
+                                            Gửi thư Xác nhận chính thức từ Showroom
+                                        </button>
+                                    @endif
+
+                                    <a
+                                        href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'system_received']) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="flex items-center justify-center rounded-none border border-[#1C69D4]/40 bg-[#0B0F17] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-[#70A7FF] transition-colors hover:border-[#1C69D4] hover:bg-[#1C69D4]/15"
+                                    >
+                                        Xem thư Hệ thống tiếp nhận
+                                    </a>
+                                    <a
+                                        href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'admin_confirmed']) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="flex items-center justify-center rounded-none border border-emerald-500/40 bg-[#0B0F17] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300 transition-colors hover:border-emerald-400 hover:bg-emerald-500/15"
+                                    >
+                                        Xem thư Admin duyệt VIP
+                                    </a>
+                                    <a
+                                        href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'guest_rescheduled']) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="flex items-center justify-center rounded-none border border-amber-500/40 bg-[#0B0F17] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-amber-300 transition-colors hover:border-amber-400 hover:bg-amber-500/15"
+                                    >
+                                        Xem thư Khách đổi lịch
+                                    </a>
+                                    <a
+                                        href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'reminder']) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="flex items-center justify-center rounded-none border border-indigo-500/40 bg-[#0B0F17] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-300 transition-colors hover:border-indigo-400 hover:bg-indigo-500/15"
+                                    >
+                                        Xem thư Nhắc lịch 24h
+                                    </a>
+                                    <a
+                                        href="{{ route('admin.mail-preview.appointment', ['appointment' => $booking, 'mode' => 'followup']) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="sm:col-span-2 flex items-center justify-center rounded-none border border-amber-600/45 bg-[#0B0F17] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200 transition-colors hover:border-amber-500 hover:bg-amber-600/15"
+                                    >
+                                        Xem thư Hậu mãi trả góp
+                                    </a>
+                                </div>
+                            </section>
+                        </div>
+
+                        <footer class="shrink-0 flex items-center justify-between gap-3 border-t border-[#242B38] bg-[#050505] px-6 py-4">
+                            <span class="text-[10px] font-semibold text-zinc-500">Nhấn Esc hoặc click vùng tối để đóng</span>
+                            <button
+                                type="button"
+                                @click="close()"
+                                class="rounded-none border border-[#242B38] bg-[#0B0F17] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-200 transition-colors hover:border-white hover:bg-[#1C69D4] hover:text-white cursor-pointer"
+                            >
+                                Đóng
+                            </button>
+                        </footer>
+                    </div>
                 </div>
-
-                <footer class="flex items-center justify-between gap-3 border-t border-[#242B38] bg-[#050505] px-6 py-4">
-                    <span class="text-[10px] font-semibold text-zinc-500">Nhấn Esc hoặc click vùng tối để đóng</span>
-                    <button
-                        type="button"
-                        wire:click="closeInspector"
-                        class="rounded-none border border-[#242B38] bg-[#0B0F17] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white hover:text-white cursor-pointer"
-                    >
-                        Đóng
-                    </button>
-                </footer>
-            </div>
+            </template>
         </div>
     @endif
 </div>

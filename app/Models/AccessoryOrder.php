@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Mail\Customer\AccessoryOrderStatusMail;
+use App\Services\Cache\ShowroomCacheService;
+use App\Services\Crm\InteractionTimelineRecorder;
+use App\Services\Inventory\AccessoryStockService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +33,7 @@ class AccessoryOrder extends Model
         'notes',
         'status',
         'admin_notes',
+        'meta_data',
         'confirmed_at',
     ];
 
@@ -39,8 +43,20 @@ class AccessoryOrder extends Model
     {
         return [
             'quantity' => 'integer',
+            'meta_data' => 'array',
             'confirmed_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(static function (): void {
+            app(ShowroomCacheService::class)->flushDashboard();
+        });
+
+        static::deleted(static function (): void {
+            app(ShowroomCacheService::class)->flushDashboard();
+        });
     }
 
     public function getTotalAmountAttribute(): int
@@ -89,9 +105,21 @@ class AccessoryOrder extends Model
         };
     }
 
-    public function transitionToStatus(string $status, ?string $adminNotes = null, bool $updateNotes = false): void
-    {
+    public function transitionToStatus(
+        string $status,
+        ?string $adminNotes = null,
+        bool $updateNotes = false,
+        ?User $actor = null
+    ): void {
         $previousStatus = (string) $this->status;
+        $previousLabel = self::statuses()[$previousStatus] ?? $previousStatus;
+        $nextLabel = self::statuses()[$status] ?? $status;
+
+        if ($status === self::STATUS_CANCELLED) {
+            app(AccessoryStockService::class)->restoreStockOnCancel($this, $actor);
+        }
+
+        $meta = is_array($this->meta_data) ? $this->meta_data : [];
 
         $updates = [
             'status' => $status,
@@ -108,12 +136,40 @@ class AccessoryOrder extends Model
             $updates['confirmed_at'] = now();
         }
 
+        if ($previousStatus !== $status || ($updateNotes && filled($adminNotes))) {
+            $detail = $previousStatus !== $status
+                ? "Cập nhật đơn #ACC-{$this->id} từ {$previousLabel} sang {$nextLabel}."
+                : "Cập nhật ghi chú xử lý nội bộ cho đơn #ACC-{$this->id}.";
+            if ($updateNotes && filled($adminNotes)) {
+                $detail .= " Ghi chú: {$adminNotes}";
+            }
+
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
+                actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
+                title: $previousStatus !== $status ? "Chuyển trạng thái đơn: {$previousLabel} → {$nextLabel}" : 'Cập nhật ghi chú xử lý đơn phụ kiện',
+                detail: $detail,
+                channel: 'CRM',
+            );
+            $updates['meta_data'] = $meta;
+        }
+
         $this->update($updates);
 
         if ($previousStatus !== $status && filled($this->customer_email)) {
             try {
                 $this->loadMissing('product');
                 Mail::to($this->customer_email)->send(new AccessoryOrderStatusMail($this));
+
+                InteractionTimelineRecorder::record(
+                    model: $this,
+                    actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                    actorLabel: 'Hệ thống tự động',
+                    title: "Gửi email thông báo trạng thái: {$nextLabel}",
+                    detail: "Hệ thống đã gửi thư cập nhật đơn #ACC-{$this->id} tới {$this->customer_email}.",
+                    channel: 'Email',
+                );
             } catch (Throwable $exception) {
                 Log::warning('Failed sending accessory order status update email.', [
                     'order_id' => $this->id,

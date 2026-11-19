@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\VehicleType;
 use App\Livewire\Concerns\WithBmwPagination;
-use App\Models\Category;
+use App\Services\Cache\ShowroomCacheService;
 use App\Services\VehicleSearchService;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
@@ -83,7 +83,7 @@ class CatalogBrowser extends Component
         $this->resetPage();
     }
 
-    public function render(VehicleSearchService $searchService): View
+    public function render(VehicleSearchService $searchService, ShowroomCacheService $cacheService): View
     {
         $effectiveType = $this->lockedType === 'accessory' ? 'accessory' : $this->type;
         $isAccessoryCatalog = $effectiveType === 'accessory';
@@ -99,9 +99,7 @@ class CatalogBrowser extends Component
 
         $vehicles = $searchService->search($filters);
 
-        $categories = $isAccessoryCatalog
-            ? Category::query()->where('name', 'like', '%Phụ kiện%')->orderBy('name')->get()
-            : Category::query()->where('name', 'not like', '%Phụ kiện%')->orderBy('name')->get();
+        $categories = $cacheService->catalogCategories($isAccessoryCatalog);
 
         return view('livewire.catalog-browser', [
             'vehicles' => $vehicles,

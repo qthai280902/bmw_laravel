@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\AppointmentStatus;
 use App\Mail\AppointmentReminderMail;
 use App\Models\Appointment;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Isolatable;
 use Illuminate\Support\Collection;
@@ -46,7 +47,19 @@ class SendAppointmentRemindersCommand extends Command implements Isolatable
 
                     try {
                         Mail::to($recipientEmail)->send(new AppointmentReminderMail($appointment));
-                        $appointment->forceFill(['reminder_sent_at' => now()])->saveQuietly();
+                        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+                        $meta = InteractionTimelineRecorder::appendToMeta(
+                            meta: $meta,
+                            actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                            actorLabel: 'Hệ thống tự động',
+                            title: 'Gửi thư nhắc lịch trước 24 giờ',
+                            detail: "Tự động gửi email đếm ngược 24h tới {$recipientEmail} kèm hướng dẫn lộ trình & giấy tờ.",
+                            channel: 'Email',
+                        );
+                        $appointment->forceFill([
+                            'reminder_sent_at' => now(),
+                            'meta_data' => $meta,
+                        ])->saveQuietly();
                         $sentCount++;
                     } catch (Throwable $exception) {
                         $failedCount++;

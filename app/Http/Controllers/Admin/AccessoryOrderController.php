@@ -34,6 +34,7 @@ class AccessoryOrderController extends Controller
             $data['status'],
             $data['admin_notes'] ?? null,
             true,
+            $request->user(),
         );
 
         return redirect()

@@ -28,7 +28,8 @@ class AppointmentAlertMail extends Mailable implements ShouldQueue
             ?? 'Khách hàng';
 
         return new Envelope(
-            subject: "[LEAD MỚI] Yêu cầu {$typeLabel} từ {$customerName} — #{$this->appointment->id}",
+            subject: "[CRM NỘI BỘ · LỊCH MỚI] Yêu cầu {$typeLabel} từ {$customerName} — #{$this->appointment->id}",
+            tags: ['new-appointment', 'internal-crm'],
         );
     }
 

@@ -194,111 +194,135 @@
         </div>
     @endif
 
-    <!-- Accessory Order Quick Inspector Drawer -->
+    <!-- Accessory Order Quick Inspector Drawer (Teleported to body, Z-100/101, Independent Scroll & 2-Way Timeline) -->
     @if($this->inspectedOrder)
         @php
             $order = $this->inspectedOrder;
+            $timelineEvents = \App\Services\Crm\InteractionTimelineRecorder::timelineForAccessoryOrder($order);
         @endphp
         <div
-            class="fixed inset-0 z-[90] flex items-stretch justify-end bg-black/80 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Hồ sơ Đơn Phụ Kiện"
+            wire:key="accessory-order-inspector-drawer-{{ $order->id }}"
+            x-data="{
+                init() { document.body.classList.add('overflow-hidden'); },
+                destroy() { document.body.classList.remove('overflow-hidden'); },
+                close() {
+                    document.body.classList.remove('overflow-hidden');
+                    $wire.closeInspector();
+                }
+            }"
+            @keydown.escape.window="close()"
         >
-            <div class="fixed inset-0" wire:click="closeInspector"></div>
+            <template x-teleport="body">
+                <div
+                    class="fixed inset-0 z-[100]"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Hồ sơ Đơn Phụ Kiện"
+                >
+                    <div
+                        class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+                        @click="close()"
+                    ></div>
 
-            <div class="relative z-10 flex h-full w-full max-w-xl flex-col rounded-none border-l-2 border-[#1C69D4] bg-[#0B0F17] text-white shadow-2xl">
-                <header class="flex items-start justify-between gap-4 border-b border-[#242B38] bg-[#050505] px-6 py-5">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
-                                ĐƠN PHỤ KIỆN #ACC-{{ $order->id }}
-                            </span>
-                            <span class="rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] {{ $order->statusColorClass() }}">
-                                {{ $order->statusLabel() }}
-                            </span>
-                        </div>
-                        <h3 class="mt-2 truncate text-lg font-black uppercase tracking-wider text-white">{{ $order->customer_name }}</h3>
-                        <p class="mt-0.5 text-xs text-zinc-400">Đặt lúc {{ $order->created_at->format('H:i — d/m/Y') }}</p>
-                    </div>
-
-                    <button
-                        type="button"
-                        wire:click="closeInspector"
-                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-none border border-[#242B38] bg-[#0B0F17] text-sm font-black text-zinc-400 transition-colors hover:border-white hover:text-white cursor-pointer"
-                        aria-label="Đóng hồ sơ đơn phụ kiện"
-                    >
-                        ×
-                    </button>
-                </header>
-
-                <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-                    <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">1. Thông tin giao nhận khách hàng</p>
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Số điện thoại</p>
-                                <div class="mt-1 flex items-center gap-2" x-data="{ copied: false }">
-                                    <span class="font-bold tabular-nums text-white">{{ $order->customer_phone }}</span>
-                                    <a href="tel:{{ $order->customer_phone }}" class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-400 hover:border-emerald-500">Gọi</a>
-                                    <button
-                                        type="button"
-                                        @click="navigator.clipboard?.writeText('{{ $order->customer_phone }}'); copied = true; setTimeout(() => copied = false, 1500)"
-                                        class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-zinc-300 hover:border-[#1C69D4] cursor-pointer"
-                                        x-text="copied ? 'Đã copy' : 'Copy'"
-                                    ></button>
-                                </div>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Email nhận thông báo</p>
-                                <p class="mt-1 truncate font-semibold text-zinc-200">{{ $order->customer_email ?: 'Chưa cung cấp' }}</p>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Địa chỉ giao hàng</p>
-                                <p class="mt-1 text-zinc-200">{{ $order->customer_address }}</p>
-                            </div>
-                            @if(filled($order->notes))
-                                <div class="sm:col-span-2">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Ghi chú của khách</p>
-                                    <p class="mt-1 text-zinc-300">{{ $order->notes }}</p>
-                                </div>
-                            @endif
-                        </div>
-                    </section>
-
-                    <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">2. Sản phẩm &amp; Giá trị thanh toán</p>
-                        <div class="flex items-center justify-between gap-4 border border-white/5 bg-[#0B0F17] p-3.5">
+                    <div class="fixed inset-y-0 right-0 z-[101] flex h-dvh w-full max-w-xl flex-col rounded-none border-l border-[#1C69D4] bg-[#0B0F17] text-white shadow-2xl">
+                        <header class="shrink-0 flex items-start justify-between gap-4 border-b border-[#242B38] bg-[#050505] px-6 py-5">
                             <div class="min-w-0">
-                                <p class="truncate text-xs font-bold uppercase text-white">{{ $order->product?->name ?? 'Sản phẩm đã xóa' }}</p>
-                                <p class="mt-0.5 text-[11px] text-zinc-400">Số lượng: {{ $order->quantity }} · Danh mục: {{ $order->product?->category?->name ?? 'Phụ kiện BMW' }}</p>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
+                                        ĐƠN PHỤ KIỆN #ACC-{{ $order->id }}
+                                    </span>
+                                    <span class="rounded-none border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] {{ $order->statusColorClass() }}">
+                                        {{ $order->statusLabel() }}
+                                    </span>
+                                </div>
+                                <h3 class="mt-2 truncate text-lg font-black uppercase tracking-wider text-white">{{ $order->customer_name }}</h3>
+                                <p class="mt-0.5 text-xs text-zinc-400">Đặt lúc {{ $order->created_at->format('H:i — d/m/Y') }}</p>
                             </div>
-                            <p class="shrink-0 text-sm font-black tabular-nums text-[#70A7FF]">{{ number_format($order->total_amount) }} VNĐ</p>
+
+                            <button
+                                type="button"
+                                @click="close()"
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-[#242B38] bg-[#0B0F17] text-lg font-black text-zinc-300 transition-colors hover:border-white hover:bg-[#1C69D4] hover:text-white cursor-pointer"
+                                aria-label="Đóng hồ sơ đơn phụ kiện"
+                            >
+                                ×
+                            </button>
+                        </header>
+
+                        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
+                            <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">1. Thông tin giao nhận khách hàng</p>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs">
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Số điện thoại</p>
+                                        <div class="mt-1 flex items-center gap-2" x-data="{ copied: false }">
+                                            <span class="font-bold tabular-nums text-white">{{ $order->customer_phone }}</span>
+                                            <a href="tel:{{ $order->customer_phone }}" class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-400 hover:border-emerald-500">Gọi</a>
+                                            <button
+                                                type="button"
+                                                @click="navigator.clipboard?.writeText('{{ $order->customer_phone }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                                                class="border border-[#242B38] bg-[#0B0F17] px-2 py-0.5 text-[9px] font-bold uppercase text-zinc-300 hover:border-[#1C69D4] cursor-pointer"
+                                                x-text="copied ? 'Đã copy' : 'Copy'"
+                                            ></button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Email nhận thông báo</p>
+                                        <p class="mt-1 truncate font-semibold text-zinc-200">{{ $order->customer_email ?: 'Chưa cung cấp' }}</p>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Địa chỉ giao hàng</p>
+                                        <p class="mt-1 text-zinc-200">{{ $order->customer_address }}</p>
+                                    </div>
+                                    @if(filled($order->notes))
+                                        <div class="sm:col-span-2">
+                                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Ghi chú của khách</p>
+                                            <p class="mt-1 text-zinc-300">{{ $order->notes }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </section>
+
+                            <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">2. Sản phẩm &amp; Giá trị thanh toán</p>
+                                <div class="flex items-center justify-between gap-4 border border-white/5 bg-[#0B0F17] p-3.5">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-xs font-bold uppercase text-white">{{ $order->product?->name ?? 'Sản phẩm đã xóa' }}</p>
+                                        <p class="mt-0.5 text-[11px] text-zinc-400">Số lượng: {{ $order->quantity }} · Danh mục: {{ $order->product?->category?->name ?? 'Phụ kiện BMW' }}</p>
+                                    </div>
+                                    <p class="shrink-0 text-sm font-black tabular-nums text-[#70A7FF]">{{ number_format($order->total_amount) }} VNĐ</p>
+                                </div>
+                            </section>
+
+                            <x-admin.interaction-timeline
+                                :events="$timelineEvents"
+                                heading="3. Lịch sử tương tác Khách hàng ↔ Hệ thống"
+                            />
+
+                            <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">4. Trung tâm Thao tác nhanh (Action Hub)</p>
+                                <a
+                                    href="{{ route('admin.accessory-orders.show', $order) }}"
+                                    class="flex w-full items-center justify-center rounded-none border border-[#1C69D4] bg-[#1C69D4]/15 px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white"
+                                >
+                                    Mở trang chi tiết &amp; ghi chú nội bộ
+                                </a>
+                            </section>
                         </div>
-                    </section>
 
-                    <section class="rounded-none border border-[#242B38] bg-[#050505] p-4 space-y-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">3. Trung tâm Thao tác nhanh (Action Hub)</p>
-                        <a
-                            href="{{ route('admin.accessory-orders.show', $order) }}"
-                            class="flex w-full items-center justify-center rounded-none border border-[#1C69D4] bg-[#1C69D4]/15 px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white"
-                        >
-                            Mở trang chi tiết &amp; ghi chú nội bộ
-                        </a>
-                    </section>
+                        <footer class="shrink-0 flex items-center justify-between gap-3 border-t border-[#242B38] bg-[#050505] px-6 py-4">
+                            <span class="text-[10px] font-semibold text-zinc-500">Nhấn Esc hoặc click vùng tối để đóng</span>
+                            <button
+                                type="button"
+                                @click="close()"
+                                class="rounded-none border border-[#242B38] bg-[#0B0F17] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-200 transition-colors hover:border-white hover:bg-[#1C69D4] hover:text-white cursor-pointer"
+                            >
+                                Đóng
+                            </button>
+                        </footer>
+                    </div>
                 </div>
-
-                <footer class="flex items-center justify-between gap-3 border-t border-[#242B38] bg-[#050505] px-6 py-4">
-                    <span class="text-[10px] font-semibold text-zinc-500">Nhấn Esc hoặc click vùng tối để đóng</span>
-                    <button
-                        type="button"
-                        wire:click="closeInspector"
-                        class="rounded-none border border-[#242B38] bg-[#0B0F17] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white hover:text-white cursor-pointer"
-                    >
-                        Đóng
-                    </button>
-                </footer>
-            </div>
+            </template>
         </div>
     @endif
 </div>

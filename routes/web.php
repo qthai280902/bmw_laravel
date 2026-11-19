@@ -19,25 +19,17 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceController;
-use App\Models\Article;
-use App\Models\Product;
+use App\Services\Cache\ShowroomCacheService;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
-Route::get('/', function () {
-    $featuredProducts = Product::active()
-        ->where('is_featured', true)
-        ->with(['category', 'primaryImage', 'images'])
-        ->latest()
-        ->take(3)
-        ->get();
+Route::get('/', function (ShowroomCacheService $cacheService) {
+    $homeData = $cacheService->homeData();
 
-    $latestArticles = Article::published()
-        ->latest('published_at')
-        ->take(3)
-        ->get();
-
-    return view('welcome', compact('featuredProducts', 'latestArticles'));
+    return view('welcome', [
+        'featuredProducts' => $homeData['featuredProducts'],
+        'latestArticles' => $homeData['latestArticles'],
+    ]);
 })->name('home');
 
 Route::get('/catalog', [ProductController::class, 'index'])->name('products.index');
@@ -49,7 +41,9 @@ Route::get('/tim-hieu-them/{article:slug}', [ArticleController::class, 'show'])-
 // Accessories (reuse ProductController with accessory type filter)
 Route::get('/accessories', [ProductController::class, 'index'])->defaults('type', 'accessory')->name('accessories.index');
 Route::get('/accessories/{product:slug}/order', [AccessoryOrderController::class, 'create'])->name('accessory-orders.create');
-Route::post('/accessories/{product:slug}/order', [AccessoryOrderController::class, 'store'])->name('accessory-orders.store');
+Route::post('/accessories/{product:slug}/order', [AccessoryOrderController::class, 'store'])
+    ->middleware('throttle:public-booking-submit')
+    ->name('accessory-orders.store');
 
 // Static Pages
 Route::get('/offers', [PageController::class, 'exclusiveOffers'])->name('offers.exclusive');
@@ -59,7 +53,7 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact.index'
 // Public Booking Routes
 Route::get('/booking', [AppointmentController::class, 'create'])->name('appointments.create');
 Route::post('/booking', [AppointmentController::class, 'store'])
-    ->middleware('throttle:showroom-booking')
+    ->middleware('throttle:public-booking-submit')
     ->name('appointments.store');
 Route::get('/booking/success', [AppointmentController::class, 'success'])->name('appointments.success');
 Route::get('/appointments/{appointment}/manage', [GuestAppointmentManageController::class, 'show'])
@@ -70,10 +64,10 @@ Route::post('/appointments/{appointment}/manage', [GuestAppointmentManageControl
     ->name('appointments.guest.update');
 
 Route::post('/ai/showroom-assistant', ShowroomAssistantController::class)
-    ->middleware('throttle:12,1')
+    ->middleware('throttle:ai-concierge-chat')
     ->name('ai.showroom-assistant.ask');
 Route::post('/ai/showroom-assistant/stream', [ShowroomAssistantController::class, 'stream'])
-    ->middleware('throttle:12,1')
+    ->middleware('throttle:ai-concierge-chat')
     ->name('ai.showroom-assistant.stream');
 Route::get('/ai/showroom-assistant/history', [ShowroomAssistantController::class, 'history'])
     ->middleware('throttle:30,1')
@@ -83,10 +77,10 @@ Route::post('/ai/showroom-assistant/reset', [ShowroomAssistantController::class,
     ->name('ai.showroom-assistant.reset');
 
 Route::post('/api/ai/assistant', ShowroomAssistantController::class)
-    ->middleware('throttle:12,1')
+    ->middleware('throttle:ai-concierge-chat')
     ->name('ai.api.assistant.ask');
 Route::post('/api/ai/assistant/stream', [ShowroomAssistantController::class, 'stream'])
-    ->middleware('throttle:12,1')
+    ->middleware('throttle:ai-concierge-chat')
     ->name('ai.api.assistant.stream');
 Route::get('/api/ai/assistant/history', [ShowroomAssistantController::class, 'history'])
     ->middleware('throttle:30,1')

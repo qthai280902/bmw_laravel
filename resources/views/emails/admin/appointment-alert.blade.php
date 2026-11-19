@@ -1,10 +1,13 @@
 @extends('emails.layouts.bmw-concierge')
 
-@section('title', 'Lịch Hẹn Mới Tại Showroom | BMW Showroom Vietnam')
+@section('title', '[CRM NỘI BỘ · LỊCH MỚI] Lịch Hẹn Mới Tại Showroom | BMW Showroom')
+@section('accent_color', '#EF4444')
+@section('header_subtitle', 'INTERNAL CRM ALERT · STAFF ONLY')
+@section('header_subtitle_color', '#FCA5A5')
 
 @section('badge')
-    <span style="display: inline-block; padding: 5px 12px; background-color: #16243D; border: 1px solid #1C69D4; color: #60A5FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-        NEW APPOINTMENT
+    <span style="display: inline-block; padding: 5px 12px; background-color: #3B1219; border: 1px solid #EF4444; color: #FCA5A5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
+        CẢNH BÁO NỘI BỘ CRM &middot; CHỈ DÀNH CHO NHÂN SỰ
     </span>
 @endsection
 

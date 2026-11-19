@@ -36,6 +36,55 @@
 
                             <div class="whitespace-pre-wrap break-words text-sm font-medium leading-7 text-zinc-200">{{ $message->content }}</div>
 
+                            @if (! $message->isUserMessage() && is_array($message->meta_data) && $message->meta_data !== [])
+                                @php
+                                    $structuredMeta = $message->meta_data;
+                                    $metaLeadLevel = (string) ($structuredMeta['lead_level'] ?? 'cold');
+                                    $metaLeadStyle = match ($metaLeadLevel) {
+                                        'hot' => 'border-rose-500/40 bg-rose-500/15 text-rose-300',
+                                        'warm' => 'border-amber-500/40 bg-amber-500/15 text-amber-300',
+                                        default => 'border-white/15 bg-white/5 text-zinc-300',
+                                    };
+                                    $metaProducts = is_array($structuredMeta['recommended_product_ids'] ?? null)
+                                        ? $structuredMeta['recommended_product_ids']
+                                        : [];
+                                    $metaToolCalls = is_array($structuredMeta['tool_calls'] ?? null)
+                                        ? $structuredMeta['tool_calls']
+                                        : [];
+                                @endphp
+                                <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+                                    @if (filled($structuredMeta['intent'] ?? null))
+                                        <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#70A7FF]">
+                                            INTENT: {{ $structuredMeta['intent'] }}
+                                        </span>
+                                    @endif
+
+                                    @if (filled($structuredMeta['lead_level'] ?? null))
+                                        <span class="rounded-none border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] {{ $metaLeadStyle }}">
+                                            LEAD: {{ strtoupper($metaLeadLevel) }}
+                                        </span>
+                                    @endif
+
+                                    @if ($metaProducts !== [])
+                                        <span class="rounded-none border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                                            SẢN PHẨM #{{ implode(', #', $metaProducts) }}
+                                        </span>
+                                    @endif
+
+                                    @if (filled($structuredMeta['recommended_service_package'] ?? null))
+                                        <span class="rounded-none border border-sky-500/35 bg-sky-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-300">
+                                            GÓI DỊCH VỤ: {{ $structuredMeta['recommended_service_package'] }}
+                                        </span>
+                                    @endif
+
+                                    @foreach ($metaToolCalls as $toolName)
+                                        <span class="rounded-none border border-violet-500/35 bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-300">
+                                            TOOL: {{ $toolName }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+
                             @if ($message->page_path || $message->provider || $message->latency_ms)
                                 <dl class="mt-4 grid grid-cols-1 gap-2 border-t border-white/10 pt-4 text-xs text-zinc-600 sm:grid-cols-3">
                                     <div>

@@ -7,6 +7,7 @@ use App\Enums\AppointmentType;
 use App\Events\AppointmentStatusChanged;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -294,7 +295,20 @@ class Appointment extends Model implements Attachable
 
             Mail::to($recipientEmail)->later($sendAt, $mail);
 
-            $this->forceFill(['followup_email_sent_at' => now()])->saveQuietly();
+            $meta = is_array($this->meta_data) ? $this->meta_data : [];
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                actorLabel: 'Hệ thống tự động',
+                title: 'Lên lịch gửi thư hậu mãi & dự toán trả góp (sau 2h)',
+                detail: "Hệ thống hẹn gửi email cảm ơn và bảng dự toán tài chính tới {$recipientEmail} sau 2 giờ.",
+                channel: 'Email',
+            );
+
+            $this->forceFill([
+                'followup_email_sent_at' => now(),
+                'meta_data' => $meta,
+            ])->saveQuietly();
 
             return true;
         } catch (Throwable $exception) {
@@ -330,6 +344,14 @@ class Appointment extends Model implements Attachable
             if ($actor) {
                 $meta['confirmed_by_name'] = $actor->name;
             }
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
+                actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
+                title: 'Gửi Thư Xác Nhận Chính Thức (Thẻ VIP Pass)',
+                detail: "Đã phát hành Thẻ đón tiếp VIP và gửi email xác nhận chính thức tới {$recipientEmail}.",
+                channel: 'Email',
+            );
             $this->forceFill([
                 'meta_data' => $meta,
             ])->saveQuietly();
@@ -350,9 +372,27 @@ class Appointment extends Model implements Attachable
         $oldStatus = $this->status instanceof AppointmentStatus
             ? $this->status->value
             : (string) $this->status;
+        $oldLabel = $this->status instanceof AppointmentStatus
+            ? $this->status->label()
+            : $oldStatus;
+
+        $meta = is_array($this->meta_data) ? $this->meta_data : [];
+        if ($oldStatus !== $newStatus->value) {
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
+                actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
+                title: "Chuyển trạng thái: {$oldLabel} → {$newStatus->label()}",
+                detail: $newStatus === AppointmentStatus::Confirmed
+                    ? 'Chuyên viên Showroom đã duyệt lịch hẹn và kích hoạt quy trình gửi Thẻ đón tiếp VIP.'
+                    : "Cập nhật trạng thái xử lý trên bảng điều phối CRM sang {$newStatus->label()}.",
+                channel: 'CRM',
+            );
+        }
 
         $this->update([
             'status' => $newStatus->value,
+            'meta_data' => $meta,
         ]);
 
         if ($oldStatus !== $newStatus->value) {

@@ -17,7 +17,7 @@ use Throwable;
 class AiConversationTracker
 {
     /**
-     * @param  array{answer?: string, status?: string, reason?: string, suggestions?: array<int, mixed>, current_product?: array<string, mixed>|null}  $assistantResponse
+     * @param  array{answer?: string, status?: string, reason?: string, suggestions?: array<int, mixed>, current_product?: array<string, mixed>|null, structured?: array<string, mixed>|null, tool_calls?: array<int, string>}  $assistantResponse
      * @param  array<string, mixed>|null  $currentProduct
      */
     public function recordExchange(
@@ -55,6 +55,18 @@ class AiConversationTracker
                     'referrer' => $this->safeUrl($referrer),
                 ]);
 
+                $structured = is_array($assistantResponse['structured'] ?? null)
+                    ? $assistantResponse['structured']
+                    : [];
+                $toolCalls = is_array($assistantResponse['tool_calls'] ?? null)
+                    ? array_values($assistantResponse['tool_calls'])
+                    : [];
+                $metaData = $structured;
+
+                if ($toolCalls !== []) {
+                    $metaData['tool_calls'] = $toolCalls;
+                }
+
                 AiChatMessage::create([
                     'ai_chat_session_id' => $session->id,
                     'role' => 'assistant',
@@ -67,9 +79,21 @@ class AiConversationTracker
                     'model' => filled(config('showroom_ai.model')) ? (string) config('showroom_ai.model') : null,
                     'response_reason' => $reason,
                     'latency_ms' => max(0, $latencyMs),
+                    'meta_data' => $metaData !== [] ? $metaData : null,
                 ]);
 
-                $detectedIntent = $this->detectIntent($message, is_array($resolvedProduct) ? $resolvedProduct : null);
+                $structuredIntent = is_string($structured['intent'] ?? null)
+                    && $structured['intent'] !== ''
+                    && $structured['intent'] !== 'general_info'
+                    ? $structured['intent']
+                    : null;
+
+                $usedStructuredJson = ($structured['used_fallback'] ?? true) === false;
+                $legacyIntent = $this->detectIntent($message, is_array($resolvedProduct) ? $resolvedProduct : null);
+
+                $detectedIntent = $usedStructuredJson
+                    ? ($structuredIntent ?? $legacyIntent)
+                    : ($legacyIntent ?? $structuredIntent);
 
                 $attributes = [
                     'last_seen_at' => now(),

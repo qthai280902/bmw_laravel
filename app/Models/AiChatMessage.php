@@ -19,7 +19,15 @@ class AiChatMessage extends Model
         'model',
         'response_reason',
         'latency_ms',
+        'meta_data',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'meta_data' => 'array',
+        ];
+    }
 
     public function session(): BelongsTo
     {

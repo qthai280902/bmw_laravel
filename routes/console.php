@@ -49,3 +49,8 @@ Schedule::call(function (): void {
 Schedule::command('queue:prune-failed --hours=168')
     ->weeklyOn(0, '03:15')
     ->timezone('Asia/Ho_Chi_Minh');
+
+Schedule::command('showroom:prune-orphan-media')
+    ->weeklyOn(0, '04:00')
+    ->timezone('Asia/Ho_Chi_Minh')
+    ->withoutOverlapping();

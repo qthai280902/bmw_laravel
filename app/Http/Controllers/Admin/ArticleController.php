@@ -12,7 +12,6 @@ use App\Services\Ai\ArticleEditorialAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -96,7 +95,6 @@ class ArticleController extends Controller
         $data = $this->prepareArticleData($request->validated(), $article);
 
         if ($request->hasFile('cover_image')) {
-            $this->deleteCoverImage($article);
             $data['cover_image'] = $request->file('cover_image')->store('articles', 'public');
         }
 
@@ -130,7 +128,6 @@ class ArticleController extends Controller
 
     public function destroy(Article $article): RedirectResponse
     {
-        $this->deleteCoverImage($article);
         $article->delete();
 
         return redirect()
@@ -161,12 +158,5 @@ class ArticleController extends Controller
         }
 
         return $data;
-    }
-
-    private function deleteCoverImage(Article $article): void
-    {
-        if (filled($article->cover_image) && Storage::disk('public')->exists($article->cover_image)) {
-            Storage::disk('public')->delete($article->cover_image);
-        }
     }
 }

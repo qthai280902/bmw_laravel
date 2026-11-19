@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Client;
 
 use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
+use App\Mail\Customer\GuestAppointmentChangeMail;
 use App\Models\Appointment;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -38,6 +42,8 @@ class GuestAppointmentManageController extends Controller
         $action = $validated['action'];
         $cleanReason = isset($validated['reason']) ? trim(strip_tags((string) $validated['reason'])) : '';
         $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $previousDateLabel = $appointment->appointment_date?->format('H:i — d/m/Y');
+        $previousStatusLabel = $appointment->statusLabel();
 
         if ($action === 'confirm') {
             if ($appointment->status === AppointmentStatus::Cancelled) {
@@ -50,10 +56,29 @@ class GuestAppointmentManageController extends Controller
 
             if ($appointment->status === AppointmentStatus::Pending) {
                 $meta['guest_confirmed_at'] = now()->toIso8601String();
+                $meta = InteractionTimelineRecorder::appendToMeta(
+                    meta: $meta,
+                    actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
+                    actorLabel: 'Khách hàng · '.$appointment->customer_name,
+                    title: 'Khách tự xác nhận tham dự lịch hẹn',
+                    detail: 'Khách hàng đã bấm nút xác nhận tham dự trực tiếp qua đường dẫn Signed URL.',
+                    channel: 'Signed Link',
+                );
+
                 $appointment->forceFill([
                     'status' => AppointmentStatus::Confirmed->value,
                     'meta_data' => $meta,
                 ])->save();
+
+                $this->dispatchGuestChangeMail(
+                    appointment: $appointment,
+                    action: GuestAppointmentChangeMail::ACTION_CONFIRM,
+                    previousDateLabel: $previousDateLabel,
+                    newDateLabel: $previousDateLabel,
+                    previousStatusLabel: $previousStatusLabel,
+                    newStatusLabel: AppointmentStatus::Confirmed->label(),
+                    reason: $cleanReason !== '' ? $cleanReason : null,
+                );
             }
 
             return back()->with('success', "Cảm ơn Quý khách đã xác nhận lịch hẹn #{$appointment->id}. Showroom BMW sẵn sàng đón tiếp.");
@@ -90,10 +115,28 @@ class GuestAppointmentManageController extends Controller
                 ]);
             }
 
+            $newDateLabel = $newDate->format('H:i — d/m/Y');
             $meta['rescheduled_at'] = now()->toIso8601String();
+            $meta['previous_appointment_date'] = $previousDateLabel;
             if ($cleanReason !== '') {
                 $meta['reschedule_reason'] = $cleanReason;
             }
+
+            $timelineDetail = $previousDateLabel
+                ? "Đổi lịch hẹn: {$previousDateLabel} → {$newDateLabel}."
+                : "Đổi sang khung giờ mới: {$newDateLabel}.";
+            if ($cleanReason !== '') {
+                $timelineDetail .= " Ghi chú: {$cleanReason}";
+            }
+
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
+                actorLabel: 'Khách hàng · '.$appointment->customer_name,
+                title: 'Khách tự đổi ngày/giờ hẹn',
+                detail: $timelineDetail,
+                channel: 'Signed Link',
+            );
 
             $appointment->forceFill([
                 'appointment_date' => $newDate,
@@ -101,7 +144,17 @@ class GuestAppointmentManageController extends Controller
                 'meta_data' => $meta,
             ])->save();
 
-            return back()->with('success', "Đã cập nhật thời gian mới cho lịch hẹn #{$appointment->id}: ".$newDate->format('H:i — d/m/Y').'.');
+            $this->dispatchGuestChangeMail(
+                appointment: $appointment,
+                action: GuestAppointmentChangeMail::ACTION_RESCHEDULE,
+                previousDateLabel: $previousDateLabel,
+                newDateLabel: $newDateLabel,
+                previousStatusLabel: $previousStatusLabel,
+                newStatusLabel: $appointment->statusLabel(),
+                reason: $cleanReason !== '' ? $cleanReason : null,
+            );
+
+            return back()->with('success', "Đã cập nhật thời gian mới cho lịch hẹn #{$appointment->id}: ".$newDateLabel.'.');
         }
 
         if ($appointment->status === AppointmentStatus::Completed) {
@@ -113,11 +166,76 @@ class GuestAppointmentManageController extends Controller
             $meta['cancel_reason'] = $cleanReason;
         }
 
+        $meta = InteractionTimelineRecorder::appendToMeta(
+            meta: $meta,
+            actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
+            actorLabel: 'Khách hàng · '.$appointment->customer_name,
+            title: 'Khách tự hủy lịch hẹn',
+            detail: $cleanReason !== ''
+                ? "Lý do khách cung cấp: {$cleanReason}"
+                : 'Khách hàng đã hủy lịch hẹn qua đường dẫn Signed URL.',
+            channel: 'Signed Link',
+        );
+
         $appointment->forceFill([
             'status' => AppointmentStatus::Cancelled->value,
             'meta_data' => $meta,
         ])->save();
 
+        $this->dispatchGuestChangeMail(
+            appointment: $appointment,
+            action: GuestAppointmentChangeMail::ACTION_CANCEL,
+            previousDateLabel: $previousDateLabel,
+            newDateLabel: $previousDateLabel,
+            previousStatusLabel: $previousStatusLabel,
+            newStatusLabel: AppointmentStatus::Cancelled->label(),
+            reason: $cleanReason !== '' ? $cleanReason : null,
+        );
+
         return back()->with('success', "Lịch hẹn #{$appointment->id} đã được hủy theo yêu cầu của Quý khách.");
+    }
+
+    private function dispatchGuestChangeMail(
+        Appointment $appointment,
+        string $action,
+        ?string $previousDateLabel,
+        ?string $newDateLabel,
+        ?string $previousStatusLabel,
+        ?string $newStatusLabel,
+        ?string $reason,
+    ): void {
+        $appointment->loadMissing(['product.category', 'user']);
+        $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
+
+        if ($recipientEmail === '' || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+
+        try {
+            Mail::to($recipientEmail)->send(new GuestAppointmentChangeMail(
+                appointment: $appointment,
+                action: $action,
+                previousDateLabel: $previousDateLabel,
+                newDateLabel: $newDateLabel,
+                previousStatusLabel: $previousStatusLabel,
+                newStatusLabel: $newStatusLabel,
+                reason: $reason,
+            ));
+
+            InteractionTimelineRecorder::record(
+                model: $appointment,
+                actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                actorLabel: 'Hệ thống tự động',
+                title: 'Gửi email xác nhận thay đổi lịch hẹn cho khách',
+                detail: "Đã gửi thư đối chiếu cập nhật lịch hẹn tới {$recipientEmail}.",
+                channel: 'Email',
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Failed sending guest appointment change email.', [
+                'appointment_id' => $appointment->id,
+                'action' => $action,
+                'exception' => $exception::class,
+            ]);
+        }
     }
 }

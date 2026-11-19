@@ -575,6 +575,18 @@ window.aiAssistantWidget = (config) => ({
                         return;
                     }
                 }
+
+                if (streamResponse.status === 429) {
+                    const rateLimitPayload = await streamResponse.json().catch(() => ({}));
+                    this.appendAssistantMessage(
+                        rateLimitPayload.answer || rateLimitPayload.message || config.fallback,
+                        [],
+                        true,
+                    );
+                    this.pruneMessages();
+                    this.persistState();
+                    return;
+                }
             }
 
             const response = await fetch(
@@ -589,7 +601,7 @@ window.aiAssistantWidget = (config) => ({
             }
 
             this.appendAssistantMessage(
-                payload.answer || config.fallback,
+                payload.answer || payload.message || config.fallback,
                 Array.isArray(payload.suggestions) ? payload.suggestions : [],
                 true,
             );

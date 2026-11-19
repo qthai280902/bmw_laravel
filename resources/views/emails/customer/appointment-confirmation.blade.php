@@ -7,15 +7,18 @@
 @endphp
 
 @section('title', $officialMode ? 'Xác Nhận Chính Thức Lịch Hẹn | BMW Concierge' : 'Đã Tiếp Nhận Yêu Cầu Đặt Lịch | BMW Showroom Vietnam')
+@section('accent_color', $officialMode ? '#10B981' : '#1C69D4')
+@section('header_subtitle', $officialMode ? 'VIP CONCIERGE PASS · OFFICIAL APPROVAL' : 'AUTOMATED SYSTEM RECEIPT')
+@section('header_subtitle_color', $officialMode ? '#34D399' : '#60A5FA')
 
 @section('badge')
     @if($officialMode)
-        <span style="display: inline-block; padding: 5px 12px; background-color: #064E3B; border: 1px solid #10B981; color: #6EE7B7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-            ĐÃ XÁC NHẬN CHÍNH THỨC
+        <span style="display: inline-block; padding: 5px 12px; background-color: #064E3B; border: 1px solid #10B981; color: #6EE7B7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
+            CHUYÊN VIÊN DUYỆT &middot; THẺ ĐÓN TIẾP VIP
         </span>
     @else
-        <span style="display: inline-block; padding: 5px 12px; background-color: #1E293B; border: 1px solid #F59E0B; color: #FCD34D; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-            ĐÃ TIẾP NHẬN &middot; CHỜ XÁC NHẬN
+        <span style="display: inline-block; padding: 5px 12px; background-color: #16243D; border: 1px solid #1C69D4; color: #60A5FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
+            HỆ THỐNG TỰ ĐỘNG &middot; ĐÃ TIẾP NHẬN
         </span>
     @endif
 @endsection
@@ -50,30 +53,36 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #091B18; border: 1px solid #10B981; border-left: 4px solid #10B981; margin-bottom: 24px;">
             <tr>
                 <td style="padding: 18px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: #34D399; text-transform: uppercase; margin-bottom: 8px;">
-                        CHUẨN BỊ ĐÓN TIẾP TẠI SHOWROOM
+                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: #34D399; text-transform: uppercase; margin-bottom: 10px;">
+                        ĐÃ XÁC NHẬN CHÍNH THỨC &mdash; QUYỀN LỢI ĐÓN TIẾP VIP TẠI SHOWROOM
                     </div>
                     <p style="margin: 0 0 6px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #F8FAFC; line-height: 1.6;">
-                        <strong>Chuyên viên phụ trách:</strong> {{ $advisorName }} &mdash; <span style="color: #6EE7B7;">{{ $advisorRole }}</span>
+                        <strong>Chuyên viên phụ trách xác nhận:</strong> {{ $advisorName }} &mdash; <span style="color: #6EE7B7;">{{ $advisorRole }}</span>
                     </p>
-                    <p style="margin: 0 0 6px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
+                    <p style="margin: 0 0 10px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
                         <strong>Hotline đón tiếp trực tiếp:</strong> <a href="tel:1900123456" style="color: #F8FAFC; text-decoration: none; font-weight: 600;">1900 123 456</a>
                     </p>
-                    <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
-                        Khu vực đỗ xe VIP, xe mẫu trưng bày/lái thử và kỹ thuật viên chuyên trách đã được giữ suất đúng khung giờ hẹn của Quý khách tại <span style="color: #F8FAFC; text-decoration: none;">123 Nguyễn Văn Linh, Quận 7, TP.HCM</span>.
+                    <p style="margin: 0 0 4px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #D1FAE5; line-height: 1.6;">
+                        &bull; Bố trí sẵn <strong>khu đỗ xe VIP ưu tiên</strong> ngay sảnh chính Flagship Showroom.
+                    </p>
+                    <p style="margin: 0 0 4px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #D1FAE5; line-height: 1.6;">
+                        &bull; Chuẩn bị sẵn <strong>xe lái thử / khoang dịch vụ &amp; phòng tiếp khách BMW Lounge</strong> đúng khung giờ.
+                    </p>
+                    <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #D1FAE5; line-height: 1.6;">
+                        &bull; Xuất trình mã <strong style="color: #FFFFFF;">#BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}</strong> tại quầy Lễ tân để được đón tiếp ngay.
                     </p>
                 </td>
             </tr>
         </table>
     @else
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #FCD34D; text-transform: uppercase; margin-bottom: 8px;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-bottom: 8px;">
             THƯ TIẾP NHẬN TỰ ĐỘNG TỪ HỆ THỐNG BMW SHOWROOM
         </div>
         <h1 style="margin: 0 0 14px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">
             Yêu cầu của Quý khách đã được Hệ thống ghi nhận
         </h1>
         <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: #CBD5E1; line-height: 1.65;">
-            Kính chào Quý khách <strong style="color: #F8FAFC; font-weight: 600;">{{ $appointment->customer_name }}</strong>, hệ thống đã tiếp nhận yêu cầu <strong style="color: #F8FAFC; font-weight: 600;">{{ $appointment->typeLabel() }}</strong> của Quý khách. Chuyên viên tư vấn BMW đang kiểm tra khung giờ trống và sẽ gửi thư xác nhận chính thức kèm liên hệ trong thời gian sớm nhất.
+            Kính chào Quý khách <strong style="color: #F8FAFC; font-weight: 600;">{{ $appointment->customer_name }}</strong>, máy chủ BMW Showroom đã tự động ghi nhận yêu cầu <strong style="color: #F8FAFC; font-weight: 600;">{{ $appointment->typeLabel() }}</strong> của Quý khách. <em>Đây là thư xác nhận tiếp nhận ban đầu, chưa phải lịch chốt cuối cùng</em> — Chuyên viên BMW sẽ kiểm tra lịch trình và gửi <strong>Thư Xác Nhận Chính Thức (Thẻ VIP)</strong> trong thời gian sớm nhất.
         </p>
     @endif
 

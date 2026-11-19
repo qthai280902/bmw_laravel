@@ -32,7 +32,7 @@ class ProductFactory extends Factory
             'type' => $this->faker->randomElement(VehicleType::cases()),
             'price' => $price,
             'deposit_amount' => (int) ($price * 0.05), // 5% deposit
-            'stock' => $this->faker->numberBetween(0, 5),
+            'stock' => $this->faker->numberBetween(10, 25),
             'specifications' => [
                 'Engine' => 'V8 Twin-Power Turbo',
                 'Power' => '600 HP',

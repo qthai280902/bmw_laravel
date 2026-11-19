@@ -4,6 +4,8 @@ namespace App\Listeners;
 
 use App\Models\Appointment;
 use App\Services\Admin\AdminNotificationDispatcher;
+use App\Services\Crm\InteractionTimelineRecorder;
+use App\Services\Mail\GmailQuotaGuard;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Mail\MailManager;
 use Illuminate\Mail\Transport\LogTransport;
@@ -18,6 +20,12 @@ class RecordAppointmentMailSent
 {
     public function handle(MessageSent $event): void
     {
+        try {
+            app(GmailQuotaGuard::class)->recordSentMail();
+        } catch (Throwable) {
+            // Do not allow quota counter cache hiccup to interrupt mail handling
+        }
+
         $this->recordAppointmentConfirmationTimestamp($event);
         $this->notifyIfFailoverFellBackToLog($event);
     }
@@ -53,11 +61,25 @@ class RecordAppointmentMailSent
             return;
         }
 
-        Appointment::query()
-            ->whereKey($appointmentId)
-            ->update([
-                'confirmation_email_sent_at' => now(),
-            ]);
+        $appointment = Appointment::query()->find($appointmentId);
+        if (! $appointment) {
+            return;
+        }
+
+        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $meta = InteractionTimelineRecorder::appendToMeta(
+            meta: $meta,
+            actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+            actorLabel: 'Hệ thống tự động',
+            title: 'Gửi thư tiếp nhận ban đầu',
+            detail: 'Hệ thống tự động gửi email xác nhận đã tiếp nhận yêu cầu kèm liên kết quản lý Signed URL.',
+            channel: 'Email',
+        );
+
+        $appointment->forceFill([
+            'confirmation_email_sent_at' => now(),
+            'meta_data' => $meta,
+        ])->saveQuietly();
     }
 
     private function notifyIfFailoverFellBackToLog(MessageSent $event): void
