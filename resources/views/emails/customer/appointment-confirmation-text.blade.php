@@ -24,7 +24,9 @@ Yêu cầu của Quý khách đã được Hệ thống ghi nhận. Chuyên viê
 @endif
 
 THÔNG TIN LỊCH HẸN
-- Mã lịch hẹn: #BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
+- Mã khách hàng: {{ $appointment->customer_order_code ?: '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
+@if($appointment->daily_sequence_code)- Mã ngày: {{ $appointment->daily_sequence_code }}
+@endif- Mã lịch hẹn hệ thống: #BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
 - Hạng mục: {{ $appointment->typeLabel() }}
 @if($appointment->servicePackageLabel())
 - Gói dịch vụ chăm sóc: {{ $appointment->servicePackageLabel() }}

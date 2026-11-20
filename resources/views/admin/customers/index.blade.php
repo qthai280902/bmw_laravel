@@ -9,14 +9,39 @@
             <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tổng khách hàng</p>
             <p class="mt-1 text-2xl font-black tabular-nums text-white">{{ $customers->total() }}</p>
         </x-slot>
+
+        @if(Auth::user()?->canManageSystem())
+            <x-slot name="actions">
+                <form method="POST" action="{{ route('admin.customers.distribute-sales') }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-[#38BDF8]/40 bg-[#38BDF8]/15 px-4 text-xs font-semibold text-[#38BDF8] transition-colors hover:bg-[#38BDF8] hover:text-black cursor-pointer"
+                    >
+                        <span>Chia đều hồ sơ chưa phân công</span>
+                        <span class="rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-bold tabular-nums">{{ $unassignedTotal ?? 0 }}</span>
+                    </button>
+                </form>
+            </x-slot>
+        @endif
     </x-admin.page-header>
 
     <div class="space-y-8">
         <!-- Khu vực 1: Danh sách & Bộ lọc Khách hàng -->
         <section class="space-y-5">
+            @php
+                $salesSelectOptions = [
+                    '' => 'Tất cả Sales',
+                    'mine' => 'Khách của tôi',
+                    'unassigned' => 'Chưa phân công',
+                ];
+                foreach ($salesRoster ?? [] as $salesMember) {
+                    $salesSelectOptions[(string) $salesMember->id] = $salesMember->name;
+                }
+            @endphp
             <x-admin.card class="!p-5">
-                <form action="{{ route('admin.customers.index') }}" method="GET" class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
-                    <div class="md:col-span-5">
+                <form action="{{ route('admin.customers.index') }}" method="GET" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
+                    <div>
                         <label for="customer-search-input" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Tìm kiếm khách hàng</label>
                         <div class="relative">
                             <input
@@ -24,11 +49,11 @@
                                 type="text"
                                 name="search"
                                 value="{{ request('search') }}"
-                                placeholder="Tên, Email hoặc Số điện thoại..."
+                                placeholder="Tên, Email, SĐT hoặc #SĐT_STT..."
                                 x-data
                                 data-last-search="{{ request('search', '') }}"
                                 @input.debounce.450ms="if ($el.value !== ($el.dataset.lastSearch || '')) { $el.dataset.lastSearch = $el.value; $el.form.submit(); }"
-                                class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] pl-10 pr-4 text-xs font-semibold text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all"
+                                class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] pl-10 pr-4 text-xs font-semibold text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all"
                             >
                             <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -36,7 +61,7 @@
                         </div>
                     </div>
 
-                    <div class="md:col-span-3">
+                    <div>
                         <label for="customer-filter-status" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Trạng thái lịch hẹn</label>
                         <x-ui.custom-select
                             id="customer-filter-status"
@@ -47,7 +72,7 @@
                         />
                     </div>
 
-                    <div class="md:col-span-2">
+                    <div>
                         <label for="customer-filter-product" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Mẫu xe quan tâm</label>
                         <x-ui.custom-select
                             id="customer-filter-product"
@@ -58,13 +83,56 @@
                         />
                     </div>
 
-                    <div class="flex items-center gap-2 md:col-span-2 md:justify-end">
-                        <button type="submit" class="h-10 flex-1 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-widest text-white shadow-sm shadow-[#1C69D4]/25 transition-all hover:bg-[#2575e6] cursor-pointer md:flex-none">
+                    <div>
+                        <label for="customer-filter-sales" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Sales phụ trách</label>
+                        <x-ui.custom-select
+                            id="customer-filter-sales"
+                            name="sales_id"
+                            :value="(string) ($salesIdFilter ?? '')"
+                            :options="$salesSelectOptions"
+                            :auto-submit="true"
+                        />
+                    </div>
+
+                    <div>
+                        <label for="customer-filter-priority" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Độ ưu tiên Lead</label>
+                        <x-ui.custom-select
+                            id="customer-filter-priority"
+                            name="lead_priority"
+                            :value="(string) ($leadPriorityFilter ?? '')"
+                            :options="[
+                                '' => 'Mọi mức độ',
+                                'hot' => 'HOT LEAD',
+                                'warm' => 'TIỀM NĂNG',
+                                'normal' => 'THAM KHẢO',
+                            ]"
+                            :auto-submit="true"
+                        />
+                    </div>
+
+                    <div>
+                        <label for="customer-filter-recent" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Tương tác gần đây</label>
+                        <x-ui.custom-select
+                            id="customer-filter-recent"
+                            name="recent"
+                            :value="(string) ($recentFilter ?? '')"
+                            :options="[
+                                '' => 'Mọi thời gian',
+                                '7d' => '7 ngày qua',
+                                '30d' => '30 ngày qua',
+                                'this_month' => 'Tháng này',
+                            ]"
+                            :auto-submit="true"
+                        />
+                    </div>
+
+                    <div class="flex items-center gap-2 lg:justify-end">
+                        <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-widest text-white shadow-sm shadow-[#1C69D4]/25 transition-all hover:bg-[#2575e6] cursor-pointer">
                             Lọc
                         </button>
-                        @if(request()->anyFilled(['search', 'status', 'product_id']))
-                            <a href="{{ route('admin.customers.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-3.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-300 transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                                Xóa lọc
+                        @if(($activeFilterCount ?? 0) > 0)
+                            <a href="{{ route('admin.customers.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-white/10 bg-white/[0.03] px-3.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-300 transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
+                                Xóa ({{ $activeFilterCount }})
                             </a>
                         @endif
                     </div>
@@ -95,8 +163,15 @@
                                                 <div class="mb-1 truncate text-sm font-black uppercase leading-none tracking-wider text-white transition-colors group-hover:text-[#70A7FF]">
                                                     {{ $customer->name }}
                                                 </div>
-                                                <div class="text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                                                    Premium Lead
+                                                <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-zinc-400">
+                                                    @if(($customer->priority_rank ?? 4) === 1)
+                                                        <span class="rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-rose-300">HOT LEAD</span>
+                                                    @elseif(($customer->priority_rank ?? 4) === 2)
+                                                        <span class="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-amber-300">TIỀM NĂNG</span>
+                                                    @endif
+                                                    <span class="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-sky-300">
+                                                        {{ filled($customer->assigned_sales_name) ? 'Sales: ' . $customer->assigned_sales_name : 'Chưa gán Sales' }}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>

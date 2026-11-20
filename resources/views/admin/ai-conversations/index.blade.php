@@ -25,14 +25,25 @@
         </x-admin.card>
     </div>
 
+    @php
+        $aiFilterCount = collect([
+            request()->filled('search'),
+            request()->filled('identity'),
+            request()->filled('interest'),
+            request()->filled('range'),
+            request()->filled('status'),
+            request()->filled('lead_level'),
+            request()->filled('converted'),
+        ])->filter()->count();
+    @endphp
     <x-admin.card class="mb-6 !p-5">
-        <form method="GET" action="{{ route('admin.ai-conversations.index') }}" class="grid grid-cols-1 gap-3 xl:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
+        <form method="GET" action="{{ route('admin.ai-conversations.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm">
                 <input
                     id="search"
                     name="search"
                     value="{{ request('search') }}"
-                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                     placeholder="Tên, IP, visitor, 330i, S1000RR..."
                 >
             </x-admin.form-field>
@@ -46,6 +57,33 @@
                         '' => 'Tất cả',
                         'linked' => 'Đã linked',
                         'unknown' => 'Chưa biết khách',
+                    ]"
+                />
+            </x-admin.form-field>
+
+            <x-admin.form-field name="lead_level" label="Mức độ khách">
+                <x-ui.custom-select
+                    id="lead_level"
+                    name="lead_level"
+                    :value="(string) request('lead_level', '')"
+                    :options="[
+                        '' => 'Tất cả',
+                        'hot' => 'HOT LEAD',
+                        'warm' => 'TIỀM NĂNG',
+                        'cold' => 'THAM KHẢO',
+                    ]"
+                />
+            </x-admin.form-field>
+
+            <x-admin.form-field name="converted" label="Chốt lịch hẹn">
+                <x-ui.custom-select
+                    id="converted"
+                    name="converted"
+                    :value="(string) request('converted', '')"
+                    :options="[
+                        '' => 'Tất cả',
+                        'yes' => 'Đã chốt lịch',
+                        'no' => 'Chưa chốt',
                     ]"
                 />
             </x-admin.form-field>
@@ -86,11 +124,11 @@
             </x-admin.form-field>
 
             <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.ai-conversations.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                    Reset
+                <a href="{{ route('admin.ai-conversations.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-white/10 bg-white/[0.03] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
+                    Reset @if($aiFilterCount > 0)({{ $aiFilterCount }})@endif
                 </a>
             </div>
         </form>

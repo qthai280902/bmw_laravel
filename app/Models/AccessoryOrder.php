@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Mail\Customer\AccessoryOrderStatusMail;
 use App\Services\Cache\ShowroomCacheService;
+use App\Services\Crm\DocumentCodeGenerator;
 use App\Services\Crm\InteractionTimelineRecorder;
 use App\Services\Inventory\AccessoryStockService;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,10 @@ class AccessoryOrder extends Model
     public const STATUS_COMPLETED = 'completed';
 
     protected $fillable = [
+        'customer_order_code',
+        'daily_sequence_code',
         'product_id',
+        'assigned_to',
         'customer_name',
         'customer_phone',
         'customer_address',
@@ -52,6 +56,10 @@ class AccessoryOrder extends Model
 
     protected static function booted(): void
     {
+        static::creating(static function (AccessoryOrder $order): void {
+            app(DocumentCodeGenerator::class)->populateMissingCodes($order);
+        });
+
         static::saved(static function (): void {
             app(ShowroomCacheService::class)->flushDashboard();
         });
@@ -69,6 +77,11 @@ class AccessoryOrder extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function assignedSales(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     /**

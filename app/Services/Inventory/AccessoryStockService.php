@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Cache\ShowroomCacheService;
 use App\Services\Crm\InteractionTimelineRecorder;
+use App\Services\Crm\SalesAssignmentService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -93,6 +94,8 @@ class AccessoryStockService
                     return $order;
                 });
             });
+
+        app(SalesAssignmentService::class)->autoAssignIfUnassigned($order);
 
         $this->cacheService->flushCatalog();
         $this->cacheService->flushDashboard();

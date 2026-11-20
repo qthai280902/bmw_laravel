@@ -134,7 +134,7 @@
         @if($disabled) disabled @endif
         :disabled="disabledState"
         @click="toggle()"
-        class="flex w-full items-center justify-between gap-2.5 rounded-none border border-[#242B38] bg-[#0B0F17] text-left text-zinc-100 transition-colors hover:border-[#1C69D4] focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {{ $triggerSizeClasses }}"
+        class="flex w-full items-center justify-between gap-2.5 rounded-lg border border-[#242B38] bg-[#0B0F17] text-left text-zinc-100 transition-colors hover:border-[#1C69D4] focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {{ $triggerSizeClasses }}"
         :class="open ? 'border-[#1C69D4] ring-1 ring-[#1C69D4]' : ''"
     >
         <span class="truncate" x-text="selectedLabel">{{ collect($normalized)->flatMap(fn ($i) => ($i['type'] ?? '') === 'group' ? $i['options'] : [$i])->firstWhere('value', $initialValue)['label'] ?? ($placeholder ?? 'Chọn một mục...') }}</span>
@@ -156,7 +156,7 @@
             data-custom-select-panel
             @click.outside="if (!$refs.trigger || !$refs.trigger.contains($event.target)) close()"
             :style="panelStyle"
-            class="fixed z-[140] rounded-none border border-[#242B38] bg-[#0E131D] shadow-[0_22px_50px_rgba(0,0,0,0.85)]"
+            class="fixed z-[140] overflow-hidden rounded-xl border border-[#242B38] bg-[#0E131D] shadow-[0_22px_50px_rgba(0,0,0,0.85)]"
         >
             <ul
                 role="listbox"

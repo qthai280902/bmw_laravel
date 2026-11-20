@@ -17,6 +17,13 @@
         </x-slot>
     </x-admin.page-header>
 
+    @php
+        $articleFilterCount = collect([
+            request()->filled('search'),
+            request()->filled('category'),
+            request()->filled('status'),
+        ])->filter()->count();
+    @endphp
     <x-admin.card class="mb-6 !p-5">
         <form method="GET" action="{{ route('admin.articles.index') }}" class="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto] lg:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm">
@@ -26,7 +33,7 @@
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Tiêu đề hoặc tóm tắt..."
-                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -49,11 +56,11 @@
             </x-admin.form-field>
 
             <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-xs font-semibold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-xs font-semibold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.articles.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-4 text-xs font-medium text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                    Xóa
+                <a href="{{ route('admin.articles.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-medium text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
+                    Xóa @if($articleFilterCount > 0)({{ $articleFilterCount }})@endif
                 </a>
             </div>
         </form>

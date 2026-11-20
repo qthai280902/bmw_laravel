@@ -12,7 +12,7 @@
     </div>
 
     @if ($errors->any())
-        <div class="mb-8 rounded-none border border-rose-500/20 bg-rose-500/5 p-5 text-sm font-bold text-rose-300">
+        <div class="mb-8 rounded-xl border border-rose-500/20 bg-rose-500/5 p-5 text-sm font-bold text-rose-300">
             <p>Vui lòng kiểm tra lại thông tin trước khi gửi.</p>
             <ul class="mt-3 list-inside list-disc space-y-1 text-xs font-medium text-rose-200">
                 @foreach ($errors->all() as $error)
@@ -88,7 +88,7 @@
                             name="guest_name"
                             wire:model.live.debounce.300ms="guestName"
                             required
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('guestName')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -102,7 +102,7 @@
                             name="guest_phone"
                             wire:model.live.debounce.300ms="guestPhone"
                             required
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('guestPhone')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -115,7 +115,7 @@
                             type="email"
                             name="guest_email"
                             wire:model.live.debounce.300ms="guestEmail"
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('guestEmail')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -123,7 +123,7 @@
                     </div>
                 </div>
             @else
-                <div class="rounded-none border border-zinc-800 bg-zinc-950 p-5 text-sm font-medium text-zinc-300">
+                <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-5 text-sm font-medium text-zinc-300">
                     Xin chào <span class="font-black text-white">{{ auth()->user()->name }}</span>, thông tin tài khoản của bạn sẽ được gắn với yêu cầu này.
                 </div>
             @endguest
@@ -156,7 +156,7 @@
                             wire:model.live.debounce.300ms="customerCarModel"
                             required
                             placeholder="Ví dụ: BMW 320i 2020"
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('customerCarModel')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -170,7 +170,7 @@
                             name="customer_car_condition"
                             wire:model.live.debounce.300ms="customerCarCondition"
                             placeholder="Ví dụ: 30A-12345, đã đi 50.000km"
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                     </div>
                 </div>
@@ -211,7 +211,7 @@
                 </div>
 
                 @if($this->selectedProduct)
-                    <div class="grid grid-cols-1 gap-4 rounded-none border border-white/10 bg-[#121215] p-4 sm:grid-cols-[120px_1fr]">
+                    <div class="grid grid-cols-1 gap-4 rounded-xl border border-white/10 bg-[#121215] p-4 sm:grid-cols-[120px_1fr]">
                         <div class="aspect-[4/3] overflow-hidden bg-black">
                             <img src="{{ $this->selectedProduct->displayImageUrl() }}" alt="{{ $this->selectedProduct->name }}" class="h-full w-full object-cover">
                         </div>
@@ -244,7 +244,7 @@
                     data-lpignore="true"
                     x-on:change="$wire.set('appointmentDate', $event.target.value)"
                     required
-                    class="flatpickr-input w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="flatpickr-input w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors placeholder:text-zinc-700 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                     placeholder="Chọn ngày và giờ"
                 >
             </div>
@@ -258,7 +258,7 @@
                     name="notes"
                     wire:model.live.debounce.400ms="notes"
                     rows="4"
-                    class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 ></textarea>
                 @error('notes')
                     <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -267,7 +267,7 @@
         </section>
 
         <div class="border-t border-white/10 pt-8">
-            <button type="submit" class="w-full rounded-none bg-[#1C69D4] px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+            <button type="submit" class="w-full rounded-xl bg-[#1C69D4] px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
                 Xác nhận gửi yêu cầu
             </button>
         </div>

@@ -66,6 +66,33 @@ class User extends Authenticatable
     }
 
     /**
+     * Hồ sơ lịch hẹn / dịch vụ được phân công cho nhân sự Sales này.
+     */
+    public function assignedAppointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'assigned_to');
+    }
+
+    /**
+     * Đơn phụ kiện được phân công cho nhân sự Sales này.
+     */
+    public function assignedAccessoryOrders(): HasMany
+    {
+        return $this->hasMany(AccessoryOrder::class, 'assigned_to');
+    }
+
+    /**
+     * Scope query tới danh sách nhân sự giữ vai trò Tư Vấn Bán Hàng (Sales).
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeSales(Builder $query): Builder
+    {
+        return $query->admins()->where('role', self::ROLE_SALES);
+    }
+
+    /**
      * Get normalized allowlisted admin emails configured via auth.admin_emails.
      *
      * @return list<string>

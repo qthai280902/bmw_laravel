@@ -9,6 +9,9 @@ use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\AiChatSession;
 use App\Models\Appointment;
+use App\Services\Cache\ShowroomCacheService;
+use App\Services\Crm\SalesAssignmentService;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -33,6 +36,18 @@ class AppointmentTable extends Component
     #[Url(as: 'priority', except: '')]
     public string $leadPriority = '';
 
+    #[Url(as: 'sales_id', except: '')]
+    public string $salesId = '';
+
+    #[Url(as: 'date_preset', except: '')]
+    public string $datePreset = '';
+
+    #[Url(as: 'date_from', except: '')]
+    public string $dateFrom = '';
+
+    #[Url(as: 'date_to', except: '')]
+    public string $dateTo = '';
+
     #[Url(as: 'today', except: false)]
     public bool $onlyToday = false;
 
@@ -45,6 +60,10 @@ class AppointmentTable extends Component
     public function mount(): void
     {
         $this->authorizeCrm();
+
+        if ($this->onlyToday && $this->datePreset === '') {
+            $this->datePreset = 'today';
+        }
     }
 
     public function updatedSearch(): void
@@ -67,12 +86,45 @@ class AppointmentTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSalesId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDatePreset(): void
+    {
+        $this->onlyToday = $this->datePreset === 'today';
+        if ($this->datePreset !== 'custom') {
+            $this->dateFrom = '';
+            $this->dateTo = '';
+        }
+        $this->resetPage();
+    }
+
+    public function updatedDateFrom(): void
+    {
+        if ($this->dateFrom !== '') {
+            $this->datePreset = 'custom';
+            $this->onlyToday = false;
+        }
+        $this->resetPage();
+    }
+
+    public function updatedDateTo(): void
+    {
+        if ($this->dateTo !== '') {
+            $this->datePreset = 'custom';
+            $this->onlyToday = false;
+        }
+        $this->resetPage();
+    }
+
     public function applyQuickFilter(string $preset): void
     {
         $this->authorizeCrm();
 
         if ($preset === 'pending') {
-            $isActive = $this->status === AppointmentStatus::Pending->value && $this->leadPriority === '' && ! $this->onlyToday;
+            $isActive = $this->status === AppointmentStatus::Pending->value && $this->leadPriority === '' && ! $this->onlyToday && $this->datePreset === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->status = AppointmentStatus::Pending->value;
@@ -82,7 +134,7 @@ class AppointmentTable extends Component
         }
 
         if ($preset === 'hot') {
-            $isActive = $this->leadPriority === Appointment::LEAD_PRIORITY_HOT && $this->status === '' && ! $this->onlyToday;
+            $isActive = $this->leadPriority === Appointment::LEAD_PRIORITY_HOT && $this->status === '' && ! $this->onlyToday && $this->datePreset === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->leadPriority = Appointment::LEAD_PRIORITY_HOT;
@@ -92,17 +144,18 @@ class AppointmentTable extends Component
         }
 
         if ($preset === 'today') {
-            $isActive = $this->onlyToday && $this->status === '' && $this->leadPriority === '';
+            $isActive = ($this->onlyToday || $this->datePreset === 'today') && $this->status === '' && $this->leadPriority === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->onlyToday = true;
+                $this->datePreset = 'today';
             }
 
             return;
         }
 
         if ($preset === 'completed') {
-            $isActive = $this->status === AppointmentStatus::Completed->value && $this->leadPriority === '' && ! $this->onlyToday;
+            $isActive = $this->status === AppointmentStatus::Completed->value && $this->leadPriority === '' && ! $this->onlyToday && $this->datePreset === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->status = AppointmentStatus::Completed->value;
@@ -120,6 +173,10 @@ class AppointmentTable extends Component
         $this->status = '';
         $this->type = '';
         $this->leadPriority = '';
+        $this->salesId = '';
+        $this->datePreset = '';
+        $this->dateFrom = '';
+        $this->dateTo = '';
         $this->onlyToday = false;
         $this->resetPage();
     }
@@ -166,6 +223,28 @@ class AppointmentTable extends Component
             $this->flashMessage = null;
             $this->errorMessage = $exception->getMessage();
             $this->addError('statusTransition', $exception->getMessage());
+        }
+    }
+
+    public function assignToSales(int $appointmentId, string|int|null $salesUserId, SalesAssignmentService $assignmentService): void
+    {
+        $this->authorizeSystemManagement();
+        $this->resetErrorBag(['statusTransition']);
+        $this->errorMessage = null;
+
+        $appointment = Appointment::query()->findOrFail($appointmentId);
+        $targetId = filled($salesUserId) ? (int) $salesUserId : null;
+
+        try {
+            $assignedUser = $assignmentService->assignManually($appointment, $targetId, auth()->user());
+            unset($this->inspectedAppointment);
+
+            $this->flashMessage = $assignedUser
+                ? "Đã phân công hồ sơ {$appointment->customer_order_code} cho {$assignedUser->name}."
+                : "Đã gỡ phân công Sales cho hồ sơ {$appointment->customer_order_code}.";
+        } catch (\Throwable $exception) {
+            $this->flashMessage = null;
+            $this->errorMessage = $exception->getMessage();
         }
     }
 
@@ -234,7 +313,7 @@ class AppointmentTable extends Component
         }
 
         return Appointment::query()
-            ->with(['user', 'product', 'aiChatSession.messages'])
+            ->with(['user', 'product', 'assignedSales', 'aiChatSession.messages'])
             ->find($this->inspectedAppointmentId);
     }
 
@@ -261,11 +340,12 @@ class AppointmentTable extends Component
         return null;
     }
 
-    public function render(): View
+    public function render(ShowroomCacheService $cacheService): View
     {
         $keyword = trim($this->search);
         $todayStart = now()->startOfDay()->toDateTimeString();
         $todayEnd = now()->endOfDay()->toDateTimeString();
+        [$rangeStart, $rangeEnd] = $this->resolveDateRange();
 
         // Single aggregate SQL query for contextual quick-filter strip (keeps <= 8 total queries)
         $statsRow = Appointment::query()
@@ -285,43 +365,85 @@ class AppointmentTable extends Component
             )
             ->first();
 
+        $salesRoster = $cacheService->salesRoster();
+
         $appointments = Appointment::query()
+            ->leftJoin('users as assigned_sales', 'appointments.assigned_to', '=', 'assigned_sales.id')
+            ->select('appointments.*', 'assigned_sales.name as assigned_sales_name')
             ->with(['user', 'product'])
             ->when(
                 $this->status !== '',
-                fn ($query) => $query->where('status', $this->status),
+                fn ($query) => $query->where('appointments.status', $this->status),
             )
             ->when(
                 $this->type !== '',
-                fn ($query) => $query->where('type', $this->type),
+                fn ($query) => $query->where('appointments.type', $this->type),
             )
             ->when(
                 in_array($this->leadPriority, [Appointment::LEAD_PRIORITY_HOT, Appointment::LEAD_PRIORITY_WARM, Appointment::LEAD_PRIORITY_NORMAL], true),
-                fn ($query) => $query->where('lead_priority', $this->leadPriority),
+                fn ($query) => $query->where('appointments.lead_priority', $this->leadPriority),
             )
             ->when(
-                $this->onlyToday,
-                fn ($query) => $query->whereBetween('appointment_date', [$todayStart, $todayEnd]),
+                $this->salesId !== '',
+                function ($query): void {
+                    if ($this->salesId === 'mine') {
+                        $query->where('appointments.assigned_to', auth()->id());
+                    } elseif ($this->salesId === 'unassigned') {
+                        $query->whereNull('appointments.assigned_to');
+                    } elseif (is_numeric($this->salesId)) {
+                        $query->where('appointments.assigned_to', (int) $this->salesId);
+                    }
+                },
+            )
+            ->when(
+                $rangeStart !== null && $rangeEnd !== null,
+                fn ($query) => $query->whereBetween('appointments.appointment_date', [$rangeStart, $rangeEnd]),
+            )
+            ->when(
+                $rangeStart !== null && $rangeEnd === null,
+                fn ($query) => $query->where('appointments.appointment_date', '>=', $rangeStart),
+            )
+            ->when(
+                $rangeStart === null && $rangeEnd !== null,
+                fn ($query) => $query->where('appointments.appointment_date', '<=', $rangeEnd),
             )
             ->when(
                 $keyword !== '',
                 function ($query) use ($keyword): void {
                     $query->where(function ($subQuery) use ($keyword): void {
-                        $subQuery->where('guest_name', 'like', "%{$keyword}%")
-                            ->orWhere('guest_email', 'like', "%{$keyword}%")
-                            ->orWhere('guest_phone', 'like', "%{$keyword}%")
+                        if (is_numeric(ltrim($keyword, '#'))) {
+                            $subQuery->orWhere('appointments.id', (int) ltrim($keyword, '#'));
+                        }
+
+                        $subQuery->orWhere('appointments.customer_order_code', 'like', "%{$keyword}%")
+                            ->orWhere('appointments.daily_sequence_code', 'like', "%{$keyword}%")
+                            ->orWhere('appointments.guest_name', 'like', "%{$keyword}%")
+                            ->orWhere('appointments.guest_email', 'like', "%{$keyword}%")
+                            ->orWhere('appointments.guest_phone', 'like', "%{$keyword}%")
                             ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$keyword}%")->orWhere('email', 'like', "%{$keyword}%"))
                             ->orWhereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', "%{$keyword}%"));
                     });
                 },
             )
-            ->latest()
+            ->orderByDesc('appointments.created_at')
+            ->orderByDesc('appointments.id')
             ->paginate(15);
+
+        $activeFilterCount = collect([
+            $keyword !== '',
+            $this->status !== '',
+            $this->type !== '',
+            $this->leadPriority !== '',
+            $this->salesId !== '',
+            $this->datePreset !== '' || $this->onlyToday || $this->dateFrom !== '' || $this->dateTo !== '',
+        ])->filter()->count();
 
         return view('livewire.admin.appointment-table', [
             'appointments' => $appointments,
             'statuses' => AppointmentStatus::cases(),
             'types' => AppointmentType::cases(),
+            'salesRoster' => $salesRoster,
+            'activeFilterCount' => $activeFilterCount,
             'quickStats' => [
                 'pending' => (int) ($statsRow->pending_count ?? 0),
                 'hot' => (int) ($statsRow->hot_count ?? 0),
@@ -329,5 +451,67 @@ class AppointmentTable extends Component
                 'completed' => (int) ($statsRow->completed_count ?? 0),
             ],
         ]);
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function resolveDateRange(): array
+    {
+        if ($this->onlyToday && ($this->datePreset === '' || $this->datePreset === 'today')) {
+            return [now()->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()];
+        }
+
+        $tz = 'Asia/Ho_Chi_Minh';
+        $appTz = (string) config('app.timezone', 'UTC');
+        $nowVn = CarbonImmutable::now($tz);
+
+        if ($this->datePreset === 'today') {
+            return [now()->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()];
+        }
+
+        if ($this->datePreset === '7d') {
+            return [
+                $nowVn->subDays(6)->startOfDay()->setTimezone($appTz)->toDateTimeString(),
+                $nowVn->endOfDay()->setTimezone($appTz)->toDateTimeString(),
+            ];
+        }
+
+        if ($this->datePreset === '30d') {
+            return [
+                $nowVn->subDays(29)->startOfDay()->setTimezone($appTz)->toDateTimeString(),
+                $nowVn->endOfDay()->setTimezone($appTz)->toDateTimeString(),
+            ];
+        }
+
+        if ($this->datePreset === 'this_month') {
+            return [
+                $nowVn->startOfMonth()->setTimezone($appTz)->toDateTimeString(),
+                $nowVn->endOfMonth()->setTimezone($appTz)->toDateTimeString(),
+            ];
+        }
+
+        if ($this->datePreset === 'custom' || $this->dateFrom !== '' || $this->dateTo !== '') {
+            $start = null;
+            $end = null;
+
+            if ($this->dateFrom !== '') {
+                try {
+                    $start = CarbonImmutable::parse($this->dateFrom, $tz)->startOfDay()->setTimezone($appTz)->toDateTimeString();
+                } catch (\Throwable) {
+                }
+            }
+
+            if ($this->dateTo !== '') {
+                try {
+                    $end = CarbonImmutable::parse($this->dateTo, $tz)->endOfDay()->setTimezone($appTz)->toDateTimeString();
+                } catch (\Throwable) {
+                }
+            }
+
+            return [$start, $end];
+        }
+
+        return [null, null];
     }
 }

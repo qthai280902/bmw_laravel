@@ -32,14 +32,14 @@
                     }
                 }"
                 @comparison-updated.window="updateComparison()"
-                class="{{ $isAccessoryCatalog ? 'hidden' : 'flex' }} flex-col gap-3 rounded-none border border-zinc-800 bg-zinc-950 px-5 py-4 sm:min-w-72"
+                class="{{ $isAccessoryCatalog ? 'hidden' : 'flex' }} flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-5 py-4 sm:min-w-72"
             >
                 <p class="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500">Comparison</p>
                 <div class="flex items-center justify-between gap-4">
                     <span class="text-sm font-black uppercase tracking-widest text-white">
                         <span x-text="comparisonIds.length"></span>/4 mẫu xe
                     </span>
-                    <button type="button" @click="goToCompare()" class="rounded-none bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:bg-[#1C69D4] hover:text-white">
+                    <button type="button" @click="goToCompare()" class="rounded-lg bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:bg-[#1C69D4] hover:text-white">
                         So sánh
                     </button>
                 </div>

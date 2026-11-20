@@ -17,6 +17,24 @@
         'warm' => 'TIỀM NĂNG',
         'normal' => 'THAM KHẢO',
     ];
+
+    $salesFilterOptions = [
+        '' => 'Tất cả Sales',
+        'mine' => 'Hồ sơ của tôi',
+        'unassigned' => 'Chưa phân công',
+    ];
+    foreach ($salesRoster as $salesMember) {
+        $salesFilterOptions[(string) $salesMember->id] = $salesMember->name;
+    }
+
+    $datePresetOptions = [
+        '' => 'Mọi thời điểm',
+        'today' => 'Hôm nay',
+        '7d' => '7 ngày qua',
+        '30d' => '30 ngày qua',
+        'this_month' => 'Tháng này',
+        'custom' => 'Tùy chọn ngày',
+    ];
 @endphp
 
 <div @keydown.escape.window="$wire.closeAiConversationModal()">
@@ -102,56 +120,89 @@
     @endif
 
     <x-admin.card class="mb-6 !p-5">
-        <form action="{{ route('admin.appointments.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.35fr_1fr_1fr_1fr_auto] lg:items-end">
-            <x-admin.form-field name="search" label="Tìm kiếm khách hàng / xe">
-                <input
-                    id="search"
-                    type="text"
-                    name="search"
-                    wire:model.live.debounce.350ms="search"
-                    placeholder="Tên, SĐT, email hoặc mẫu xe..."
-                    class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
-                >
-            </x-admin.form-field>
+        <form action="{{ route('admin.appointments.index') }}" method="GET" wire:submit.prevent="$refresh" class="space-y-3.5">
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
+                <x-admin.form-field name="search" label="Tìm kiếm mã kép / khách / xe">
+                    <input
+                        id="search"
+                        type="text"
+                        name="search"
+                        wire:model.live.debounce.350ms="search"
+                        placeholder="Mã #SĐT_STT, dd/mm/yyyy/NN, tên, SĐT, xe..."
+                        class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
+                    >
+                </x-admin.form-field>
 
-            <x-admin.form-field name="status" label="Trạng thái">
-                <x-ui.custom-select
-                    id="status"
-                    name="status"
-                    :value="$status"
-                    :options="$statusFilterOptions"
-                    wire-model="status"
-                />
-            </x-admin.form-field>
+                <x-admin.form-field name="status" label="Trạng thái">
+                    <x-ui.custom-select
+                        id="status"
+                        name="status"
+                        :value="$status"
+                        :options="$statusFilterOptions"
+                        wire-model="status"
+                    />
+                </x-admin.form-field>
 
-            <x-admin.form-field name="type" label="Loại yêu cầu">
-                <x-ui.custom-select
-                    id="type"
-                    name="type"
-                    :value="$type"
-                    :options="$typeFilterOptions"
-                    wire-model="type"
-                />
-            </x-admin.form-field>
+                <x-admin.form-field name="type" label="Loại yêu cầu">
+                    <x-ui.custom-select
+                        id="type"
+                        name="type"
+                        :value="$type"
+                        :options="$typeFilterOptions"
+                        wire-model="type"
+                    />
+                </x-admin.form-field>
 
-            <x-admin.form-field name="leadPriority" label="Phân loại Lead AI">
-                <x-ui.custom-select
-                    id="leadPriority"
-                    name="priority"
-                    :value="$leadPriority"
-                    :options="$priorityFilterOptions"
-                    wire-model="leadPriority"
-                />
-            </x-admin.form-field>
+                <x-admin.form-field name="leadPriority" label="Phân loại Lead AI">
+                    <x-ui.custom-select
+                        id="leadPriority"
+                        name="priority"
+                        :value="$leadPriority"
+                        :options="$priorityFilterOptions"
+                        wire-model="leadPriority"
+                    />
+                </x-admin.form-field>
 
-            <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
-                    Lọc
-                </button>
-                <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-xl border border-white/10 bg-[#131A29] px-4 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:text-white cursor-pointer">
-                    Xóa
-                </button>
+                <x-admin.form-field name="salesId" label="Sales phụ trách">
+                    <x-ui.custom-select
+                        id="salesId"
+                        name="sales_id"
+                        :value="$salesId"
+                        :options="$salesFilterOptions"
+                        wire-model="salesId"
+                    />
+                </x-admin.form-field>
+
+                <x-admin.form-field name="datePreset" label="Khoảng ngày hẹn">
+                    <x-ui.custom-select
+                        id="datePreset"
+                        name="date_preset"
+                        :value="$datePreset"
+                        :options="$datePresetOptions"
+                        wire-model="datePreset"
+                    />
+                </x-admin.form-field>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
+                        Lọc
+                    </button>
+                    <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-xl border border-white/10 bg-[#131A29] px-4 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:text-white cursor-pointer">
+                        Xóa @if($activeFilterCount > 0)({{ $activeFilterCount }})@endif
+                    </button>
+                </div>
             </div>
+
+            @if($datePreset === 'custom' || $dateFrom !== '' || $dateTo !== '')
+                <div class="grid grid-cols-1 gap-3.5 border-t border-white/[0.06] pt-3.5 sm:grid-cols-2 lg:max-w-lg">
+                    <x-admin.form-field name="dateFrom" label="Từ ngày">
+                        <input id="dateFrom" type="date" name="date_from" wire:model.live="dateFrom" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    </x-admin.form-field>
+                    <x-admin.form-field name="dateTo" label="Đến ngày">
+                        <input id="dateTo" type="date" name="date_to" wire:model.live="dateTo" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    </x-admin.form-field>
+                </div>
+            @endif
         </form>
     </x-admin.card>
 
@@ -160,10 +211,10 @@
             <table class="w-full lg:table-fixed border-collapse text-left">
                 <thead>
                     <tr class="border-b border-white/[0.08] bg-[#070A10]/60">
-                        <th class="w-[14%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Thời điểm</th>
-                        <th class="w-[22%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng</th>
-                        <th class="w-[29%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Nhu cầu</th>
-                        <th class="w-[15%] px-5 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
+                        <th class="w-[17%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Mã kép &amp; Thời điểm</th>
+                        <th class="w-[23%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng &amp; Sales</th>
+                        <th class="w-[26%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Nhu cầu</th>
+                        <th class="w-[14%] px-5 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
                         <th class="w-[20%] px-5 py-3.5 text-right text-xs font-semibold text-zinc-400">Thao tác</th>
                     </tr>
                 </thead>
@@ -177,8 +228,14 @@
                         @endphp
                         <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]">
                             <td class="whitespace-nowrap px-5 py-4">
-                                <p class="text-sm font-bold tabular-nums text-white">{{ $appointment->appointment_date->format('d/m/Y') }}</p>
-                                <p class="mt-0.5 text-xs font-medium tabular-nums text-zinc-400">{{ $appointment->appointment_date->format('H:i') }} · #{{ $appointment->id }}</p>
+                                @if($appointment->customer_order_code)
+                                    <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $appointment->customer_order_code }}</p>
+                                @endif
+                                @if($appointment->daily_sequence_code)
+                                    <p class="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">{{ $appointment->daily_sequence_code }}</p>
+                                @endif
+                                <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $appointment->appointment_date->format('d/m/Y · H:i') }}</p>
+                                <p class="mt-0.5 text-[11px] tabular-nums text-zinc-500">ID #{{ $appointment->id }}</p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -187,6 +244,11 @@
                                 @if(filled($appointment->guest_phone) && filled($customerEmail))
                                     <p class="mt-0.5 truncate text-[11px] text-zinc-500">{{ $customerEmail }}</p>
                                 @endif
+                                <p class="mt-1.5">
+                                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ filled($appointment->assigned_sales_name) ? 'border-sky-500/25 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/[0.04] text-zinc-400' }}">
+                                        {{ filled($appointment->assigned_sales_name) ? 'Sales: ' . $appointment->assigned_sales_name : 'Chưa gán Sales' }}
+                                    </span>
+                                </p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -280,8 +342,7 @@
                             <td colspan="5" class="p-6">
                                 <x-admin.empty-state
                                     title="Chưa có lịch hẹn phù hợp"
-                                    description="Các yêu cầu lái thử, tư vấn mua xe và báo giá từ website sẽ tự động đổ về bảng điều phối này."
-                                    hint="Mẹo: Nhấn nút 'Xóa' ở thanh bộ lọc hoặc chọn một thẻ chỉ số nhanh phía trên để xem toàn bộ lịch hẹn."
+                                    description="Chưa có yêu cầu đặt lịch nào khớp bộ lọc hiện tại."
                                 />
                             </td>
                         </tr>
@@ -339,6 +400,16 @@
                                     <span class="rounded-full border border-[#1C69D4]/30 bg-[#1C69D4]/15 px-3 py-0.5 text-[10px] font-bold tracking-wider text-[#70A7FF]">
                                         HỒ SƠ LỊCH HẸN #{{ $lead->id }}
                                     </span>
+                                    @if($lead->customer_order_code)
+                                        <span class="rounded-full border border-sky-500/30 bg-sky-500/15 px-3 py-0.5 text-[11px] font-bold tabular-nums text-sky-300">
+                                            {{ $lead->customer_order_code }}
+                                        </span>
+                                    @endif
+                                    @if($lead->daily_sequence_code)
+                                        <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-200">
+                                            {{ $lead->daily_sequence_code }}
+                                        </span>
+                                    @endif
                                     @if($lead->lead_priority)
                                         <span class="rounded-full border px-3 py-0.5 text-[11px] font-semibold {{ $lead->leadPriorityColorClass() }}">
                                             {{ $lead->leadPriorityLabel() }}
@@ -398,6 +469,27 @@
                                     <div>
                                         <p class="text-[11px] font-medium text-zinc-400">Nguồn &amp; Ý định Lead</p>
                                         <p class="mt-1 font-semibold text-zinc-300">{{ $lead->leadIntentLabel() }}</p>
+                                    </div>
+                                    <div class="sm:col-span-2 border-t border-white/[0.06] pt-3">
+                                        <p class="text-[11px] font-medium text-zinc-400">Sales phụ trách</p>
+                                        @if(auth()->user()?->canManageSystem())
+                                            <div class="mt-1.5 flex flex-wrap items-center gap-2">
+                                                <select
+                                                    aria-label="Phân công Sales cho lịch hẹn #{{ $lead->id }}"
+                                                    wire:change="assignToSales({{ $lead->id }}, $event.target.value)"
+                                                    class="h-9 flex-1 min-w-[180px] rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                                >
+                                                    <option value="">-- Chưa phân công --</option>
+                                                    @foreach($salesRoster as $salesMember)
+                                                        <option value="{{ $salesMember->id }}" @selected((int) $lead->assigned_to === (int) $salesMember->id)>
+                                                            {{ $salesMember->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        @else
+                                            <p class="mt-1 font-semibold text-sky-300">{{ $lead->assignedSales?->name ?? 'Chưa phân công' }}</p>
+                                        @endif
                                     </div>
                                 </div>
 

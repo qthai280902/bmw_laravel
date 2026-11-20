@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AppointmentStatus;
 use App\Events\PromotionCampaignDispatched;
 use App\Http\Controllers\Controller;
+use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\Product;
+use App\Services\Cache\ShowroomCacheService;
+use App\Services\Crm\SalesAssignmentService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +21,7 @@ use Illuminate\View\View;
 
 class CustomerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, ShowroomCacheService $cacheService): View
     {
         $search = trim((string) $request->query('search', ''));
         $rawStatus = trim((string) $request->query('status', ''));
@@ -26,20 +30,40 @@ class CustomerController extends Controller
         $productIdFilter = $request->filled('product_id') && is_numeric($request->query('product_id'))
             ? (int) $request->query('product_id')
             : null;
+        $salesIdFilter = trim((string) $request->query('sales_id', ''));
+        $recentFilter = trim((string) $request->query('recent', ''));
+        if (! in_array($recentFilter, ['', '7d', '30d', 'this_month'], true)) {
+            $recentFilter = '';
+        }
+        $leadPriorityFilter = trim((string) $request->query('lead_priority', ''));
+        if (! in_array($leadPriorityFilter, ['', Appointment::LEAD_PRIORITY_HOT, Appointment::LEAD_PRIORITY_WARM, Appointment::LEAD_PRIORITY_NORMAL], true)) {
+            $leadPriorityFilter = '';
+        }
+
+        $recentStart = match ($recentFilter) {
+            '7d' => CarbonImmutable::now('Asia/Ho_Chi_Minh')->subDays(6)->startOfDay()->setTimezone(config('app.timezone', 'UTC')),
+            '30d' => CarbonImmutable::now('Asia/Ho_Chi_Minh')->subDays(29)->startOfDay()->setTimezone(config('app.timezone', 'UTC')),
+            'this_month' => CarbonImmutable::now('Asia/Ho_Chi_Minh')->startOfMonth()->setTimezone(config('app.timezone', 'UTC')),
+            default => null,
+        };
 
         $customers = Appointment::select(
             DB::raw('COALESCE(appointments.guest_email, users.email) as email'),
             DB::raw('MAX(COALESCE(appointments.guest_name, users.name)) as name'),
             DB::raw("MAX(COALESCE(appointments.guest_phone, 'N/A')) as phone"),
             DB::raw('COUNT(*) as interactions_count'),
-            DB::raw('MAX(appointments.appointment_date) as last_interaction')
+            DB::raw('MAX(appointments.appointment_date) as last_interaction'),
+            DB::raw('MAX(assigned_sales.name) as assigned_sales_name'),
+            DB::raw("MIN(CASE appointments.lead_priority WHEN 'hot' THEN 1 WHEN 'warm' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END) as priority_rank")
         )
             ->leftJoin('users', 'appointments.user_id', '=', 'users.id')
+            ->leftJoin('users as assigned_sales', 'appointments.assigned_to', '=', 'assigned_sales.id')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('appointments.guest_name', 'like', "%{$search}%")
                         ->orWhere('appointments.guest_email', 'like', "%{$search}%")
                         ->orWhere('appointments.guest_phone', 'like', "%{$search}%")
+                        ->orWhere('appointments.customer_order_code', 'like', "%{$search}%")
                         ->orWhereHas('user', function ($u) use ($search) {
                             $u->where('name', 'like', "%{$search}%")
                                 ->orWhere('email', 'like', "%{$search}%");
@@ -48,6 +72,17 @@ class CustomerController extends Controller
             })
             ->when($statusFilter !== '', fn ($query) => $query->where('appointments.status', $statusFilter))
             ->when($productIdFilter !== null, fn ($query) => $query->where('appointments.product_id', $productIdFilter))
+            ->when($leadPriorityFilter !== '', fn ($query) => $query->where('appointments.lead_priority', $leadPriorityFilter))
+            ->when($recentStart !== null, fn ($query) => $query->where('appointments.appointment_date', '>=', $recentStart->toDateTimeString()))
+            ->when($salesIdFilter !== '', function ($query) use ($salesIdFilter) {
+                if ($salesIdFilter === 'mine') {
+                    $query->where('appointments.assigned_to', Auth::id());
+                } elseif ($salesIdFilter === 'unassigned') {
+                    $query->whereNull('appointments.assigned_to');
+                } elseif (is_numeric($salesIdFilter)) {
+                    $query->where('appointments.assigned_to', (int) $salesIdFilter);
+                }
+            })
             ->groupBy(DB::raw('COALESCE(appointments.guest_email, users.email)'))
             ->orderBy('last_interaction', 'desc')
             ->paginate(15)
@@ -59,9 +94,22 @@ class CustomerController extends Controller
             ->get(['id', 'name', 'type']);
 
         $statuses = AppointmentStatus::cases();
+        $salesRoster = $cacheService->salesRoster();
+        $unassignedTotal = Appointment::query()->whereNull('assigned_to')->count()
+            + AccessoryOrder::query()->whereNull('assigned_to')->count();
+
         $promotionAudienceTuples = Auth::user()?->canAccessContent()
             ? $this->buildPromotionAudienceTuples()
             : [];
+
+        $activeFilterCount = collect([
+            $search !== '',
+            $statusFilter !== '',
+            $productIdFilter !== null,
+            $salesIdFilter !== '',
+            $recentFilter !== '',
+            $leadPriorityFilter !== '',
+        ])->filter()->count();
 
         return view('admin.customers.index', compact(
             'customers',
@@ -69,8 +117,30 @@ class CustomerController extends Controller
             'statuses',
             'statusFilter',
             'productIdFilter',
+            'salesIdFilter',
+            'recentFilter',
+            'leadPriorityFilter',
+            'salesRoster',
+            'unassignedTotal',
+            'activeFilterCount',
             'promotionAudienceTuples',
         ));
+    }
+
+    public function distributeSales(Request $request, SalesAssignmentService $assignmentService): RedirectResponse
+    {
+        $counts = $assignmentService->distributeUnassignedEvenly($request->user());
+        $totalDistributed = $counts['appointments'] + $counts['accessory_orders'];
+
+        if ($totalDistributed === 0) {
+            return redirect()
+                ->route('admin.customers.index')
+                ->with('success', 'Không có hồ sơ chưa phân công hoặc chưa có nhân viên Sales hoạt động để chia tải.');
+        }
+
+        return redirect()
+            ->route('admin.customers.index')
+            ->with('success', "Đã chia đều {$counts['appointments']} lịch hẹn và {$counts['accessory_orders']} đơn phụ kiện chưa phân công cho đội Sales.");
     }
 
     public function sendPromotions(Request $request): RedirectResponse

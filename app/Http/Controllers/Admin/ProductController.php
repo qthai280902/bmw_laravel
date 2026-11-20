@@ -35,10 +35,26 @@ class ProductController extends Controller
             $query->where('name', 'like', '%'.$request->search.'%');
         }
 
+        $stockStatus = (string) $request->query('stock_status', '');
+        match ($stockStatus) {
+            'in_stock' => $query->where('stock', '>', 0),
+            'low_stock' => $query->where('stock', '>', 0)->where('stock', '<=', 3),
+            'out_of_stock' => $query->where('stock', '<=', 0),
+            default => null,
+        };
+
+        $priceRange = (string) $request->query('price_range', '');
+        match ($priceRange) {
+            'under_2b' => $query->where('price', '<', 2_000_000_000),
+            '2b_5b' => $query->whereBetween('price', [2_000_000_000, 5_000_000_000]),
+            'over_5b' => $query->where('price', '>', 5_000_000_000),
+            default => null,
+        };
+
         $products = $query->paginate(10)->withQueryString();
         $categories = Category::orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'categories'));
+        return view('admin.products.index', compact('products', 'categories', 'stockStatus', 'priceRange'));
     }
 
     /**

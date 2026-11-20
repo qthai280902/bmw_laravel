@@ -100,13 +100,13 @@
 
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 @foreach($servicePackages as $package)
-                    <article class="flex flex-col justify-between rounded-none border border-white/10 bg-[#0B0F17] transition-colors hover:border-[#1C69D4]/60">
+                    <article class="flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#0B0F17] transition-colors hover:border-[#1C69D4]/60">
                         <div>
                             <div class="relative aspect-[16/9] overflow-hidden border-b border-white/10 bg-black">
                                 <img src="{{ $package['image'] }}" alt="{{ $package['title'] }}" class="h-full w-full object-cover opacity-75 grayscale transition-all duration-700 hover:scale-105 hover:grayscale-0">
                                 <div class="absolute inset-0 bg-gradient-to-t from-[#0B0F17] via-transparent to-black/30"></div>
                                 <div class="absolute left-5 top-5">
-                                    <span class="inline-block rounded-none border border-[#1C69D4]/40 bg-[#050505]/90 px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">
+                                    <span class="inline-block rounded-full border border-[#1C69D4]/40 bg-[#050505]/90 px-3.5 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">
                                         {{ $package['badge'] }}
                                     </span>
                                 </div>
@@ -145,7 +145,7 @@
                         <div class="border-t border-white/10 bg-[#050505] px-7 py-5 sm:px-8">
                             <a
                                 href="{{ route('appointments.create', ['type' => 'service', 'service_package' => $package['title']]) }}"
-                                class="inline-flex w-full items-center justify-center rounded-none bg-[#1C69D4] px-6 py-4 text-[11px] font-black uppercase tracking-[0.24em] text-white transition-colors hover:bg-white hover:text-black"
+                                class="inline-flex w-full items-center justify-center rounded-lg bg-[#1C69D4] px-6 py-4 text-[11px] font-black uppercase tracking-[0.24em] text-white transition-colors hover:bg-white hover:text-black"
                             >
                                 ĐẶT LỊCH CHĂM SÓC XE
                             </a>

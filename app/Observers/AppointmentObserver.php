@@ -8,6 +8,7 @@ use App\Services\Ai\AiConversationTracker;
 use App\Services\Ai\AppointmentLeadClassifier;
 use App\Services\Cache\ShowroomCacheService;
 use App\Services\Crm\InteractionTimelineRecorder;
+use App\Services\Crm\SalesAssignmentService;
 
 class AppointmentObserver
 {
@@ -24,6 +25,7 @@ class AppointmentObserver
         $this->tracker->linkAppointment($appointment, $request);
 
         $this->classifier->classifyAndSave($appointment);
+        app(SalesAssignmentService::class)->autoAssignIfUnassigned($appointment);
 
         $appointment->loadMissing('product');
         $channel = filled($appointment->ai_conversation_id) || filled($appointment->ai_visitor_id)

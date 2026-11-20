@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Notifications\Admin\LeadAssignedNotification;
 use App\Notifications\Admin\MailDeliveryFailureNotification;
 use App\Notifications\Admin\NewAccessoryOrderNotification;
 use App\Notifications\Admin\NewAppointmentLeadNotification;
@@ -118,6 +119,23 @@ class AdminNotificationDispatcher
             'mail_delivery_failure',
             0
         );
+    }
+
+    public function notifySalesLeadAssigned(
+        Appointment|AccessoryOrder $record,
+        User $assignee,
+        ?User $assignedBy = null,
+    ): void {
+        try {
+            $assignee->notify(new LeadAssignedNotification($record, $assignedBy));
+            $this->forgetDigestCache((int) $assignee->id);
+        } catch (Throwable $exception) {
+            Log::warning('Failed dispatching sales lead assignment notification.', [
+                'record_id' => $record->id,
+                'assignee_id' => $assignee->id,
+                'exception' => $exception::class,
+            ]);
+        }
     }
 
     private function sendToAdmins(BaseNotification $notification, string $entityType, int $entityId): void

@@ -60,6 +60,23 @@ class AiConversationController extends Controller
             ->when($request->filled('status') && in_array($request->string('status')->toString(), AiChatSession::statusValues(), true), function (Builder $query) use ($request): void {
                 $query->where('status', $request->string('status')->toString());
             })
+            ->when($request->filled('lead_level') && in_array($request->string('lead_level')->toString(), ['hot', 'warm', 'cold'], true), function (Builder $query) use ($request): void {
+                $level = $request->string('lead_level')->toString();
+                $query->whereHas('messages', function (Builder $msgQuery) use ($level): void {
+                    $msgQuery->where('role', 'assistant')
+                        ->where('meta_data->lead_level', $level);
+                });
+            })
+            ->when($request->string('converted')->toString() === 'yes', function (Builder $query): void {
+                $query->where(function (Builder $q): void {
+                    $q->where('status', AiChatSession::STATUS_CONVERTED)
+                        ->orWhereNotNull('linked_source_id');
+                });
+            })
+            ->when($request->string('converted')->toString() === 'no', function (Builder $query): void {
+                $query->where('status', '!=', AiChatSession::STATUS_CONVERTED)
+                    ->whereNull('linked_source_id');
+            })
             ->when($request->filled('range'), function (Builder $query) use ($request): void {
                 $range = $request->string('range')->toString();
 

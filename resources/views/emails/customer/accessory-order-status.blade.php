@@ -34,8 +34,22 @@
             </td>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #1C69D4; width: 62%;">
                 #ACC-{{ $order->id }}
+                @if($order->customer_order_code)
+                    <span style="color: #64748B; font-weight: 500;"> &middot; </span>
+                    <span style="color: #0F172A;">{{ $order->customer_order_code }}</span>
+                @endif
             </td>
         </tr>
+        @if($order->daily_sequence_code)
+        <tr>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Mã ngày (STT)
+            </td>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #0F172A;">
+                {{ $order->daily_sequence_code }}
+            </td>
+        </tr>
+        @endif
         <tr>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
                 Phụ kiện chính hãng

@@ -17,8 +17,17 @@
         </x-slot>
     </x-admin.page-header>
 
+    @php
+        $productFilterCount = collect([
+            request()->filled('search'),
+            request()->filled('type'),
+            request()->filled('category_id'),
+            request()->filled('stock_status'),
+            request()->filled('price_range'),
+        ])->filter()->count();
+    @endphp
     <x-admin.card class="mb-6 !p-5">
-        <form method="GET" action="{{ route('admin.products.index') }}" class="grid grid-cols-1 gap-3 xl:grid-cols-[1.5fr_1fr_1fr_auto] xl:items-end">
+        <form method="GET" action="{{ route('admin.products.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm">
                 <input
                     id="search"
@@ -26,7 +35,7 @@
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Tên sản phẩm..."
-                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -53,12 +62,40 @@
                 />
             </x-admin.form-field>
 
+            <x-admin.form-field name="stock_status" label="Tồn kho">
+                <x-ui.custom-select
+                    id="stock_status"
+                    name="stock_status"
+                    :value="(string) request('stock_status', '')"
+                    :options="[
+                        '' => 'Mọi tồn kho',
+                        'in_stock' => 'Còn hàng (> 0)',
+                        'low_stock' => 'Sắp hết (1 – 3)',
+                        'out_of_stock' => 'Hết hàng (0)',
+                    ]"
+                />
+            </x-admin.form-field>
+
+            <x-admin.form-field name="price_range" label="Khoảng giá">
+                <x-ui.custom-select
+                    id="price_range"
+                    name="price_range"
+                    :value="(string) request('price_range', '')"
+                    :options="[
+                        '' => 'Mọi mức giá',
+                        'under_2b' => 'Dưới 2 tỷ',
+                        '2b_5b' => 'Từ 2 – 5 tỷ',
+                        'over_5b' => 'Trên 5 tỷ',
+                    ]"
+                />
+            </x-admin.form-field>
+
             <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.products.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                    Xóa
+                <a href="{{ route('admin.products.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-white/10 bg-white/[0.03] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
+                    Xóa @if($productFilterCount > 0)({{ $productFilterCount }})@endif
                 </a>
             </div>
         </form>

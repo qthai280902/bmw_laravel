@@ -127,7 +127,7 @@
                     </div>
                     <div>
                         <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Visitor ID</dt>
-                        <dd class="mt-1 font-mono text-xs text-zinc-400">{{ $session->maskedVisitorId() }}</dd>
+                        <dd class="mt-1 tabular-nums text-xs text-zinc-400">{{ $session->maskedVisitorId() }}</dd>
                     </div>
                     <div>
                         <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Seen</dt>

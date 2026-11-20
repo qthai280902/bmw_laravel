@@ -276,7 +276,7 @@
                                       @input="sync()"
                                       rows="3" 
                                       placeholder="Nhập câu trích dẫn hoặc thông số kỹ thuật nổi bật..." 
-                                      class="w-full rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2.5 text-xs italic leading-relaxed text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                                      class="w-full rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2.5 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
                             <input type="text" 
                                    x-model="block.author" 
                                    @input="sync()"
@@ -335,7 +335,7 @@
                 <textarea x-model="serializedMarkdown" 
                           @input="syncFromMarkdown()"
                           rows="18" 
-                          class="w-full rounded-xl font-mono text-xs leading-relaxed border border-white/10 bg-[#070A10] p-4 text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                          class="w-full rounded-xl text-xs leading-relaxed border border-white/10 bg-[#070A10] p-4 text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
             </div>
 
             <!-- Tab 3: Live Public Preview -->
@@ -643,7 +643,7 @@ function articleCanvasStudio(initialMarkdown) {
                     html += `<blockquote><p>${this.escapeHtml(b.text || '')}</p>${b.author ? `<figcaption class="text-right text-xs text-zinc-400 mt-2">— ${this.escapeHtml(b.author)}</figcaption>` : ''}</blockquote>`;
                 }
             }
-            return html || '<p class="text-zinc-500 italic">Nội dung bài viết đang trống...</p>';
+            return html || '<p class="text-zinc-500">Nội dung bài viết đang trống...</p>';
         },
 
         escapeHtml(string) {

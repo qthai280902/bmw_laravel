@@ -99,7 +99,7 @@ class Phase25LivewireInteractiveUxTest extends TestCase
             ->assertSee($accessory->name)
             ->assertDontSee($car330i->name);
 
-        // Verify custom 0px BMW Livewire pagination renders without rounded-md buttons
+        // Verify soft-rounded BMW Livewire pagination renders cleanly without rounded-none or rounded-md
         Product::factory()->count(11)->for($sedan)->create([
             'type' => VehicleType::CAR,
             'is_active' => true,
@@ -107,7 +107,8 @@ class Phase25LivewireInteractiveUxTest extends TestCase
 
         Livewire::test(CatalogBrowser::class)
             ->assertSee('wire:click="nextPage(\'page\')"', false)
-            ->assertSee('rounded-none', false)
+            ->assertSee('rounded-xl', false)
+            ->assertDontSee('rounded-none', false)
             ->assertDontSee('rounded-md', false)
             ->call('nextPage')
             ->assertSet('paginators.page', 2);
@@ -154,7 +155,8 @@ class Phase25LivewireInteractiveUxTest extends TestCase
 
         Livewire::test(ArticleHub::class)
             ->assertSee('wire:click="nextPage(\'page\')"', false)
-            ->assertSee('rounded-none', false)
+            ->assertSee('rounded-xl', false)
+            ->assertDontSee('rounded-none', false)
             ->assertDontSee('rounded-md', false)
             ->call('nextPage')
             ->assertSet('paginators.page', 2);

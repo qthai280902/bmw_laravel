@@ -7,10 +7,10 @@
 
         <title>@yield('title', 'BMW Showroom')</title>
 
-        <!-- Fonts: Be Vietnam Pro & JetBrains Mono for optimal Vietnamese diacritics -->
+        <!-- Fonts: Be Vietnam Pro unified typography for Vietnamese UI -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
         <!-- Flatpickr -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -195,7 +195,7 @@
                 <div class="flex items-center gap-6">
                     <div class="flex -space-x-3 overflow-hidden">
                         <template x-for="id in ids" :key="id">
-                            <div class="flex h-10 w-10 items-center justify-center border-2 border-zinc-950 bg-zinc-900 text-[10px] font-black uppercase tracking-normal text-white">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-zinc-950 bg-zinc-900 text-[10px] font-black uppercase tracking-normal text-white">
                                 BMW
                             </div>
                         </template>
@@ -212,7 +212,7 @@
                     <button @click="localStorage.removeItem('bmw_comparison_ids'); update();" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
                         Xóa tất cả
                     </button>
-                    <button @click="compare()" class="px-10 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all flex-grow md:flex-grow-0">
+                    <button @click="compare()" class="rounded-lg px-10 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all flex-grow md:flex-grow-0">
                         So sánh ngay
                     </button>
                 </div>

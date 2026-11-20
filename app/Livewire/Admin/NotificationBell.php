@@ -146,6 +146,7 @@ class NotificationBell extends Component
         $subtitle = match ($kind) {
             'accessory_order' => 'Đơn phụ kiện #'.($data['order_id'] ?? '').' · SL: '.($data['quantity'] ?? 1).' · '.number_format((int) ($data['total_amount'] ?? 0), 0, ',', '.').' VNĐ',
             'mail_delivery_failure' => 'Người nhận: '.($data['recipient_email'] ?? 'N/A').' · '.($data['error_message'] ?? 'Lỗi gửi email'),
+            'lead_assigned' => 'Được phân công phụ trách '.($data['code_label'] ?? '').' · Bởi '.($data['assigned_by'] ?? 'Quản Lý'),
             default => (($data['appointment_type'] ?? 'Lịch hẹn').(! empty($data['appointment_date']) ? ' · '.$data['appointment_date'] : '')),
         };
 

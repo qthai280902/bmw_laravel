@@ -317,12 +317,13 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
         $aiDetailRes->assertSee('rounded-full border border-[#1C69D4]/40', false);
         $aiDetailRes->assertSee('rounded-full border border-violet-500/35', false);
 
-        // Verify Public site keeps 0px (rounded-none) and does NOT include admin-cockpit
+        // Verify Public site renders unified soft-rounded geometry without rounded-none or admin-cockpit
         foreach ([route('products.index'), route('articles.index'), route('appointments.create')] as $publicUrl) {
             $pub = $this->get($publicUrl);
             $pub->assertOk();
             $pub->assertDontSee('class="admin-cockpit', false);
-            $pub->assertSee('rounded-none', false);
+            $pub->assertDontSee('rounded-none', false);
+            $pub->assertSee('rounded-xl', false);
         }
 
         $this->assertNotNull($serviceBooking->id);

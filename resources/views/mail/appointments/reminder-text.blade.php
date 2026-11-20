@@ -9,7 +9,9 @@ Kính chào Quý khách {{ $appointment->customer_name }},
 BMW Showroom Vietnam xin trân trọng nhắc lịch hẹn {{ $appointment->typeLabel() }} của Quý khách sẽ diễn ra trong vòng 24 giờ tới.
 
 CHI TIẾT LỊCH HẸN
-- Mã lịch hẹn: #BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
+- Mã khách hàng: {{ $appointment->customer_order_code ?: '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
+@if($appointment->daily_sequence_code)- Mã ngày: {{ $appointment->daily_sequence_code }}
+@endif- Mã lịch hẹn: #BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
 - Hạng mục: {{ $appointment->typeLabel() }}
 @if($appointment->servicePackageLabel())
 - Gói dịch vụ: {{ $appointment->servicePackageLabel() }}

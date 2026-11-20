@@ -113,6 +113,10 @@ Route::middleware('auth')->group(function () {
 
         // CRM & Sales Operations Portal (admin + sales)
         Route::middleware('role:admin,sales')->group(function () {
+            Route::get('users/{user}/performance', [UserController::class, 'performance'])
+                ->name('users.performance');
+            Route::get('sales/{user}/performance', [UserController::class, 'performance'])
+                ->name('sales.performance');
             Route::resource('appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'update']);
             Route::get('service-bookings', [ServiceBookingController::class, 'index'])
                 ->name('service-bookings.index');
@@ -137,6 +141,7 @@ Route::middleware('auth')->group(function () {
 
         // System & Staff Management (admin only)
         Route::middleware('role:admin')->group(function () {
+            Route::post('customers/distribute-sales', [CustomerController::class, 'distributeSales'])->name('customers.distribute-sales');
             Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
             Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
             Route::resource('users', UserController::class)->only(['index', 'store']);

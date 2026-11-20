@@ -474,9 +474,9 @@ class AiAssistantPhase22Test extends TestCase
         $this->assertStringContainsString('visiblePartText(', $appJs);
 
         $appCss = file_get_contents(resource_path('css/app.css')) ?: '';
-        $this->assertMatchesRegularExpression('/\.ai-message-bubble\s*\{[^}]*border-radius:\s*0px\s*;/s', $appCss);
-        $this->assertMatchesRegularExpression('/\.ai-assistant-launcher\s*\{[^}]*border-radius:\s*0px\s*;/s', $appCss);
-        $this->assertMatchesRegularExpression('/\[data-ai-action-chip\]\s*\{[^}]*border-radius:\s*0px\s*;/s', $appCss);
+        $this->assertMatchesRegularExpression('/\.ai-message-bubble\s*\{[^}]*border-radius:\s*0\.75rem\s*;/s', $appCss);
+        $this->assertMatchesRegularExpression('/\.ai-assistant-launcher\s*\{[^}]*border-radius:\s*1rem\s*;/s', $appCss);
+        $this->assertMatchesRegularExpression('/\[data-ai-action-chip\]\s*\{[^}]*border-radius:\s*9999px\s*;/s', $appCss);
     }
 
     public function test_search_knowledge_base_tool_and_rag_prompt_grounding_and_resilience(): void

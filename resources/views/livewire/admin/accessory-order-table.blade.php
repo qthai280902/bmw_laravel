@@ -1,3 +1,23 @@
+@php
+    $salesFilterOptions = [
+        '' => 'Tất cả Sales',
+        'mine' => 'Đơn của tôi',
+        'unassigned' => 'Chưa phân công',
+    ];
+    foreach ($salesRoster as $salesMember) {
+        $salesFilterOptions[(string) $salesMember->id] = $salesMember->name;
+    }
+
+    $datePresetOptions = [
+        '' => 'Mọi thời điểm',
+        'today' => 'Hôm nay',
+        '7d' => '7 ngày qua',
+        '30d' => '30 ngày qua',
+        'this_month' => 'Tháng này',
+        'custom' => 'Tùy chọn ngày',
+    ];
+@endphp
+
 <div @keydown.escape.window="$wire.closeInspector()">
     <x-admin.page-header
         eyebrow="Parts operations"
@@ -81,36 +101,69 @@
     @endif
 
     <x-admin.card class="mb-6 !p-5">
-        <form action="{{ route('admin.accessory-orders.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-3.5 md:grid-cols-[1.35fr_minmax(0,300px)_auto] md:items-end">
-            <x-admin.form-field name="search" label="Tìm kiếm mã đơn / khách hàng / phụ kiện">
-                <input
-                    id="search"
-                    type="text"
-                    name="search"
-                    wire:model.live.debounce.350ms="search"
-                    placeholder="#12, tên khách, SĐT hoặc phụ kiện..."
-                    class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
-                >
-            </x-admin.form-field>
+        <form action="{{ route('admin.accessory-orders.index') }}" method="GET" wire:submit.prevent="$refresh" class="space-y-3.5">
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-[1.45fr_1fr_1fr_1fr_auto] lg:items-end">
+                <x-admin.form-field name="search" label="Tìm kiếm mã kép / khách / phụ kiện">
+                    <input
+                        id="search"
+                        type="text"
+                        name="search"
+                        wire:model.live.debounce.350ms="search"
+                        placeholder="Mã #SĐT_STT, dd/mm/yyyy/NN, #12, tên, SĐT..."
+                        class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
+                    >
+                </x-admin.form-field>
 
-            <x-admin.form-field name="status" label="Trạng thái">
-                <x-ui.custom-select
-                    id="status"
-                    name="status"
-                    :value="$status"
-                    :options="array_merge(['' => 'Tất cả trạng thái'], $statusOptions)"
-                    wire-model="status"
-                />
-            </x-admin.form-field>
+                <x-admin.form-field name="status" label="Trạng thái">
+                    <x-ui.custom-select
+                        id="status"
+                        name="status"
+                        :value="$status"
+                        :options="array_merge(['' => 'Tất cả trạng thái'], $statusOptions)"
+                        wire-model="status"
+                    />
+                </x-admin.form-field>
 
-            <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
-                    Lọc
-                </button>
-                <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-xl border border-white/10 bg-[#131A29] px-4 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:text-white cursor-pointer">
-                    Xóa
-                </button>
+                <x-admin.form-field name="sales_id" label="Sales phụ trách">
+                    <x-ui.custom-select
+                        id="order-sales-filter"
+                        name="sales_id"
+                        :value="$salesId"
+                        :options="$salesFilterOptions"
+                        wire-model="salesId"
+                    />
+                </x-admin.form-field>
+
+                <x-admin.form-field name="date_preset" label="Khoảng ngày tạo">
+                    <x-ui.custom-select
+                        id="order-date-preset"
+                        name="date_preset"
+                        :value="$datePreset"
+                        :options="$datePresetOptions"
+                        wire-model="datePreset"
+                    />
+                </x-admin.form-field>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
+                        Lọc
+                    </button>
+                    <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-xl border border-white/10 bg-[#131A29] px-4 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:text-white cursor-pointer">
+                        Xóa @if($activeFilterCount > 0)({{ $activeFilterCount }})@endif
+                    </button>
+                </div>
             </div>
+
+            @if($datePreset === 'custom' || $dateFrom !== '' || $dateTo !== '')
+                <div class="grid grid-cols-1 gap-3.5 border-t border-white/[0.06] pt-3.5 sm:grid-cols-2 lg:max-w-lg">
+                    <x-admin.form-field name="dateFrom" label="Từ ngày">
+                        <input id="orderDateFrom" type="date" name="date_from" wire:model.live="dateFrom" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    </x-admin.form-field>
+                    <x-admin.form-field name="dateTo" label="Đến ngày">
+                        <input id="orderDateTo" type="date" name="date_to" wire:model.live="dateTo" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    </x-admin.form-field>
+                </div>
+            @endif
         </form>
     </x-admin.card>
 
@@ -119,9 +172,9 @@
             <table class="w-full lg:table-fixed border-collapse text-left">
                 <thead>
                     <tr class="border-b border-white/[0.08] bg-[#070A10]/60">
-                        <th class="w-[15%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Mã &amp; Ngày tạo</th>
-                        <th class="w-[22%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng</th>
-                        <th class="w-[29%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Phụ kiện &amp; Giá trị</th>
+                        <th class="w-[18%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Mã kép &amp; Ngày tạo</th>
+                        <th class="w-[22%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng &amp; Sales</th>
+                        <th class="w-[26%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Phụ kiện &amp; Giá trị</th>
                         <th class="w-[14%] px-5 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
                         <th class="w-[20%] px-5 py-3.5 text-right text-xs font-semibold text-zinc-400">Thao tác</th>
                     </tr>
@@ -130,13 +183,23 @@
                     @forelse($orders as $order)
                         <tr wire:key="admin-accessory-order-{{ $order->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]">
                             <td class="whitespace-nowrap px-5 py-4">
-                                <p class="text-sm font-bold tabular-nums text-white">#{{ $order->id }}</p>
-                                <p class="mt-0.5 text-xs font-medium tabular-nums text-zinc-400">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                                @if($order->customer_order_code)
+                                    <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $order->customer_order_code }}</p>
+                                @endif
+                                @if($order->daily_sequence_code)
+                                    <p class="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">{{ $order->daily_sequence_code }}</p>
+                                @endif
+                                <p class="mt-1 text-xs font-semibold tabular-nums text-white">#{{ $order->id }} · {{ $order->created_at->format('d/m/Y H:i') }}</p>
                             </td>
 
                             <td class="px-5 py-4">
                                 <p class="truncate text-sm font-bold text-white">{{ $order->customer_name }}</p>
                                 <p class="mt-0.5 truncate text-xs tabular-nums text-zinc-300">{{ $order->customer_phone }}</p>
+                                <p class="mt-1.5">
+                                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ filled($order->assigned_sales_name) ? 'border-sky-500/25 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/[0.04] text-zinc-400' }}">
+                                        {{ filled($order->assigned_sales_name) ? 'Sales: ' . $order->assigned_sales_name : 'Chưa gán Sales' }}
+                                    </span>
+                                </p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -192,8 +255,7 @@
                             <td colspan="5" class="p-6">
                                 <x-admin.empty-state
                                     title="Chưa có đơn phụ kiện"
-                                    description="Đơn đặt phụ kiện chính hãng từ khách hàng sẽ xuất hiện tại đây để đội ngũ Showroom xác nhận và giao hàng."
-                                    hint="Mẹo: Khi có đơn mới, nhấn biểu tượng Con Mắt ở cột Thao tác để xem địa chỉ giao hàng và chuyển trạng thái nhanh."
+                                    description="Chưa có đơn hàng nào khớp bộ lọc hiện tại."
                                 />
                             </td>
                         </tr>
@@ -246,6 +308,16 @@
                                     <span class="rounded-full border border-[#1C69D4]/30 bg-[#1C69D4]/15 px-3 py-0.5 text-[10px] font-bold tracking-wider text-[#70A7FF]">
                                         ĐƠN PHỤ KIỆN #ACC-{{ $order->id }}
                                     </span>
+                                    @if($order->customer_order_code)
+                                        <span class="rounded-full border border-sky-500/30 bg-sky-500/15 px-3 py-0.5 text-[11px] font-bold tabular-nums text-sky-300">
+                                            {{ $order->customer_order_code }}
+                                        </span>
+                                    @endif
+                                    @if($order->daily_sequence_code)
+                                        <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-200">
+                                            {{ $order->daily_sequence_code }}
+                                        </span>
+                                    @endif
                                     <span class="rounded-full border px-3 py-0.5 text-[11px] font-semibold {{ $order->statusColorClass() }}">
                                         {{ $order->statusLabel() }}
                                     </span>
@@ -295,6 +367,25 @@
                                             <p class="mt-1 text-zinc-300">{{ $order->notes }}</p>
                                         </div>
                                     @endif
+                                    <div class="sm:col-span-2 border-t border-white/[0.06] pt-3">
+                                        <p class="text-[11px] font-medium text-zinc-400">Sales phụ trách</p>
+                                        @if(auth()->user()?->canManageSystem())
+                                            <select
+                                                aria-label="Phân công Sales cho đơn phụ kiện #{{ $order->id }}"
+                                                wire:change="assignToSales({{ $order->id }}, $event.target.value)"
+                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                            >
+                                                <option value="">-- Chưa phân công --</option>
+                                                @foreach($salesRoster as $salesMember)
+                                                    <option value="{{ $salesMember->id }}" @selected((int) $order->assigned_to === (int) $salesMember->id)>
+                                                        {{ $salesMember->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <p class="mt-1 font-semibold text-sky-300">{{ $order->assignedSales?->name ?? 'Chưa phân công' }}</p>
+                                        @endif
+                                    </div>
                                 </div>
                             </section>
 

@@ -76,6 +76,7 @@
                         <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Hồ sơ nhân viên</th>
                         <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Địa chỉ Email</th>
                         <th class="min-w-[240px] px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Phân quyền vai trò</th>
+                        <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Tải việc & Hiệu suất</th>
                         <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Ngày ghi danh</th>
                     </tr>
                 </thead>
@@ -134,13 +135,29 @@
                                     </button>
                                 </form>
                             </td>
+                            <td class="whitespace-nowrap px-6 py-5 text-center">
+                                <div class="inline-flex flex-col items-center gap-1.5">
+                                    <span class="rounded-full border border-white/10 bg-[#070A10] px-2.5 py-0.5 text-[10px] font-semibold tabular-nums text-zinc-300">
+                                        Đang giữ: {{ ($user->active_appointments_count ?? 0) + ($user->active_orders_count ?? 0) }} hồ sơ
+                                    </span>
+                                    <a
+                                        href="{{ route('admin.users.performance', $user) }}"
+                                        class="inline-flex items-center gap-1.5 rounded-lg border border-[#38BDF8]/30 bg-[#38BDF8]/10 px-3 py-1.5 text-[11px] font-semibold text-[#38BDF8] transition-colors hover:border-[#38BDF8] hover:bg-[#38BDF8] hover:text-black"
+                                    >
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                        <span>Xem thống kê</span>
+                                    </a>
+                                </div>
+                            </td>
                             <td class="whitespace-nowrap px-6 py-5 text-right text-[10px] font-bold uppercase tracking-widest tabular-nums text-zinc-400">
                                 {{ $user->created_at->format('d/m/Y') }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-8 py-24 text-center">
+                            <td colspan="5" class="px-8 py-24 text-center">
                                 <div class="flex flex-col items-center">
                                     <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-[#070A10]">
                                         <svg class="w-6 h-6 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 01-12 0v1zm0-4.708a5.992 5.992 0 00-5.923-4.35H9v1.5a.5.5 0 01-1 0v-1.5H7.5c-2.31 0-4.223 1.636-4.636 3.791l-.114.563h6.5z"></path></svg>

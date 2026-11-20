@@ -10,6 +10,24 @@
     foreach ($serviceTypes as $typeOption) {
         $typeFilterOptions[$typeOption->value] = $typeOption->label();
     }
+
+    $salesFilterOptions = [
+        '' => 'Tất cả Sales',
+        'mine' => 'Hồ sơ của tôi',
+        'unassigned' => 'Chưa phân công',
+    ];
+    foreach ($salesRoster as $salesMember) {
+        $salesFilterOptions[(string) $salesMember->id] = $salesMember->name;
+    }
+
+    $datePresetOptions = [
+        '' => 'Mọi thời điểm',
+        'today' => 'Hôm nay',
+        '7d' => '7 ngày qua',
+        '30d' => '30 ngày qua',
+        'this_month' => 'Tháng này',
+        'custom' => 'Tùy chọn ngày',
+    ];
 @endphp
 
 <div @keydown.escape.window="$wire.closeInspector()">
@@ -95,46 +113,79 @@
     @endif
 
     <x-admin.card class="mb-6 !p-5">
-        <form action="{{ route('admin.service-bookings.index') }}" method="GET" wire:submit.prevent="$refresh" class="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.5fr_1fr_1fr_auto] lg:items-end">
-            <x-admin.form-field name="search" label="Tìm kiếm khách hàng / xe / gói dịch vụ">
-                <input
-                    id="service-search"
-                    type="text"
-                    name="search"
-                    wire:model.live.debounce.350ms="search"
-                    placeholder="Tên khách, SĐT, email, biển số hoặc gói chăm sóc..."
-                    class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
-                >
-            </x-admin.form-field>
+        <form action="{{ route('admin.service-bookings.index') }}" method="GET" wire:submit.prevent="$refresh" class="space-y-3.5">
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-[1.45fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
+                <x-admin.form-field name="search" label="Tìm kiếm mã kép / khách / xe / gói dịch vụ">
+                    <input
+                        id="service-search"
+                        type="text"
+                        name="search"
+                        wire:model.live.debounce.350ms="search"
+                        placeholder="Mã #SĐT_STT, dd/mm/yyyy/NN, tên, SĐT, biển số..."
+                        class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
+                    >
+                </x-admin.form-field>
 
-            <x-admin.form-field name="service_type" label="Nhóm dịch vụ">
-                <x-ui.custom-select
-                    id="service-type-filter"
-                    name="service_type"
-                    :value="$serviceType"
-                    :options="$typeFilterOptions"
-                    wire-model="serviceType"
-                />
-            </x-admin.form-field>
+                <x-admin.form-field name="service_type" label="Nhóm dịch vụ">
+                    <x-ui.custom-select
+                        id="service-type-filter"
+                        name="service_type"
+                        :value="$serviceType"
+                        :options="$typeFilterOptions"
+                        wire-model="serviceType"
+                    />
+                </x-admin.form-field>
 
-            <x-admin.form-field name="status" label="Trạng thái">
-                <x-ui.custom-select
-                    id="service-status-filter"
-                    name="status"
-                    :value="$status"
-                    :options="$statusFilterOptions"
-                    wire-model="status"
-                />
-            </x-admin.form-field>
+                <x-admin.form-field name="status" label="Trạng thái">
+                    <x-ui.custom-select
+                        id="service-status-filter"
+                        name="status"
+                        :value="$status"
+                        :options="$statusFilterOptions"
+                        wire-model="status"
+                    />
+                </x-admin.form-field>
 
-            <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
-                    Lọc
-                </button>
-                <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-xl border border-white/10 bg-[#131A29] px-4 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:text-white cursor-pointer">
-                    Xóa
-                </button>
+                <x-admin.form-field name="sales_id" label="Sales / Cố vấn">
+                    <x-ui.custom-select
+                        id="service-sales-filter"
+                        name="sales_id"
+                        :value="$salesId"
+                        :options="$salesFilterOptions"
+                        wire-model="salesId"
+                    />
+                </x-admin.form-field>
+
+                <x-admin.form-field name="date_preset" label="Khoảng ngày hẹn">
+                    <x-ui.custom-select
+                        id="service-date-preset"
+                        name="date_preset"
+                        :value="$datePreset"
+                        :options="$datePresetOptions"
+                        wire-model="datePreset"
+                    />
+                </x-admin.form-field>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
+                        Lọc
+                    </button>
+                    <button type="button" wire:click="resetFilters" class="h-10 whitespace-nowrap rounded-xl border border-white/10 bg-[#131A29] px-4 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:text-white cursor-pointer">
+                        Xóa @if($activeFilterCount > 0)({{ $activeFilterCount }})@endif
+                    </button>
+                </div>
             </div>
+
+            @if($datePreset === 'custom' || $dateFrom !== '' || $dateTo !== '')
+                <div class="grid grid-cols-1 gap-3.5 border-t border-white/[0.06] pt-3.5 sm:grid-cols-2 lg:max-w-lg">
+                    <x-admin.form-field name="dateFrom" label="Từ ngày">
+                        <input id="serviceDateFrom" type="date" name="date_from" wire:model.live="dateFrom" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    </x-admin.form-field>
+                    <x-admin.form-field name="dateTo" label="Đến ngày">
+                        <input id="serviceDateTo" type="date" name="date_to" wire:model.live="dateTo" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    </x-admin.form-field>
+                </div>
+            @endif
         </form>
     </x-admin.card>
 
@@ -143,10 +194,10 @@
             <table class="w-full lg:table-fixed border-collapse text-left">
                 <thead>
                     <tr class="border-b border-white/[0.08] bg-[#070A10]/60">
-                        <th class="w-[14%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Thời điểm</th>
-                        <th class="w-[22%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng</th>
-                        <th class="w-[29%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Xe &amp; Gói dịch vụ</th>
-                        <th class="w-[15%] px-5 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
+                        <th class="w-[17%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Mã kép &amp; Thời điểm</th>
+                        <th class="w-[23%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng &amp; Sales</th>
+                        <th class="w-[26%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Xe &amp; Gói dịch vụ</th>
+                        <th class="w-[14%] px-5 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
                         <th class="w-[20%] px-5 py-3.5 text-right text-xs font-semibold text-zinc-400">Thao tác</th>
                     </tr>
                 </thead>
@@ -160,8 +211,14 @@
                         @endphp
                         <tr wire:key="admin-service-booking-{{ $booking->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]">
                             <td class="whitespace-nowrap px-5 py-4">
-                                <p class="text-sm font-bold tabular-nums text-white">{{ $booking->appointment_date->format('d/m/Y') }}</p>
-                                <p class="mt-0.5 text-xs font-medium tabular-nums text-zinc-400">{{ $booking->appointment_date->format('H:i') }} · #{{ $booking->id }}</p>
+                                @if($booking->customer_order_code)
+                                    <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $booking->customer_order_code }}</p>
+                                @endif
+                                @if($booking->daily_sequence_code)
+                                    <p class="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">{{ $booking->daily_sequence_code }}</p>
+                                @endif
+                                <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $booking->appointment_date->format('d/m/Y · H:i') }}</p>
+                                <p class="mt-0.5 text-[11px] tabular-nums text-zinc-500">ID #{{ $booking->id }}</p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -170,6 +227,11 @@
                                 @if(filled($booking->guest_phone) && filled($customerEmail))
                                     <p class="mt-0.5 truncate text-[11px] text-zinc-500">{{ $customerEmail }}</p>
                                 @endif
+                                <p class="mt-1.5">
+                                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ filled($booking->assigned_sales_name) ? 'border-sky-500/25 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/[0.04] text-zinc-400' }}">
+                                        {{ filled($booking->assigned_sales_name) ? 'Sales: ' . $booking->assigned_sales_name : 'Chưa gán Sales' }}
+                                    </span>
+                                </p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -230,8 +292,7 @@
                             <td colspan="5" class="p-6">
                                 <x-admin.empty-state
                                     title="Chưa có lịch hẹn dịch vụ chăm sóc xe"
-                                    description="Các yêu cầu bảo dưỡng định kỳ, phủ Ceramic, chăm sóc da Merino và chẩn đoán ISTA từ trang Dịch vụ sẽ xuất hiện tại đây."
-                                    hint="Mẹo: Khi khách đặt dịch vụ từ /services hoặc /dich-vu, cố vấn dịch vụ có thể bấm biểu tượng Con Mắt để xem chi tiết & gửi thư xác nhận."
+                                    description="Chưa có hồ sơ dịch vụ nào khớp bộ lọc hiện tại."
                                 />
                             </td>
                         </tr>
@@ -288,6 +349,16 @@
                                     <span class="rounded-full border border-[#1C69D4]/30 bg-[#1C69D4]/15 px-3 py-0.5 text-[10px] font-bold tracking-wider text-[#70A7FF]">
                                         DỊCH VỤ CHĂM SÓC XE #{{ $booking->id }}
                                     </span>
+                                    @if($booking->customer_order_code)
+                                        <span class="rounded-full border border-sky-500/30 bg-sky-500/15 px-3 py-0.5 text-[11px] font-bold tabular-nums text-sky-300">
+                                            {{ $booking->customer_order_code }}
+                                        </span>
+                                    @endif
+                                    @if($booking->daily_sequence_code)
+                                        <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-200">
+                                            {{ $booking->daily_sequence_code }}
+                                        </span>
+                                    @endif
                                     <span class="rounded-full border px-3 py-0.5 text-[11px] font-semibold {{ $booking->status->color() }}">
                                         {{ $booking->status->label() }}
                                     </span>
@@ -349,6 +420,25 @@
                                             <p class="mt-1 text-zinc-300">{{ $booking->notes }}</p>
                                         </div>
                                     @endif
+                                    <div class="sm:col-span-2 border-t border-white/[0.06] pt-3">
+                                        <p class="text-[11px] font-medium text-zinc-400">Sales / Cố vấn phụ trách</p>
+                                        @if(auth()->user()?->canManageSystem())
+                                            <select
+                                                aria-label="Phân công Sales cho lịch dịch vụ #{{ $booking->id }}"
+                                                wire:change="assignToSales({{ $booking->id }}, $event.target.value)"
+                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                            >
+                                                <option value="">-- Chưa phân công --</option>
+                                                @foreach($salesRoster as $salesMember)
+                                                    <option value="{{ $salesMember->id }}" @selected((int) $booking->assigned_to === (int) $salesMember->id)>
+                                                        {{ $salesMember->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <p class="mt-1 font-semibold text-sky-300">{{ $booking->assignedSales?->name ?? 'Chưa phân công' }}</p>
+                                        @endif
+                                    </div>
                                 </div>
                             </section>
 

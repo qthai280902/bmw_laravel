@@ -8,6 +8,7 @@ use App\Events\AppointmentStatusChanged;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
+use App\Services\Crm\DocumentCodeGenerator;
 use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,7 +32,10 @@ class Appointment extends Model implements Attachable
     public const LEAD_PRIORITY_NORMAL = 'normal';
 
     protected $fillable = [
+        'customer_order_code',
+        'daily_sequence_code',
         'user_id',
+        'assigned_to',
         'guest_name',
         'guest_email',
         'guest_phone',
@@ -66,9 +70,34 @@ class Appointment extends Model implements Attachable
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(static function (Appointment $appointment): void {
+            app(DocumentCodeGenerator::class)->populateMissingCodes($appointment);
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignedSales(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function isServiceBooking(): bool
+    {
+        $type = $this->type instanceof AppointmentType
+            ? $this->type
+            : AppointmentType::tryFrom((string) $this->type);
+
+        return in_array($type, [
+            AppointmentType::Maintenance,
+            AppointmentType::Detailing,
+            AppointmentType::CarWash,
+        ], true);
     }
 
     public function product(): BelongsTo

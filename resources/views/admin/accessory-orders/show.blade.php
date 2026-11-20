@@ -21,6 +21,20 @@
                 </div>
                 <div class="grid grid-cols-1 gap-3 p-6 md:grid-cols-2">
                     <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Mã khách hàng / Mã ngày</p>
+                        <p class="mt-2 text-sm font-bold tabular-nums text-[#70A7FF]">
+                            {{ $order->customer_order_code ?: '#ACC-' . $order->id }}
+                            @if($order->daily_sequence_code)
+                                <span class="text-zinc-500">&middot;</span>
+                                <span class="text-white">{{ $order->daily_sequence_code }}</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Sales phụ trách</p>
+                        <p class="mt-2 text-sm font-bold text-white">{{ $order->assignedSales?->name ?? 'Chưa phân công' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Số điện thoại</p>
                         <p class="mt-2 text-sm font-bold text-white">{{ $order->customer_phone }}</p>
                     </div>

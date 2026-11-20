@@ -16,6 +16,8 @@
         }
     }
     $ticketCode = '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT);
+    $customerOrderCode = $appointment->customer_order_code ?: $ticketCode;
+    $dailySequenceCode = $appointment->daily_sequence_code;
 @endphp
 
 @section('title', $officialMode ? 'Xác Nhận Chính Thức Lịch Hẹn | BMW Concierge' : 'Đã Tiếp Nhận Yêu Cầu Đặt Lịch | BMW Showroom Vietnam')
@@ -52,9 +54,15 @@
                     </div>
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                            <td style="padding: 4px 0; font-size: 13px; color: #065F46; width: 38%;">Mã đón tiếp</td>
-                            <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #0F172A; width: 62%;">{{ $ticketCode }}</td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #065F46; width: 38%;">Mã đón tiếp (Khách hàng)</td>
+                            <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #0F172A; width: 62%;">{{ $customerOrderCode }}</td>
                         </tr>
+                        @if($dailySequenceCode)
+                        <tr>
+                            <td style="padding: 4px 0; font-size: 13px; color: #065F46; width: 38%;">Mã số trong ngày</td>
+                            <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #059669; width: 62%;">{{ $dailySequenceCode }}</td>
+                        </tr>
+                        @endif
                         <tr>
                             <td style="padding: 4px 0; font-size: 13px; color: #065F46;">Chuyên viên phụ trách</td>
                             <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #0F172A;">{{ $advisorName }} ({{ $advisorRole }})</td>
@@ -86,9 +94,27 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px;">
         <tr>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
-                Mã lịch hẹn
+                Mã khách hàng
             </td>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: {{ $officialMode ? '#059669' : '#1C69D4' }}; width: 62%;">
+                {{ $customerOrderCode }}
+            </td>
+        </tr>
+        @if($dailySequenceCode)
+        <tr>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Mã ngày (STT)
+            </td>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #0F172A;">
+                {{ $dailySequenceCode }}
+            </td>
+        </tr>
+        @endif
+        <tr>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Mã hệ thống
+            </td>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 600; color: #475569;">
                 {{ $ticketCode }}
             </td>
         </tr>

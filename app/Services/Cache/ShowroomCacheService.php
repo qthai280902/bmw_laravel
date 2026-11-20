@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SiteSetting;
+use App\Models\User;
 use Closure;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +24,8 @@ class ShowroomCacheService
     public const KEY_CATEGORIES_VEHICLES = 'showroom:categories:vehicles';
 
     public const KEY_CATEGORIES_ACCESSORIES = 'showroom:categories:accessories';
+
+    public const KEY_SALES_ROSTER = 'showroom:crm:sales_roster';
 
     /**
      * Retrieve public homepage showcase datasets with stale-while-revalidate caching.
@@ -170,6 +173,26 @@ class ShowroomCacheService
     public function flushDashboard(): void
     {
         $this->forgetFlexible(self::KEY_DASHBOARD_SUMMARY);
+    }
+
+    /**
+     * Danh sách nhân sự Sales được cache nhẹ để dùng lại cho bộ lọc và phân công CRM.
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public function salesRoster(): EloquentCollection
+    {
+        return Cache::remember(self::KEY_SALES_ROSTER, 300, static function (): EloquentCollection {
+            return User::query()
+                ->sales()
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'role']);
+        });
+    }
+
+    public function flushSalesRoster(): void
+    {
+        Cache::forget(self::KEY_SALES_ROSTER);
     }
 
     /**

@@ -23,6 +23,31 @@
         Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, chân thành cảm ơn Quý khách đã hoàn thành buổi <strong style="color: #0F172A;">{{ $appointment->typeLabel() }}</strong>@if($car) cùng mẫu xe <strong style="color: #1C69D4;">{{ $car->name }}</strong>@endif. Chúng tôi hy vọng Quý khách đã có trải nghiệm hài lòng nhất.
     </p>
 
+    @if($appointment->customer_order_code || $appointment->daily_sequence_code)
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 20px;">
+            @if($appointment->customer_order_code)
+            <tr>
+                <td style="padding: 11px 18px; {{ $appointment->daily_sequence_code ? 'border-bottom: 1px solid #E2E8F0;' : '' }} font-size: 13px; font-weight: 500; color: #64748B; width: 46%;">
+                    Mã khách hàng
+                </td>
+                <td align="right" style="padding: 11px 18px; {{ $appointment->daily_sequence_code ? 'border-bottom: 1px solid #E2E8F0;' : '' }} font-size: 14px; font-weight: 700; color: #B45309; width: 54%;">
+                    {{ $appointment->customer_order_code }}
+                </td>
+            </tr>
+            @endif
+            @if($appointment->daily_sequence_code)
+            <tr>
+                <td style="padding: 11px 18px; font-size: 13px; font-weight: 500; color: #64748B; width: 46%;">
+                    Mã ngày (STT)
+                </td>
+                <td align="right" style="padding: 11px 18px; font-size: 14px; font-weight: 700; color: #0F172A; width: 54%;">
+                    {{ $appointment->daily_sequence_code }}
+                </td>
+            </tr>
+            @endif
+        </table>
+    @endif
+
     @if($car && is_array($estimate))
         <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;">
             BẢNG ƯỚC TÍNH TÀI CHÍNH / TRẢ GÓP THAM KHẢO &mdash; {{ strtoupper($car->name) }}

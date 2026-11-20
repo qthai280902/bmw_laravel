@@ -358,14 +358,14 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
         $this->get($appointment->temporaryManageUrl().'tampered')->assertForbidden();
         $this->post(route('appointments.guest.update', $appointment), ['action' => 'confirm'])->assertForbidden();
 
-        // Valid signed GET portal renders cleanly with dark date input + showroom time slots
+        // Valid signed GET portal renders cleanly with Clean Minimalist Luxury theme + showroom time slots
         $this->get($appointment->temporaryManageUrl())
             ->assertOk()
             ->assertSee($car->name)
             ->assertSee('Nguyen Khach Signed')
             ->assertSee('id="new_date"', false)
             ->assertSee('id="new_time"', false)
-            ->assertSee('color-scheme: dark;', false)
+            ->assertSee('#F1F5F9', false)
             ->assertSee('name="new_appointment_date"', false);
 
         // Confirm action

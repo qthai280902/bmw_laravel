@@ -8,6 +8,9 @@ use App\Exceptions\InvalidStatusTransitionException;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\Appointment;
+use App\Services\Cache\ShowroomCacheService;
+use App\Services\Crm\SalesAssignmentService;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
@@ -30,6 +33,18 @@ class ServiceBookingTable extends Component
     #[Url(as: 'service_type', except: '')]
     public string $serviceType = '';
 
+    #[Url(as: 'sales_id', except: '')]
+    public string $salesId = '';
+
+    #[Url(as: 'date_preset', except: '')]
+    public string $datePreset = '';
+
+    #[Url(as: 'date_from', except: '')]
+    public string $dateFrom = '';
+
+    #[Url(as: 'date_to', except: '')]
+    public string $dateTo = '';
+
     #[Url(as: 'today', except: false)]
     public bool $onlyToday = false;
 
@@ -42,6 +57,10 @@ class ServiceBookingTable extends Component
     public function mount(): void
     {
         $this->authorizeCrm();
+
+        if ($this->onlyToday && $this->datePreset === '') {
+            $this->datePreset = 'today';
+        }
     }
 
     public function updatedSearch(): void
@@ -59,12 +78,45 @@ class ServiceBookingTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSalesId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDatePreset(): void
+    {
+        $this->onlyToday = $this->datePreset === 'today';
+        if ($this->datePreset !== 'custom') {
+            $this->dateFrom = '';
+            $this->dateTo = '';
+        }
+        $this->resetPage();
+    }
+
+    public function updatedDateFrom(): void
+    {
+        if ($this->dateFrom !== '') {
+            $this->datePreset = 'custom';
+            $this->onlyToday = false;
+        }
+        $this->resetPage();
+    }
+
+    public function updatedDateTo(): void
+    {
+        if ($this->dateTo !== '') {
+            $this->datePreset = 'custom';
+            $this->onlyToday = false;
+        }
+        $this->resetPage();
+    }
+
     public function applyQuickFilter(string $preset): void
     {
         $this->authorizeCrm();
 
         if ($preset === 'pending') {
-            $isActive = $this->status === AppointmentStatus::Pending->value && ! $this->onlyToday;
+            $isActive = $this->status === AppointmentStatus::Pending->value && ! $this->onlyToday && $this->datePreset === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->status = AppointmentStatus::Pending->value;
@@ -74,7 +126,7 @@ class ServiceBookingTable extends Component
         }
 
         if ($preset === 'confirmed') {
-            $isActive = $this->status === AppointmentStatus::Confirmed->value && ! $this->onlyToday;
+            $isActive = $this->status === AppointmentStatus::Confirmed->value && ! $this->onlyToday && $this->datePreset === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->status = AppointmentStatus::Confirmed->value;
@@ -84,17 +136,18 @@ class ServiceBookingTable extends Component
         }
 
         if ($preset === 'today') {
-            $isActive = $this->onlyToday && $this->status === '';
+            $isActive = ($this->onlyToday || $this->datePreset === 'today') && $this->status === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->onlyToday = true;
+                $this->datePreset = 'today';
             }
 
             return;
         }
 
         if ($preset === 'completed') {
-            $isActive = $this->status === AppointmentStatus::Completed->value && ! $this->onlyToday;
+            $isActive = $this->status === AppointmentStatus::Completed->value && ! $this->onlyToday && $this->datePreset === '';
             $this->resetFilters();
             if (! $isActive) {
                 $this->status = AppointmentStatus::Completed->value;
@@ -111,6 +164,10 @@ class ServiceBookingTable extends Component
         $this->search = '';
         $this->status = '';
         $this->serviceType = '';
+        $this->salesId = '';
+        $this->datePreset = '';
+        $this->dateFrom = '';
+        $this->dateTo = '';
         $this->onlyToday = false;
         $this->resetPage();
     }
@@ -160,6 +217,30 @@ class ServiceBookingTable extends Component
             $this->flashMessage = null;
             $this->errorMessage = $exception->getMessage();
             $this->addError('statusTransition', $exception->getMessage());
+        }
+    }
+
+    public function assignToSales(int $bookingId, string|int|null $salesUserId, SalesAssignmentService $assignmentService): void
+    {
+        $this->authorizeSystemManagement();
+        $this->resetErrorBag('statusTransition');
+        $this->errorMessage = null;
+
+        $booking = Appointment::query()
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->findOrFail($bookingId);
+        $targetId = filled($salesUserId) ? (int) $salesUserId : null;
+
+        try {
+            $assignedUser = $assignmentService->assignManually($booking, $targetId, auth()->user());
+            unset($this->inspectedBooking);
+
+            $this->flashMessage = $assignedUser
+                ? "Đã phân công lịch dịch vụ {$booking->customer_order_code} cho {$assignedUser->name}."
+                : "Đã gỡ phân công Sales cho lịch dịch vụ {$booking->customer_order_code}.";
+        } catch (\Throwable $exception) {
+            $this->flashMessage = null;
+            $this->errorMessage = $exception->getMessage();
         }
     }
 
@@ -219,18 +300,19 @@ class ServiceBookingTable extends Component
         }
 
         return Appointment::query()
-            ->with(['product', 'user'])
+            ->with(['product', 'user', 'assignedSales'])
             ->whereIn('type', $this->allowedServiceTypeValues())
             ->find($this->inspectedBookingId);
     }
 
-    public function render(): View
+    public function render(ShowroomCacheService $cacheService): View
     {
         $this->authorizeCrm();
 
         $serviceTypeValues = $this->allowedServiceTypeValues();
         $todayStart = now()->startOfDay()->toDateTimeString();
         $todayEnd = now()->endOfDay()->toDateTimeString();
+        [$rangeStart, $rangeEnd] = $this->resolveDateRange();
 
         $statsRow = Appointment::query()
             ->toBase()
@@ -250,31 +332,55 @@ class ServiceBookingTable extends Component
             )
             ->first();
 
+        $salesRoster = $cacheService->salesRoster();
+
         $query = Appointment::query()
+            ->leftJoin('users as assigned_sales', 'appointments.assigned_to', '=', 'assigned_sales.id')
+            ->select('appointments.*', 'assigned_sales.name as assigned_sales_name')
             ->with(['product', 'user'])
-            ->whereIn('type', $serviceTypeValues);
+            ->whereIn('appointments.type', $serviceTypeValues);
 
         if (in_array($this->status, array_column(AppointmentStatus::cases(), 'value'), true)) {
-            $query->where('status', $this->status);
+            $query->where('appointments.status', $this->status);
         }
 
         if (in_array($this->serviceType, $serviceTypeValues, true)) {
-            $query->where('type', $this->serviceType);
+            $query->where('appointments.type', $this->serviceType);
         }
 
-        if ($this->onlyToday) {
-            $query->whereBetween('appointment_date', [$todayStart, $todayEnd]);
+        if ($this->salesId !== '') {
+            if ($this->salesId === 'mine') {
+                $query->where('appointments.assigned_to', auth()->id());
+            } elseif ($this->salesId === 'unassigned') {
+                $query->whereNull('appointments.assigned_to');
+            } elseif (is_numeric($this->salesId)) {
+                $query->where('appointments.assigned_to', (int) $this->salesId);
+            }
+        }
+
+        if ($rangeStart !== null && $rangeEnd !== null) {
+            $query->whereBetween('appointments.appointment_date', [$rangeStart, $rangeEnd]);
+        } elseif ($rangeStart !== null) {
+            $query->where('appointments.appointment_date', '>=', $rangeStart);
+        } elseif ($rangeEnd !== null) {
+            $query->where('appointments.appointment_date', '<=', $rangeEnd);
         }
 
         $search = trim($this->search);
         if ($search !== '') {
             $like = '%'.$search.'%';
-            $query->where(function (Builder $builder) use ($like): void {
-                $builder->where('guest_name', 'like', $like)
-                    ->orWhere('guest_phone', 'like', $like)
-                    ->orWhere('guest_email', 'like', $like)
-                    ->orWhere('meta_data', 'like', $like)
-                    ->orWhere('notes', 'like', $like)
+            $query->where(function (Builder $builder) use ($like, $search): void {
+                if (is_numeric(ltrim($search, '#'))) {
+                    $builder->orWhere('appointments.id', (int) ltrim($search, '#'));
+                }
+
+                $builder->orWhere('appointments.customer_order_code', 'like', $like)
+                    ->orWhere('appointments.daily_sequence_code', 'like', $like)
+                    ->orWhere('appointments.guest_name', 'like', $like)
+                    ->orWhere('appointments.guest_phone', 'like', $like)
+                    ->orWhere('appointments.guest_email', 'like', $like)
+                    ->orWhere('appointments.meta_data', 'like', $like)
+                    ->orWhere('appointments.notes', 'like', $like)
                     ->orWhereHas('user', function (Builder $userQuery) use ($like): void {
                         $userQuery->where('name', 'like', $like)
                             ->orWhere('email', 'like', $like);
@@ -285,14 +391,24 @@ class ServiceBookingTable extends Component
             });
         }
 
+        $activeFilterCount = collect([
+            $search !== '',
+            $this->status !== '',
+            $this->serviceType !== '',
+            $this->salesId !== '',
+            $this->datePreset !== '' || $this->onlyToday || $this->dateFrom !== '' || $this->dateTo !== '',
+        ])->filter()->count();
+
         return view('livewire.admin.service-booking-table', [
-            'bookings' => $query->latest('appointment_date')->paginate(15),
+            'bookings' => $query->latest('appointments.appointment_date')->paginate(15),
             'statuses' => AppointmentStatus::cases(),
             'serviceTypes' => [
                 AppointmentType::Maintenance,
                 AppointmentType::Detailing,
                 AppointmentType::CarWash,
             ],
+            'salesRoster' => $salesRoster,
+            'activeFilterCount' => $activeFilterCount,
             'quickStats' => [
                 'pending' => (int) ($statsRow->pending_count ?? 0),
                 'confirmed' => (int) ($statsRow->confirmed_count ?? 0),
@@ -312,5 +428,67 @@ class ServiceBookingTable extends Component
             AppointmentType::Detailing->value,
             AppointmentType::CarWash->value,
         ];
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function resolveDateRange(): array
+    {
+        if ($this->onlyToday && ($this->datePreset === '' || $this->datePreset === 'today')) {
+            return [now()->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()];
+        }
+
+        $tz = 'Asia/Ho_Chi_Minh';
+        $appTz = (string) config('app.timezone', 'UTC');
+        $nowVn = CarbonImmutable::now($tz);
+
+        if ($this->datePreset === 'today') {
+            return [now()->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()];
+        }
+
+        if ($this->datePreset === '7d') {
+            return [
+                $nowVn->subDays(6)->startOfDay()->setTimezone($appTz)->toDateTimeString(),
+                $nowVn->endOfDay()->setTimezone($appTz)->toDateTimeString(),
+            ];
+        }
+
+        if ($this->datePreset === '30d') {
+            return [
+                $nowVn->subDays(29)->startOfDay()->setTimezone($appTz)->toDateTimeString(),
+                $nowVn->endOfDay()->setTimezone($appTz)->toDateTimeString(),
+            ];
+        }
+
+        if ($this->datePreset === 'this_month') {
+            return [
+                $nowVn->startOfMonth()->setTimezone($appTz)->toDateTimeString(),
+                $nowVn->endOfMonth()->setTimezone($appTz)->toDateTimeString(),
+            ];
+        }
+
+        if ($this->datePreset === 'custom' || $this->dateFrom !== '' || $this->dateTo !== '') {
+            $start = null;
+            $end = null;
+
+            if ($this->dateFrom !== '') {
+                try {
+                    $start = CarbonImmutable::parse($this->dateFrom, $tz)->startOfDay()->setTimezone($appTz)->toDateTimeString();
+                } catch (\Throwable) {
+                }
+            }
+
+            if ($this->dateTo !== '') {
+                try {
+                    $end = CarbonImmutable::parse($this->dateTo, $tz)->endOfDay()->setTimezone($appTz)->toDateTimeString();
+                } catch (\Throwable) {
+                }
+            }
+
+            return [$start, $end];
+        }
+
+        return [null, null];
     }
 }

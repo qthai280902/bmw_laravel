@@ -7,6 +7,13 @@ BMW SHOWROOM VIETNAM — CẢM ƠN & HẬU MÃI SAU TRẢI NGHIỆM
 Kính chào Quý khách {{ $appointment->customer_name }},
 
 Cảm ơn Quý khách đã dành thời gian tới tham dự buổi {{ $appointment->typeLabel() }} tại BMW Showroom Vietnam. Chúng tôi hy vọng Quý khách đã có những trải nghiệm ấn tượng và trọn vẹn cùng đội ngũ BMW Genius.
+@if($appointment->customer_order_code || $appointment->daily_sequence_code)
+
+MÃ HỒ SƠ LỊCH HẸN
+@if($appointment->customer_order_code)- Mã khách hàng: {{ $appointment->customer_order_code }}
+@endif@if($appointment->daily_sequence_code)- Mã ngày: {{ $appointment->daily_sequence_code }}
+@endif
+@endif
 
 @if($car && is_array($estimate))
 BẢNG ƯỚC TÍNH TÀI CHÍNH / TRẢ GÓP THAM KHẢO — {{ $car->name }}

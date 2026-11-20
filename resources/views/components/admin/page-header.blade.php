@@ -4,7 +4,14 @@
     'accent' => null,
     'description' => null,
     'metric' => null,
+    'guideKey' => null,
 ])
+
+@php
+    $resolvedGuide = $guideKey === false
+        ? null
+        : \App\Support\AdminPageGuideRegistry::forRoute($guideKey ?: request()->route()?->getName());
+@endphp
 
 <div {{ $attributes->merge(['class' => 'mb-8 border-b border-white/[0.08] pb-6']) }}>
     <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -13,12 +20,18 @@
                 <p class="mb-2 text-xs font-semibold text-[#38BDF8]">{{ $eyebrow }}</p>
             @endif
 
-            <h1 class="text-2xl font-extrabold tracking-tight text-white md:text-4xl">
-                {{ $title }}
-                @if($accent)
-                    <span class="text-[#70A7FF]">{{ $accent }}</span>
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-extrabold tracking-tight text-white md:text-4xl">
+                    {{ $title }}
+                    @if($accent)
+                        <span class="text-[#70A7FF]">{{ $accent }}</span>
+                    @endif
+                </h1>
+
+                @if($resolvedGuide)
+                    <x-admin.help-popover :guide="$resolvedGuide" />
                 @endif
-            </h1>
+            </div>
 
             @if($description)
                 <p class="mt-2.5 max-w-2xl text-sm leading-6 text-zinc-400">{{ $description }}</p>
