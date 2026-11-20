@@ -14,7 +14,7 @@
         @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-zinc-950 font-sans text-zinc-100 antialiased selection:bg-[#1C69D4] selection:text-white" x-data="{ sidebarOpen: false }">
+    <body class="admin-cockpit bg-[#070A10] font-sans text-zinc-100 antialiased selection:bg-[#1C69D4] selection:text-white" x-data="{ sidebarOpen: false }">
         @php
             $sectionLabels = [
                 'products' => 'Kho sản phẩm',
@@ -42,20 +42,22 @@
             <!-- Admin Sidebar -->
             <aside
                 :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-                class="fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col border-r border-zinc-800/80 bg-[#050505]/95 shadow-2xl backdrop-blur-2xl transition-transform duration-300 lg:translate-x-0"
+                class="fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col border-r border-white/[0.08] bg-[#0D121C]/95 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 lg:translate-x-0"
             >
                 <!-- Brand Header -->
-                <div class="shrink-0 border-b border-zinc-800/80 bg-[#0B0F17]/90 px-5 py-4">
+                <div class="shrink-0 border-b border-white/[0.08] bg-[#0D121C] px-5 py-4">
                     <div class="flex items-center justify-between gap-3">
                         <a href="{{ Auth::user()?->canAccessCrm() ? route('dashboard') : route('admin.products.index') }}" class="flex items-center gap-3">
-                            <img src="{{ asset('images/bmw-logo.svg') }}" class="h-8 w-8 shrink-0 object-contain" style="width: 32px; height: 32px;" alt="BMW Logo">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] p-1.5">
+                                <img src="{{ asset('images/bmw-logo.svg') }}" class="h-full w-full object-contain" alt="BMW Logo">
+                            </div>
                             <div>
                                 <p class="text-sm font-extrabold uppercase tracking-wider text-white">BMW Admin</p>
-                                <p class="text-[10px] font-medium tracking-wide text-[#70A7FF]">Cổng Quản Trị Showroom</p>
+                                <p class="text-[11px] font-medium text-[#38BDF8]">Cổng Quản Trị Showroom</p>
                             </div>
                         </a>
 
-                        <button type="button" class="border border-zinc-800 p-1.5 text-zinc-500 transition-colors hover:text-white lg:hidden" @click="sidebarOpen = false" aria-label="Đóng menu">
+                        <button type="button" class="rounded-xl border border-white/10 bg-[#131A29] p-1.5 text-zinc-400 transition-colors hover:text-white lg:hidden" @click="sidebarOpen = false" aria-label="Đóng menu">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -170,26 +172,26 @@
                 </nav>
 
                 <!-- User Footer -->
-                <div class="shrink-0 border-t border-zinc-800/80 bg-[#0B0F17]/90 p-3">
-                    <div class="border border-zinc-800/80 bg-zinc-950/80 p-3 shadow-sm">
-                        <div class="mb-2.5 flex items-center gap-2.5">
-                            <div class="flex h-8 w-8 shrink-0 items-center justify-center border border-zinc-700 bg-black font-bold text-xs text-[#70A7FF]">
+                <div class="shrink-0 border-t border-white/[0.08] bg-[#0D121C] p-3.5">
+                    <div class="rounded-2xl border border-white/[0.08] bg-[#070A10]/90 p-3.5 shadow-sm">
+                        <div class="mb-3 flex items-center gap-3">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1C69D4]/30 bg-[#1C69D4]/15 font-bold text-xs text-[#38BDF8]">
                                 {{ Str::of(Auth::user()->name)->substr(0, 1) }}
                             </div>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between gap-2">
                                     <p class="truncate text-xs font-semibold text-white">{{ Auth::user()->name }}</p>
-                                    <span class="shrink-0 whitespace-nowrap rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#70A7FF]">
+                                    <span class="shrink-0 whitespace-nowrap rounded-full border border-[#1C69D4]/30 bg-[#1C69D4]/15 px-2.5 py-0.5 text-[10px] font-semibold text-[#70A7FF]">
                                         {{ Auth::user()->roleLabel() }}
                                     </span>
                                 </div>
-                                <p class="mt-0.5 truncate text-[10px] text-zinc-400">{{ Auth::user()->email }}</p>
+                                <p class="mt-0.5 truncate text-[11px] text-zinc-400">{{ Auth::user()->email }}</p>
                             </div>
                         </div>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="w-full rounded-none border border-zinc-800 bg-black px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-rose-500/50 hover:bg-rose-950/20 hover:text-rose-400 cursor-pointer">
+                            <button type="submit" class="h-9 w-full rounded-xl border border-white/10 bg-[#131A29] px-3 text-xs font-semibold text-zinc-300 transition-colors hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-300 cursor-pointer">
                                 Đăng xuất
                             </button>
                         </form>
@@ -199,18 +201,18 @@
 
             <!-- Main Layout Shell -->
             <div class="flex min-h-screen flex-col lg:pl-72">
-                <header class="sticky top-0 z-30 shrink-0 border-b border-[#1E2533] bg-[#050505]/95 backdrop-blur-md">
+                <header class="sticky top-0 z-30 shrink-0 border-b border-white/[0.08] bg-[#070A10]/90 backdrop-blur-xl">
                     <div class="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                         <div class="flex min-w-0 items-center gap-3.5">
-                            <button type="button" class="rounded-none border border-[#242B38] bg-[#0B0F17] p-2 text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-white lg:hidden cursor-pointer" @click="sidebarOpen = true" aria-label="Mở menu">
+                            <button type="button" class="rounded-xl border border-white/10 bg-[#0D121C] p-2 text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-white lg:hidden cursor-pointer" @click="sidebarOpen = true" aria-label="Mở menu">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
 
                             <div class="min-w-0">
-                                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-[#70A7FF]">Cổng Quản Trị</p>
-                                <p class="mt-0.5 truncate text-sm font-bold text-zinc-100">
+                                <p class="text-[11px] font-semibold text-[#38BDF8]">Cổng Quản Trị Showroom</p>
+                                <p class="truncate text-sm font-bold text-white">
                                     {{ $currentSection ? ($sectionLabels[$currentSection] ?? Str::headline($currentSection)) : 'Tổng quan CRM' }}
                                 </p>
                             </div>
@@ -221,15 +223,15 @@
                                 <livewire:admin.notification-bell />
                             @endif
 
-                            <a href="{{ route('home') }}" class="hidden items-center gap-1.5 rounded-none border border-[#242B38] bg-[#0B0F17] px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-white sm:inline-flex">
+                            <a href="{{ route('home') }}" class="hidden h-9 items-center gap-2 rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold text-zinc-300 transition-colors hover:border-[#1C69D4] hover:bg-[#131A29] hover:text-white sm:inline-flex">
                                 <svg class="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                 </svg>
                                 Trang Chủ
                             </a>
-                            <div class="hidden items-center gap-2 rounded-none border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 md:flex">
-                                <span class="h-1.5 w-1.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Online</span>
+                            <div class="hidden h-9 items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/15 px-3 md:flex">
+                                <span class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
+                                <span class="text-xs font-semibold text-emerald-300">Online</span>
                             </div>
                         </div>
                     </div>
@@ -239,18 +241,18 @@
                     <div class="mx-auto max-w-[1440px]">
                         @if (session('success'))
                             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition class="fixed bottom-6 right-6 z-[100] w-[calc(100%-3rem)] max-w-md">
-                                <div class="border border-emerald-500/30 bg-zinc-950 p-4 shadow-2xl">
+                                <div class="rounded-2xl border border-emerald-500/30 bg-[#0D121C] p-4 shadow-2xl shadow-black/60">
                                     <div class="flex items-start gap-3">
-                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-300">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
                                         <div class="min-w-0 flex-1">
-                                            <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Thông báo</p>
+                                            <p class="text-xs font-bold text-emerald-300">Thông báo</p>
                                             <p class="mt-0.5 text-xs font-medium text-zinc-200">{{ session('success') }}</p>
                                         </div>
-                                        <button type="button" @click="show = false" class="text-zinc-500 transition-colors hover:text-white" aria-label="Đóng thông báo">
+                                        <button type="button" @click="show = false" class="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white" aria-label="Đóng thông báo">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                             </svg>
@@ -262,18 +264,18 @@
 
                         @if (session('error'))
                             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition class="fixed bottom-6 right-6 z-[100] w-[calc(100%-3rem)] max-w-md">
-                                <div class="border border-rose-500/30 bg-zinc-950 p-4 shadow-2xl">
+                                <div class="rounded-2xl border border-rose-500/30 bg-[#0D121C] p-4 shadow-2xl shadow-black/60">
                                     <div class="flex items-start gap-3">
-                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center border border-rose-500/30 bg-rose-500/10 text-rose-400">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/15 text-rose-300">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                         </div>
                                         <div class="min-w-0 flex-1">
-                                            <p class="text-xs font-bold text-rose-400 uppercase tracking-wider">Lỗi hệ thống</p>
+                                            <p class="text-xs font-bold text-rose-300">Lỗi hệ thống</p>
                                             <p class="mt-0.5 text-xs font-medium text-zinc-200">{{ session('error') }}</p>
                                         </div>
-                                        <button type="button" @click="show = false" class="text-zinc-500 transition-colors hover:text-white" aria-label="Đóng thông báo">
+                                        <button type="button" @click="show = false" class="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white" aria-label="Đóng thông báo">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                             </svg>

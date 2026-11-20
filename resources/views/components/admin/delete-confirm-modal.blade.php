@@ -2,23 +2,23 @@
     <div class="absolute inset-0 bg-black/80" data-admin-delete-cancel></div>
 
     <div class="relative flex min-h-screen items-center justify-center px-4 py-8">
-        <div class="w-full max-w-md border border-zinc-800 bg-zinc-950 shadow-2xl">
-            <div class="border-b border-zinc-800 px-6 py-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500">Xác nhận xóa</p>
-                <h2 class="mt-2 text-xl font-black uppercase tracking-tight text-white">Thao tác không thể hoàn tác</h2>
+        <div class="w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D121C] shadow-2xl shadow-black/70">
+            <div class="border-b border-white/[0.08] px-6 py-5">
+                <p class="text-xs font-semibold text-rose-400">Xác nhận xóa</p>
+                <h2 class="mt-1.5 text-lg font-bold text-white">Thao tác không thể hoàn tác</h2>
             </div>
 
             <div class="px-6 py-6">
-                <p class="text-sm font-medium leading-6 text-zinc-400" data-admin-delete-message>
+                <p class="text-sm leading-6 text-zinc-400" data-admin-delete-message>
                     Bạn có chắc chắn muốn xóa bản ghi này?
                 </p>
             </div>
 
-            <div class="grid grid-cols-2 border-t border-zinc-800">
-                <button type="button" class="border-r border-zinc-800 px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 transition-all hover:bg-zinc-900 hover:text-white" data-admin-delete-cancel>
+            <div class="flex items-center justify-end gap-3 border-t border-white/[0.08] bg-[#070A10]/60 px-6 py-4">
+                <button type="button" class="h-10 rounded-xl border border-white/10 bg-[#131A29] px-5 text-xs font-semibold text-zinc-300 transition-colors hover:text-white cursor-pointer" data-admin-delete-cancel>
                     Hủy
                 </button>
-                <button type="button" class="bg-rose-600 px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-rose-500" data-admin-delete-confirm>
+                <button type="button" class="h-10 rounded-xl bg-rose-600 px-5 text-xs font-semibold text-white transition-colors hover:bg-rose-500 cursor-pointer" data-admin-delete-confirm>
                     Xóa
                 </button>
             </div>

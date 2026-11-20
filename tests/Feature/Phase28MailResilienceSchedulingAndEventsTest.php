@@ -239,9 +239,9 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
             $mail->assertSeeInText('8.5%/năm');
 
             $html = $mail->render();
-            $this->assertStringContainsString('#0B0E14', $html);
-            $this->assertStringContainsString('#121620', $html);
-            $this->assertStringContainsString('CONCIERGE &amp; CLIENT RELATIONS', $html);
+            $this->assertStringContainsString('#F1F5F9', $html);
+            $this->assertStringContainsString('#FFFFFF', $html);
+            $this->assertStringContainsString('BMW SHOWROOM', $html);
             $this->assertStringContainsString('BẢNG ƯỚC TÍNH TÀI CHÍNH / TRẢ GÓP THAM KHẢO', $html);
             $this->assertStringNotContainsString('monospace', strtolower($html));
             $this->assertStringNotContainsString('courier', strtolower($html));
@@ -327,8 +327,8 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
             $mail->assertSeeInText('7.500.000 VNĐ');
 
             $html = $mail->render();
-            $this->assertStringContainsString('#0B0E14', $html);
-            $this->assertStringContainsString('#121620', $html);
+            $this->assertStringContainsString('#F1F5F9', $html);
+            $this->assertStringContainsString('#FFFFFF', $html);
             $this->assertStringNotContainsString('monospace', strtolower($html));
 
             return $mail->summary['total_appointments'] === 2
@@ -705,6 +705,7 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
         Livewire::actingAs($sales)
             ->test(AppointmentTable::class)
             ->call('updateStatus', $consultAppointment->id, AppointmentStatus::Completed->value)
+            ->call('updateStatus', $generalConsult->id, AppointmentStatus::Confirmed->value)
             ->call('updateStatus', $generalConsult->id, AppointmentStatus::Completed->value)
             ->assertHasNoErrors();
 
@@ -723,8 +724,16 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
             return true;
         });
 
-        // System/null actor status transition still logs safely to admin_activity_logs
-        $consultAppointment->transitionStatusWithAutomation(AppointmentStatus::Cancelled, null);
+        // System/null actor status transition on a fresh pending appointment still logs safely to admin_activity_logs
+        $pendingCancelAppointment = Appointment::factory()->for($car, 'product')->guest()->create([
+            'guest_name' => 'Khách Hủy Hệ Thống',
+            'guest_email' => 'system.cancel@example.com',
+            'type' => AppointmentType::Consult->value,
+            'status' => AppointmentStatus::Pending->value,
+            'appointment_date' => now()->addDays(4),
+        ]);
+        $pendingCancelAppointment->transitionStatusWithAutomation(AppointmentStatus::Cancelled, null);
+        $this->assertSame(AppointmentStatus::Cancelled, $pendingCancelAppointment->fresh()->status);
         $this->assertTrue(
             AdminActivityLog::query()
                 ->where('action', 'appointment.status_changed')

@@ -1,110 +1,92 @@
 @extends('emails.layouts.bmw-concierge')
 
 @section('title', '[CRM NỘI BỘ · LỊCH MỚI] Lịch Hẹn Mới Tại Showroom | BMW Showroom')
-@section('accent_color', '#EF4444')
-@section('header_subtitle', 'INTERNAL CRM ALERT · STAFF ONLY')
-@section('header_subtitle_color', '#FCA5A5')
+@section('accent_color', '#DC2626')
+@section('header_subtitle', 'Thông báo lịch hẹn mới · Dành cho nhân sự')
 
 @section('badge')
-    <span style="display: inline-block; padding: 5px 12px; background-color: #3B1219; border: 1px solid #EF4444; color: #FCA5A5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;">
-        CẢNH BÁO NỘI BỘ CRM &middot; CHỈ DÀNH CHO NHÂN SỰ
+    <span style="display: inline-block; padding: 6px 14px; background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 9999px; color: #DC2626; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
+        Nội bộ CRM
     </span>
 @endsection
 
 @section('content')
     @php
         $car = $car ?? $appointment->product;
+        $ticketCode = '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT);
     @endphp
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-bottom: 8px;">
-        THÔNG BÁO LỊCH HẸN MỚI TẠI SHOWROOM
-    </div>
-    <h1 style="margin: 0 0 18px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">
-        {{ $appointment->customer_name }} &mdash; {{ $appointment->typeLabel() }}
-    </h1>
 
-    <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: #CBD5E1; line-height: 1.65;">
-        Hệ thống vừa ghi nhận một lịch hẹn <strong style="color: #F8FAFC;">{{ $appointment->typeLabel() }}</strong> mới từ khách hàng. Vui lòng kiểm tra thông tin dưới đây và liên hệ xác nhận với khách hàng.
+    <h1 style="margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0F172A; line-height: 1.35;">
+        Lịch hẹn mới: {{ $appointment->customer_name }}
+    </h1>
+    <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
+        Hệ thống vừa tiếp nhận lịch <strong style="color: #0F172A;">{{ $appointment->typeLabel() }}</strong> mới từ khách hàng. Vui lòng kiểm tra và liên hệ xác nhận sớm.
     </p>
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0E121B; border: 1px solid #1E2533; margin-bottom: 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px;">
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px; width: 38%;">
-                Mã Lịch Hẹn
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
+                Mã lịch hẹn
             </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #60A5FA;">
-                #BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #1C69D4; width: 62%;">
+                {{ $ticketCode }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Khách Hàng
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Khách hàng
             </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #F8FAFC;">
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 600; color: #0F172A;">
                 {{ $appointment->customer_name }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Số Điện Thoại
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Số điện thoại
             </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #F8FAFC;">
-                <a href="tel:{{ $appointment->customer_phone }}" style="color: #F8FAFC; text-decoration: none;">{{ $appointment->customer_phone }}</a>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #DC2626;">
+                <a href="tel:{{ $appointment->customer_phone }}" style="color: #DC2626; text-decoration: none;">{{ $appointment->customer_phone }}</a>
             </td>
         </tr>
         @if($appointment->customer_email)
             <tr>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
+                <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
                     Email
                 </td>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #F8FAFC;">
-                    <span style="color: #F8FAFC; text-decoration: none;">{{ $appointment->customer_email }}</span>
+                <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 600; color: #0F172A;">
+                    {{ $appointment->customer_email }}
                 </td>
             </tr>
         @endif
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Hạng Mục
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Nhu cầu
             </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #F8FAFC;">
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 600; color: #0F172A;">
                 {{ $appointment->typeLabel() }}
+                @if($appointment->servicePackageLabel())
+                    &mdash; <span style="color: #1C69D4;">{{ $appointment->servicePackageLabel() }}</span>
+                @elseif($car)
+                    &mdash; <span style="color: #1C69D4;">{{ $car->name }}</span>
+                @endif
             </td>
         </tr>
-        @if($appointment->servicePackageLabel())
-            <tr>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                    Gói Dịch Vụ Chăm Sóc
-                </td>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #60A5FA;">
-                    {{ $appointment->servicePackageLabel() }}
-                </td>
-            </tr>
-        @endif
-        @if($car)
-            <tr>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                    Dòng Xe Quan Tâm
-                </td>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #60A5FA;">
-                    {{ $car->name }}
-                </td>
-            </tr>
-        @endif
         <tr>
-            <td style="padding: 13px 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Thời Gian Hẹn
+            <td style="padding: 13px 18px; font-size: 13px; font-weight: 500; color: #64748B;">
+                Thời gian hẹn
             </td>
-            <td style="padding: 13px 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #F8FAFC;">
+            <td style="padding: 13px 18px; font-size: 14px; font-weight: 600; color: #0F172A;">
                 {{ $appointment->appointment_date?->format('H:i — d/m/Y') }}
             </td>
         </tr>
     </table>
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-            <td align="left" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <td align="left">
                 <a href="{{ route('admin.appointments.index') }}"
-                   style="display: inline-block; background-color: #1C69D4; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-radius: 0px;">
-                    XỬ LÝ LỊCH HẸN TRÊN ADMIN
+                   style="display: inline-block; background-color: #1C69D4; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 600; border-radius: 10px;">
+                    Xử lý lịch hẹn trên Admin
                 </a>
             </td>
         </tr>

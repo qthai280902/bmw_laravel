@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AppointmentStatus;
+use App\Exceptions\InvalidStatusTransitionException;
 use App\Http\Controllers\Controller;
 use App\Mail\AppointmentReminderMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
@@ -11,7 +12,7 @@ use App\Mail\Customer\PostTestDriveFollowupMail;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Mailable;
-use Illuminate\Validation\Rules\Rule;
+use Illuminate\Validation\Rule;
 
 class AppointmentController extends Controller
 {
@@ -32,10 +33,20 @@ class AppointmentController extends Controller
             'status' => ['required', Rule::enum(AppointmentStatus::class)],
         ]);
 
-        $appointment->transitionStatusWithAutomation(
-            AppointmentStatus::from($validated['status']),
-            $request->user()
-        );
+        try {
+            $appointment->transitionStatusWithAutomation(
+                AppointmentStatus::from($validated['status']),
+                $request->user()
+            );
+        } catch (InvalidStatusTransitionException $exception) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $exception->getMessage()], 422);
+            }
+
+            return back()
+                ->with('error', $exception->getMessage())
+                ->withErrors(['status' => $exception->getMessage()]);
+        }
 
         return back()->with('success', 'Đã cập nhật trạng thái lịch hẹn thành công.');
     }

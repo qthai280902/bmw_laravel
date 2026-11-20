@@ -126,6 +126,7 @@
     <button
         type="button"
         x-ref="trigger"
+        data-custom-select-trigger
         @if($id) id="{{ $id }}" @endif
         @if($ariaLabel) aria-label="{{ $ariaLabel }}" @endif
         aria-haspopup="listbox"
@@ -152,6 +153,7 @@
         <div
             x-show="open"
             x-cloak
+            data-custom-select-panel
             @click.outside="if (!$refs.trigger || !$refs.trigger.contains($event.target)) close()"
             :style="panelStyle"
             class="fixed z-[140] rounded-none border border-[#242B38] bg-[#0E131D] shadow-[0_22px_50px_rgba(0,0,0,0.85)]"

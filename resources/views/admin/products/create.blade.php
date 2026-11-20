@@ -6,7 +6,7 @@
         description="Đăng ký cấu hình xe, Motorrad hoặc phụ kiện mới vào kho showroom."
     >
         <x-slot name="actions">
-            <a href="{{ route('admin.products.index') }}" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+            <a href="{{ route('admin.products.index') }}" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                 Quay lại
             </a>
         </x-slot>
@@ -14,23 +14,23 @@
 
     <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column: Core Info -->
             <div class="lg:col-span-2 space-y-8">
-                <x-admin.card class="!p-10">
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-10 pb-4 border-b border-zinc-800">Cấu hình cơ bản</h3>
+                <x-admin.card class="!p-8">
+                    <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-8 pb-4 border-b border-white/[0.08]">Cấu hình cơ bản</h3>
                     
-                    <div class="space-y-8">
+                    <div class="space-y-6">
                         <div>
-                            <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Tên thương mại của sản phẩm</label>
+                            <label class="block text-[10px] font-bold uppercase text-zinc-400 mb-2 tracking-widest">Tên thương mại của sản phẩm</label>
                             <input type="text" name="name" value="{{ old('name') }}" required 
-                                   class="w-full bg-zinc-950 border-zinc-800 text-white text-base font-black px-6 py-4 focus:border-zinc-500 focus:ring-0 transition-all placeholder-zinc-800"
+                                   class="w-full rounded-xl border border-white/10 bg-[#070A10] text-white text-base font-bold px-5 py-3.5 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all placeholder-zinc-600"
                                    placeholder="Ví dụ: BMW M4 Competition">
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Dòng xe (BMW Line)</label>
+                                <label class="block text-[10px] font-bold uppercase text-zinc-400 mb-2 tracking-widest">Dòng xe (BMW Line)</label>
                                 <x-ui.custom-select
                                     name="category_id"
                                     :value="(string) old('category_id', '')"
@@ -40,7 +40,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Phân loại phương tiện</label>
+                                <label class="block text-[10px] font-bold uppercase text-zinc-400 mb-2 tracking-widest">Phân loại phương tiện</label>
                                 <x-ui.custom-select
                                     name="type"
                                     :value="(string) old('type', 'car')"
@@ -54,46 +54,46 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest text-emerald-500/80">Giá niêm yết (VNĐ)</label>
+                                <label class="block text-[10px] font-bold uppercase mb-2 tracking-widest text-emerald-400">Giá niêm yết (VNĐ)</label>
                                 <input type="number" name="price" value="{{ old('price', 0) }}" required 
-                                       class="w-full bg-zinc-950 border-zinc-800 text-white text-base font-black px-6 py-4 focus:border-emerald-500 focus:ring-0 transition-all tabular-nums">
+                                       class="w-full rounded-xl border border-white/10 bg-[#070A10] text-white text-base font-bold px-5 py-3.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all tabular-nums">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest text-[#1C69D4]/80">Tiền đặt cọc (VNĐ)</label>
+                                <label class="block text-[10px] font-bold uppercase mb-2 tracking-widest text-[#70A7FF]">Tiền đặt cọc (VNĐ)</label>
                                 <input type="number" name="deposit_amount" value="{{ old('deposit_amount', 0) }}" required 
-                                       class="w-full bg-zinc-950 border-zinc-800 text-white text-base font-black px-6 py-4 focus:border-[#1C69D4] focus:ring-0 transition-all tabular-nums">
+                                       class="w-full rounded-xl border border-white/10 bg-[#070A10] text-white text-base font-bold px-5 py-3.5 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all tabular-nums">
                             </div>
                         </div>
                     </div>
                 </x-admin.card>
 
-                <x-admin.card class="!p-10">
-                    <div class="flex justify-between items-center mb-10 pb-4 border-b border-zinc-800">
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Thông số kỹ thuật nâng cao</h3>
-                        <p class="text-[9px] font-bold text-zinc-700 uppercase ">Dữ liệu định dạng Key-Value</p>
+                <x-admin.card class="!p-8">
+                    <div class="flex justify-between items-center mb-8 pb-4 border-b border-white/[0.08]">
+                        <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">Thông số kỹ thuật nâng cao</h3>
+                        <p class="text-[9px] font-bold text-zinc-500 uppercase">Dữ liệu định dạng Key-Value</p>
                     </div>
 
-                    <div class="space-y-6" x-data="{ specs: [{key: '', value: ''}] }">
+                    <div class="space-y-4" x-data="{ specs: [{key: '', value: ''}] }">
                         <template x-for="(spec, index) in specs" :key="index">
-                            <div class="grid grid-cols-12 gap-4 items-center group">
-                                <div class="col-span-1 border border-zinc-800 bg-zinc-950 h-full flex items-center justify-center">
-                                    <span class="text-[10px] font-black text-zinc-800" x-text="index + 1"></span>
+                            <div class="grid grid-cols-12 gap-3 items-center group">
+                                <div class="col-span-1 rounded-lg border border-white/10 bg-[#070A10] h-full flex items-center justify-center">
+                                    <span class="text-[10px] font-bold text-zinc-500" x-text="index + 1"></span>
                                 </div>
                                 <div class="col-span-5">
                                     <input type="text" :name="'specifications[' + index + '][key]'" x-model="spec.key" 
                                            placeholder="Thuộc tính (vd: Engine)" 
-                                           class="w-full bg-zinc-950 border-zinc-800 text-white text-xs px-4 py-3 focus:border-zinc-500 focus:ring-0 transition-all">
+                                           class="w-full rounded-lg border border-white/10 bg-[#070A10] text-white text-xs px-4 py-3 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all">
                                 </div>
                                 <div class="col-span-5">
                                     <input type="text" :name="'specifications[' + index + '][value]'" x-model="spec.value" 
                                            placeholder="Giá trị (vd: 4.4L V8 M TwinPower)" 
-                                           class="w-full bg-zinc-950 border-zinc-800 text-white text-xs px-4 py-3 focus:border-zinc-500 focus:ring-0 transition-all">
+                                           class="w-full rounded-lg border border-white/10 bg-[#070A10] text-white text-xs px-4 py-3 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all">
                                 </div>
                                 <div class="col-span-1 flex justify-center">
                                     <button type="button" @click="specs.splice(index, 1)" 
-                                            class="p-2 text-zinc-800 hover:text-rose-500 transition-colors">
+                                            class="rounded-lg p-2 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-400 transition-colors cursor-pointer">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </div>
@@ -102,7 +102,7 @@
                         
                         <div class="pt-4">
                             <button type="button" @click="specs.push({key: '', value: ''})" 
-                                    class="inline-flex items-center gap-2 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-all bg-zinc-900 px-4 py-2 border border-zinc-800 hover:border-zinc-600">
+                                    class="inline-flex items-center gap-2 rounded-xl text-[10px] font-semibold uppercase text-zinc-300 hover:text-white transition-all bg-[#070A10] px-4 py-2.5 border border-white/10 hover:border-[#1C69D4] cursor-pointer">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                 Thêm trường thông số
                             </button>
@@ -113,53 +113,52 @@
 
             <!-- Right Column: Media & Publish -->
             <div class="space-y-8">
-                <x-admin.card class="!p-8">
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-8 pb-4 border-b border-zinc-800">Media Assets</h3>
-                    <div class="space-y-6">
+                <x-admin.card class="!p-7">
+                    <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-6 pb-4 border-b border-white/[0.08]">Media Assets</h3>
+                    <div class="space-y-5">
                         <div>
-                            <div class="relative group cursor-pointer border-2 border-dashed border-zinc-800 bg-zinc-950 p-10 text-center hover:border-zinc-500 transition-all duration-500 overflow-hidden">
+                            <div class="relative group cursor-pointer rounded-2xl border-2 border-dashed border-white/15 bg-[#070A10] p-8 text-center hover:border-[#1C69D4]/60 transition-all duration-300 overflow-hidden">
                                 <input type="file" name="new_images[]" multiple 
                                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                                 <div class="relative z-0">
-                                    <svg class="w-8 h-8 text-zinc-700 group-hover:text-[#1C69D4] mx-auto mb-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    <p class="text-[10px] font-black uppercase text-zinc-500 tracking-widest group-hover:text-zinc-300">Drop files or Browse</p>
-                                    <p class="text-[8px] text-zinc-800 mt-1 uppercase font-bold">BMW Visual Library</p>
+                                    <svg class="w-8 h-8 text-zinc-500 group-hover:text-[#70A7FF] mx-auto mb-3 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <p class="text-[10px] font-bold uppercase text-zinc-400 tracking-widest group-hover:text-white">Drop files or Browse</p>
+                                    <p class="text-[9px] text-zinc-500 mt-1 uppercase font-semibold">BMW Visual Library</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="p-4 bg-zinc-950/50 border border-zinc-900">
-                            <p class="text-[9px] font-bold text-zinc-700 uppercase leading-relaxed ">
+                        <div class="rounded-xl p-4 bg-[#070A10]/70 border border-white/[0.06]">
+                            <p class="text-[10px] font-medium text-zinc-400 leading-relaxed">
                                 * Ảnh đầu tiên trong danh sách tải lên sẽ được thiết lập làm Primary Visual cho xe.
                             </p>
                         </div>
                     </div>
                 </x-admin.card>
 
-                <x-admin.card class="!p-8">
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-8 pb-4 border-b border-zinc-800">Visibility & Stock</h3>
-                    <div class="space-y-8">
+                <x-admin.card class="!p-7">
+                    <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-6 pb-4 border-b border-white/[0.08]">Visibility & Stock</h3>
+                    <div class="space-y-6">
                         <label class="flex items-center justify-between group cursor-pointer">
-                            <span class="text-xs font-black uppercase tracking-wider text-zinc-400 group-hover:text-white transition-colors ">Dòng xe tiêu biểu</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-zinc-300 group-hover:text-white transition-colors">Dòng xe tiêu biểu</span>
                             <div class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="is_featured" value="1" class="sr-only peer">
-                                <div class="w-11 h-6 bg-zinc-800 border border-zinc-700 peer-focus:outline-none rounded-none peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-300 after:rounded-none after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1C69D4] peer-checked:border-[#1C69D4]"></div>
+                                <div class="w-11 h-6 bg-zinc-800 border border-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-200 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1C69D4] peer-checked:border-[#1C69D4]"></div>
                             </div>
                         </label>
                         
                         <div>
-                            <label class="block text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Số lượng khả dụng</label>
+                            <label class="block text-[10px] font-bold uppercase text-zinc-400 mb-2 tracking-widest">Số lượng khả dụng</label>
                             <input type="number" name="stock" value="{{ old('stock', 0) }}" 
-                                   class="w-full bg-zinc-950 border-zinc-800 text-white text-base font-black px-6 py-3 focus:border-zinc-500 focus:ring-0 transition-all tabular-nums">
+                                   class="w-full rounded-xl border border-white/10 bg-[#070A10] text-white text-base font-bold px-5 py-3 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all tabular-nums">
                         </div>
                     </div>
                 </x-admin.card>
 
-                <div class="grid grid-cols-1 gap-4">
-                    <button type="submit" class="group relative py-5 bg-white text-black font-black uppercase text-sm tracking-widest shadow-2xl overflow-hidden text-center">
-                        <span class="relative z-10">Lưu cấu hình xe</span>
-                        <div class="absolute inset-0 bg-zinc-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <div class="grid grid-cols-1 gap-3">
+                    <button type="submit" class="rounded-xl py-4 bg-[#1C69D4] text-white font-semibold uppercase text-xs tracking-widest shadow-lg shadow-[#1C69D4]/25 hover:bg-[#2575e6] transition-colors text-center cursor-pointer">
+                        Lưu cấu hình xe
                     </button>
-                    <a href="{{ route('admin.products.index') }}" class="py-5 bg-zinc-900 border border-zinc-800 text-zinc-500 font-black uppercase text-sm tracking-widest text-center hover:text-white hover:bg-zinc-800 transition-all">
+                    <a href="{{ route('admin.products.index') }}" class="rounded-xl py-3.5 bg-white/[0.03] border border-white/10 text-zinc-300 font-semibold uppercase text-xs tracking-widest text-center hover:text-white hover:border-white/25 hover:bg-white/[0.08] transition-all">
                         Hủy cấu hình
                     </a>
                 </div>

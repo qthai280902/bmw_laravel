@@ -616,3 +616,60 @@ select:-webkit-autofill:focus {
     caret-color: #f8fafc;
     transition: background-color 5000s ease-in-out 0s;
 }
+
+/* Modern Automotive Cockpit — Scoped exclusively to Admin Portal (preserves 0px on Public pages) */
+.admin-cockpit {
+    --radius-lg: 0.5rem;
+    --radius-md: 0.375rem;
+    --radius-sm: 0.25rem;
+    --radius: 0.75rem;
+    background-color: #070A10;
+}
+
+.admin-cockpit .bg-card-luxury {
+    background-color: #0D121C;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+}
+
+.admin-cockpit .bg-card-luxury:hover {
+    background-color: #101622;
+    border-color: rgba(28, 105, 212, 0.38);
+}
+
+.admin-cockpit [data-custom-select-trigger] {
+    border-radius: 0.75rem !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    background-color: #070A10;
+}
+
+.admin-cockpit [data-custom-select-trigger]:hover,
+.admin-cockpit [data-custom-select-trigger]:focus {
+    border-color: #1C69D4;
+}
+
+.admin-cockpit [data-custom-select-panel] {
+    border-radius: 0.75rem !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    background-color: #0D121C;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+}
+
+.admin-cockpit [data-bmw-pagination="bar"] {
+    border-radius: 0.75rem !important;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: #0D121C;
+    overflow: hidden;
+}
+
+.admin-cockpit [data-bmw-pagination="mobile-btn"] {
+    border-radius: 0.75rem !important;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: #0D121C;
+}
+
+.admin-cockpit ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+}

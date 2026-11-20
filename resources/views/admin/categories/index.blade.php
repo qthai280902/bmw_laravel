@@ -11,7 +11,7 @@
         </x-slot>
 
         <x-slot name="actions">
-            <a href="{{ route('admin.categories.create') }}" class="inline-flex items-center justify-center border border-white bg-white px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white">
+            <a href="{{ route('admin.categories.create') }}" class="inline-flex items-center justify-center rounded-xl border border-[#1C69D4] bg-[#1C69D4] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]">
                 Thêm dòng xe
             </a>
         </x-slot>
@@ -21,18 +21,18 @@
         <div class="overflow-x-auto">
             <table class="w-full min-w-[760px] text-left">
                 <thead>
-                    <tr class="border-b border-zinc-800 bg-black/60">
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Dòng xe</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Mô tả</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">Thao tác</th>
+                    <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
+                        <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Dòng xe</th>
+                        <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Mô tả</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-900">
+                <tbody class="divide-y divide-white/[0.06]">
                     @forelse($categories as $category)
-                        <tr class="group transition-colors hover:bg-zinc-900/60">
+                        <tr class="group transition-colors hover:bg-[#131A29]/60">
                             <td class="px-6 py-5">
                                 <p class="text-sm font-black uppercase tracking-wider text-white group-hover:text-[#70A7FF]">{{ $category->name }}</p>
-                                <p class="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700">{{ $category->slug }}</p>
+                                <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">{{ $category->slug }}</p>
                             </td>
                             <td class="px-6 py-5">
                                 <p class="max-w-2xl text-sm font-medium leading-6 text-zinc-500">

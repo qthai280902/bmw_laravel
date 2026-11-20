@@ -24,7 +24,7 @@
                     value="{{ old('name') }}"
                     required
                     placeholder="Nguyễn Văn A..."
-                    class="h-10 w-full rounded-none border-zinc-800 bg-black px-3.5 text-xs font-medium text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -36,7 +36,7 @@
                     value="{{ old('email') }}"
                     required
                     placeholder="sales01@bmw.com"
-                    class="h-10 w-full rounded-none border-zinc-800 bg-black px-3.5 text-xs font-medium text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -48,7 +48,7 @@
                     required
                     minlength="8"
                     placeholder="Tối thiểu 8 ký tự"
-                    class="h-10 w-full rounded-none border-zinc-800 bg-black px-3.5 text-xs font-medium text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -61,41 +61,41 @@
                 />
             </x-admin.form-field>
 
-            <button type="submit" class="h-10 whitespace-nowrap rounded-none border border-[#1C69D4] bg-[#1C69D4] px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-white hover:text-black cursor-pointer">
+            <button type="submit" class="h-10 whitespace-nowrap rounded-lg border border-[#1C69D4] bg-[#1C69D4] px-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
                 Tạo nhân sự
             </button>
         </form>
     </x-admin.card>
 
     <!-- Table -->
-    <x-admin.card class="!p-0 border-zinc-800 overflow-hidden">
+    <x-admin.card class="!p-0 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full min-w-[920px] border-collapse text-left">
                 <thead>
-                    <tr class="border-b border-zinc-800 bg-zinc-900/50">
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Hồ sơ nhân viên</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Địa chỉ Email</th>
-                        <th class="min-w-[240px] px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Phân quyền vai trò</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Ngày ghi danh</th>
+                    <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
+                        <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Hồ sơ nhân viên</th>
+                        <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Địa chỉ Email</th>
+                        <th class="min-w-[240px] px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Phân quyền vai trò</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Ngày ghi danh</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-900">
+                <tbody class="divide-y divide-white/[0.06]">
                     @forelse($users as $user)
                         @php
                             $isCurrentAdmin = Auth::id() === $user->id;
                             $currentRole = $user->normalizedRole();
                         @endphp
-                        <tr class="group transition-colors hover:bg-zinc-800/30">
-                            <td class="px-6 py-5">
+                        <tr class="group transition-colors hover:bg-[#131A29]/60">
+                            <td class="px-6 py-4.5">
                                 <div class="flex items-center gap-3.5">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-zinc-800 bg-zinc-950 transition-all group-hover:border-[#1C69D4]">
-                                        <span class="text-xs font-black text-zinc-500 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-all group-hover:border-[#1C69D4]">
+                                        <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
                                     </div>
                                     <div class="min-w-0">
                                         <div class="mb-1 flex flex-wrap items-center gap-2 text-sm font-black uppercase leading-none tracking-wider text-white transition-colors group-hover:text-[#70A7FF]">
                                             <span class="truncate">{{ $user->name }}</span>
                                             @if($isCurrentAdmin)
-                                                <span class="whitespace-nowrap border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-1.5 py-0.5 text-[9px] text-[#70A7FF]">Bạn</span>
+                                                <span class="whitespace-nowrap rounded-full border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-semibold text-[#70A7FF]">Bạn</span>
                                             @endif
                                         </div>
                                         <div class="whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-zinc-500">
@@ -128,25 +128,25 @@
                                     </div>
                                     <button
                                         type="submit"
-                                        class="h-9 whitespace-nowrap rounded-none border border-zinc-700 bg-zinc-900 px-3.5 text-[9px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer"
+                                        class="h-9 whitespace-nowrap rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer"
                                     >
                                         Lưu
                                     </button>
                                 </form>
                             </td>
-                            <td class="whitespace-nowrap px-6 py-5 text-right text-[10px] font-black uppercase tracking-widest tabular-nums text-zinc-400">
+                            <td class="whitespace-nowrap px-6 py-5 text-right text-[10px] font-bold uppercase tracking-widest tabular-nums text-zinc-400">
                                 {{ $user->created_at->format('d/m/Y') }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-8 py-32 text-center">
+                            <td colspan="4" class="px-8 py-24 text-center">
                                 <div class="flex flex-col items-center">
-                                    <div class="w-16 h-16 bg-zinc-900/50 flex items-center justify-center border border-zinc-800 mb-6">
-                                        <svg class="w-6 h-6 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 01-12 0v1zm0-4.708a5.992 5.992 0 00-5.923-4.35H9v1.5a.5.5 0 01-1 0v-1.5H7.5c-2.31 0-4.223 1.636-4.636 3.791l-.114.563h6.5z"></path></svg>
+                                    <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-[#070A10]">
+                                        <svg class="w-6 h-6 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 01-12 0v1zm0-4.708a5.992 5.992 0 00-5.923-4.35H9v1.5a.5.5 0 01-1 0v-1.5H7.5c-2.31 0-4.223 1.636-4.636 3.791l-.114.563h6.5z"></path></svg>
                                     </div>
-                                    <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500">Dữ liệu trống</h3>
-                                    <p class="text-[10px] text-zinc-700 font-bold mt-2 uppercase tracking-tight">Chưa có tài khoản quản trị nào ngoài hệ thống gốc.</p>
+                                    <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-400">Dữ liệu trống</h3>
+                                    <p class="mt-2 text-[11px] font-medium text-zinc-500">Chưa có tài khoản quản trị nào ngoài hệ thống gốc.</p>
                                 </div>
                             </td>
                         </tr>
@@ -166,29 +166,29 @@
     <div class="mt-10">
         <div class="mb-4 flex items-end justify-between gap-4">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.26em] text-[#70A7FF]">Audit Trail &middot; 3 Vai Trò Nội Bộ</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.26em] text-[#70A7FF]">Audit Trail &middot; 3 Vai Trò Nội Bộ</p>
                 <h3 class="mt-1 text-lg font-black uppercase tracking-wider text-white">Nhật Ký Hoạt Động Nhân Sự Gần Đây</h3>
             </div>
-            <span class="whitespace-nowrap border border-zinc-800 bg-[#0B0F17] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
+            <span class="whitespace-nowrap rounded-full border border-white/10 bg-[#0D121C] px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
                 15 bản ghi mới nhất
             </span>
         </div>
 
-        <x-admin.card class="!p-0 border-zinc-800 overflow-hidden">
+        <x-admin.card class="!p-0 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[920px] border-collapse text-left">
                     <thead>
-                        <tr class="border-b border-zinc-800 bg-zinc-900/50">
-                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Thời gian</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Nhân sự</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Vai trò</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Hành động</th>
-                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Mô tả chi tiết</th>
+                        <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Thời gian</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Nhân sự</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Vai trò</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Hành động</th>
+                            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Mô tả chi tiết</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-900">
+                    <tbody class="divide-y divide-white/[0.06]">
                         @forelse(($activityLogs ?? collect()) as $log)
-                            <tr class="transition-colors hover:bg-zinc-800/30">
+                            <tr class="transition-colors hover:bg-[#131A29]/60">
                                 <td class="whitespace-nowrap px-6 py-4 text-[11px] font-semibold tabular-nums text-zinc-400">
                                     {{ $log->created_at?->format('H:i:s · d/m/Y') }}
                                 </td>
@@ -199,12 +199,12 @@
                                     @endif
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
-                                    <span class="inline-block rounded-none border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] {{ $log->user_role === 'admin' ? 'border-[#1C69D4]/50 bg-[#1C69D4]/15 text-[#70A7FF]' : ($log->user_role === 'sales' ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-amber-500/40 bg-amber-500/15 text-amber-300') }}">
+                                    <span class="inline-block rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] {{ $log->user_role === 'admin' ? 'border-[#1C69D4]/50 bg-[#1C69D4]/15 text-[#70A7FF]' : ($log->user_role === 'sales' ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-amber-500/40 bg-amber-500/15 text-amber-300') }}">
                                         {{ $log->roleLabel() }}
                                     </span>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
-                                    <span class="inline-block rounded-none border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-200">
+                                    <span class="inline-block rounded-full border border-white/10 bg-[#070A10] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-200">
                                         {{ $log->actionLabel() }}
                                     </span>
                                 </td>

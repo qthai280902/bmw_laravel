@@ -157,8 +157,10 @@ class GuestAppointmentManageController extends Controller
             return back()->with('success', "Đã cập nhật thời gian mới cho lịch hẹn #{$appointment->id}: ".$newDateLabel.'.');
         }
 
-        if ($appointment->status === AppointmentStatus::Completed) {
-            return back()->with('error', 'Lịch hẹn đã hoàn thành nên không thể hủy.');
+        if ($appointment->isTerminalStatus()) {
+            return back()->with('error', $appointment->status === AppointmentStatus::Completed
+                ? 'Lịch hẹn đã hoàn thành nên không thể hủy.'
+                : 'Lịch hẹn này đã được hủy trước đó.');
         }
 
         $meta['cancelled_at'] = now()->toIso8601String();

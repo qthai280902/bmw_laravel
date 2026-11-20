@@ -209,7 +209,8 @@ class Phase28_5UiPolishAndDistinctMailsTest extends TestCase
             ->call('inspectAppointment', $hotAppointment->id)
             ->assertSet('inspectedAppointmentId', $hotAppointment->id)
             ->assertSee('HỒ SƠ LỊCH HẸN #'.$hotAppointment->id)
-            ->assertSee('Gửi thư Xác nhận chính thức từ Showroom')
+            ->assertSee('Duyệt & Xác nhận')
+            ->assertSee('Hủy hồ sơ')
             ->assertSee('Quan tâm tài chính trả góp.')
             ->call('closeInspector')
             ->assertSet('inspectedAppointmentId', null);

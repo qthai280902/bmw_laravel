@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exceptions\InvalidStatusTransitionException;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\AccessoryOrder;
@@ -29,6 +30,8 @@ class AccessoryOrderTable extends Component
     public ?int $inspectedOrderId = null;
 
     public ?string $flashMessage = null;
+
+    public ?string $errorMessage = null;
 
     public function mount(): void
     {
@@ -103,21 +106,53 @@ class AccessoryOrderTable extends Component
     public function updateStatus(int $orderId, string $status): void
     {
         $this->authorizeCrm();
+        $this->resetErrorBag(['status', 'statusTransition']);
+        $this->errorMessage = null;
 
-        $validated = Validator::make(
+        $validator = Validator::make(
             ['status' => $status],
             ['status' => ['required', 'string', Rule::in(AccessoryOrder::statusValues())]],
-        )->validate();
+            ['status.*' => 'Trạng thái đơn phụ kiện không hợp lệ hoặc sai định dạng.'],
+        );
+
+        if ($validator->fails()) {
+            $message = (string) $validator->errors()->first('status');
+            $this->flashMessage = null;
+            $this->errorMessage = $message;
+            $this->addError('status', $message);
+            $this->addError('statusTransition', $message);
+
+            return;
+        }
 
         $order = AccessoryOrder::query()->findOrFail($orderId);
-        $order->transitionToStatus($validated['status'], null, false, auth()->user());
+        $nextStatus = (string) $validator->validated()['status'];
 
-        $this->flashMessage = "Đơn phụ kiện #{$order->id} đã được cập nhật trạng thái.";
+        try {
+            $transitioned = $order->transitionToStatus($nextStatus, null, false, auth()->user());
+
+            if (! $transitioned) {
+                $staleMessage = "Đơn phụ kiện #{$order->id} hiện đã ở trạng thái '{$order->statusLabel()}' trước đó (có thể đã được nhân sự khác xử lý).";
+                $this->flashMessage = null;
+                $this->errorMessage = $staleMessage;
+                $this->addError('statusTransition', $staleMessage);
+
+                return;
+            }
+
+            $this->flashMessage = "Đơn phụ kiện #{$order->id} đã được cập nhật trạng thái.";
+        } catch (InvalidStatusTransitionException $exception) {
+            $this->flashMessage = null;
+            $this->errorMessage = $exception->getMessage();
+            $this->addError('statusTransition', $exception->getMessage());
+        }
     }
 
     public function inspectOrder(int $orderId): void
     {
         $this->authorizeCrm();
+        $this->resetErrorBag('statusTransition');
+        $this->errorMessage = null;
 
         $this->inspectedOrderId = $orderId;
     }

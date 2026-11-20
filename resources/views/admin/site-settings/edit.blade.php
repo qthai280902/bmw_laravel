@@ -6,7 +6,7 @@
         description="Quản lý hình nền chung cho các form public như tư vấn, báo giá, đặt lịch và đặt hàng phụ kiện."
     >
         <x-slot name="actions">
-            <a href="{{ route('home') }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+            <a href="{{ route('home') }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                 Xem website
             </a>
         </x-slot>
@@ -35,12 +35,12 @@
                 @method('PUT')
 
                 <div>
-                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Cấu hình hiện tại</p>
-                    <div class="mt-5 border border-zinc-800 bg-black p-5">
-                        <p class="text-xs font-bold text-zinc-400">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">Cấu hình hiện tại</p>
+                    <div class="mt-4 rounded-xl border border-white/[0.08] bg-[#070A10] p-5">
+                        <p class="text-xs font-bold text-zinc-300">
                             {{ $backgroundPath ? 'Đang dùng ảnh upload: '.$backgroundPath : 'Đang dùng ảnh fallback mặc định.' }}
                         </p>
-                        <p class="mt-3 break-all text-[11px] font-medium leading-5 text-zinc-600">
+                        <p class="mt-2 break-all text-[11px] font-medium leading-5 text-zinc-500">
                             Fallback: {{ $fallbackUrl }}
                         </p>
                     </div>
@@ -52,30 +52,30 @@
                         type="file"
                         name="public_form_background_image"
                         accept="image/*"
-                        class="w-full border border-zinc-800 bg-black px-4 py-4 text-xs text-zinc-400 file:mr-4 file:border-0 file:bg-white file:px-4 file:py-2 file:text-[10px] file:font-black file:uppercase file:tracking-[0.18em] file:text-black hover:file:bg-[#1C69D4] hover:file:text-white"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3.5 text-xs text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-[10px] file:font-bold file:uppercase file:tracking-[0.16em] file:text-black hover:file:bg-[#1C69D4] hover:file:text-white cursor-pointer"
                     >
                 </x-admin.form-field>
 
-                <label class="flex items-start gap-4 border border-zinc-800 bg-black p-5">
+                <label class="flex items-start gap-4 rounded-xl border border-white/[0.08] bg-[#070A10] p-5 cursor-pointer hover:border-white/20 transition-colors">
                     <input
                         type="checkbox"
                         name="remove_public_form_background_image"
                         value="1"
-                        class="mt-1 border-zinc-700 bg-zinc-950 text-[#1C69D4] focus:ring-[#1C69D4]"
+                        class="mt-1 rounded border-white/20 bg-[#0D121C] text-[#1C69D4] focus:ring-[#1C69D4]"
                     >
                     <span>
-                        <span class="block text-[10px] font-black uppercase tracking-[0.24em] text-white">Reset về fallback</span>
-                        <span class="mt-2 block text-xs font-medium leading-5 text-zinc-500">
+                        <span class="block text-[10px] font-bold uppercase tracking-[0.22em] text-white">Reset về fallback</span>
+                        <span class="mt-2 block text-xs font-medium leading-5 text-zinc-400">
                             Xóa cấu hình ảnh upload hiện tại và dùng lại ảnh showroom mặc định trong public assets.
                         </span>
                     </span>
                 </label>
 
-                <div class="grid grid-cols-1 gap-4 border-t border-zinc-800 pt-8 sm:grid-cols-[1fr_auto]">
-                    <button type="submit" class="h-12 whitespace-nowrap rounded-none bg-[#1C69D4] px-8 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black cursor-pointer">
+                <div class="grid grid-cols-1 gap-4 border-t border-white/[0.08] pt-8 sm:grid-cols-[1fr_auto]">
+                    <button type="submit" class="h-11 whitespace-nowrap rounded-xl bg-[#1C69D4] px-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-white shadow-sm shadow-[#1C69D4]/25 transition-all hover:bg-[#2575e6] cursor-pointer">
                         Lưu thiết lập
                     </button>
-                    <a href="{{ route('appointments.create', ['type' => 'consult']) }}" target="_blank" rel="noopener" class="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-none border border-zinc-700 px-8 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-300 transition-all hover:border-white hover:text-white">
+                    <a href="{{ route('appointments.create', ['type' => 'consult']) }}" target="_blank" rel="noopener" class="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-white/10 bg-white/[0.03] px-7 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-300 transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                         Xem form public
                     </a>
                 </div>

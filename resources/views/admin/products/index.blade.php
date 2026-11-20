@@ -11,7 +11,7 @@
         </x-slot>
 
         <x-slot name="actions">
-            <a href="{{ route('admin.products.create') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-none border border-white bg-white px-5 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-colors hover:border-[#1C69D4] hover:bg-[#1C69D4] hover:text-white">
+            <a href="{{ route('admin.products.create') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-[#1C69D4] bg-[#1C69D4] px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]">
                 Thêm sản phẩm
             </a>
         </x-slot>
@@ -26,7 +26,7 @@
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Tên sản phẩm..."
-                    class="h-10 w-full rounded-none border-zinc-800 bg-black px-3.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -54,10 +54,10 @@
             </x-admin.form-field>
 
             <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-none border border-zinc-700 bg-zinc-900 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.products.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-none border border-zinc-800 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white">
+                <a href="{{ route('admin.products.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                     Xóa
                 </a>
             </div>
@@ -68,26 +68,26 @@
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1040px] text-left">
                 <thead>
-                    <tr class="border-b border-zinc-800 bg-black/60">
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Sản phẩm</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Loại</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Giá</th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tồn kho</th>
-                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Thao tác</th>
+                    <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
+                        <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Sản phẩm</th>
+                        <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Loại</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Giá</th>
+                        <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Tồn kho</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-900">
+                <tbody class="divide-y divide-white/[0.06]">
                     @forelse($products as $product)
                         @php $primaryImg = $product->images->where('is_primary', true)->first(); @endphp
-                        <tr class="group transition-colors hover:bg-zinc-900/60">
+                        <tr class="group transition-colors hover:bg-[#131A29]/60">
                             <td class="px-6 py-5">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-14 w-24 shrink-0 overflow-hidden border border-zinc-800 bg-black">
+                                    <div class="h-14 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#070A10]">
                                         <img src="{{ $product->displayImageUrl($primaryImg) }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
                                     </div>
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-black uppercase tracking-wider text-white group-hover:text-[#70A7FF]">{{ $product->name }}</p>
-                                        <p class="mt-1 truncate text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ $product->category?->name ?? 'Không phân loại' }}</p>
+                                        <p class="mt-1 truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">{{ $product->category?->name ?? 'Không phân loại' }}</p>
                                     </div>
                                 </div>
                             </td>
@@ -98,8 +98,8 @@
                                 {{ number_format($product->price) }} <span class="text-xs text-zinc-500">VNĐ</span>
                             </td>
                             <td class="whitespace-nowrap px-6 py-5 text-center">
-                                <span class="inline-flex items-center gap-2 text-xs font-black tabular-nums {{ $product->stock > 0 ? 'text-emerald-400' : 'text-rose-400' }}">
-                                    <span class="h-1.5 w-1.5 {{ $product->stock > 0 ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
+                                <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold tabular-nums {{ $product->stock > 0 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ $product->stock > 0 ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
                                     {{ $product->stock }}
                                 </span>
                             </td>

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Events\AppointmentStatusChanged;
+use App\Exceptions\InvalidStatusTransitionException;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
 use App\Services\Crm\InteractionTimelineRecorder;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -87,6 +89,70 @@ class Appointment extends Model implements Attachable
     public function statusLabel(): string
     {
         return $this->status instanceof AppointmentStatus ? $this->status->label() : (string) $this->status;
+    }
+
+    /**
+     * Trả về danh sách các trạng thái kế tiếp hợp lệ theo State Machine 1 chiều.
+     *
+     * @return list<AppointmentStatus>
+     */
+    public static function allowedTransitionsFrom(AppointmentStatus|string $status): array
+    {
+        $resolved = $status instanceof AppointmentStatus
+            ? $status
+            : (AppointmentStatus::tryFrom((string) $status) ?? AppointmentStatus::Pending);
+
+        return match ($resolved) {
+            AppointmentStatus::Pending => [AppointmentStatus::Confirmed, AppointmentStatus::Cancelled],
+            AppointmentStatus::Confirmed => [AppointmentStatus::Completed, AppointmentStatus::Cancelled],
+            AppointmentStatus::Completed, AppointmentStatus::Cancelled => [],
+        };
+    }
+
+    /**
+     * @return list<AppointmentStatus>
+     */
+    public function allowedNextStatuses(): array
+    {
+        $current = $this->status instanceof AppointmentStatus
+            ? $this->status
+            : AppointmentStatus::from((string) $this->status);
+
+        return self::allowedTransitionsFrom($current);
+    }
+
+    public function isTerminalStatus(): bool
+    {
+        $current = $this->status instanceof AppointmentStatus
+            ? $this->status
+            : AppointmentStatus::tryFrom((string) $this->status);
+
+        return in_array($current, [AppointmentStatus::Completed, AppointmentStatus::Cancelled], true);
+    }
+
+    public function canTransitionTo(AppointmentStatus $newStatus): bool
+    {
+        return in_array($newStatus, $this->allowedNextStatuses(), true);
+    }
+
+    /**
+     * Các lựa chọn trạng thái hiển thị trên Inline Table Select (chỉ gồm trạng thái hiện tại + các bước kế tiếp hợp lệ).
+     *
+     * @return array<string, string>
+     */
+    public function allowedStatusOptions(): array
+    {
+        $current = $this->status instanceof AppointmentStatus
+            ? $this->status
+            : AppointmentStatus::from((string) $this->status);
+
+        $options = [$current->value => $current->label()];
+
+        foreach ($this->allowedNextStatuses() as $next) {
+            $options[$next->value] = $next->label();
+        }
+
+        return $options;
     }
 
     public function getCustomerNameAttribute(): string
@@ -323,6 +389,10 @@ class Appointment extends Model implements Attachable
 
     public function sendOfficialConfirmationEmail(?User $actor = null): bool
     {
+        if ($this->isTerminalStatus()) {
+            return false;
+        }
+
         $this->loadMissing(['product.category', 'user']);
 
         $recipientEmail = trim((string) ($this->user?->email ?? $this->guest_email ?? ''));
@@ -367,17 +437,41 @@ class Appointment extends Model implements Attachable
         }
     }
 
-    public function transitionStatusWithAutomation(AppointmentStatus $newStatus, ?User $actor = null): void
+    public function transitionStatusWithAutomation(AppointmentStatus $newStatus, ?User $actor = null): bool
     {
-        $oldStatus = $this->status instanceof AppointmentStatus
-            ? $this->status->value
-            : (string) $this->status;
-        $oldLabel = $this->status instanceof AppointmentStatus
-            ? $this->status->label()
-            : $oldStatus;
+        $transitionResult = DB::transaction(function () use ($newStatus, $actor): ?array {
+            /** @var self $locked */
+            $locked = static::query()
+                ->whereKey($this->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $meta = is_array($this->meta_data) ? $this->meta_data : [];
-        if ($oldStatus !== $newStatus->value) {
+            $currentStatus = $locked->status instanceof AppointmentStatus
+                ? $locked->status
+                : AppointmentStatus::from((string) $locked->status);
+            $oldStatus = $currentStatus->value;
+            $oldLabel = $currentStatus->label();
+
+            if ($oldStatus === $newStatus->value) {
+                $this->setRawAttributes($locked->getAttributes(), true);
+                $this->meta_data = $locked->meta_data;
+
+                return null;
+            }
+
+            if (! $locked->canTransitionTo($newStatus)) {
+                if ($locked->isTerminalStatus()) {
+                    throw InvalidStatusTransitionException::forTerminalStatus($oldLabel);
+                }
+
+                throw InvalidStatusTransitionException::forTransition(
+                    $oldLabel,
+                    $newStatus->label(),
+                    'Vui lòng duyệt xác nhận hồ sơ trước khi hoàn tất.'
+                );
+            }
+
+            $meta = is_array($locked->meta_data) ? $locked->meta_data : [];
             $meta = InteractionTimelineRecorder::appendToMeta(
                 meta: $meta,
                 actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
@@ -388,29 +482,41 @@ class Appointment extends Model implements Attachable
                     : "Cập nhật trạng thái xử lý trên bảng điều phối CRM sang {$newStatus->label()}.",
                 channel: 'CRM',
             );
+
+            $locked->update([
+                'status' => $newStatus->value,
+                'meta_data' => $meta,
+            ]);
+
+            $this->setRawAttributes($locked->getAttributes(), true);
+            $this->meta_data = $locked->meta_data;
+
+            return [
+                'oldStatus' => $oldStatus,
+                'fresh' => $locked->fresh(['product', 'user']) ?? $locked,
+            ];
+        });
+
+        if ($transitionResult === null) {
+            return false;
         }
 
-        $this->update([
-            'status' => $newStatus->value,
-            'meta_data' => $meta,
-        ]);
+        event(new AppointmentStatusChanged(
+            appointment: $transitionResult['fresh'],
+            oldStatus: $transitionResult['oldStatus'],
+            newStatus: $newStatus->value,
+            actor: $actor,
+        ));
 
-        if ($oldStatus !== $newStatus->value) {
-            event(new AppointmentStatusChanged(
-                appointment: $this->fresh(['product', 'user']) ?? $this,
-                oldStatus: $oldStatus,
-                newStatus: $newStatus->value,
-                actor: $actor,
-            ));
-        }
-
-        if ($newStatus === AppointmentStatus::Confirmed && $oldStatus !== AppointmentStatus::Confirmed->value && $actor !== null) {
+        if ($newStatus === AppointmentStatus::Confirmed && $transitionResult['oldStatus'] !== AppointmentStatus::Confirmed->value && $actor !== null) {
             $this->sendOfficialConfirmationEmail($actor);
         }
 
         if ($newStatus === AppointmentStatus::Completed) {
             $this->schedulePostTestDriveFollowup();
         }
+
+        return true;
     }
 
     private function escapeIcsText(string $value): string

@@ -11,13 +11,13 @@
         </x-slot>
 
         <x-slot name="actions">
-            <a href="{{ route('admin.articles.create') }}" class="inline-flex items-center justify-center border border-zinc-700 bg-white px-5 py-2.5 text-xs font-bold text-black transition-colors hover:bg-[#1C69D4] hover:text-white hover:border-[#1C69D4] shadow-sm">
+            <a href="{{ route('admin.articles.create') }}" class="inline-flex items-center justify-center rounded-xl border border-[#1C69D4] bg-[#1C69D4] px-5 py-2.5 text-xs font-semibold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]">
                 Viết bài mới
             </a>
         </x-slot>
     </x-admin.page-header>
 
-    <div class="mb-6 bg-card-luxury p-5">
+    <x-admin.card class="mb-6 !p-5">
         <form method="GET" action="{{ route('admin.articles.index') }}" class="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto] lg:items-end">
             <x-admin.form-field name="search" label="Tìm kiếm">
                 <input
@@ -26,7 +26,7 @@
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Tiêu đề hoặc tóm tắt..."
-                    class="h-10 w-full rounded-none border-zinc-800 bg-zinc-950 px-3.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
 
@@ -49,18 +49,18 @@
             </x-admin.form-field>
 
             <div class="flex items-center gap-2">
-                <button type="submit" class="h-10 whitespace-nowrap rounded-none border border-zinc-700 bg-zinc-900 px-4 text-xs font-semibold text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer">
+                <button type="submit" class="h-10 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-xs font-semibold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer">
                     Lọc
                 </button>
-                <a href="{{ route('admin.articles.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-none border border-zinc-800 bg-zinc-950 px-4 text-xs font-medium text-zinc-400 transition-colors hover:text-white">
+                <a href="{{ route('admin.articles.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-4 text-xs font-medium text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                     Xóa
                 </a>
             </div>
         </form>
-    </div>
+    </x-admin.card>
 
     <!-- Table Container Strictly Bound to 1 Frame -->
-    <div class="w-full max-w-full overflow-hidden border border-zinc-800/80 bg-[#121215] shadow-2xl">
+    <div class="w-full max-w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D121C] shadow-xl shadow-black/40">
         <table class="table-fixed w-full border-collapse text-left">
             <colgroup>
                 <col class="w-[42%]">
@@ -70,7 +70,7 @@
                 <col class="w-[14%]">
             </colgroup>
             <thead>
-                <tr class="border-b border-zinc-800 bg-zinc-900/60">
+                <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
                     <th class="px-6 py-3.5 text-xs font-semibold text-zinc-400">Bài viết</th>
                     <th class="px-6 py-3.5 text-xs font-semibold text-zinc-400">Chuyên mục</th>
                     <th class="px-6 py-3.5 text-xs font-semibold text-zinc-400">Trạng thái</th>
@@ -78,16 +78,16 @@
                     <th class="px-6 py-3.5 text-right text-xs font-semibold text-zinc-400">Thao tác</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-900">
+            <tbody class="divide-y divide-white/[0.06]">
                 @forelse($articles as $article)
-                    <tr class="group transition-colors hover:bg-zinc-900/50">
+                    <tr class="group transition-colors hover:bg-[#131A29]/60">
                         <!-- Cột Bài viết: 42% với min-w-0 và truncate -->
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3 min-w-0">
                                 @if($article->coverImageUrl())
-                                    <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="w-16 h-10 object-cover shrink-0 border border-zinc-800">
+                                    <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="w-16 h-10 rounded-lg object-cover shrink-0 border border-white/10">
                                 @else
-                                    <div class="w-16 h-10 shrink-0 border border-zinc-800 bg-zinc-900 flex items-center justify-center text-[10px] font-bold text-zinc-600">
+                                    <div class="w-16 h-10 shrink-0 rounded-lg border border-white/10 bg-[#070A10] flex items-center justify-center text-[10px] font-bold text-zinc-500">
                                         BMW
                                     </div>
                                 @endif
@@ -112,7 +112,7 @@
                         </td>
                         <!-- Cột Trạng thái: 12% -->
                         <td class="whitespace-nowrap px-6 py-4">
-                            <span class="inline-flex whitespace-nowrap rounded-none border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider {{ $article->statusColorClass() }}">
+                            <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider {{ $article->statusColorClass() }}">
                                 {{ $article->statusLabel() }}
                             </span>
                         </td>

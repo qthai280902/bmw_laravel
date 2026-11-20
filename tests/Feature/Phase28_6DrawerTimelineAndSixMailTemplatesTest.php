@@ -149,8 +149,8 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
                 "[BMW Showroom] Cập nhật lịch hẹn #{$appointment->id} — Xác nhận thay đổi từ Quý khách",
                 $mail->envelope()->subject
             );
-            $this->assertStringContainsString('#F59E0B', $html);
-            $this->assertStringContainsString('KHÁCH HÀNG CẬP NHẬT', $html);
+            $this->assertStringContainsString('#D97706', $html);
+            $this->assertStringContainsString('Khách hàng cập nhật', $html);
             $this->assertStringContainsString($originalDate->format('H:i — d/m/Y'), $html);
             $this->assertStringContainsString($newDate->format('H:i — d/m/Y'), $html);
             $this->assertStringContainsString('Chuyển sang chiều thứ Sáu cho thuận tiện.', $html);
@@ -183,27 +183,27 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
         $previewCases = [
             'system_received' => [
                 'accent' => '#1C69D4',
-                'badge' => 'HỆ THỐNG TỰ ĐỘNG',
+                'badge' => 'Hệ thống tự động',
                 'mustContain' => 'Yêu cầu của Quý khách đã được Hệ thống ghi nhận',
             ],
             'admin_confirmed' => [
-                'accent' => '#10B981',
-                'badge' => 'CHUYÊN VIÊN DUYỆT',
+                'accent' => '#059669',
+                'badge' => 'Chuyên viên xác nhận',
                 'mustContain' => 'VIP CONCIERGE PASS',
             ],
             'guest_rescheduled' => [
-                'accent' => '#F59E0B',
-                'badge' => 'KHÁCH HÀNG CẬP NHẬT',
+                'accent' => '#D97706',
+                'badge' => 'Khách hàng cập nhật',
                 'mustContain' => 'BẢNG ĐỐI CHIẾU THÔNG TIN TRƯỚC',
             ],
             'reminder' => [
-                'accent' => '#6366F1',
-                'badge' => 'NHẮC LỊCH TỰ ĐỘNG',
+                'accent' => '#4F46E5',
+                'badge' => 'Nhắc lịch 24h',
                 'mustContain' => 'Bằng lái xe hạng B',
             ],
             'followup' => [
-                'accent' => '#D97706',
-                'badge' => 'CHĂM SÓC HẬU MÃI',
+                'accent' => '#B45309',
+                'badge' => 'Chăm sóc hậu mãi',
                 'mustContain' => 'BẢNG ƯỚC TÍNH TÀI CHÍNH',
             ],
         ];
@@ -240,15 +240,15 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
         $hotLeadMail = new HotLeadAlertMail($appointment);
         $hotHtml = $hotLeadMail->render();
         $this->assertStringStartsWith('[CRM NỘI BỘ] [HOT LEAD]', (string) $hotLeadMail->envelope()->subject);
-        $this->assertStringContainsString('#EF4444', $hotHtml);
-        $this->assertStringContainsString('CẢNH BÁO NỘI BỘ CRM', $hotHtml);
+        $this->assertStringContainsString('#DC2626', $hotHtml);
+        $this->assertStringContainsString('Nội bộ CRM', $hotHtml);
         $this->assertStringNotContainsStringIgnoringCase('monospace', $hotHtml);
 
         $alertMail = new AppointmentAlertMail($appointment);
         $alertHtml = $alertMail->render();
         $this->assertStringStartsWith('[CRM NỘI BỘ · LỊCH MỚI]', (string) $alertMail->envelope()->subject);
-        $this->assertStringContainsString('#EF4444', $alertHtml);
-        $this->assertStringContainsString('CẢNH BÁO NỘI BỘ CRM', $alertHtml);
+        $this->assertStringContainsString('#DC2626', $alertHtml);
+        $this->assertStringContainsString('Nội bộ CRM', $alertHtml);
         $this->assertStringNotContainsStringIgnoringCase('monospace', $alertHtml);
     }
 

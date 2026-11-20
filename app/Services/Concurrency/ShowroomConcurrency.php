@@ -12,11 +12,17 @@ class ShowroomConcurrency
 {
     private static string $lastDriver = 'sync';
 
+    public static ?string $forcedDriverForTests = null;
+
     /**
      * Resolve the effective concurrency driver safe for tests, transactions, and host OS.
      */
     public static function resolveDriver(): string
     {
+        if (app()->runningUnitTests() && self::$forcedDriverForTests !== null) {
+            return self::$forcedDriverForTests;
+        }
+
         if (app()->runningUnitTests() || DB::transactionLevel() > 0) {
             return 'sync';
         }

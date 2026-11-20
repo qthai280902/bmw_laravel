@@ -1,71 +1,69 @@
 @extends('emails.layouts.bmw-concierge')
 
 @section('title', 'Báo Cáo Tổng Kết Ngày ' . ($summary['date_label'] ?? now()->format('d/m/Y')) . ' | BMW Showroom')
+@section('accent_color', '#1C69D4')
+@section('header_subtitle', 'Tổng kết vận hành Showroom (18:00)')
 
 @section('badge')
-    <span style="display: inline-block; padding: 5px 12px; background-color: #16243D; border: 1px solid #1C69D4; color: #60A5FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-        DAILY SUMMARY
+    <span style="display: inline-block; padding: 6px 14px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 9999px; color: #1C69D4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
+        Báo cáo ngày
     </span>
 @endsection
 
 @section('content')
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #60A5FA; text-transform: uppercase; margin-bottom: 8px;">
-        BÁO CÁO TỔNG KẾT VẬN HÀNH SHOWROOM (18:00)
-    </div>
-    <h1 style="margin: 0 0 18px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">
+    <h1 style="margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0F172A; line-height: 1.35;">
         Tổng hợp hoạt động ngày {{ $summary['date_label'] ?? now()->format('d/m/Y') }}
     </h1>
-
-    <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: #CBD5E1; line-height: 1.65;">
-        Dưới đây là các chỉ số tiếp nhận khách hàng, dịch vụ chăm sóc xe và đơn hàng phụ kiện chính hãng trong ngày tại BMW Showroom Vietnam.
+    <p style="margin: 0 0 24px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
+        Báo cáo nhanh các chỉ số tiếp nhận khách hàng, lịch dịch vụ chăm sóc xe và đơn phụ kiện chính hãng trong ngày tại BMW Showroom Vietnam.
     </p>
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0E121B; border: 1px solid #1E2533; margin-bottom: 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px; width: 58%;">
-                Tổng Lịch Hẹn Mới Trong Ngày
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 58%;">
+                Tổng lịch hẹn mới trong ngày
             </td>
-            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 700; color: #F8FAFC;">
+            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #0F172A; width: 42%;">
                 {{ $summary['total_appointments'] ?? 0 }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Số HOT LEAD Mới
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Số HOT LEAD mới
             </td>
-            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 700; color: #FDA4AF;">
+            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #DC2626;">
                 {{ $summary['hot_leads'] ?? 0 }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Lịch Dịch Vụ Chăm Sóc Xe Mới
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Lịch dịch vụ chăm sóc xe mới
             </td>
-            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 700; color: #60A5FA;">
+            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #1C69D4;">
                 {{ $summary['service_bookings'] ?? 0 }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Lịch Đã Xác Nhận / Hoàn Thành
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Lịch đã xác nhận / hoàn thành
             </td>
-            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 700; color: #34D399;">
+            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #059669;">
                 {{ $summary['confirmed_or_completed'] ?? 0 }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; color: #8E9BAE; text-transform: uppercase; letter-spacing: 1px;">
-                Đơn Phụ Kiện Mới
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Đơn phụ kiện mới
             </td>
-            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #1E2533; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 700; color: #F8FAFC;">
+            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #0F172A;">
                 {{ $summary['accessory_orders_count'] ?? 0 }}
             </td>
         </tr>
         <tr>
-            <td style="padding: 15px 18px; background-color: #161F30; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; color: #60A5FA; text-transform: uppercase; letter-spacing: 1px;">
-                Tổng Giá Trị Đơn Phụ Kiện
+            <td style="padding: 15px 18px; background-color: #EFF6FF; font-size: 13px; font-weight: 700; color: #1E40AF;">
+                Tổng giá trị đơn phụ kiện
             </td>
-            <td align="right" style="padding: 15px 18px; background-color: #161F30; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 700; color: #60A5FA;">
+            <td align="right" style="padding: 15px 18px; background-color: #EFF6FF; font-size: 16px; font-weight: 700; color: #1C69D4;">
                 {{ number_format((float) ($summary['accessory_orders_value'] ?? 0), 0, ',', '.') }} VNĐ
             </td>
         </tr>
@@ -73,10 +71,10 @@
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-            <td align="left" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <td align="left">
                 <a href="{{ route('dashboard') }}"
-                   style="display: inline-block; background-color: #1C69D4; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-radius: 0px;">
-                    MỞ BẢNG ĐIỀU KHIỂN SHOWROOM
+                   style="display: inline-block; background-color: #1C69D4; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 600; border-radius: 10px;">
+                    Mở bảng điều khiển Showroom
                 </a>
             </td>
         </tr>

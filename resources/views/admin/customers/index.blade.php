@@ -28,7 +28,7 @@
                                 x-data
                                 data-last-search="{{ request('search', '') }}"
                                 @input.debounce.450ms="if ($el.value !== ($el.dataset.lastSearch || '')) { $el.dataset.lastSearch = $el.value; $el.form.submit(); }"
-                                class="h-10 w-full rounded-none border-zinc-800 bg-zinc-950 pl-10 pr-4 text-xs font-semibold text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-0 transition-all"
+                                class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] pl-10 pr-4 text-xs font-semibold text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] transition-all"
                             >
                             <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -59,11 +59,11 @@
                     </div>
 
                     <div class="flex items-center gap-2 md:col-span-2 md:justify-end">
-                        <button type="submit" class="h-10 flex-1 whitespace-nowrap rounded-none bg-white px-4 text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-zinc-200 cursor-pointer md:flex-none">
+                        <button type="submit" class="h-10 flex-1 whitespace-nowrap rounded-lg bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-widest text-white shadow-sm shadow-[#1C69D4]/25 transition-all hover:bg-[#2575e6] cursor-pointer md:flex-none">
                             Lọc
                         </button>
                         @if(request()->anyFilled(['search', 'status', 'product_id']))
-                            <a href="{{ route('admin.customers.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-none border border-zinc-800 px-3.5 text-[10px] font-black uppercase tracking-widest text-zinc-400 transition-all hover:border-zinc-600 hover:bg-zinc-900 hover:text-white">
+                            <a href="{{ route('admin.customers.index') }}" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/10 bg-white/[0.03] px-3.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-300 transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                                 Xóa lọc
                             </a>
                         @endif
@@ -72,24 +72,24 @@
             </x-admin.card>
 
             <!-- CRM Table -->
-            <x-admin.card class="!p-0 border-zinc-800 overflow-hidden">
+            <x-admin.card class="!p-0 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[840px] border-collapse text-left">
                         <thead>
-                            <tr class="border-b border-zinc-800 bg-zinc-900/50">
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Thông tin khách hàng</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Liên lạc</th>
-                                <th class="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Tương tác</th>
-                                <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Gần nhất</th>
+                            <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Thông tin khách hàng</th>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Liên lạc</th>
+                                <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Tương tác</th>
+                                <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Gần nhất</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-900">
+                        <tbody class="divide-y divide-white/[0.06]">
                             @forelse($customers as $customer)
-                                <tr class="group transition-colors hover:bg-zinc-800/30">
-                                    <td class="px-6 py-5">
+                                <tr class="group transition-colors hover:bg-[#131A29]/60">
+                                    <td class="px-6 py-4.5">
                                         <div class="flex items-center gap-4">
-                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center border border-zinc-800 bg-zinc-950 transition-colors group-hover:border-[#1C69D4]">
-                                                <span class="text-xs font-black text-zinc-500 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
+                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-colors group-hover:border-[#1C69D4]">
+                                                <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
                                             </div>
                                             <div class="min-w-0">
                                                 <div class="mb-1 truncate text-sm font-black uppercase leading-none tracking-wider text-white transition-colors group-hover:text-[#70A7FF]">
@@ -113,10 +113,10 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-5 text-center whitespace-nowrap">
-                                        <div class="inline-flex items-center gap-1.5 whitespace-nowrap border border-zinc-800 bg-zinc-950 px-3 py-1">
-                                            <span class="text-[10px] font-black tabular-nums text-white">{{ $customer->interactions_count }}</span>
-                                            <span class="text-[9px] font-black uppercase tracking-wider text-zinc-500">Lượt</span>
+                                    <td class="px-6 py-4.5 text-center whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-[#070A10] px-3 py-1">
+                                            <span class="text-[10px] font-bold tabular-nums text-white">{{ $customer->interactions_count }}</span>
+                                            <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Lượt</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-5 text-right whitespace-nowrap">
@@ -186,12 +186,12 @@
                     class="!p-6 border-white/10"
                     x-data="bmwPromotionCampaign('bmw-promotion-campaign-config')"
                 >
-                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-5">
                         <div>
-                            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#70A7FF]">BMW Loyalty & Retention</p>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-[#70A7FF]">BMW Loyalty & Retention</p>
                             <h2 class="mt-1 text-base font-black uppercase tracking-wider text-white">Trung tâm Gửi Chiến Dịch Ưu Đãi Khách Cũ</h2>
                         </div>
-                        <span class="inline-flex whitespace-nowrap rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#70A7FF]">
+                        <span class="inline-flex whitespace-nowrap rounded-full border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#70A7FF]">
                             Cá nhân hóa theo dòng xe
                         </span>
                     </div>
@@ -209,7 +209,7 @@
                                     value="{{ old('title') }}"
                                     required
                                     placeholder="Ví dụ: Tặng gói rửa xe & kiểm tra tổng quát 20 hạng mục miễn phí"
-                                    class="h-11 w-full rounded-none border-zinc-800 bg-[#050505] px-4 text-xs font-medium text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                    class="h-11 w-full rounded-xl border border-white/10 bg-[#070A10] px-4 text-xs font-medium text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                                 >
                             </x-admin.form-field>
 
@@ -220,15 +220,15 @@
                                     rows="8"
                                     required
                                     placeholder="Nhập nội dung chi tiết ưu đãi, thời gian áp dụng và quyền lợi dành riêng cho khách hàng BMW..."
-                                    class="w-full rounded-none border-zinc-800 bg-[#050505] px-4 py-3 text-xs leading-relaxed text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                    class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-xs leading-relaxed text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                                 >{{ old('content') }}</textarea>
                             </x-admin.form-field>
                         </div>
 
                         <!-- Cột phải (5/12): Bộ lọc đối tượng chủ động & Live Preview Box -->
-                        <div class="flex flex-col justify-between space-y-5 border border-zinc-800/90 bg-[#050505] p-5 lg:col-span-5">
+                        <div class="flex flex-col justify-between space-y-5 rounded-2xl border border-white/[0.08] bg-[#070A10] p-5 lg:col-span-5">
                             <div class="space-y-4">
-                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Bộ lọc đối tượng mục tiêu</p>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Bộ lọc đối tượng mục tiêu</p>
 
                                 <x-admin.form-field name="audience" label="Nhóm đối tượng">
                                     <x-ui.custom-select
@@ -256,7 +256,7 @@
                                     />
                                 </x-admin.form-field>
 
-                                <label class="flex items-start gap-2.5 border border-zinc-800/80 bg-[#0B0F17] p-3 text-xs text-zinc-300 cursor-pointer">
+                                <label class="flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-[#0D121C] p-3.5 text-xs text-zinc-300 cursor-pointer">
                                     <input
                                         id="promo-only-completed"
                                         type="checkbox"
@@ -265,7 +265,7 @@
                                         x-model="onlyCompleted"
                                         @change="onOnlyCompletedChange()"
                                         @checked($initialOnlyCompleted)
-                                        class="mt-0.5 rounded-none border-zinc-700 bg-black text-[#1C69D4] focus:ring-[#1C69D4]"
+                                        class="mt-0.5 rounded border-white/20 bg-[#070A10] text-[#1C69D4] focus:ring-[#1C69D4]"
                                     >
                                     <span class="leading-snug">
                                         <span class="block font-semibold text-zinc-200">Chỉ gửi khách đã hoàn thành lịch hẹn</span>
@@ -276,29 +276,29 @@
                                 <!-- Live Preview Box -->
                                 <div
                                     data-testid="promotion-matched-counter"
-                                    class="space-y-3 border border-[#1C69D4]/30 bg-[#0B0F17] p-4"
+                                    class="space-y-3 rounded-xl border border-[#1C69D4]/30 bg-[#0D121C] p-4"
                                 >
-                                    <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+                                    <div class="flex items-center justify-between gap-2 border-b border-white/[0.08] pb-2.5">
                                         <div class="flex items-center gap-2 text-xs font-medium text-zinc-300">
-                                            <span class="h-2 w-2 shrink-0 bg-[#1C69D4]"></span>
+                                            <span class="h-2 w-2 shrink-0 rounded-full bg-[#1C69D4]"></span>
                                             <span>
                                                 Sẽ gửi tới
                                                 <strong class="font-black text-[#70A7FF] tabular-nums" x-text="matchedCount">{{ $initialMatchedCount }}</strong>
                                                 khách hàng phù hợp
                                             </span>
                                         </div>
-                                        <span class="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.18em] text-zinc-500">Live Preview</span>
+                                        <span class="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-500">Live Preview</span>
                                     </div>
 
                                     <div x-show="previewRecipients.length > 0" class="space-y-2">
                                         <template x-for="recipient in previewRecipients" :key="recipient.key">
-                                            <div class="flex items-center justify-between gap-3 border border-zinc-800/80 bg-[#050505] px-3 py-2">
+                                            <div class="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-[#070A10] px-3 py-2">
                                                 <div class="min-w-0">
                                                     <p class="truncate text-xs font-bold text-white" x-text="recipient.name"></p>
                                                     <p class="truncate text-[11px] text-zinc-400" x-text="recipient.email"></p>
                                                 </div>
                                                 <div class="shrink-0 text-right">
-                                                    <span class="inline-block max-w-[140px] truncate border border-[#1C69D4]/30 bg-[#1C69D4]/10 px-2 py-0.5 text-[10px] font-bold text-[#70A7FF]" x-text="recipient.vehicle"></span>
+                                                    <span class="inline-block max-w-[140px] truncate rounded-full border border-[#1C69D4]/30 bg-[#1C69D4]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#70A7FF]" x-text="recipient.vehicle"></span>
                                                 </div>
                                             </div>
                                         </template>
@@ -318,7 +318,7 @@
                             <button
                                 type="submit"
                                 :disabled="matchedCount === 0"
-                                class="h-11 w-full whitespace-nowrap rounded-none border border-[#1C69D4] bg-[#1C69D4] px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-white hover:text-black cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#1C69D4] disabled:hover:text-white"
+                                class="h-11 w-full whitespace-nowrap rounded-xl border border-[#1C69D4] bg-[#1C69D4] px-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#1C69D4]"
                             >
                                 PHÁT CHIẾN DỊCH NGAY
                             </button>

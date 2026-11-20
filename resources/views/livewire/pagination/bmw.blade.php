@@ -4,12 +4,13 @@
             {{-- Mobile Pagination --}}
             <div class="flex flex-1 items-center justify-between gap-3 sm:hidden">
                 @if ($paginator->onFirstPage())
-                    <span class="inline-flex cursor-default items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                    <span data-bmw-pagination="mobile-btn" class="inline-flex cursor-default items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
                         Trước
                     </span>
                 @else
                     <button
                         type="button"
+                        data-bmw-pagination="mobile-btn"
                         wire:click="previousPage('{{ $paginator->getPageName() }}')"
                         wire:loading.attr="disabled"
                         class="inline-flex items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1c69d4] hover:text-white"
@@ -25,6 +26,7 @@
                 @if ($paginator->hasMorePages())
                     <button
                         type="button"
+                        data-bmw-pagination="mobile-btn"
                         wire:click="nextPage('{{ $paginator->getPageName() }}')"
                         wire:loading.attr="disabled"
                         class="inline-flex items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1c69d4] hover:text-white"
@@ -32,7 +34,7 @@
                         Sau
                     </button>
                 @else
-                    <span class="inline-flex cursor-default items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                    <span data-bmw-pagination="mobile-btn" class="inline-flex cursor-default items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
                         Sau
                     </span>
                 @endif
@@ -57,7 +59,7 @@
                 </div>
 
                 <div>
-                    <span class="relative z-0 inline-flex rounded-none border border-white/10 bg-[#121215]">
+                    <span data-bmw-pagination="bar" class="relative z-0 inline-flex rounded-none border border-white/10 bg-[#121215]">
                         {{-- Previous Page Button --}}
                         @if ($paginator->onFirstPage())
                             <span aria-disabled="true" aria-label="Trang trước" class="inline-flex cursor-default items-center rounded-none border-r border-white/10 px-3 py-2.5 text-zinc-700">

@@ -5,7 +5,7 @@
         description="Timeline trao đổi giữa khách và BMW AI Assistant, kèm metadata an toàn để đội showroom follow-up."
     >
         <x-slot name="actions">
-            <a href="{{ route('admin.ai-conversations.index') }}" class="inline-flex items-center justify-center border border-zinc-800 px-6 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 transition-colors hover:border-white hover:text-white">
+            <a href="{{ route('admin.ai-conversations.index') }}" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                 Quay lại
             </a>
         </x-slot>
@@ -13,15 +13,15 @@
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_24rem]">
         <x-admin.card class="!p-0 overflow-hidden">
-            <div class="border-b border-zinc-900 bg-black/45 px-6 py-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500">Timeline chat</p>
+            <div class="border-b border-white/[0.08] bg-[#070A10]/60 px-6 py-5">
+                <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Timeline chat</p>
                 <p class="mt-2 text-sm font-semibold text-zinc-300">{{ $session->message_count }} message đã ghi nhận</p>
             </div>
 
-            <div class="space-y-5 p-5">
+            <div class="space-y-5 p-6">
                 @forelse ($session->messages as $message)
                     <article class="flex {{ $message->isUserMessage() ? 'justify-end' : 'justify-start' }}">
-                        <div class="max-w-3xl border {{ $message->isUserMessage() ? 'border-[#1C69D4]/30 bg-[#1C69D4]/10' : 'border-zinc-800 bg-zinc-950/90' }} p-5">
+                        <div class="max-w-3xl rounded-2xl border {{ $message->isUserMessage() ? 'border-[#1C69D4]/30 bg-[#1C69D4]/10' : 'border-white/[0.08] bg-[#070A10]/90' }} p-5 shadow-md shadow-black/20">
                             <div class="mb-3 flex flex-wrap items-center gap-3">
                                 <span class="text-[10px] font-black uppercase tracking-[0.22em] {{ $message->isUserMessage() ? 'text-[#70A7FF]' : 'text-zinc-500' }}">
                                     {{ $message->isUserMessage() ? 'Khách' : 'BMW AI' }}
@@ -52,33 +52,33 @@
                                         ? $structuredMeta['tool_calls']
                                         : [];
                                 @endphp
-                                <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+                                <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[0.08] pt-3">
                                     @if (filled($structuredMeta['intent'] ?? null))
-                                        <span class="rounded-none border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#70A7FF]">
+                                        <span class="rounded-full border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#70A7FF]">
                                             INTENT: {{ $structuredMeta['intent'] }}
                                         </span>
                                     @endif
 
                                     @if (filled($structuredMeta['lead_level'] ?? null))
-                                        <span class="rounded-none border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] {{ $metaLeadStyle }}">
+                                        <span class="rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] {{ $metaLeadStyle }}">
                                             LEAD: {{ strtoupper($metaLeadLevel) }}
                                         </span>
                                     @endif
 
                                     @if ($metaProducts !== [])
-                                        <span class="rounded-none border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                                        <span class="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300">
                                             SẢN PHẨM #{{ implode(', #', $metaProducts) }}
                                         </span>
                                     @endif
 
                                     @if (filled($structuredMeta['recommended_service_package'] ?? null))
-                                        <span class="rounded-none border border-sky-500/35 bg-sky-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-300">
+                                        <span class="rounded-full border border-sky-500/35 bg-sky-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-300">
                                             GÓI DỊCH VỤ: {{ $structuredMeta['recommended_service_package'] }}
                                         </span>
                                     @endif
 
                                     @foreach ($metaToolCalls as $toolName)
-                                        <span class="rounded-none border border-violet-500/35 bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-300">
+                                        <span class="rounded-full border border-violet-500/35 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-300">
                                             TOOL: {{ $toolName }}
                                         </span>
                                     @endforeach
@@ -175,9 +175,9 @@
                 </div>
 
                 @if ($linkedRecord)
-                    <div class="mt-5 border-t border-white/10 pt-5">
+                    <div class="mt-5 border-t border-white/[0.08] pt-5">
                         @if ($session->linked_source_type === 'accessory_order')
-                            <a href="{{ route('admin.accessory-orders.show', $linkedRecord) }}" class="inline-flex w-full justify-center bg-[#1C69D4] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-white hover:text-black">
+                            <a href="{{ route('admin.accessory-orders.show', $linkedRecord) }}" class="inline-flex w-full justify-center rounded-xl bg-[#1C69D4] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]">
                                 Mở đơn liên quan
                             </a>
                         @else
@@ -188,7 +188,7 @@
             </x-admin.card>
 
             <x-admin.card class="!p-6">
-                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500">Status</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Status</p>
                 <form method="POST" action="{{ route('admin.ai-conversations.update-status', $session) }}" class="mt-5 space-y-4">
                     @csrf
                     @method('PATCH')
@@ -197,7 +197,7 @@
                         :value="$session->status"
                         :options="$statusOptions"
                     />
-                    <button type="submit" class="w-full border border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white cursor-pointer">
+                    <button type="submit" class="w-full rounded-xl bg-white px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-black transition-colors hover:bg-[#1C69D4] hover:text-white cursor-pointer">
                         Cập nhật
                     </button>
                 </form>

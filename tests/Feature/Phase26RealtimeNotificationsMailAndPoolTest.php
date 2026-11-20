@@ -277,6 +277,7 @@ class Phase26RealtimeNotificationsMailAndPoolTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(AccessoryOrderTable::class)
+            ->call('updateStatus', $orderNoEmail->id, AccessoryOrder::STATUS_CONFIRMED)
             ->call('updateStatus', $orderNoEmail->id, AccessoryOrder::STATUS_COMPLETED)
             ->assertHasNoErrors();
 

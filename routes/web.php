@@ -121,6 +121,8 @@ Route::middleware('auth')->group(function () {
             Route::get('accessory-orders', [AdminAccessoryOrderController::class, 'index'])->name('accessory-orders.index');
             Route::get('accessory-orders/{accessoryOrder}', [AdminAccessoryOrderController::class, 'show'])->name('accessory-orders.show');
             Route::patch('accessory-orders/{accessoryOrder}/status', [AdminAccessoryOrderController::class, 'updateStatus'])->name('accessory-orders.update-status');
+            Route::get('mail-preview/accessory-order/{accessoryOrder}', [AdminAccessoryOrderController::class, 'previewMail'])
+                ->name('mail-preview.accessory-order');
             Route::middleware('verified')->group(function () {
                 Route::get('ai-conversations', [AdminAiConversationController::class, 'index'])->name('ai-conversations.index');
                 Route::get('ai-conversations/{session}', [AdminAiConversationController::class, 'show'])->name('ai-conversations.show');

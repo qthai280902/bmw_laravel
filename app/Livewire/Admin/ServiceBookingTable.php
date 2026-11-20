@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
+use App\Exceptions\InvalidStatusTransitionException;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\Appointment;
@@ -35,6 +36,8 @@ class ServiceBookingTable extends Component
     public ?int $inspectedBookingId = null;
 
     public ?string $flashMessage = null;
+
+    public ?string $errorMessage = null;
 
     public function mount(): void
     {
@@ -115,32 +118,69 @@ class ServiceBookingTable extends Component
     public function updateStatus(int $appointmentId, string $status): void
     {
         $this->authorizeCrm();
+        $this->resetErrorBag(['status', 'statusTransition']);
+        $this->errorMessage = null;
 
-        $validated = Validator::make(
+        $validator = Validator::make(
             ['status' => $status],
-            ['status' => ['required', Rule::enum(AppointmentStatus::class)]],
-        )->validate();
+            ['status' => ['required', 'string', Rule::enum(AppointmentStatus::class)]],
+            ['status.*' => 'Trạng thái cập nhật không hợp lệ hoặc sai định dạng.'],
+        );
+
+        if ($validator->fails()) {
+            $message = (string) $validator->errors()->first('status');
+            $this->flashMessage = null;
+            $this->errorMessage = $message;
+            $this->addError('status', $message);
+            $this->addError('statusTransition', $message);
+
+            return;
+        }
 
         $appointment = Appointment::query()
             ->whereIn('type', $this->allowedServiceTypeValues())
             ->findOrFail($appointmentId);
 
-        $appointment->transitionStatusWithAutomation(
-            AppointmentStatus::from($validated['status']),
-            auth()->user()
-        );
+        $nextStatus = AppointmentStatus::from((string) $validator->validated()['status']);
 
-        $this->flashMessage = "Đã cập nhật trạng thái lịch chăm sóc xe #{$appointment->id} thành công.";
+        try {
+            $transitioned = $appointment->transitionStatusWithAutomation($nextStatus, auth()->user());
+
+            if (! $transitioned) {
+                $staleMessage = "Lịch chăm sóc xe #{$appointment->id} hiện đã ở trạng thái '{$nextStatus->label()}' trước đó (có thể đã được nhân sự khác xử lý).";
+                $this->flashMessage = null;
+                $this->errorMessage = $staleMessage;
+                $this->addError('statusTransition', $staleMessage);
+
+                return;
+            }
+
+            $this->flashMessage = "Đã cập nhật trạng thái lịch chăm sóc xe #{$appointment->id} thành công.";
+        } catch (InvalidStatusTransitionException $exception) {
+            $this->flashMessage = null;
+            $this->errorMessage = $exception->getMessage();
+            $this->addError('statusTransition', $exception->getMessage());
+        }
     }
 
     public function resendConfirmationEmail(int $appointmentId): void
     {
         $this->authorizeCrm();
+        $this->resetErrorBag('statusTransition');
+        $this->errorMessage = null;
 
         $appointment = Appointment::query()
             ->with(['product.category', 'user'])
             ->whereIn('type', $this->allowedServiceTypeValues())
             ->findOrFail($appointmentId);
+
+        if ($appointment->isTerminalStatus()) {
+            $this->flashMessage = null;
+            $this->errorMessage = "Lịch chăm sóc xe #{$appointment->id} đã ở trạng thái đóng ({$appointment->statusLabel()}), không thể gửi lại thư xác nhận.";
+            $this->addError('statusTransition', $this->errorMessage);
+
+            return;
+        }
 
         $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
@@ -160,6 +200,8 @@ class ServiceBookingTable extends Component
     public function inspectBooking(int $bookingId): void
     {
         $this->authorizeCrm();
+        $this->resetErrorBag('statusTransition');
+        $this->errorMessage = null;
 
         $this->inspectedBookingId = $bookingId;
     }

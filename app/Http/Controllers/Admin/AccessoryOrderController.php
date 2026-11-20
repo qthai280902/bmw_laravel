@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\InvalidStatusTransitionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateAccessoryOrderStatusRequest;
+use App\Mail\Customer\AccessoryOrderConfirmationMail;
+use App\Mail\Customer\AccessoryOrderStatusMail;
 use App\Models\AccessoryOrder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Mail\Mailable;
 use Illuminate\View\View;
 
 class AccessoryOrderController extends Controller
@@ -21,7 +26,7 @@ class AccessoryOrderController extends Controller
 
         return view('admin.accessory-orders.show', [
             'order' => $accessoryOrder,
-            'statusOptions' => AccessoryOrder::statuses(),
+            'statusOptions' => $accessoryOrder->allowedStatusOptions(),
         ]);
     }
 
@@ -30,15 +35,38 @@ class AccessoryOrderController extends Controller
         AccessoryOrder $accessoryOrder
     ): RedirectResponse {
         $data = $request->validated();
-        $accessoryOrder->transitionToStatus(
-            $data['status'],
-            $data['admin_notes'] ?? null,
-            true,
-            $request->user(),
-        );
+
+        try {
+            $accessoryOrder->transitionToStatus(
+                $data['status'],
+                $data['admin_notes'] ?? null,
+                true,
+                $request->user(),
+            );
+        } catch (InvalidStatusTransitionException $exception) {
+            return back()
+                ->withErrors(['status' => $exception->getMessage()])
+                ->with('error', $exception->getMessage())
+                ->withInput();
+        }
 
         return redirect()
             ->route('admin.accessory-orders.show', $accessoryOrder)
             ->with('success', 'Đơn phụ kiện đã được cập nhật.');
+    }
+
+    /**
+     * Xem trước trực tiếp 2 mẫu email giao dịch của Đơn phụ kiện (chỉ đọc).
+     */
+    public function previewMail(Request $request, AccessoryOrder $accessoryOrder): Mailable
+    {
+        $accessoryOrder->loadMissing(['product.category', 'product.primaryImage', 'product.images']);
+
+        $mode = trim((string) $request->query('mode', 'confirmation'));
+
+        return match ($mode) {
+            'status' => new AccessoryOrderStatusMail($accessoryOrder),
+            default => new AccessoryOrderConfirmationMail($accessoryOrder),
+        };
     }
 }

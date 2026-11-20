@@ -3,8 +3,8 @@
     <!-- Main Content Column -->
     <div class="space-y-6">
         <!-- Article Basic Information Card -->
-        <div class="bg-card-luxury p-6 relative">
-            <div class="mb-5 border-b border-zinc-800/80 pb-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-6 relative shadow-xl shadow-black/40">
+            <div class="mb-5 border-b border-white/[0.08] pb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider">Thông Tin Bài Viết</h3>
                     <p class="text-xs text-zinc-400 mt-0.5">Tiêu đề, đường dẫn thân thiện và tóm tắt hiển thị ngoài website</p>
@@ -74,7 +74,7 @@
                         type="button"
                         @click="runEditorialAi()"
                         :disabled="aiLoading"
-                        class="inline-flex items-center gap-2 rounded-none border border-[#1C69D4] bg-[#1C69D4]/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                        class="inline-flex items-center gap-2 rounded-xl border border-[#1C69D4]/50 bg-[#1C69D4]/15 px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                     >
                         <span x-show="!aiLoading">AI Tóm Tắt & Tạo Mô Tả SEO</span>
                         <span x-show="aiLoading">Đang phân tích bài viết...</span>
@@ -91,7 +91,7 @@
                         name="title"
                         value="{{ old('title', $article->title) }}"
                         required
-                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-3 text-base font-bold text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-base font-bold text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         placeholder="Ví dụ: Trải nghiệm công nghệ lái điện hoàn toàn mới trên BMW i7"
                     >
                 </x-admin.form-field>
@@ -102,7 +102,7 @@
                         type="text"
                         name="slug"
                         value="{{ old('slug', $article->slug) }}"
-                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-zinc-300 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-2.5 text-xs text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         placeholder="trai-nghiem-cong-nghe-lai-dien-bmw-i7"
                     >
                 </x-admin.form-field>
@@ -113,7 +113,7 @@
                         name="excerpt"
                         rows="3"
                         maxlength="500"
-                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-3 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         placeholder="Nhập tóm tắt dẫn dắt bài viết..."
                     >{{ old('excerpt', $article->excerpt) }}</textarea>
                 </x-admin.form-field>
@@ -121,22 +121,22 @@
         </div>
 
         <!-- Canvas Studio Editor Card -->
-        <div class="bg-card-luxury overflow-hidden">
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] overflow-hidden shadow-xl shadow-black/40">
             <!-- Studio Toolbar & Tab Navigation -->
-            <div class="border-b border-zinc-800/80 px-6 py-4 flex flex-wrap items-center justify-between gap-4 bg-[#121215]">
+            <div class="border-b border-white/[0.08] px-6 py-4 flex flex-wrap items-center justify-between gap-4 bg-[#070A10]/70">
                 <div class="flex items-center gap-3">
-                    <div class="w-2.5 h-2.5 bg-[#1C69D4]"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-[#1C69D4]"></div>
                     <div>
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Canvas Studio Visual Editor</h3>
                         <p class="text-[11px] text-zinc-400">Trình soạn thảo khối trực quan chuẩn BMW Editorial</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1.5 border border-zinc-800 bg-zinc-950 p-1">
+                <div class="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#070A10] p-1">
                     <button type="button" 
                             @click="switchTab('canvas')"
                             :class="activeTab === 'canvas' ? 'bg-[#1C69D4] text-white shadow-sm font-semibold' : 'text-zinc-400 hover:text-white'"
-                            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                            class="rounded-lg px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
@@ -146,7 +146,7 @@
                     <button type="button" 
                             @click="switchTab('markdown')"
                             :class="activeTab === 'markdown' ? 'bg-[#1C69D4] text-white shadow-sm font-semibold' : 'text-zinc-400 hover:text-white'"
-                            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                            class="rounded-lg px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
@@ -156,7 +156,7 @@
                     <button type="button" 
                             @click="switchTab('preview')"
                             :class="activeTab === 'preview' ? 'bg-[#1C69D4] text-white shadow-sm font-semibold' : 'text-zinc-400 hover:text-white'"
-                            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                            class="rounded-lg px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -169,11 +169,11 @@
             <!-- Tab 1: Visual Block Canvas -->
             <div x-show="activeTab === 'canvas'" class="p-6 space-y-5">
                 <template x-for="(block, index) in blocks" :key="block.id">
-                    <div class="border border-zinc-800 bg-[#121215] p-4 relative group shadow-sm transition-all hover:border-zinc-700">
+                    <div class="rounded-xl border border-white/[0.08] bg-[#070A10]/85 p-4 relative group shadow-sm transition-all hover:border-white/20">
                         <!-- Block Header Controls -->
-                        <div class="flex items-center justify-between mb-3 border-b border-zinc-800/80 pb-2.5">
+                        <div class="flex items-center justify-between mb-3 border-b border-white/[0.08] pb-2.5">
                             <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border"
+                                <span class="rounded-full text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 border"
                                       :class="{
                                           'text-[#70A7FF] bg-blue-950/40 border-blue-500/30': block.type === 'heading',
                                           'text-emerald-400 bg-emerald-950/40 border-emerald-500/30': block.type === 'paragraph',
@@ -236,7 +236,7 @@
                                        x-model="block.text" 
                                        @input="sync()"
                                        placeholder="Nhập tiêu đề phần..." 
-                                       class="flex-1 border-zinc-800 bg-zinc-950 px-3.5 py-2 text-sm font-bold text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                                       class="flex-1 rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-sm font-bold text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                             </div>
                         </div>
 
@@ -246,7 +246,7 @@
                                       @input="sync()"
                                       rows="4" 
                                       placeholder="Nhập nội dung đoạn văn bài viết..." 
-                                      class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                                      class="w-full rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2.5 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
                         </div>
 
                         <!-- Image Block Input -->
@@ -256,15 +256,15 @@
                                        x-model="block.url" 
                                        @input="sync()"
                                        placeholder="URL ảnh (https://... hoặc /images/cars/...)" 
-                                       class="border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                                       class="rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                                 <input type="text" 
                                        x-model="block.caption" 
                                        @input="sync()"
                                        placeholder="Chú thích ảnh (caption)..." 
-                                       class="border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-300 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                                       class="rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs text-zinc-300 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                             </div>
                             <template x-if="block.url">
-                                <div class="relative max-h-48 overflow-hidden border border-zinc-800 bg-black flex items-center justify-center">
+                                <div class="relative max-h-48 overflow-hidden rounded-xl border border-white/10 bg-[#070A10] flex items-center justify-center">
                                     <img :src="block.url" class="max-h-48 object-cover w-full" alt="Preview">
                                 </div>
                             </template>
@@ -276,23 +276,23 @@
                                       @input="sync()"
                                       rows="3" 
                                       placeholder="Nhập câu trích dẫn hoặc thông số kỹ thuật nổi bật..." 
-                                      class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs italic leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                                      class="w-full rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2.5 text-xs italic leading-relaxed text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
                             <input type="text" 
                                    x-model="block.author" 
                                    @input="sync()"
                                    placeholder="Nguồn phát biểu hoặc thông số (Ví dụ: Đội ngũ thiết kế BMW M)" 
-                                   class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-400 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                                   class="w-full rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs text-zinc-400 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                         </div>
                     </div>
                 </template>
 
                 <!-- Add Block Actions Toolbar -->
-                <div class="border border-dashed border-zinc-800 bg-zinc-950/60 p-4 text-center">
+                <div class="rounded-xl border border-dashed border-white/15 bg-[#070A10]/60 p-4 text-center">
                     <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Thêm Khối Nội Dung Mới</p>
                     <div class="flex flex-wrap items-center justify-center gap-2.5">
                         <button type="button" 
                                 @click="addBlock('heading')"
-                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
                             <svg class="w-3.5 h-3.5 text-[#1C69D4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
@@ -301,7 +301,7 @@
 
                         <button type="button" 
                                 @click="addBlock('paragraph')"
-                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
                             <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
@@ -310,7 +310,7 @@
 
                         <button type="button" 
                                 @click="addBlock('image')"
-                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
                             <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -319,7 +319,7 @@
 
                         <button type="button" 
                                 @click="addBlock('quote')"
-                                class="inline-flex items-center gap-1.5 border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0D121C] px-3.5 py-2 text-xs font-semibold text-white hover:border-[#1C69D4] hover:text-[#70A7FF] transition-colors cursor-pointer">
                             <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                             </svg>
@@ -335,13 +335,13 @@
                 <textarea x-model="serializedMarkdown" 
                           @input="syncFromMarkdown()"
                           rows="18" 
-                          class="w-full font-mono text-xs leading-relaxed border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
+                          class="w-full rounded-xl font-mono text-xs leading-relaxed border border-white/10 bg-[#070A10] p-4 text-zinc-200 placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"></textarea>
             </div>
 
             <!-- Tab 3: Live Public Preview -->
-            <div x-show="activeTab === 'preview'" class="p-6 bg-zinc-950">
-                <div class="border border-zinc-800 bg-[#121215] p-6 sm:p-8">
-                    <span class="inline-block border border-blue-500/20 bg-blue-950/40 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF] mb-3">
+            <div x-show="activeTab === 'preview'" class="p-6 bg-[#070A10]/60">
+                <div class="rounded-xl border border-white/[0.08] bg-[#0D121C] p-6 sm:p-8">
+                    <span class="inline-block rounded-full border border-blue-500/25 bg-blue-950/40 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#70A7FF] mb-3">
                         Xem trước công khai
                     </span>
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-4" x-text="document.getElementById('title')?.value || 'Tiêu đề bài viết mẫu'"></h2>
@@ -361,8 +361,8 @@
         </div>
 
         <!-- SEO Settings Card -->
-        <div class="bg-card-luxury p-6 relative">
-            <div class="mb-5 border-b border-zinc-800/80 pb-3">
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-6 relative shadow-xl shadow-black/40">
+            <div class="mb-5 border-b border-white/[0.08] pb-3">
                 <h3 class="text-xs font-bold text-white uppercase tracking-wider">Cấu Hình SEO Tìm Kiếm</h3>
                 <p class="text-xs text-zinc-400 mt-0.5">Tùy biến thẻ tiêu đề và mô tả xuất hiện trên kết quả Google Tìm kiếm</p>
             </div>
@@ -374,7 +374,7 @@
                         type="text"
                         name="seo_title"
                         value="{{ old('seo_title', $article->seo_title) }}"
-                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         placeholder="Tiêu đề hiển thị trên Google..."
                     >
                 </x-admin.form-field>
@@ -385,7 +385,7 @@
                         type="text"
                         name="seo_description"
                         value="{{ old('seo_description', $article->seo_description) }}"
-                        class="w-full border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         placeholder="Đoạn văn ngắn mô tả bài viết..."
                     >
                 </x-admin.form-field>
@@ -396,8 +396,8 @@
     <!-- Sidebar Right Column -->
     <aside class="space-y-6">
         <!-- Publication Settings Card -->
-        <div class="bg-card-luxury p-6 relative">
-            <div class="mb-5 border-b border-zinc-800/80 pb-3">
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-6 relative shadow-xl shadow-black/40">
+            <div class="mb-5 border-b border-white/[0.08] pb-3">
                 <h3 class="text-xs font-bold text-white uppercase tracking-wider">Xuất Bản Bài Viết</h3>
             </div>
 
@@ -426,20 +426,20 @@
                         type="datetime-local"
                         name="published_at"
                         value="{{ old('published_at', $article->published_at?->format('Y-m-d\TH:i')) }}"
-                        class="w-full border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-200 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                        class="w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 py-2.5 text-xs text-zinc-200 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                     >
                 </x-admin.form-field>
             </div>
         </div>
 
         <!-- Cover Image Card -->
-        <div class="bg-card-luxury p-6 relative">
-            <div class="mb-5 border-b border-zinc-800/80 pb-3">
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-6 relative shadow-xl shadow-black/40">
+            <div class="mb-5 border-b border-white/[0.08] pb-3">
                 <h3 class="text-xs font-bold text-white uppercase tracking-wider">Ảnh Đại Diện</h3>
             </div>
 
             @if($article->coverImageUrl())
-                <div class="mb-4 aspect-video border border-zinc-800 bg-zinc-950 overflow-hidden shadow-sm">
+                <div class="mb-4 aspect-video rounded-xl border border-white/10 bg-[#070A10] overflow-hidden shadow-sm">
                     <img src="{{ $article->coverImageUrl() }}" alt="{{ $article->title }}" class="h-full w-full object-cover">
                 </div>
             @endif
@@ -450,17 +450,17 @@
                     type="file"
                     name="cover_image"
                     accept="image/*"
-                    class="w-full border border-zinc-800 bg-zinc-950 p-2.5 text-xs text-zinc-400 file:mr-3 file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-zinc-200 hover:file:bg-zinc-700 cursor-pointer"
+                    class="w-full rounded-xl border border-white/10 bg-[#070A10] p-2.5 text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[#1C69D4] cursor-pointer"
                 >
             </x-admin.form-field>
         </div>
 
         <!-- Submit & Actions -->
         <div class="grid grid-cols-1 gap-3">
-            <button type="submit" class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-[#1C69D4] to-[#154fa0] hover:from-[#2575e6] hover:to-[#1c69d4] text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-900/30 hover:shadow-blue-700/40 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all cursor-pointer">
+            <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl px-6 py-3.5 bg-[#1C69D4] hover:bg-[#2575e6] text-white text-xs font-semibold uppercase tracking-wider shadow-lg shadow-[#1C69D4]/25 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all cursor-pointer">
                 {{ $submitLabel }}
             </button>
-            <a href="{{ route('admin.articles.index') }}" class="border border-zinc-800 bg-zinc-950 px-5 py-3 text-center text-xs font-semibold text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white">
+            <a href="{{ route('admin.articles.index') }}" class="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-center text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
                 Hủy bỏ
             </a>
         </div>

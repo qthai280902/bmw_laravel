@@ -12,7 +12,9 @@ use App\Enums\AppointmentType;
 use App\Enums\VehicleType;
 use App\Events\PromotionCampaignDispatched;
 use App\Listeners\SendPromotionCampaignEmails;
+use App\Livewire\Admin\AccessoryOrderTable;
 use App\Livewire\Admin\AppointmentTable;
+use App\Mail\Admin\HotLeadAlertMail;
 use App\Mail\Admin\ShowroomDailySummaryMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Models\AccessoryOrder;
@@ -33,6 +35,7 @@ use App\Services\Concurrency\ShowroomConcurrency;
 use App\Services\Inventory\AccessoryStockService;
 use App\Services\Mail\GmailQuotaGuard;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Contracts\Console\Isolatable;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
@@ -95,7 +98,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $this->assertTrue((bool) ($order->meta_data['stock_deducted'] ?? false));
         $this->assertSame(1, (int) ($order->meta_data['stock_deducted_quantity'] ?? 0));
 
-        // 2. Concurrent Order #2 fails cleanly with HTTP 409 JSON and stock never goes negative
+        // 2. Concurrent Order #2 fails cleanly with HTTP 409 JSON & web form error without negative stock
         $secondResponse = $this->postJson(route('accessory-orders.store', $accessory->slug), [
             'customer_name' => 'Trần Văn B',
             'customer_phone' => '0907654321',
@@ -104,47 +107,93 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         ]);
 
         $secondResponse->assertStatus(409);
+        $this->assertStringContainsString('hết hàng', (string) $secondResponse->json('message'));
         $this->assertSame(0, $accessory->fresh()->stock);
         $this->assertDatabaseCount('accessory_orders', 1);
 
-        // 3. Simulate LockTimeoutException (409 JSON without partial DB row)
-        $accessory->update(['stock' => 2]);
+        $secondWebResponse = $this->from(route('accessory-orders.create', $accessory->slug))
+            ->post(route('accessory-orders.store', $accessory->slug), [
+                'customer_name' => 'Trần Văn Web',
+                'customer_phone' => '0907654322',
+                'customer_address' => '45 Pasteur, Quận 1, TP.HCM',
+                'quantity' => 1,
+            ]);
 
-        $this->partialMock(AccessoryStockService::class, static function ($mock): void {
-            $mock->shouldReceive('placeOrder')->once()->andThrow(new LockTimeoutException);
-        });
+        $secondWebResponse->assertRedirect(route('accessory-orders.create', $accessory->slug));
+        $secondWebResponse->assertSessionHasErrors('quantity');
+        $secondWebResponse->assertSessionHas('error');
 
-        $timeoutResponse = $this->postJson(route('accessory-orders.store', $accessory->slug), [
-            'customer_name' => 'Lê Bảo Long',
-            'customer_phone' => '0911223344',
-            'customer_address' => '99 Nguyễn Huệ, TP.HCM',
-            'quantity' => 1,
-        ]);
-
-        $timeoutResponse->assertStatus(409);
-        $this->app->forgetInstance(AccessoryStockService::class);
-        $this->assertSame(2, $accessory->fresh()->stock);
-
-        // Verify Cache::lock key acquires & releases cleanly
+        // Verify real Cache::lock key acquires & releases cleanly
         $realLock = Cache::lock(app(AccessoryStockService::class)->lockKey($accessory->id), AccessoryStockService::LOCK_TTL_SECONDS);
         $this->assertTrue($realLock->get());
         $realLock->release();
+
+        // 3. Simulate Cache::lock("accessory-stock:{$product->id}", 10) held timeout -> graceful 409/redirect (never HTTP 500)
+        $accessory->update(['stock' => 2]);
+
+        $originalCache = Cache::getFacadeRoot();
+        $timeoutLock = $this->createMock(Lock::class);
+        $timeoutLock->method('block')->willThrowException(new LockTimeoutException);
+
+        Cache::partialMock()
+            ->shouldReceive('lock')
+            ->twice()
+            ->with("accessory-stock:{$accessory->id}", AccessoryStockService::LOCK_TTL_SECONDS)
+            ->andReturn($timeoutLock);
+
+        try {
+            $timeoutResponse = $this->postJson(route('accessory-orders.store', $accessory->slug), [
+                'customer_name' => 'Lê Bảo Long',
+                'customer_phone' => '0911223344',
+                'customer_address' => '99 Nguyễn Huệ, TP.HCM',
+                'quantity' => 1,
+            ]);
+
+            $timeoutResponse->assertStatus(409);
+
+            $timeoutWebResponse = $this->from(route('accessory-orders.create', $accessory->slug))
+                ->post(route('accessory-orders.store', $accessory->slug), [
+                    'customer_name' => 'Lê Bảo Web',
+                    'customer_phone' => '0911223355',
+                    'customer_address' => '99 Nguyễn Huệ, TP.HCM',
+                    'quantity' => 1,
+                ]);
+
+            $timeoutWebResponse->assertRedirect(route('accessory-orders.create', $accessory->slug));
+            $timeoutWebResponse->assertSessionHasErrors('quantity');
+        } finally {
+            Cache::swap($originalCache);
+        }
+
+        $this->assertSame(2, $accessory->fresh()->stock);
 
         // Restore stock to 0 for order #1 before cancellation idempotency check
         $accessory->update(['stock' => 0]);
 
         $admin = User::factory()->create(['email' => 'director.conc.p29@bmw.com', 'role' => User::ROLE_ADMIN]);
 
-        // 4. First cancellation restores stock exactly +1
-        $order->transitionToStatus(AccessoryOrder::STATUS_CANCELLED, 'Khách đổi mẫu', true, $admin);
+        // 4. First cancellation via Livewire AccessoryOrderTable restores stock exactly +1 & logs InteractionTimelineRecorder
+        Livewire::actingAs($admin)
+            ->test(AccessoryOrderTable::class)
+            ->call('updateStatus', $order->id, AccessoryOrder::STATUS_CANCELLED);
+
         $accessory->refresh();
         $order->refresh();
 
         $this->assertSame(1, $accessory->stock);
         $this->assertNotEmpty($order->meta_data['stock_restored_at'] ?? null);
+        $timelineTitles = collect($order->meta_data['timeline'] ?? [])->pluck('title')->all();
+        $this->assertContains('Hoàn 1 sản phẩm về kho', $timelineTitles);
 
-        // 5. Re-cancelling the same order is idempotent (stock stays 1, NOT 2)
-        $order->transitionToStatus(AccessoryOrder::STATUS_CANCELLED, 'Cập nhật ghi chú', true, $admin);
+        // 5. Re-cancelling via Admin Controller PATCH & direct transition is idempotent (stock stays 1, NOT 2)
+        $this->actingAs($admin)
+            ->patch(route('admin.accessory-orders.update-status', $order), [
+                'status' => AccessoryOrder::STATUS_CANCELLED,
+                'admin_notes' => 'Xác nhận lại lần 2',
+            ])
+            ->assertRedirect();
+
+        $order->fresh()->transitionToStatus(AccessoryOrder::STATUS_CANCELLED, 'Cập nhật ghi chú', true, $admin);
         $this->assertSame(1, $accessory->fresh()->stock);
     }
 
@@ -196,6 +245,21 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $this->assertCount(2, $refreshedHome['featuredProducts']);
         $this->assertTrue($refreshedHome['featuredProducts']->contains('id', $newCar->id));
 
+        // Updating and deleting Product invalidates home cache automatically
+        $newCar->update(['name' => 'BMW M4 Competition Updated']);
+        $this->assertSame('BMW M4 Competition Updated', $cacheService->homeData()['featuredProducts']->firstWhere('id', $newCar->id)?->name);
+        $newCar->delete();
+        $this->assertCount(1, $cacheService->homeData()['featuredProducts']);
+
+        // Creating & updating Article invalidates home latestArticles via ArticleObserver
+        $newArticle = Article::factory()->published()->create([
+            'title' => 'Bài viết Cache Mới Phase 29',
+            'slug' => 'bai-viet-cache-moi-p29',
+        ]);
+        $this->assertTrue($cacheService->homeData()['latestArticles']->contains('id', $newArticle->id));
+        $newArticle->update(['title' => 'Bài viết Cache Đã Sửa']);
+        $this->assertSame('Bài viết Cache Đã Sửa', $cacheService->homeData()['latestArticles']->firstWhere('id', $newArticle->id)?->title);
+
         // Category & Dashboard auto-invalidation
         $categories = $cacheService->catalogCategories(false);
         $this->assertCount(1, $categories);
@@ -228,6 +292,29 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         });
         $this->assertSame(['total' => 11], $summaryThree);
         $this->assertSame(2, $loaderRuns);
+
+        // AccessoryOrder model events flush dashboard cache automatically too
+        $accCat = Category::factory()->create(['name' => 'Phụ kiện Cache', 'slug' => 'phu-kien-cache-p29']);
+        $accItem = Product::factory()->for($accCat)->create([
+            'name' => 'Áo khoác BMW M',
+            'slug' => 'ao-khoac-bmw-m-cache',
+            'type' => VehicleType::ACCESSORY,
+            'stock' => 5,
+            'is_active' => true,
+        ]);
+        app(AccessoryStockService::class)->placeOrder($accItem, [
+            'customer_name' => 'Khách Cache Order',
+            'customer_phone' => '0908887766',
+            'customer_address' => '100 Nguyễn Huệ, TP.HCM',
+            'quantity' => 1,
+        ]);
+        $summaryFour = $cacheService->dashboardSummary(function () use (&$loaderRuns): array {
+            $loaderRuns++;
+
+            return ['total' => 12];
+        });
+        $this->assertSame(['total' => 12], $summaryFour);
+        $this->assertSame(3, $loaderRuns);
     }
 
     public function test_showroom_concurrency_wrapper_and_hot_spots_work_safely(): void
@@ -248,6 +335,18 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $this->assertSame(['alpha' => 5, 'beta' => 'BMW'], $results);
         $this->assertSame('sync', ShowroomConcurrency::lastDriverUsed());
 
+        // Forced driver exception falls back safely to 'sync' without crashing request
+        ShowroomConcurrency::$forcedDriverForTests = 'fork';
+        try {
+            $fallbackResults = ShowroomConcurrency::run([
+                'gamma' => static fn (): string => 'fallback-ok',
+            ]);
+            $this->assertSame(['gamma' => 'fallback-ok'], $fallbackResults);
+            $this->assertSame('sync', ShowroomConcurrency::lastDriverUsed());
+        } finally {
+            ShowroomConcurrency::$forcedDriverForTests = null;
+        }
+
         $admin = User::factory()->create(['email' => 'director.conc.p29@bmw.com', 'role' => User::ROLE_ADMIN]);
         $category = Category::factory()->create(['name' => 'SAV', 'slug' => 'sav-conc-p29']);
         $car = Product::factory()->for($category)->create([
@@ -262,18 +361,29 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
             'type' => AppointmentType::TestDrive,
         ]);
 
-        // Dashboard uses Cache::flexible + ShowroomConcurrency::run cleanly
+        // 1. Dashboard uses Cache::flexible + ShowroomConcurrency::run cleanly
         $this->actingAs($admin)
             ->get(route('dashboard'))
             ->assertOk();
 
-        // Daily summary command runs concurrent aggregates without throwing serialization errors
+        // 2. Daily summary command runs concurrent aggregates without throwing serialization errors
         config(['mail.showroom_admin' => 'director.p29@bmw.com']);
 
         $this->artisan('showroom:daily-summary')
             ->assertExitCode(0);
 
         Mail::assertSent(ShowroomDailySummaryMail::class, 1);
+
+        // 3. ShowroomAssistantService retrieves Catalog/Articles + RAG concurrently via ShowroomConcurrency::run
+        config([
+            'showroom_ai.enabled' => true,
+            'ai.providers.gemini.key' => 'testing-key',
+        ]);
+        ShowroomAssistant::fake(['Mẫu BMW X3 M Sport hiện đang có xe giao tại showroom.']);
+
+        $assistantPayload = app(ShowroomAssistantService::class)->ask('Tư vấn giúp tôi BMW X3 M Sport và chính sách bảo hành');
+        $this->assertSame('ok', $assistantPayload['status'] ?? null);
+        $this->assertStringContainsString('BMW X3 M Sport', (string) ($assistantPayload['answer'] ?? ''));
     }
 
     public function test_rate_limiting_gmail_quota_guard_preserves_transactional_mail_and_throttles_ai_and_booking(): void
@@ -345,15 +455,22 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $this->assertSame(1, $salesAlerts);
         $this->assertSame(0, $marketingAlerts);
 
-        // 3. Transactional booking confirmation email is NEVER blocked by marketing quota limit
+        // 3. Transactional booking confirmation & HOT LEAD alert emails are NEVER blocked by marketing quota limit (including 420 limit)
+        config(['mail.daily_soft_limit' => 420]);
+        $quotaGuard->recordSentMail(415); // total becomes 420
+        $this->assertFalse($quotaGuard->canSendMarketingEmail());
+
         $appointment = Appointment::factory()->create([
             'guest_email' => 'khach.hot@bmw.test',
+            'lead_priority' => Appointment::LEAD_PRIORITY_HOT,
         ]);
 
         Mail::to($appointment->guest_email)->send(new AppointmentConfirmationMail($appointment));
+        Mail::to('sales.director@bmw.com')->send(new HotLeadAlertMail($appointment));
         Mail::assertQueued(AppointmentConfirmationMail::class, 1);
+        Mail::assertSent(HotLeadAlertMail::class, 1);
 
-        // 4. AI Chat endpoint returns JSON HTTP 429 cleanly after 15 requests/min
+        // 4. AI Chat endpoint returns JSON HTTP 429 cleanly after per-minute (15/min) AND per-hour thresholds
         config([
             'showroom_ai.enabled' => true,
             'ai.providers.gemini.key' => 'testing-key',
@@ -361,7 +478,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
             'showroom.ai_chat_rate_per_hour' => 60,
         ]);
 
-        $answers = array_fill(0, 16, 'Showroom luôn sẵn sàng hỗ trợ Quý khách.');
+        $answers = array_fill(0, 30, 'Showroom luôn sẵn sàng hỗ trợ Quý khách.');
         ShowroomAssistant::fake($answers);
 
         $aiIp = '198.51.100.77';
@@ -375,14 +492,51 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
 
         $rateLimitedAi = $this->withServerVariables(['REMOTE_ADDR' => $aiIp])
             ->postJson(route('ai.api.assistant.ask'), [
-                'message' => 'Hỏi vượt hạn mức',
+                'message' => 'Hỏi vượt hạn mức phút',
                 'visitor_id' => 'visitor-rate-p29',
             ]);
 
         $rateLimitedAi->assertStatus(429)
-            ->assertJsonStructure(['message', 'retry_after']);
+            ->assertJsonPath('status', 'rate_limited')
+            ->assertJsonStructure(['status', 'reason', 'message', 'retry_after']);
 
-        // 5. Public booking submit endpoint throttles bursts cleanly
+        config([
+            'showroom.ai_chat_rate_per_minute' => 4,
+            'showroom.ai_chat_rate_per_hour' => 6,
+        ]);
+        $aiHourIp = '198.51.100.78';
+        try {
+            for ($i = 0; $i < 4; $i++) {
+                $this->withServerVariables(['REMOTE_ADDR' => $aiHourIp])
+                    ->postJson(route('ai.api.assistant.ask'), [
+                        'message' => "Hỏi giờ phút 1 #{$i}",
+                        'visitor_id' => 'visitor-hour-p29',
+                    ])->assertOk();
+            }
+
+            $this->travel(65)->seconds();
+
+            for ($i = 0; $i < 2; $i++) {
+                $this->withServerVariables(['REMOTE_ADDR' => $aiHourIp])
+                    ->postJson(route('ai.api.assistant.ask'), [
+                        'message' => "Hỏi giờ phút 2 #{$i}",
+                        'visitor_id' => 'visitor-hour-p29',
+                    ])->assertOk();
+            }
+
+            $this->withServerVariables(['REMOTE_ADDR' => $aiHourIp])
+                ->postJson(route('ai.api.assistant.ask'), [
+                    'message' => 'Hỏi vượt hạn mức giờ',
+                    'visitor_id' => 'visitor-hour-p29',
+                ])
+                ->assertStatus(429)
+                ->assertJsonPath('status', 'rate_limited')
+                ->assertJsonStructure(['retry_after']);
+        } finally {
+            $this->travelBack();
+        }
+
+        // 5. Public booking submit endpoint throttles bursts cleanly on BOTH /booking and /accessories/{slug}/order
         config(['mail.booking_rate_limit_per_minute' => 5]);
         $bookingIp = '198.51.100.88';
         $category = Category::factory()->create(['name' => 'Sedan', 'slug' => 'sedan-rl-p29']);
@@ -405,16 +559,40 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
                 ]);
         }
 
-        $throttledBooking = $this->withServerVariables(['REMOTE_ADDR' => $bookingIp])
+        $this->withServerVariables(['REMOTE_ADDR' => $bookingIp])
             ->postJson(route('appointments.store'), [
                 'guest_name' => 'Khách Spam',
                 'guest_phone' => '0909888777',
                 'type' => 'consult',
                 'product_id' => $car->id,
                 'appointment_date' => now()->addDays(3)->format('Y-m-d H:i:s'),
-            ]);
+            ])->assertStatus(429);
 
-        $throttledBooking->assertStatus(429);
+        $accCat = Category::factory()->create(['name' => 'Phụ kiện Throttle', 'slug' => 'phu-kien-throttle-p29']);
+        $accProduct = Product::factory()->for($accCat)->create([
+            'name' => 'Nắp van BMW M',
+            'slug' => 'nap-van-bmw-m-rl',
+            'type' => VehicleType::ACCESSORY,
+            'stock' => 30,
+            'is_active' => true,
+        ]);
+        $accIp = '198.51.100.89';
+        for ($i = 0; $i < 5; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => $accIp])
+                ->postJson(route('accessory-orders.store', $accProduct->slug), [
+                    'customer_name' => "Khách Phụ kiện {$i}",
+                    'customer_phone' => '0909111222',
+                    'customer_address' => '10 Đồng Khởi, TP.HCM',
+                    'quantity' => 1,
+                ])->assertRedirect();
+        }
+        $this->withServerVariables(['REMOTE_ADDR' => $accIp])
+            ->postJson(route('accessory-orders.store', $accProduct->slug), [
+                'customer_name' => 'Khách Spam Phụ kiện',
+                'customer_phone' => '0909111222',
+                'customer_address' => '10 Đồng Khởi, TP.HCM',
+                'quantity' => 1,
+            ])->assertStatus(429);
     }
 
     public function test_local_media_cleanup_orphan_prune_command_schedule_and_docker_hygiene(): void
@@ -436,6 +614,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $disk = Storage::disk('public');
         $disk->put('products/old-img.jpg', 'old');
         $disk->put('products/new-img.jpg', 'new');
+        $disk->put('products/gallery-del.jpg', 'gallery-del');
         $disk->put('products/shared-img.jpg', 'shared');
         $disk->put('products/orphan-stale.jpg', 'stale');
         $disk->put('products/orphan-fresh.jpg', 'fresh');
@@ -458,12 +637,18 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $disk->assertMissing('products/old-img.jpg');
         $disk->assertExists('products/new-img.jpg');
 
-        // 2. Deleting Product sharing an image with ProductB keeps shared file intact
+        // 2. Deleting Product with primary + unshared gallery + shared image removes unreferenced files before FK cascade while keeping shared intact
+        ProductImage::create([
+            'product_id' => $productA->id,
+            'path' => 'products/gallery-del.jpg',
+            'is_primary' => false,
+            'sort_order' => 1,
+        ]);
         ProductImage::create([
             'product_id' => $productA->id,
             'path' => 'products/shared-img.jpg',
             'is_primary' => false,
-            'sort_order' => 1,
+            'sort_order' => 2,
         ]);
         ProductImage::create([
             'product_id' => $productB->id,
@@ -475,6 +660,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
         $productA->delete();
         $disk->assertExists('products/shared-img.jpg');
         $disk->assertMissing('products/new-img.jpg');
+        $disk->assertMissing('products/gallery-del.jpg');
 
         // 3. Article cover update & external URL tolerance
         $article = Article::factory()->published()->create([
@@ -507,6 +693,9 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
 
         $disk->assertMissing('products/orphan-fresh.jpg');
         $disk->assertExists('images/bmw-hero-static.png');
+
+        $article->delete();
+        $disk->assertMissing('articles/cover-new.jpg');
 
         // 5. Weekly Sunday 04:00 schedule + Isolatable check
         $this->assertTrue(is_subclass_of(PruneOrphanMediaCommand::class, Isolatable::class));
@@ -712,13 +901,19 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
 
         $admin = User::factory()->create(['email' => 'director.conc.p29@bmw.com', 'role' => User::ROLE_ADMIN]);
 
-        // View on /admin/ai-conversations/{session} displays structured badges
+        // View on /admin/ai-conversations/{session} displays structured badges within <= 8 SQL queries
+        Cache::flush();
+        DB::enableQueryLog();
+        DB::flushQueryLog();
         $this->actingAs($admin)
             ->get(route('admin.ai-conversations.show', $session))
             ->assertOk()
             ->assertSee('INTENT: test_drive')
             ->assertSee('LEAD: HOT')
             ->assertSee("#{$car->id}");
+        $conversationQueries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+        $this->assertLessThanOrEqual(8, $conversationQueries, "Exceeded <= 8 SQL query budget on admin.ai-conversations.show (ran {$conversationQueries} queries)");
 
         // Link an Appointment and verify badges show inside Quick Inspector Drawer without breaking <= 8 SQL budget
         $appointment = Appointment::factory()->for($car)->create([

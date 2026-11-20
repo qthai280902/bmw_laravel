@@ -1012,7 +1012,7 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
 
         $this->assertSame(AppointmentStatus::Confirmed, $serviceAppointment->fresh()->status);
 
-        // 5. Verify BMW Concierge Email Layout (sans-serif, #0B0E14, #121620, no monospace/Courier)
+        // 5. Verify Clean Minimalist Luxury Email Layout (sans-serif, #F1F5F9, #FFFFFF, no monospace/Courier)
         $mailables = [
             new AppointmentConfirmationMail($serviceAppointment->fresh('product')),
             new AppointmentReminderMail($serviceAppointment->fresh('product')),
@@ -1027,10 +1027,10 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
 
         foreach ($mailables as $mailable) {
             $html = $mailable->render();
-            $this->assertStringContainsString('#0B0E14', $html);
-            $this->assertStringContainsString('#121620', $html);
-            $this->assertStringContainsString('CONCIERGE &amp; CLIENT RELATIONS', $html);
-            $this->assertStringContainsString("font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;", $html);
+            $this->assertStringContainsString('#F1F5F9', $html);
+            $this->assertStringContainsString('#FFFFFF', $html);
+            $this->assertStringContainsString('BMW SHOWROOM', $html);
+            $this->assertStringContainsString("font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;", $html);
             $this->assertStringNotContainsString('monospace', strtolower($html));
             $this->assertStringNotContainsString('courier', strtolower($html));
         }
