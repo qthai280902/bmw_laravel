@@ -367,7 +367,7 @@
             $chatSession = $this->inspectedAiSession;
             $leadName = $lead->user?->name ?? $lead->guest_name ?? 'Khách vãng lai';
             $leadEmail = $lead->user?->email ?? $lead->guest_email;
-            $officialSentAt = is_array($lead->meta_data) ? ($lead->meta_data['official_confirmation_sent_at'] ?? null) : null;
+            $officialSentAt = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($lead->meta_data)['official_confirmation_sent_at'] ?? null;
             $timelineEvents = \App\Services\Crm\InteractionTimelineRecorder::timelineForAppointment($lead);
         @endphp
         <div
@@ -621,10 +621,12 @@
                             <!-- Timeline Chat AI (nếu có) -->
                             @if($chatSession && $chatSession->messages->isNotEmpty())
                                 @php
-                                    $latestStructuredMeta = $chatSession->messages
-                                        ->reverse()
-                                        ->first(fn ($msg) => ! $msg->isUserMessage() && is_array($msg->meta_data) && $msg->meta_data !== [])
-                                        ?->meta_data ?? [];
+                                    $latestStructuredMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray(
+                                        $chatSession->messages
+                                            ->reverse()
+                                            ->first(fn ($msg) => ! $msg->isUserMessage() && \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($msg->meta_data) !== [])
+                                            ?->meta_data
+                                    );
                                     $drawerLeadLevel = (string) ($latestStructuredMeta['lead_level'] ?? '');
                                     $drawerLeadStyle = match ($drawerLeadLevel) {
                                         'hot' => 'border-rose-500/30 bg-rose-500/15 text-rose-300',

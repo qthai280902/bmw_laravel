@@ -47,4 +47,32 @@ class AppointmentFactory extends Factory
             'guest_phone' => fake()->phoneNumber(),
         ]);
     }
+
+    public function hotLead(): static
+    {
+        return $this->state(fn (): array => [
+            'lead_priority' => Appointment::LEAD_PRIORITY_HOT,
+            'lead_intent' => 'ready_to_buy',
+            'ai_lead_note' => 'Khách hàng có nhu cầu chốt cọc trong tuần này.',
+        ]);
+    }
+
+    public function assignedTo(User|int $user): static
+    {
+        return $this->state(fn (): array => [
+            'assigned_to' => $user instanceof User ? $user->id : $user,
+        ]);
+    }
+
+    public function rescheduledByGuest(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => AppointmentStatus::Pending,
+            'meta_data' => [
+                'reschedule_pending_review' => true,
+                'reschedule_reason' => 'Khách hàng yêu cầu dời lịch sang khung giờ mới.',
+                'reschedule_requested_at' => now()->toIso8601String(),
+            ],
+        ]);
+    }
 }

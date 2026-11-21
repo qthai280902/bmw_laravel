@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Collections\AppointmentCollection;
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Events\AppointmentStatusChanged;
@@ -11,6 +12,8 @@ use App\Mail\Customer\PostTestDriveFollowupMail;
 use App\Services\Crm\DocumentCodeGenerator;
 use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Contracts\Mail\Attachable;
+use Illuminate\Database\Eloquent\Attributes\CollectedBy;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +24,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Throwable;
 
+#[CollectedBy(AppointmentCollection::class)]
 class Appointment extends Model implements Attachable
 {
     use HasFactory;
@@ -30,6 +34,17 @@ class Appointment extends Model implements Attachable
     public const LEAD_PRIORITY_WARM = 'warm';
 
     public const LEAD_PRIORITY_NORMAL = 'normal';
+
+    /**
+     * Sensitive internal attributes hidden from JSON/array serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'customer_internal_code',
+        'daily_sequence_code',
+        'meta_data',
+    ];
 
     protected $fillable = [
         'customer_order_code',
@@ -64,7 +79,7 @@ class Appointment extends Model implements Attachable
             'type' => AppointmentType::class,
             'status' => AppointmentStatus::class,
             'appointment_date' => 'datetime',
-            'meta_data' => 'array',
+            'meta_data' => AsArrayObject::class,
             'confirmation_email_sent_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
             'followup_email_sent_at' => 'datetime',
@@ -85,7 +100,9 @@ class Appointment extends Model implements Attachable
 
     public function assignedSales(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'assigned_to')->withDefault([
+            'name' => 'Chưa phân công',
+        ]);
     }
 
     public function isServiceBooking(): bool
@@ -334,7 +351,8 @@ class Appointment extends Model implements Attachable
 
     public function servicePackageLabel(): ?string
     {
-        $raw = is_array($this->meta_data) ? ($this->meta_data['service_package'] ?? null) : null;
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $raw = $meta['service_package'] ?? null;
 
         return is_string($raw) && trim($raw) !== '' ? trim($raw) : null;
     }
@@ -426,7 +444,7 @@ class Appointment extends Model implements Attachable
 
             Mail::to($recipientEmail)->later($sendAt, $mail);
 
-            $meta = is_array($this->meta_data) ? $this->meta_data : [];
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
             $meta = InteractionTimelineRecorder::appendToMeta(
                 meta: $meta,
                 actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
@@ -474,7 +492,7 @@ class Appointment extends Model implements Attachable
                 confirmedByRole: $actor?->roleLabel(),
             ));
 
-            $meta = is_array($this->meta_data) ? $this->meta_data : [];
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
             $meta['official_confirmation_sent_at'] = now()->toIso8601String();
             if ($actor) {
                 $meta['confirmed_by_name'] = $actor->name;
@@ -536,7 +554,7 @@ class Appointment extends Model implements Attachable
                 );
             }
 
-            $meta = is_array($locked->meta_data) ? $locked->meta_data : [];
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
             $meta = InteractionTimelineRecorder::appendToMeta(
                 meta: $meta,
                 actorType: InteractionTimelineRecorder::ACTOR_ADMIN,

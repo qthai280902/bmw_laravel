@@ -171,7 +171,7 @@ class UserController extends Controller
         $endUtc = $endVn?->setTimezone('UTC');
 
         $appointments = Appointment::query()
-            ->with(['product:id,name'])
+            ->with(['user:id,name,email', 'product:id,name'])
             ->where('assigned_to', $user->id)
             ->when($startUtc, fn ($q) => $q->where('created_at', '>=', $startUtc))
             ->when($endUtc, fn ($q) => $q->where('created_at', '<=', $endUtc))
@@ -190,16 +190,17 @@ class UserController extends Controller
 
         $allItems = $this->normalizeAssignedItems($appointments, $orders);
 
-        $totalLeads = $allItems->count();
-        $completedCount = $allItems->where('status', 'completed')->count();
-        $confirmedCount = $allItems->where('status', 'confirmed')->count();
-        $pendingCount = $allItems->where('status', 'pending')->count();
-        $cancelledCount = $allItems->where('status', 'cancelled')->count();
+        $appointmentCounts = $appointments->statusCounts();
+        $orderCounts = $orders->statusCounts();
+
+        $totalLeads = $appointmentCounts['total'] + $orderCounts['total'];
+        $completedCount = $appointmentCounts['completed'] + $orderCounts['completed'];
+        $confirmedCount = $appointmentCounts['confirmed'] + $orderCounts['confirmed'];
+        $pendingCount = $appointmentCounts['pending'] + $orderCounts['pending'];
+        $cancelledCount = $appointmentCounts['cancelled'] + $orderCounts['cancelled'];
 
         $completionRate = $totalLeads > 0 ? round(($completedCount / $totalLeads) * 100, 1) : 0.0;
-        $accessoryRevenue = (float) $orders
-            ->where('status', AccessoryOrder::STATUS_COMPLETED)
-            ->sum('total_amount');
+        $accessoryRevenue = (float) $orders->completedRevenue();
 
         $series = $this->buildTimelineSeries($allItems, $startVn, $endVn, $nowVn, $tz);
         $donutSlices = $this->buildDonutSlices($pendingCount, $confirmedCount, $completedCount, $cancelledCount, $totalLeads);

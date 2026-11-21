@@ -6,9 +6,12 @@ use App\Enums\AppointmentStatus;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\User;
+use ArrayObject;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Context;
 use Throwable;
 
 class InteractionTimelineRecorder
@@ -22,7 +25,25 @@ class InteractionTimelineRecorder
     public const MAX_EVENTS = 50;
 
     /**
-     * Build a structured timeline event payload.
+     * Chuẩn hóa meta_data từ array, ArrayObject (AsArrayObject), Arrayable hoặc null sang mảng thuần.
+     *
+     * @return array<string, mixed>
+     */
+    public static function normalizeMetaArray(mixed $meta): array
+    {
+        if ($meta instanceof ArrayObject) {
+            return $meta->getArrayCopy();
+        }
+
+        if ($meta instanceof Arrayable) {
+            return $meta->toArray();
+        }
+
+        return is_array($meta) ? $meta : [];
+    }
+
+    /**
+     * Build a structured timeline event payload, automatically inheriting trace_id from Laravel Context.
      *
      * @return array{
      *     actor_type: string,
@@ -31,7 +52,8 @@ class InteractionTimelineRecorder
      *     detail: string,
      *     channel: string,
      *     occurred_at: string,
-     *     occurred_at_iso: string
+     *     occurred_at_iso: string,
+     *     trace_id?: string
      * }
      */
     public static function makeEvent(
@@ -47,7 +69,7 @@ class InteractionTimelineRecorder
             ? $actorType
             : self::ACTOR_SYSTEM;
 
-        return [
+        $event = [
             'actor_type' => $normalizedActorType,
             'actor_label' => trim($actorLabel) !== '' ? trim($actorLabel) : self::defaultActorLabel($normalizedActorType),
             'title' => trim($title),
@@ -56,16 +78,23 @@ class InteractionTimelineRecorder
             'occurred_at' => $timestamp->format('H:i · d/m/Y'),
             'occurred_at_iso' => $timestamp->toIso8601String(),
         ];
+
+        $traceId = Context::get('trace_id');
+        if (is_string($traceId) && trim($traceId) !== '') {
+            $event['trace_id'] = trim($traceId);
+        }
+
+        return $event;
     }
 
     /**
-     * Append a timeline event into an existing meta_data array without issuing extra SQL queries.
+     * Append a timeline event into an existing meta_data array or ArrayObject without issuing extra SQL queries.
      *
-     * @param  array<string, mixed>  $meta
+     * @param  array<string, mixed>|ArrayObject<string, mixed>  $meta
      * @return array<string, mixed>
      */
     public static function appendToMeta(
-        array $meta,
+        array|ArrayObject $meta,
         string $actorType,
         string $actorLabel,
         string $title,
@@ -73,16 +102,17 @@ class InteractionTimelineRecorder
         string $channel = 'CRM',
         ?CarbonInterface $occurredAt = null,
     ): array {
-        $events = isset($meta['timeline']) && is_array($meta['timeline']) ? array_values($meta['timeline']) : [];
+        $normalized = self::normalizeMetaArray($meta);
+        $events = isset($normalized['timeline']) && is_array($normalized['timeline']) ? array_values($normalized['timeline']) : [];
         $events[] = self::makeEvent($actorType, $actorLabel, $title, $detail, $channel, $occurredAt);
 
         if (count($events) > self::MAX_EVENTS) {
             $events = array_slice($events, -self::MAX_EVENTS);
         }
 
-        $meta['timeline'] = $events;
+        $normalized['timeline'] = $events;
 
-        return $meta;
+        return $normalized;
     }
 
     /**
@@ -98,7 +128,7 @@ class InteractionTimelineRecorder
         ?CarbonInterface $occurredAt = null,
         bool $persist = true,
     ): void {
-        $meta = is_array($model->getAttribute('meta_data')) ? $model->getAttribute('meta_data') : [];
+        $meta = self::normalizeMetaArray($model->getAttribute('meta_data'));
         $meta = self::appendToMeta($meta, $actorType, $actorLabel, $title, $detail, $channel, $occurredAt);
 
         $model->forceFill(['meta_data' => $meta]);
@@ -132,7 +162,7 @@ class InteractionTimelineRecorder
      */
     public static function timelineForAppointment(Appointment $appointment): array
     {
-        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $meta = self::normalizeMetaArray($appointment->meta_data);
         $rawTimeline = isset($meta['timeline']) && is_array($meta['timeline']) ? $meta['timeline'] : [];
 
         if ($rawTimeline !== []) {
@@ -286,7 +316,7 @@ class InteractionTimelineRecorder
      */
     public static function timelineForAccessoryOrder(AccessoryOrder $order): array
     {
-        $meta = is_array($order->meta_data) ? $order->meta_data : [];
+        $meta = self::normalizeMetaArray($order->meta_data);
         $rawTimeline = isset($meta['timeline']) && is_array($meta['timeline']) ? $meta['timeline'] : [];
 
         if ($rawTimeline !== []) {
@@ -374,7 +404,7 @@ class InteractionTimelineRecorder
                 ? $item['occurred_at']
                 : ($iso !== '' ? (self::parseMetaTimestamp($iso)?->format('H:i · d/m/Y') ?? '') : '');
 
-            $normalized[] = [
+            $normalizedItem = [
                 'actor_type' => $actorType,
                 'actor_label' => trim((string) ($item['actor_label'] ?? self::defaultActorLabel($actorType))),
                 'title' => trim((string) ($item['title'] ?? 'Cập nhật hồ sơ')),
@@ -383,6 +413,12 @@ class InteractionTimelineRecorder
                 'occurred_at' => $formatted,
                 'occurred_at_iso' => $iso,
             ];
+
+            if (is_string($item['trace_id'] ?? null) && trim($item['trace_id']) !== '') {
+                $normalizedItem['trace_id'] = trim($item['trace_id']);
+            }
+
+            $normalized[] = $normalizedItem;
         }
 
         usort($normalized, static function (array $a, array $b): int {

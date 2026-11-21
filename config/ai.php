@@ -97,7 +97,8 @@ return [
             'url' => env('GEMINI_URL', 'https://generativelanguage.googleapis.com/v1beta/'),
             'models' => [
                 'text' => [
-                    'default' => env('AI_ASSISTANT_MODEL'),
+                    'default' => env('AI_ASSISTANT_MODEL', 'gemini-3.1-flash-lite'),
+                    'fallback' => env('AI_ASSISTANT_FALLBACK_MODEL', 'gemini-3.5-flash-lite'),
                 ],
             ],
         ],

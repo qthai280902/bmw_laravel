@@ -3,17 +3,18 @@
 return [
     'enabled' => env('AI_ASSISTANT_ENABLED', true),
     'provider' => env('AI_ASSISTANT_PROVIDER', 'gemini'),
-    'model' => env('AI_ASSISTANT_MODEL'),
+    'model' => env('AI_ASSISTANT_MODEL', 'gemini-3.1-flash-lite'),
+    'fallback_model' => env('AI_ASSISTANT_FALLBACK_MODEL', 'gemini-3.5-flash-lite'),
     'max_context_products' => env('AI_ASSISTANT_MAX_CONTEXT_PRODUCTS', 30),
     'max_context_articles' => env('AI_ASSISTANT_MAX_CONTEXT_ARTICLES', 5),
     'max_history_messages' => (int) env('AI_ASSISTANT_MAX_HISTORY_MESSAGES', 14),
     'history_ttl_hours' => (int) env('AI_ASSISTANT_HISTORY_TTL_HOURS', 1440),
-    'timeout_seconds' => (int) env('AI_ASSISTANT_TIMEOUT_SECONDS', 30),
+    'timeout_seconds' => (int) env('AI_ASSISTANT_TIMEOUT_SECONDS', 20),
     'gemini_keys' => [
         'primary' => env('GEMINI_API_KEY'),
         'additional' => env('GEMINI_API_KEYS'),
     ],
-    'gemini_key_cooldown_seconds' => env('GEMINI_KEY_COOLDOWN_SECONDS', 120),
+    'gemini_key_cooldown_seconds' => (int) env('GEMINI_KEY_COOLDOWN_SECONDS', 60),
     'gemini_key_rotation' => env('GEMINI_KEY_ROTATION', 'round_robin'),
     'embeddings' => [
         'enabled' => filter_var(env('AI_EMBEDDINGS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),

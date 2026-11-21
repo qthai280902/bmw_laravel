@@ -32,6 +32,13 @@ return [
         'ca_bundle' => env('HTTP_CLIENT_CA_BUNDLE'),
     ],
 
+    'gemini' => [
+        'model' => env('AI_ASSISTANT_MODEL', 'gemini-3.1-flash-lite'),
+        'fallback_model' => env('AI_ASSISTANT_FALLBACK_MODEL', 'gemini-3.5-flash-lite'),
+        'timeout' => (int) env('AI_ASSISTANT_TIMEOUT_SECONDS', 20),
+        'cooldown_seconds' => (int) env('GEMINI_KEY_COOLDOWN_SECONDS', 60),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

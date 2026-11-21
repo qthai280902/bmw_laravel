@@ -316,8 +316,9 @@
             $booking = $this->inspectedBooking;
             $bookingEmail = $booking->user?->email ?? $booking->guest_email;
             $bookingCar = $booking->product?->name ?? ($booking->meta_data['customer_car_model'] ?? 'Xe BMW của khách');
-            $bookingCondition = is_array($booking->meta_data) ? ($booking->meta_data['customer_car_condition'] ?? null) : null;
-            $officialSentAt = is_array($booking->meta_data) ? ($booking->meta_data['official_confirmation_sent_at'] ?? null) : null;
+            $bookingMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($booking->meta_data);
+            $bookingCondition = $bookingMeta['customer_car_condition'] ?? null;
+            $officialSentAt = $bookingMeta['official_confirmation_sent_at'] ?? null;
             $timelineEvents = \App\Services\Crm\InteractionTimelineRecorder::timelineForAppointment($booking);
         @endphp
         <div

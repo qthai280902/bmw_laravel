@@ -116,8 +116,6 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
             'customer_email' => 'ngoc.le@example.com',
             'customer_address' => '12 Lê Lợi, Quận 1, TP.HCM',
             'quantity' => 2,
-            'unit_price' => 4500000,
-            'total_amount' => 9000000,
             'status' => AccessoryOrder::STATUS_CONFIRMED,
             'notes' => 'Giao giờ hành chính.',
         ]);
@@ -213,7 +211,7 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
             'guest_phone' => '0988777666',
             'guest_email' => 'huy.pham@example.com',
             'type' => AppointmentType::Maintenance,
-            'service_package' => 'maintenance_major',
+            'meta_data' => ['service_package' => 'maintenance_major'],
             'appointment_date' => now()->addDay()->setTime(8, 30),
             'status' => AppointmentStatus::Pending,
         ]);
@@ -225,8 +223,6 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
             'customer_email' => 'nam.vu@example.com',
             'customer_address' => '88 Hai Bà Trưng, Hà Nội',
             'quantity' => 1,
-            'unit_price' => 4500000,
-            'total_amount' => 4500000,
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 
@@ -348,7 +344,7 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
             'guest_phone' => '0902333444',
             'guest_email' => 'ha.dang@example.com',
             'type' => AppointmentType::Maintenance,
-            'service_package' => 'oil_change',
+            'meta_data' => ['service_package' => 'oil_change'],
             'appointment_date' => now()->addDays(3),
             'status' => AppointmentStatus::Pending,
         ]);
@@ -360,8 +356,6 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
             'customer_email' => 'anh.hoang@example.com',
             'customer_address' => '15 Nguyễn Huệ, TP.HCM',
             'quantity' => 1,
-            'unit_price' => 4500000,
-            'total_amount' => 4500000,
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 

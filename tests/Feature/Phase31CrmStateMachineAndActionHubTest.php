@@ -92,7 +92,7 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             'guest_email' => 'dat.vo@example.com',
             'product_id' => $car->id,
             'type' => AppointmentType::Maintenance,
-            'service_package' => 'Bảo dưỡng định kỳ tiêu chuẩn BMW (Standard Maintenance)',
+            'meta_data' => ['service_package' => 'Bảo dưỡng định kỳ tiêu chuẩn BMW (Standard Maintenance)'],
             'appointment_date' => now()->addDays(3),
             'status' => AppointmentStatus::Pending,
         ]);
@@ -104,8 +104,6 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             'customer_email' => 'an.do@example.com',
             'customer_address' => '25 Đồng Khởi, Quận 1, TP.HCM',
             'quantity' => 1,
-            'unit_price' => 6800000,
-            'total_amount' => 6800000,
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 

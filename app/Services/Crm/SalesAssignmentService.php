@@ -99,7 +99,7 @@ class SalesAssignmentService
             return $assignee;
         }
 
-        $meta = is_array($record->meta_data) ? $record->meta_data : [];
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($record->meta_data);
         $codeLabel = $record->customer_order_code ?: '#'.$record->id;
         $detail = $assignee
             ? "Chuyển giao hồ sơ {$codeLabel} cho chuyên viên Sales {$assignee->name}."

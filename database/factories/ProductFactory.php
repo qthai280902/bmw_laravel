@@ -43,4 +43,11 @@ class ProductFactory extends Factory
             'is_active' => true,
         ];
     }
+
+    public function outOfStock(): static
+    {
+        return $this->state(fn (): array => [
+            'stock' => 0,
+        ]);
+    }
 }

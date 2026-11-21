@@ -29,7 +29,7 @@ class CleanupAndFollowupAppointmentsCommand extends Command implements Isolatabl
             ->chunkById(50, function (Collection $appointments) use (&$cancelledCount): void {
                 /** @var Appointment $appointment */
                 foreach ($appointments as $appointment) {
-                    $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+                    $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
                     $meta['auto_cancelled_reason'] = 'Tự động hủy do quá hạn 24 giờ chưa xác nhận';
                     $meta['auto_cancelled_at'] = now()->toIso8601String();
                     $meta = InteractionTimelineRecorder::appendToMeta(

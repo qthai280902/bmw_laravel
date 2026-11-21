@@ -21,7 +21,7 @@ class GuestAppointmentManageController extends Controller
 {
     public function show(Appointment $appointment): View
     {
-        $appointment->loadMissing(['product.category', 'user']);
+        $appointment->loadMissing(['product.category', 'user', 'assignedSales']);
 
         return view('appointments.guest-manage', [
             'appointment' => $appointment,
@@ -41,7 +41,7 @@ class GuestAppointmentManageController extends Controller
 
         $action = $validated['action'];
         $cleanReason = isset($validated['reason']) ? trim(strip_tags((string) $validated['reason'])) : '';
-        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
         $previousDateLabel = $appointment->appointment_date?->format('H:i — d/m/Y');
         $previousStatusLabel = $appointment->statusLabel();
         $refCode = $appointment->publicReferenceCode();

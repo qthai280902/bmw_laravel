@@ -894,7 +894,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
             ->where('role', 'assistant')
             ->firstOrFail();
 
-        $this->assertIsArray($assistantMsg->meta_data);
+        $this->assertInstanceOf(\ArrayObject::class, $assistantMsg->meta_data);
         $this->assertSame('test_drive', $assistantMsg->meta_data['intent'] ?? null);
         $this->assertSame('hot', $assistantMsg->meta_data['lead_level'] ?? null);
         $this->assertSame([$car->id], $assistantMsg->meta_data['recommended_product_ids'] ?? null);

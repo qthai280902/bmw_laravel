@@ -62,7 +62,7 @@ class AppointmentLeadClassifier
                         prompt: $prompt,
                         provider: $provider,
                         model: $model,
-                        timeout: max(6, (int) config('showroom_ai.timeout_seconds', 30)),
+                        timeout: max(6, (int) config('showroom_ai.timeout_seconds', 20)),
                     ),
                     operation: 'appointment_lead_classification',
                 );

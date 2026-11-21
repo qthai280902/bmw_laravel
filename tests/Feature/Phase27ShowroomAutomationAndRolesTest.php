@@ -255,19 +255,19 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
         ])->assertRedirect(route('appointments.success'));
 
         $this->assertDatabaseHas('notifications', [
-            'notifiable_type' => User::class,
+            'notifiable_type' => (new User)->getMorphClass(),
             'notifiable_id' => $admin->id,
             'type' => NewAppointmentLeadNotification::class,
         ]);
         $this->assertDatabaseHas('notifications', [
-            'notifiable_type' => User::class,
+            'notifiable_type' => (new User)->getMorphClass(),
             'notifiable_id' => $sales->id,
             'type' => NewAppointmentLeadNotification::class,
         ]);
         $this->assertSame(
             0,
             DatabaseNotification::query()
-                ->where('notifiable_type', User::class)
+                ->where('notifiable_type', (new User)->getMorphClass())
                 ->where('notifiable_id', $marketing->id)
                 ->count()
         );

@@ -36,9 +36,11 @@
 
                             <div class="whitespace-pre-wrap break-words text-sm font-medium leading-7 text-zinc-200">{{ $message->content }}</div>
 
-                            @if (! $message->isUserMessage() && is_array($message->meta_data) && $message->meta_data !== [])
+                            @php
+                                $structuredMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($message->meta_data);
+                            @endphp
+                            @if (! $message->isUserMessage() && $structuredMeta !== [])
                                 @php
-                                    $structuredMeta = $message->meta_data;
                                     $metaLeadLevel = (string) ($structuredMeta['lead_level'] ?? 'cold');
                                     $metaLeadStyle = match ($metaLeadLevel) {
                                         'hot' => 'border-rose-500/40 bg-rose-500/15 text-rose-300',

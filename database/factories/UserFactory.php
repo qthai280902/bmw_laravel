@@ -57,4 +57,12 @@ class UserFactory extends Factory
             'role' => User::ROLE_MARKETING,
         ]);
     }
+
+    public function topSuperAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_ADMIN,
+            'is_super_admin' => true,
+        ]);
+    }
 }

@@ -12,6 +12,9 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 
+use function Laravel\Prompts\callout;
+use function Laravel\Prompts\table;
+
 class CleanAndSyncShowroomDataCommand extends Command
 {
     protected $signature = 'showroom:clean-and-sync-data {--dry-run : Xem trước số lượng bản ghi sẽ xử lý mà không thay đổi database}';
@@ -129,20 +132,27 @@ class CleanAndSyncShowroomDataCommand extends Command
             $cacheService->flushSalesRoster();
         }
 
-        $this->table(
-            ['Hạng mục', 'Số lượng'],
-            [
-                ['Lịch hẹn thử nghiệm đã dọn', $deletedAppointments],
-                ['Đơn phụ kiện thử nghiệm đã dọn', $deletedOrders],
-                ['Tài khoản Sales được khởi tạo thêm', $createdSales],
-                ['Lịch hẹn được cấp Mã kép bổ sung', $backfillCounts['appointments']],
-                ['Đơn phụ kiện được cấp Mã kép bổ sung', $backfillCounts['accessory_orders']],
-                ['Lịch hẹn được phân bổ đều cho Sales', $distributedCounts['appointments']],
-                ['Đơn phụ kiện được phân bổ đều cho Sales', $distributedCounts['accessory_orders']],
-            ]
-        );
+        $summaryRows = [
+            ['Lịch hẹn thử nghiệm đã dọn', $deletedAppointments],
+            ['Đơn phụ kiện thử nghiệm đã dọn', $deletedOrders],
+            ['Tài khoản Sales được khởi tạo thêm', $createdSales],
+            ['Lịch hẹn được cấp Mã kép bổ sung', $backfillCounts['appointments']],
+            ['Đơn phụ kiện được cấp Mã kép bổ sung', $backfillCounts['accessory_orders']],
+            ['Lịch hẹn được phân bổ đều cho Sales', $distributedCounts['appointments']],
+            ['Đơn phụ kiện được phân bổ đều cho Sales', $distributedCounts['accessory_orders']],
+        ];
 
-        $this->info($dryRun ? 'Hoàn tất kiểm tra Dry-Run.' : 'Đã đồng bộ và làm sạch dữ liệu Showroom thành công.');
+        $completionMessage = $dryRun
+            ? 'Hoàn tất kiểm tra Dry-Run.'
+            : 'Đã đồng bộ và làm sạch dữ liệu Showroom thành công.';
+
+        if ($this->input->isInteractive()) {
+            table(['Hạng mục', 'Số lượng'], $summaryRows);
+            callout($completionMessage, $dryRun ? 'Dry-Run Summary' : 'Showroom Sync Completed');
+        } else {
+            $this->table(['Hạng mục', 'Số lượng'], $summaryRows);
+            $this->info($completionMessage);
+        }
 
         return self::SUCCESS;
     }

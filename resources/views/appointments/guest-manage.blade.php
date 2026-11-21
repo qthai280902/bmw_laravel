@@ -6,7 +6,7 @@
         $customerOrderCode = $appointment->publicReferenceCode();
         $assignedSales = $appointment->assignedSales;
         $isLocked = $appointment->isTerminalStatus();
-        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $meta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
 
         $metaGuestConfirmedAt = $meta['guest_confirmed_at'] ?? null;
         $guestConfirmedAtFormatted = $metaGuestConfirmedAt
@@ -105,7 +105,7 @@
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
                             <dt class="font-medium text-slate-500">Chuyên viên phụ trách</dt>
                             <dd class="font-semibold text-slate-900">
-                                {{ $assignedSales?->name ?? 'Đội ngũ Tư vấn BMW Showroom' }}
+                                {{ $assignedSales?->exists ? $assignedSales->name : 'Đội ngũ Tư vấn BMW Showroom' }}
                             </dd>
                         </div>
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">

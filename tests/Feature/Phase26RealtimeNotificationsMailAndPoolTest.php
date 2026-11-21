@@ -103,7 +103,7 @@ class Phase26RealtimeNotificationsMailAndPoolTest extends TestCase
         ])->assertRedirect(route('accessory-orders.create', $accessory->slug));
 
         $adminNotifications = DatabaseNotification::query()
-            ->where('notifiable_type', User::class)
+            ->where('notifiable_type', (new User)->getMorphClass())
             ->where('notifiable_id', $admin->id)
             ->latest()
             ->get();

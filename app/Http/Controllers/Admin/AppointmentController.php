@@ -10,6 +10,7 @@ use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\GuestAppointmentChangeMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
 use App\Models\Appointment;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Mailable;
 use Illuminate\Validation\Rule;
@@ -81,7 +82,7 @@ class AppointmentController extends Controller
 
     private function makeGuestChangePreviewMail(Appointment $appointment): GuestAppointmentChangeMail
     {
-        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
         $previousDateLabel = isset($meta['previous_appointment_date']) && is_string($meta['previous_appointment_date']) && $meta['previous_appointment_date'] !== ''
             ? $meta['previous_appointment_date']
             : ($appointment->appointment_date?->copy()->subHours(2)->format('H:i — d/m/Y') ?? '09:00 — '.now()->addDay()->format('d/m/Y'));

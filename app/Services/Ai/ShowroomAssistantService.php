@@ -47,7 +47,10 @@ class ShowroomAssistantService
      */
     public function ask(string $message, array $options = []): array
     {
+        Context::push('ai_steps', 'resolve_page_context');
         $pageContext = $this->resolvePageContext($options);
+
+        Context::push('ai_steps', 'rag_knowledge_lookup');
         $context = $this->publicContext($message, $pageContext);
         $suggestions = $this->suggestionsFor($message, $context);
         $provider = $this->runner()->configuredProvider();
@@ -59,6 +62,7 @@ class ShowroomAssistantService
         $trackerProduct = $pageContext['tracker_product'] ?? null;
 
         if ($configurationReason = $this->runner()->configurationFailureReason($provider)) {
+            Context::push('ai_steps', "skipped:{$configurationReason}");
             Log::info('Showroom AI assistant skipped.', [
                 'reason' => $configurationReason,
                 'provider' => $provider,
@@ -78,6 +82,8 @@ class ShowroomAssistantService
                 context: $context,
                 message: $message,
             );
+
+            Context::push('ai_steps', 'completed:'.($payload['status'] ?? 'ok'));
 
             return $this->withTrackerProduct($payload, $trackerProduct);
         }
@@ -195,64 +201,65 @@ class ShowroomAssistantService
             return;
         }
 
-        $attempts = 0;
-        $rateLimitedAttempts = 0;
+        $modelsToTry = array_values(array_unique(array_filter(
+            [$model, $this->runner()->fallbackModel($model)],
+            static fn ($m): bool => $m === null || $m !== ''
+        )));
+        if ($modelsToTry === []) {
+            $modelsToTry = [null];
+        } elseif ($model === null && count($modelsToTry) === 1 && $this->runner()->fallbackModel(null) !== null) {
+            $modelsToTry = [null, $this->runner()->fallbackModel(null)];
+        }
 
-        foreach ($candidates as $candidate) {
-            $attempts++;
-            $emittedChunk = false;
-            $rawText = '';
-            Context::add('gemini_key_slot', $candidate['index']);
-            $providerName = $this->geminiKeyPool->providerNameFor($candidate);
-            $originalConfig = config("ai.providers.{$providerName}");
-            $baseConfig = config('ai.providers.gemini', []);
+        $totalAttempts = 0;
+        $totalRateLimited = 0;
 
-            Config::set("ai.providers.{$providerName}", array_merge($baseConfig, [
-                'driver' => 'gemini',
-                'key' => $candidate['key'],
-            ]));
+        foreach ($modelsToTry as $modelIndex => $activeModel) {
+            $isFallbackPass = $modelIndex > 0;
+            if ($isFallbackPass) {
+                Context::push('ai_steps', 'stream_fallback_model:'.($activeModel ?? 'default'));
+            }
 
-            app(AiManager::class)->forgetInstance($providerName);
+            $passCandidates = $isFallbackPass
+                ? ($this->geminiKeyPool->availableCandidates() ?: $candidates)
+                : $candidates;
 
-            try {
-                $stream = $this->streamAssistant(
-                    prompt: $prompt,
-                    provider: $providerName,
-                    model: $model,
-                    conversationMessages: $conversationMessages,
-                    pageContextSummary: $pageContextSummary,
-                    attachments: $attachments,
-                );
+            foreach ($passCandidates as $candidate) {
+                $totalAttempts++;
+                $emittedChunk = false;
+                $rawText = '';
+                Context::add('gemini_key_slot', $candidate['index']);
+                Context::push('ai_steps', 'stream_attempt:'.($activeModel ?? 'default').":key_{$candidate['index']}");
 
-                foreach ($stream as $streamEvent) {
-                    if ($streamEvent instanceof TextDelta && $streamEvent->delta !== '') {
-                        $emittedChunk = true;
-                        $rawText .= $streamEvent->delta;
-                        yield ['event' => 'chunk', 'data' => ['delta' => $streamEvent->delta]];
+                $providerName = $this->geminiKeyPool->providerNameFor($candidate);
+                $originalConfig = config("ai.providers.{$providerName}");
+                $baseConfig = config('ai.providers.gemini', []);
+
+                Config::set("ai.providers.{$providerName}", array_merge($baseConfig, [
+                    'driver' => 'gemini',
+                    'key' => $candidate['key'],
+                ]));
+
+                app(AiManager::class)->forgetInstance($providerName);
+
+                try {
+                    $stream = $this->streamAssistant(
+                        prompt: $prompt,
+                        provider: $providerName,
+                        model: $activeModel,
+                        conversationMessages: $conversationMessages,
+                        pageContextSummary: $pageContextSummary,
+                        attachments: $attachments,
+                    );
+
+                    foreach ($stream as $streamEvent) {
+                        if ($streamEvent instanceof TextDelta && $streamEvent->delta !== '') {
+                            $emittedChunk = true;
+                            $rawText .= $streamEvent->delta;
+                            yield ['event' => 'chunk', 'data' => ['delta' => $streamEvent->delta]];
+                        }
                     }
-                }
 
-                yield [
-                    'event' => 'done',
-                    'data' => $this->withTrackerProduct(
-                        $this->buildSuccessfulPayload($rawText, $suggestions, $context, $message),
-                        $trackerProduct,
-                    ),
-                ];
-
-                return;
-            } catch (RateLimitedException $exception) {
-                $rateLimitedAttempts++;
-                $this->geminiKeyPool->markRateLimited($candidate);
-                if ($emittedChunk) {
-                    break;
-                }
-            } catch (Throwable $exception) {
-                if (! $emittedChunk && $this->runner()->isTransientProviderException($exception)) {
-                    continue;
-                }
-
-                if ($emittedChunk && trim($rawText) !== '') {
                     yield [
                         'event' => 'done',
                         'data' => $this->withTrackerProduct(
@@ -262,21 +269,45 @@ class ShowroomAssistantService
                     ];
 
                     return;
+                } catch (RateLimitedException $exception) {
+                    $totalRateLimited++;
+                    if (! $isFallbackPass) {
+                        $this->geminiKeyPool->markRateLimited($candidate);
+                    }
+                    if ($emittedChunk) {
+                        break 2;
+                    }
+                } catch (Throwable $exception) {
+                    if (! $emittedChunk && $this->runner()->isTransientProviderException($exception)) {
+                        continue;
+                    }
+
+                    if ($emittedChunk && trim($rawText) !== '') {
+                        yield [
+                            'event' => 'done',
+                            'data' => $this->withTrackerProduct(
+                                $this->buildSuccessfulPayload($rawText, $suggestions, $context, $message),
+                                $trackerProduct,
+                            ),
+                        ];
+
+                        return;
+                    }
+
+                    yield [
+                        'event' => 'done',
+                        'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct),
+                    ];
+
+                    return;
+                } finally {
+                    app(AiManager::class)->forgetInstance($providerName);
+                    Config::set("ai.providers.{$providerName}", $originalConfig);
                 }
-
-                yield [
-                    'event' => 'done',
-                    'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct),
-                ];
-
-                return;
-            } finally {
-                app(AiManager::class)->forgetInstance($providerName);
-                Config::set("ai.providers.{$providerName}", $originalConfig);
             }
         }
 
-        $reason = ($attempts > 0 && $rateLimitedAttempts === $attempts) ? 'rate_limited' : 'provider_error';
+        $reason = ($totalAttempts > 0 && $totalRateLimited === $totalAttempts) ? 'rate_limited' : 'provider_error';
         $fallbackAnswer = $reason === 'rate_limited' ? $this->rateLimitFallbackMessage() : null;
 
         yield [
@@ -522,71 +553,104 @@ class ShowroomAssistantService
                 : $this->fallbackResponse($suggestions, 'configuration');
         }
 
-        $attempts = 0;
-        $rateLimitedAttempts = 0;
+        $fallbackModel = $this->runner()->fallbackModel($model);
+        $modelsToTry = $fallbackModel !== null ? [$model, $fallbackModel] : [$model];
+        $totalAttempts = 0;
+        $totalRateLimited = 0;
 
-        foreach ($candidates as $candidate) {
-            $attempts++;
-
-            try {
-                $response = $this->runner()->withGeminiCandidate(
-                    $candidate,
-                    fn (string $providerName): AgentResponse => $this->promptAssistant(
-                        prompt: $prompt,
-                        provider: $providerName,
-                        model: $model,
-                        conversationMessages: $conversationMessages,
-                        pageContextSummary: $pageContextSummary,
-                        attachments: $attachments,
-                    ),
-                );
-
-                return $this->successfulResponse($response, $suggestions, $context, $message);
-            } catch (RateLimitedException $exception) {
-                $rateLimitedAttempts++;
-                $this->geminiKeyPool->markRateLimited($candidate);
-
-                Log::warning('Showroom AI assistant Gemini key rate limited.', [
-                    'reason' => 'rate_limited',
-                    'provider' => 'gemini',
-                    'model' => $model,
-                    'key_index' => $candidate['index'],
-                    'exception' => $exception::class,
-                    'attempt' => $attempts,
-                    'configured_keys' => count($this->geminiKeyPool->keys()),
+        foreach ($modelsToTry as $modelIndex => $activeModel) {
+            $isFallbackPass = $modelIndex > 0;
+            if ($isFallbackPass) {
+                Context::push('ai_steps', 'fallback_model:'.($activeModel ?? 'default'));
+                Log::warning('Showroom AI assistant switching to fallback Gemini model.', [
+                    'primary_model' => $model ?? GeminiAgentRunner::DEFAULT_PRIMARY_MODEL,
+                    'fallback_model' => $activeModel,
                 ]);
-            } catch (Throwable $exception) {
-                if ($this->runner()->isTransientProviderException($exception)) {
-                    Log::warning('Showroom AI assistant Gemini key attempt failed.', [
-                        'reason' => 'provider_error',
+            }
+
+            $passCandidates = $isFallbackPass
+                ? ($this->geminiKeyPool->availableCandidates() ?: $candidates)
+                : $candidates;
+
+            $attemptsInPass = 0;
+            $rateLimitedInPass = 0;
+            $nonRetryableFailure = false;
+
+            foreach ($passCandidates as $candidate) {
+                $attemptsInPass++;
+                $totalAttempts++;
+                Context::push('ai_steps', 'model_attempt:'.($activeModel ?? 'default').":key_{$candidate['index']}");
+
+                try {
+                    $response = $this->runner()->withGeminiCandidate(
+                        $candidate,
+                        fn (string $providerName): AgentResponse => $this->promptAssistant(
+                            prompt: $prompt,
+                            provider: $providerName,
+                            model: $activeModel,
+                            conversationMessages: $conversationMessages,
+                            pageContextSummary: $pageContextSummary,
+                            attachments: $attachments,
+                        ),
+                    );
+
+                    return $this->successfulResponse($response, $suggestions, $context, $message);
+                } catch (RateLimitedException $exception) {
+                    $rateLimitedInPass++;
+                    $totalRateLimited++;
+
+                    if (! $isFallbackPass) {
+                        $this->geminiKeyPool->markRateLimited($candidate);
+                    }
+
+                    Log::warning('Showroom AI assistant Gemini key rate limited.', [
+                        'reason' => 'rate_limited',
                         'provider' => 'gemini',
-                        'model' => $model,
+                        'model' => $activeModel,
                         'key_index' => $candidate['index'],
                         'exception' => $exception::class,
-                        'attempt' => $attempts,
+                        'attempt' => $attemptsInPass,
                         'configured_keys' => count($this->geminiKeyPool->keys()),
                     ]);
+                } catch (Throwable $exception) {
+                    if ($this->runner()->isTransientProviderException($exception)) {
+                        Log::warning('Showroom AI assistant Gemini key attempt failed.', [
+                            'reason' => 'provider_error',
+                            'provider' => 'gemini',
+                            'model' => $activeModel,
+                            'key_index' => $candidate['index'],
+                            'exception' => $exception::class,
+                            'attempt' => $attemptsInPass,
+                            'configured_keys' => count($this->geminiKeyPool->keys()),
+                        ]);
 
-                    continue;
+                        continue;
+                    }
+
+                    Log::warning('Showroom AI assistant request failed.', [
+                        'reason' => 'provider_error',
+                        'exception' => $exception::class,
+                        'provider' => 'gemini',
+                        'model' => $activeModel,
+                        'key_index' => $candidate['index'],
+                        'attempt' => $attemptsInPass,
+                    ]);
+
+                    $nonRetryableFailure = true;
+                    break;
                 }
+            }
 
-                Log::warning('Showroom AI assistant request failed.', [
-                    'reason' => 'provider_error',
-                    'exception' => $exception::class,
-                    'provider' => 'gemini',
-                    'key_index' => $candidate['index'],
-                    'attempt' => $attempts,
-                ]);
-
+            if ($nonRetryableFailure) {
                 return $this->fallbackResponse($suggestions, 'provider_error');
             }
         }
 
-        if ($attempts > 0 && $rateLimitedAttempts === $attempts) {
+        if ($totalAttempts > 0 && $totalRateLimited === $totalAttempts) {
             Log::warning('Showroom AI assistant exhausted Gemini keys.', [
                 'reason' => 'rate_limited',
                 'provider' => 'gemini',
-                'attempts' => $attempts,
+                'attempts' => $totalAttempts,
                 'configured_keys' => count($this->geminiKeyPool->keys()),
             ]);
 
@@ -596,7 +660,7 @@ class ShowroomAssistantService
         Log::warning('Showroom AI assistant exhausted Gemini key attempts.', [
             'reason' => 'provider_error',
             'provider' => 'gemini',
-            'attempts' => $attempts,
+            'attempts' => $totalAttempts,
             'configured_keys' => count($this->geminiKeyPool->keys()),
         ]);
 
@@ -623,7 +687,7 @@ class ShowroomAssistantService
             attachments: $attachments,
             provider: $provider,
             model: $model,
-            timeout: max(10, (int) config('showroom_ai.timeout_seconds', 30)),
+            timeout: max(5, (int) config('showroom_ai.timeout_seconds', 20)),
         );
     }
 
@@ -647,7 +711,7 @@ class ShowroomAssistantService
             attachments: $attachments,
             provider: $provider,
             model: $model,
-            timeout: max(10, (int) config('showroom_ai.timeout_seconds', 30)),
+            timeout: max(5, (int) config('showroom_ai.timeout_seconds', 20)),
         );
     }
 

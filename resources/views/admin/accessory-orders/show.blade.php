@@ -36,7 +36,7 @@
                     </div>
                     <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Sales phụ trách</p>
-                        <p class="mt-2 text-sm font-bold text-white">{{ $order->assignedSales?->name ?? 'Chưa phân công' }}</p>
+                        <p class="mt-2 text-sm font-bold text-white">{{ $order->assignedSales?->exists ? $order->assignedSales->name : 'Chưa phân công' }}</p>
                     </div>
                     <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Số điện thoại</p>

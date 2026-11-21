@@ -102,8 +102,6 @@ class Phase28_5UiPolishAndDistinctMailsTest extends TestCase
             'customer_email' => 'huy@example.com',
             'customer_address' => '123 Nguyễn Văn Linh, Quận 7, TP.HCM',
             'quantity' => 1,
-            'unit_price' => 4500000,
-            'total_price' => 4500000,
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 
@@ -195,8 +193,6 @@ class Phase28_5UiPolishAndDistinctMailsTest extends TestCase
             'customer_email' => 'order@example.com',
             'customer_address' => '456 Lê Lợi, Quận 1, TP.HCM',
             'quantity' => 2,
-            'unit_price' => 4500000,
-            'total_price' => 9000000,
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 

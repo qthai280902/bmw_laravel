@@ -50,7 +50,7 @@ class RecordAppointmentMailSent
         if ($mailMode === 'admin_confirmed') {
             $appointment = Appointment::query()->find($appointmentId);
             if ($appointment) {
-                $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+                $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
                 $meta['official_confirmation_sent_at'] = now()->toIso8601String();
                 $appointment->forceFill([
                     'confirmation_email_sent_at' => $appointment->confirmation_email_sent_at ?? now(),
@@ -66,7 +66,7 @@ class RecordAppointmentMailSent
             return;
         }
 
-        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
         $meta = InteractionTimelineRecorder::appendToMeta(
             meta: $meta,
             actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,

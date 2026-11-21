@@ -47,7 +47,7 @@ class ArticleEditorialAiService
                         prompt: $prompt,
                         provider: $provider,
                         model: $model,
-                        timeout: max(8, (int) config('showroom_ai.timeout_seconds', 30)),
+                        timeout: max(8, (int) config('showroom_ai.timeout_seconds', 20)),
                     ),
                     operation: 'article_editorial_metadata',
                 );

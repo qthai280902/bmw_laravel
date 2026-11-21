@@ -3,17 +3,23 @@
 namespace App\Providers;
 
 use App\Listeners\AdminActivitySubscriber;
+use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\User;
 use App\Observers\AppointmentObserver;
 use App\Observers\ArticleObserver;
 use App\Observers\CategoryObserver;
 use App\Observers\ProductImageObserver;
 use App\Observers\ProductObserver;
+use App\Services\Ai\GeminiKeyPool;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -36,6 +42,31 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Model::preventLazyLoading(! $this->app->isProduction());
+        Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
+
+        Relation::enforceMorphMap([
+            'appointment' => Appointment::class,
+            'accessory_order' => AccessoryOrder::class,
+            'user' => User::class,
+            'product' => Product::class,
+            'article' => Article::class,
+        ]);
+
+        AboutCommand::add('BMW Showroom', fn (): array => [
+            'AI Provider' => (string) config('showroom_ai.provider', 'gemini'),
+            'AI Primary Model' => (string) config('showroom_ai.model', 'gemini-3.1-flash-lite'),
+            'AI Fallback Model' => (string) config('showroom_ai.fallback_model', 'gemini-3.5-flash-lite'),
+            'AI Timeout' => ((int) config('showroom_ai.timeout_seconds', 20)).'s',
+            'Gemini API Keys' => (string) count(app(GeminiKeyPool::class)->keys()),
+            'Cache Driver' => (string) config('cache.default'),
+            'Timezone' => (string) config('app.timezone'),
+        ]);
+
+        if ($this->app->runningInConsole()) {
+            $this->optimizes(clear: 'showroom:cache-clear');
+        }
+
         $this->configureHttpClientCertificateAuthority();
         $this->configureRateLimiters();
 

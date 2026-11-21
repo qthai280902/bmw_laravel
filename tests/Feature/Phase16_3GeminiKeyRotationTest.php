@@ -25,8 +25,9 @@ class Phase16_3GeminiKeyRotationTest extends TestCase
             'showroom_ai.enabled' => true,
             'showroom_ai.provider' => 'gemini',
             'showroom_ai.model' => null,
+            'showroom_ai.fallback_model' => null,
             'showroom_ai.gemini_key_rotation' => 'round_robin',
-            'showroom_ai.gemini_key_cooldown_seconds' => 120,
+            'showroom_ai.gemini_key_cooldown_seconds' => 60,
             'showroom_ai.rate_limit_fallback_message' => 'Rate limit fallback for tests.',
             'ai.providers.gemini.key' => null,
         ]);
@@ -192,7 +193,7 @@ class Phase16_3GeminiKeyRotationTest extends TestCase
         $this->assertIsString($envExample);
         $this->assertStringContainsString('GEMINI_API_KEY=', $envExample);
         $this->assertStringContainsString('GEMINI_API_KEYS=', $envExample);
-        $this->assertStringContainsString('GEMINI_KEY_COOLDOWN_SECONDS=120', $envExample);
+        $this->assertStringContainsString('GEMINI_KEY_COOLDOWN_SECONDS=60', $envExample);
         $this->assertStringContainsString('GEMINI_KEY_ROTATION=round_robin', $envExample);
         $this->assertStringNotContainsString('APP_KEY=base64:', $envExample);
         $this->assertStringNotContainsString('AIza', $envExample);

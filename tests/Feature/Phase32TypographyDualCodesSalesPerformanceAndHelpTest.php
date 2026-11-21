@@ -167,8 +167,6 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'customer_email' => 'lananh@customer.vn',
             'customer_address' => '123 Lê Lợi, Q1',
             'quantity' => 1,
-            'unit_price' => 3500000,
-            'total_amount' => 3500000,
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 
@@ -218,8 +216,6 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'customer_email' => 'ngoc@customer.vn',
             'customer_address' => '88 Đồng Khởi, TP.HCM',
             'quantity' => 1,
-            'unit_price' => 3500000,
-            'total_amount' => 3500000,
             'status' => AccessoryOrder::STATUS_CONFIRMED,
         ]);
 
@@ -363,8 +359,6 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'customer_email' => 'acc@customer.vn',
             'customer_address' => '10 Võ Văn Tần',
             'quantity' => 2,
-            'unit_price' => 3500000,
-            'total_amount' => 7000000,
             'status' => AccessoryOrder::STATUS_COMPLETED,
             'assigned_to' => $salesA->id,
         ]);
@@ -424,7 +418,7 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'guest_phone' => '0977666555',
             'guest_email' => 'thao@customer.vn',
             'type' => AppointmentType::Maintenance,
-            'service_package' => 'oil_change',
+            'meta_data' => ['service_package' => 'oil_change'],
             'appointment_date' => now()->addDays(3),
             'status' => AppointmentStatus::Pending,
             'assigned_to' => $sales->id,
@@ -437,8 +431,6 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'customer_email' => 'han@customer.vn',
             'customer_address' => '22 Pasteur, Q1',
             'quantity' => 1,
-            'unit_price' => 3500000,
-            'total_amount' => 3500000,
             'status' => AccessoryOrder::STATUS_PENDING,
             'assigned_to' => $sales->id,
         ]);

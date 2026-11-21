@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Collections\AccessoryOrderCollection;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Mail\Customer\AccessoryOrderStatusMail;
 use App\Services\Cache\ShowroomCacheService;
 use App\Services\Crm\DocumentCodeGenerator;
 use App\Services\Crm\InteractionTimelineRecorder;
 use App\Services\Inventory\AccessoryStockService;
+use Illuminate\Database\Eloquent\Attributes\CollectedBy;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -15,8 +18,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
+#[CollectedBy(AccessoryOrderCollection::class)]
 class AccessoryOrder extends Model
 {
+    use HasFactory;
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_CONFIRMED = 'confirmed';
@@ -45,6 +51,17 @@ class AccessoryOrder extends Model
     ];
 
     protected $appends = ['total_amount'];
+
+    /**
+     * Sensitive internal attributes hidden from JSON/array serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'customer_internal_code',
+        'daily_sequence_code',
+        'meta_data',
+    ];
 
     protected function casts(): array
     {
@@ -82,7 +99,9 @@ class AccessoryOrder extends Model
 
     public function assignedSales(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'assigned_to')->withDefault([
+            'name' => 'Chưa phân công',
+        ]);
     }
 
     public function publicReferenceCode(): string
@@ -246,7 +265,7 @@ class AccessoryOrder extends Model
                 return ['statusChanged' => false, 'previousStatus' => $previousStatus, 'nextLabel' => $nextLabel];
             }
 
-            $meta = is_array($locked->meta_data) ? $locked->meta_data : [];
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
 
             $updates = [
                 'status' => $status,

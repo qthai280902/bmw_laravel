@@ -163,7 +163,7 @@ class GeminiKeyPool
 
     private function cooldownSeconds(): int
     {
-        return max(1, (int) config('showroom_ai.gemini_key_cooldown_seconds', 120));
+        return max(1, (int) config('showroom_ai.gemini_key_cooldown_seconds', 60));
     }
 
     private function fingerprint(string $key): string

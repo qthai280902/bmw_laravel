@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Collections\AccessoryOrderCollection;
+use App\Collections\AppointmentCollection;
 use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AccessoryOrder;
@@ -38,38 +40,19 @@ class AccountingController extends Controller
         $dateToInput = trim((string) $request->query('date_to', ''));
 
         [$startVn, $endVn] = $this->resolvePeriodRange($period, $dateFromInput, $dateToInput);
-        $vouchers = $this->collectVouchers($startVn, $endVn, $module, $status);
+        $accountingData = $this->collectAccountingData($startVn, $endVn, $module, $status);
+        $vouchers = $accountingData['vouchers'];
+        $ordersCollection = $accountingData['orders'];
+        $appointmentsCollection = $accountingData['appointments'];
 
-        // 5 Financial KPIs
-        $completedAccessoryRevenue = 0;
-        $processingAccessoryValue = 0;
-        $vehicleCommittedDeposit = 0;
-        $vehicleReferenceValue = 0;
-        $cancelledLostValue = 0;
-        $completedVouchersCount = 0;
-
-        foreach ($vouchers as $v) {
-            if ($v['status'] === 'completed') {
-                $completedVouchersCount++;
-            }
-
-            if ($v['module_key'] === 'accessories') {
-                if ($v['status'] === 'completed') {
-                    $completedAccessoryRevenue += $v['amount'];
-                } elseif (in_array($v['status'], ['pending', 'confirmed'], true)) {
-                    $processingAccessoryValue += $v['amount'];
-                } elseif ($v['status'] === 'cancelled') {
-                    $cancelledLostValue += $v['amount'];
-                }
-            } elseif ($v['module_key'] === 'vehicles') {
-                if (in_array($v['status'], ['confirmed', 'completed'], true)) {
-                    $vehicleCommittedDeposit += $v['deposit_amount'];
-                    $vehicleReferenceValue += $v['reference_price'];
-                } elseif ($v['status'] === 'cancelled') {
-                    $cancelledLostValue += $v['deposit_amount'];
-                }
-            }
-        }
+        // 5 Financial KPIs computed via custom Eloquent Collections
+        $completedAccessoryRevenue = $ordersCollection->completedRevenue();
+        $processingAccessoryValue = $ordersCollection->processingValue();
+        $vehicleCommittedDeposit = $appointmentsCollection->committedDepositValue();
+        $vehicleReferenceValue = $appointmentsCollection->referenceVehicleValue();
+        $cancelledLostValue = $ordersCollection->cancelledValue() + $appointmentsCollection->cancelledDepositValue();
+        $completedVouchersCount = $ordersCollection->statusCounts()['completed']
+            + $appointmentsCollection->statusCounts()['completed'];
 
         $totalVouchersCount = count($vouchers);
         $completionRate = $totalVouchersCount > 0
@@ -394,11 +377,29 @@ class AccountingController extends Controller
         string $module,
         string $status
     ): array {
+        return $this->collectAccountingData($startVn, $endVn, $module, $status)['vouchers'];
+    }
+
+    /**
+     * @return array{
+     *     vouchers: list<array<string, mixed>>,
+     *     orders: AccessoryOrderCollection,
+     *     appointments: AppointmentCollection
+     * }
+     */
+    private function collectAccountingData(
+        CarbonImmutable $startVn,
+        CarbonImmutable $endVn,
+        string $module,
+        string $status
+    ): array {
         $appTz = (string) config('app.timezone', 'UTC');
         $startDb = $startVn->setTimezone($appTz)->toDateTimeString();
         $endDb = $endVn->setTimezone($appTz)->toDateTimeString();
 
         $rows = [];
+        $ordersCollection = new AccessoryOrderCollection;
+        $appointmentsCollection = new AppointmentCollection;
 
         if (in_array($module, ['all', 'accessories'], true)) {
             $ordersQuery = AccessoryOrder::query()
@@ -408,7 +409,10 @@ class AccountingController extends Controller
                 ->orderByDesc('created_at')
                 ->orderByDesc('id');
 
-            foreach ($ordersQuery->get() as $order) {
+            /** @var AccessoryOrderCollection $ordersCollection */
+            $ordersCollection = $ordersQuery->get();
+
+            foreach ($ordersCollection as $order) {
                 $createdVn = ($order->created_at ?? now())->copy()->timezone(self::TIMEZONE);
                 $unitPrice = (int) ($order->product?->price ?? 0);
                 $qty = max(1, (int) $order->quantity);
@@ -434,7 +438,7 @@ class AccountingController extends Controller
                     'unit_or_deposit_amount' => $unitPrice,
                     'realized_revenue' => $order->status === AccessoryOrder::STATUS_COMPLETED ? $totalAmount : 0,
                     'reference_price' => $totalAmount,
-                    'sales_name' => $order->assignedSales?->name ?? 'Chưa gán',
+                    'sales_name' => $order->assignedSales?->exists ? $order->assignedSales->name : 'Chưa gán',
                     'status' => (string) $order->status,
                     'status_label' => $order->statusLabel(),
                 ];
@@ -449,24 +453,22 @@ class AccountingController extends Controller
                 ->orderByDesc('created_at')
                 ->orderByDesc('id');
 
-            foreach ($appointmentsQuery->get() as $appointment) {
-                $isService = $appointment->isServiceBooking();
-                if ($module === 'services' && ! $isService) {
-                    continue;
-                }
-                if ($module === 'vehicles' && $isService) {
-                    continue;
-                }
+            /** @var AppointmentCollection $rawAppointments */
+            $rawAppointments = $appointmentsQuery->get();
+            $appointmentsCollection = match ($module) {
+                'services' => $rawAppointments->serviceBookings(),
+                'vehicles' => $rawAppointments->vehicleBookings(),
+                default => $rawAppointments,
+            };
 
+            foreach ($appointmentsCollection as $appointment) {
+                $isService = $appointment->isServiceBooking();
                 $createdVn = ($appointment->created_at ?? now())->copy()->timezone(self::TIMEZONE);
                 $statusVal = $appointment->status instanceof AppointmentStatus
                     ? $appointment->status->value
                     : (string) $appointment->status;
                 $refPrice = (int) ($appointment->product?->price ?? 0);
-                $depositAmount = (int) ($appointment->product?->deposit_amount ?? 0);
-                if (! $isService && $depositAmount <= 0 && $refPrice > 0) {
-                    $depositAmount = 50000000;
-                }
+                $depositAmount = AppointmentCollection::resolveDepositAmount($appointment);
 
                 $itemName = $isService
                     ? ($appointment->servicePackageLabel() ?? $appointment->typeLabel())
@@ -492,7 +494,7 @@ class AccountingController extends Controller
                     'unit_or_deposit_amount' => $depositAmount,
                     'realized_revenue' => 0,
                     'reference_price' => $refPrice,
-                    'sales_name' => $appointment->assignedSales?->name ?? 'Chưa gán',
+                    'sales_name' => $appointment->assignedSales?->exists ? $appointment->assignedSales->name : 'Chưa gán',
                     'status' => $statusVal,
                     'status_label' => $appointment->statusLabel(),
                 ];
@@ -501,7 +503,11 @@ class AccountingController extends Controller
 
         usort($rows, static fn (array $a, array $b): int => $b['sort_ts'] <=> $a['sort_ts']);
 
-        return $rows;
+        return [
+            'vouchers' => $rows,
+            'orders' => $ordersCollection,
+            'appointments' => $appointmentsCollection,
+        ];
     }
 
     /**

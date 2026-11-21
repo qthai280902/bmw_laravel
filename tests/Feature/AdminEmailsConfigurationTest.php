@@ -85,7 +85,7 @@ class AdminEmailsConfigurationTest extends TestCase
 
         $this->assertTrue(
             DatabaseNotification::query()
-                ->where('notifiable_type', User::class)
+                ->where('notifiable_type', (new User)->getMorphClass())
                 ->where('notifiable_id', $gmailAdmin->id)
                 ->where('type', NewAppointmentLeadNotification::class)
                 ->exists()

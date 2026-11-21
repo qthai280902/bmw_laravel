@@ -257,14 +257,14 @@ class Phase25_2HybridPersistentGuestAndCrmHandoverTest extends TestCase
             'last_seen_at' => now()->subDays(65),
             'message_count' => 2,
         ]);
-        $expiredGuestSession->forceFill([
-            'updated_at' => now()->subDays(65),
-        ])->saveQuietly();
         $expiredGuestMsg = AiChatMessage::create([
             'ai_chat_session_id' => $expiredGuestSession->id,
             'role' => 'user',
             'content' => 'Tin nhắn vãng lai cũ 65 ngày',
         ]);
+        $expiredGuestSession->forceFill([
+            'updated_at' => now()->subDays(65),
+        ])->saveQuietly();
 
         $recentGuestSession = AiChatSession::create([
             'visitor_id' => 'recent-guest-10d',
@@ -285,14 +285,14 @@ class Phase25_2HybridPersistentGuestAndCrmHandoverTest extends TestCase
             'last_seen_at' => now()->subDays(65),
             'message_count' => 2,
         ]);
-        $crmLinkedSession->forceFill([
-            'updated_at' => now()->subDays(65),
-        ])->saveQuietly();
         $crmMsg = AiChatMessage::create([
             'ai_chat_session_id' => $crmLinkedSession->id,
             'role' => 'user',
             'content' => 'Tin nhắn khách đã đặt lịch 65 ngày trước',
         ]);
+        $crmLinkedSession->forceFill([
+            'updated_at' => now()->subDays(65),
+        ])->saveQuietly();
 
         $appointmentWithOldChat = Appointment::factory()->guest()->create([
             'ai_visitor_id' => 'crm-lead-65d',

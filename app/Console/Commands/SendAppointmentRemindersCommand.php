@@ -47,7 +47,7 @@ class SendAppointmentRemindersCommand extends Command implements Isolatable
 
                     try {
                         Mail::to($recipientEmail)->send(new AppointmentReminderMail($appointment));
-                        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+                        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
                         $meta = InteractionTimelineRecorder::appendToMeta(
                             meta: $meta,
                             actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
