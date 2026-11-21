@@ -4,7 +4,7 @@
             {{-- Mobile Pagination --}}
             <div class="flex flex-1 items-center justify-between gap-3 sm:hidden">
                 @if ($paginator->onFirstPage())
-                    <span data-bmw-pagination="mobile-btn" class="inline-flex cursor-default items-center rounded-xl border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                    <span data-bmw-pagination="mobile-btn" class="inline-flex cursor-default items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
                         Trước
                     </span>
                 @else
@@ -13,7 +13,7 @@
                         data-bmw-pagination="mobile-btn"
                         wire:click="previousPage('{{ $paginator->getPageName() }}')"
                         wire:loading.attr="disabled"
-                        class="inline-flex items-center rounded-xl border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1c69d4] hover:text-white"
+                        class="inline-flex items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1c69d4] hover:text-white"
                     >
                         Trước
                     </button>
@@ -29,12 +29,12 @@
                         data-bmw-pagination="mobile-btn"
                         wire:click="nextPage('{{ $paginator->getPageName() }}')"
                         wire:loading.attr="disabled"
-                        class="inline-flex items-center rounded-xl border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1c69d4] hover:text-white"
+                        class="inline-flex items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-[#1c69d4] hover:text-white"
                     >
                         Sau
                     </button>
                 @else
-                    <span data-bmw-pagination="mobile-btn" class="inline-flex cursor-default items-center rounded-xl border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                    <span data-bmw-pagination="mobile-btn" class="inline-flex cursor-default items-center rounded-none border border-white/10 bg-[#121215] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
                         Sau
                     </span>
                 @endif
@@ -59,10 +59,10 @@
                 </div>
 
                 <div>
-                    <span data-bmw-pagination="bar" class="relative z-0 inline-flex overflow-hidden rounded-xl border border-white/10 bg-[#121215]">
+                    <span data-bmw-pagination="bar" class="relative z-0 inline-flex overflow-hidden rounded-none border border-white/10 bg-[#121215]">
                         {{-- Previous Page Button --}}
                         @if ($paginator->onFirstPage())
-                            <span aria-disabled="true" aria-label="Trang trước" class="inline-flex cursor-default items-center rounded-xl border-r border-white/10 px-3 py-2.5 text-zinc-700">
+                            <span aria-disabled="true" aria-label="Trang trước" class="inline-flex cursor-default items-center border-r border-white/10 px-3 py-2.5 text-zinc-700">
                                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                                 </svg>
@@ -73,7 +73,7 @@
                                 wire:click="previousPage('{{ $paginator->getPageName() }}')"
                                 wire:loading.attr="disabled"
                                 aria-label="Trang trước"
-                                class="inline-flex items-center rounded-xl border-r border-white/10 px-3 py-2.5 text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white focus:outline-none"
+                                class="inline-flex items-center border-r border-white/10 px-3 py-2.5 text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white focus:outline-none"
                             >
                                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -84,7 +84,7 @@
                         {{-- Page Numbers --}}
                         @foreach ($elements as $element)
                             @if (is_string($element))
-                                <span aria-disabled="true" class="inline-flex cursor-default items-center rounded-xl border-r border-white/10 px-4 py-2.5 text-xs font-bold text-zinc-600">
+                                <span aria-disabled="true" class="inline-flex cursor-default items-center border-r border-white/10 px-4 py-2.5 text-xs font-bold text-zinc-600">
                                     {{ $element }}
                                 </span>
                             @endif
@@ -93,7 +93,7 @@
                                 @foreach ($element as $page => $url)
                                     <span wire:key="paginator-{{ $paginator->getPageName() }}-page{{ $page }}">
                                         @if ($page == $paginator->currentPage())
-                                            <span aria-current="page" class="inline-flex cursor-default items-center rounded-xl border-r border-[#1c69d4] bg-[#1c69d4] px-4 py-2.5 text-xs font-black text-white">
+                                            <span aria-current="page" class="inline-flex cursor-default items-center border-r border-[#1c69d4] bg-[#1c69d4] px-4 py-2.5 text-xs font-black text-white">
                                                 {{ $page }}
                                             </span>
                                         @else
@@ -102,7 +102,7 @@
                                                 wire:click="gotoPage({{ $page }}, '{{ $paginator->getPageName() }}')"
                                                 wire:loading.attr="disabled"
                                                 aria-label="Trang {{ $page }}"
-                                                class="inline-flex items-center rounded-xl border-r border-white/10 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white focus:outline-none"
+                                                class="inline-flex items-center border-r border-white/10 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white focus:outline-none"
                                             >
                                                 {{ $page }}
                                             </button>

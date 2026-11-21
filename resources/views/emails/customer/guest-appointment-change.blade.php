@@ -13,16 +13,14 @@
 @section('content')
     @php
         $car = $appointment->product;
-        $ticketCode = '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT);
-        $customerOrderCode = $appointment->customer_order_code ?: $ticketCode;
-        $dailySequenceCode = $appointment->daily_sequence_code;
+        $customerOrderCode = $appointment->publicReferenceCode();
     @endphp
 
     <h1 style="margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0F172A; line-height: 1.35;">
         {{ $actionHeading }}
     </h1>
     <p style="margin: 0 0 24px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
-        Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, mọi điều chỉnh cho lịch hẹn <strong style="color: #D97706;">{{ $customerOrderCode }}</strong>@if($dailySequenceCode) (Mã ngày: <strong style="color: #0F172A;">{{ $dailySequenceCode }}</strong>)@endif ({{ $ticketCode }}) đã được đồng bộ ngay tới Chuyên viên BMW phụ trách.
+        Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, mọi điều chỉnh cho lịch hẹn <strong style="color: #D97706;">{{ $customerOrderCode }}</strong> đã được đồng bộ ngay tới Chuyên viên BMW phụ trách.
     </p>
 
     <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;">

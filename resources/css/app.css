@@ -184,12 +184,12 @@
         background-position: top center;
     }
 
-    /* Bề mặt thẻ đón sáng đa lớp chuẩn BMW Luxury */
+    /* Bề mặt thẻ đón sáng đa lớp chuẩn BMW Luxury (Public 0px Sharp Geometry) */
     .bg-card-luxury {
         background-color: #121215;
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-top: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 1rem;
+        border-radius: 0px;
         box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
         transition: border-color 0.4s ease, box-shadow 0.4s ease;
     }
@@ -265,16 +265,16 @@
     }
 
     .ai-message-bubble {
-        border-radius: 0.75rem;
+        border-radius: 0px;
     }
 
     [data-ai-action-chip] {
-        border-radius: 9999px;
+        border-radius: 0px;
     }
 
     .ai-assistant-launcher {
         animation: ai-assistant-launcher-glow 3.2s ease-in-out infinite;
-        border-radius: 1rem;
+        border-radius: 0px;
     }
 
     .ai-assistant-side-tab {

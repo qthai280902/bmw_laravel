@@ -34,6 +34,7 @@ class Appointment extends Model implements Attachable
     protected $fillable = [
         'customer_order_code',
         'daily_sequence_code',
+        'customer_internal_code',
         'user_id',
         'assigned_to',
         'guest_name',
@@ -98,6 +99,41 @@ class Appointment extends Model implements Attachable
             AppointmentType::Detailing,
             AppointmentType::CarWash,
         ], true);
+    }
+
+    public function publicReferenceCode(): string
+    {
+        if (is_string($this->customer_order_code) && trim($this->customer_order_code) !== '') {
+            return trim($this->customer_order_code);
+        }
+
+        $prefix = $this->isServiceBooking() ? 'SRV' : 'BMW';
+        $yymmdd = ($this->created_at ?? now())->copy()->timezone(DocumentCodeGenerator::TIMEZONE)->format('ymd');
+
+        return "{$prefix}-{$yymmdd}-REF".str_pad((string) ($this->id ?? 1), 2, '0', STR_PAD_LEFT);
+    }
+
+    public function internalVoucherCode(): string
+    {
+        if (is_string($this->daily_sequence_code) && trim($this->daily_sequence_code) !== '') {
+            return trim($this->daily_sequence_code);
+        }
+
+        $yymmdd = ($this->created_at ?? now())->copy()->timezone(DocumentCodeGenerator::TIMEZONE)->format('ymd');
+
+        return "CT-{$yymmdd}-".str_pad((string) ($this->id ?? 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    public function internalCustomerCode(): string
+    {
+        if (is_string($this->customer_internal_code) && trim($this->customer_internal_code) !== '') {
+            return trim($this->customer_internal_code);
+        }
+
+        $digits = DocumentCodeGenerator::normalizePhoneDigits($this->guest_phone ?? $this->user?->phone ?? null);
+        $lastFour = substr(str_pad($digits, 4, '0', STR_PAD_LEFT), -4);
+
+        return "KH-{$lastFour}-01";
     }
 
     public function product(): BelongsTo
@@ -253,7 +289,7 @@ class Appointment extends Model implements Attachable
 
         $summary = $this->escapeIcsText("BMW Showroom: {$typeLabel} - {$productName}");
         $description = $this->escapeIcsText(implode("\n", array_filter([
-            "Mã lịch hẹn: #{$this->id}",
+            "Mã tham chiếu: {$this->publicReferenceCode()}",
             "Khách hàng: {$customerName}",
             filled($this->guest_phone) ? "SĐT: {$this->guest_phone}" : null,
             "Dòng xe / Dịch vụ: {$productName}",

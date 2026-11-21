@@ -28,6 +28,7 @@ class AccessoryOrder extends Model
     protected $fillable = [
         'customer_order_code',
         'daily_sequence_code',
+        'customer_internal_code',
         'product_id',
         'assigned_to',
         'customer_name',
@@ -82,6 +83,40 @@ class AccessoryOrder extends Model
     public function assignedSales(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function publicReferenceCode(): string
+    {
+        if (is_string($this->customer_order_code) && trim($this->customer_order_code) !== '') {
+            return trim($this->customer_order_code);
+        }
+
+        $yymmdd = ($this->created_at ?? now())->copy()->timezone(DocumentCodeGenerator::TIMEZONE)->format('ymd');
+
+        return "ACC-{$yymmdd}-REF".str_pad((string) ($this->id ?? 1), 2, '0', STR_PAD_LEFT);
+    }
+
+    public function internalVoucherCode(): string
+    {
+        if (is_string($this->daily_sequence_code) && trim($this->daily_sequence_code) !== '') {
+            return trim($this->daily_sequence_code);
+        }
+
+        $yymmdd = ($this->created_at ?? now())->copy()->timezone(DocumentCodeGenerator::TIMEZONE)->format('ymd');
+
+        return "CT-{$yymmdd}-".str_pad((string) ($this->id ?? 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    public function internalCustomerCode(): string
+    {
+        if (is_string($this->customer_internal_code) && trim($this->customer_internal_code) !== '') {
+            return trim($this->customer_internal_code);
+        }
+
+        $digits = DocumentCodeGenerator::normalizePhoneDigits($this->customer_phone);
+        $lastFour = substr(str_pad($digits, 4, '0', STR_PAD_LEFT), -4);
+
+        return "KH-{$lastFour}-01";
     }
 
     /**

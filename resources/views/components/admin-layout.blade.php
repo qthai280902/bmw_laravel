@@ -168,6 +168,15 @@
                                 </x-admin.sidebar-link>
                             @endif
 
+                            @if(Auth::user()?->isTopSuperAdmin())
+                                <x-admin.sidebar-link :href="route('admin.accounting.index')" :active="request()->routeIs('admin.accounting.*')">
+                                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>Kế toán &amp; Sổ sách</span>
+                                </x-admin.sidebar-link>
+                            @endif
+
                             @if(Auth::user()?->isSales())
                                 <x-admin.sidebar-link :href="route('admin.sales.performance', Auth::user())" :active="request()->routeIs('admin.users.performance', 'admin.sales.performance')">
                                     <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

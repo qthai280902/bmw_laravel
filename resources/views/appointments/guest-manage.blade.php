@@ -3,28 +3,34 @@
 
     @php
         $car = $appointment->product;
-        $ticketCode = '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT);
-        $customerOrderCode = $appointment->customer_order_code ?: $ticketCode;
-        $dailySequenceCode = $appointment->daily_sequence_code;
+        $customerOrderCode = $appointment->publicReferenceCode();
         $assignedSales = $appointment->assignedSales;
         $isLocked = $appointment->isTerminalStatus();
-        $metaGuestConfirmedAt = is_array($appointment->meta_data) ? ($appointment->meta_data['guest_confirmed_at'] ?? null) : null;
+        $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
+
+        $metaGuestConfirmedAt = $meta['guest_confirmed_at'] ?? null;
         $guestConfirmedAtFormatted = $metaGuestConfirmedAt
             ? \Illuminate\Support\Carbon::parse($metaGuestConfirmedAt)->timezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')
             : null;
+        $appointmentTimeFormatted = $appointment->appointment_date?->format('H:i d/m/Y') ?? 'Chưa ấn định';
+
+        $metaInvalidatedConfirmedAt = $meta['invalidated_guest_confirmed_at'] ?? null;
+        $invalidatedConfirmedAtFormatted = $metaInvalidatedConfirmedAt
+            ? \Illuminate\Support\Carbon::parse($metaInvalidatedConfirmedAt)->timezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')
+            : null;
+        $invalidatedForDateLabel = $meta['invalidated_guest_confirmed_for_date'] ?? ($meta['previous_appointment_date'] ?? $appointmentTimeFormatted);
+        $reschedulePendingReview = (bool) ($meta['reschedule_pending_review'] ?? false);
+
+        $showroomSlots = ['08:30', '09:30', '10:30', '11:30', '13:30', '14:30', '15:30', '16:30', '17:30'];
         $defaultSlot = $appointment->appointment_date?->copy()->timezone('Asia/Ho_Chi_Minh')
-            ?? now('Asia/Ho_Chi_Minh')->addDay()->setTime(9, 0);
+            ?? now('Asia/Ho_Chi_Minh')->addDay()->setTime(9, 30);
+        if ($defaultSlot->lessThanOrEqualTo(now('Asia/Ho_Chi_Minh'))) {
+            $defaultSlot = now('Asia/Ho_Chi_Minh')->addDay()->setTime(9, 30);
+        }
         $initialDate = old('new_date', $defaultSlot->format('Y-m-d'));
         $initialTime = old('new_time', $defaultSlot->format('H:i'));
-        $timeSlots = [];
-        for ($hour = 8; $hour <= 20; $hour++) {
-            $timeSlots[] = sprintf('%02d:00', $hour);
-            if ($hour < 20) {
-                $timeSlots[] = sprintf('%02d:30', $hour);
-            }
-        }
-        if (! in_array($initialTime, $timeSlots, true)) {
-            $initialTime = '09:00';
+        if (! in_array($initialTime, $showroomSlots, true)) {
+            $initialTime = '09:30';
         }
 
         [$statusBg, $statusBorder, $statusText] = match ($appointment->status) {
@@ -35,7 +41,7 @@
         };
     @endphp
 
-    <section class="min-h-screen bg-[#F1F5F9] py-10 px-4 text-slate-900 sm:py-14">
+    <section class="guest-luxury min-h-screen bg-[#F1F5F9] py-10 px-4 text-slate-900 sm:py-14">
         <div class="mx-auto max-w-2xl space-y-6">
             {{-- Header Card --}}
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -72,15 +78,9 @@
                 <div class="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/70">
                     <dl class="divide-y divide-slate-200 text-sm">
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
-                            <dt class="font-medium text-slate-500">Mã khách hàng</dt>
+                            <dt class="font-medium text-slate-500">Mã tham chiếu</dt>
                             <dd class="font-bold text-[#1C69D4] tabular-nums">{{ $customerOrderCode }}</dd>
                         </div>
-                        @if($dailySequenceCode)
-                            <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
-                                <dt class="font-medium text-slate-500">Mã số trong ngày</dt>
-                                <dd class="font-semibold text-slate-900 tabular-nums">{{ $dailySequenceCode }}</dd>
-                            </div>
-                        @endif
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
                             <dt class="font-medium text-slate-500">Khách hàng</dt>
                             <dd class="font-semibold text-slate-900">{{ $appointment->customer_name }}</dd>
@@ -116,15 +116,32 @@
                 </div>
 
                 @if(! $isLocked)
-                    <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="mt-6 space-y-3">
                         @if($guestConfirmedAtFormatted)
                             <div class="inline-flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
                                 <svg class="h-4 w-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                                <span>Quý khách đã xác nhận sẽ đến Showroom đúng giờ lúc {{ $guestConfirmedAtFormatted }}.</span>
+                                <span>Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {{ $appointmentTimeFormatted }} (xác nhận lúc {{ $guestConfirmedAtFormatted }}).</span>
                             </div>
                         @else
+                            @if($invalidatedConfirmedAtFormatted)
+                                <div class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-xs font-medium text-slate-600">
+                                    <span class="line-through opacity-60">
+                                        Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {{ $invalidatedForDateLabel }} (xác nhận lúc {{ $invalidatedConfirmedAtFormatted }}).
+                                    </span>
+                                    <span class="ml-1.5 font-semibold text-amber-700">
+                                        (Đã hết hiệu lực do thay đổi lịch hẹn)
+                                    </span>
+                                </div>
+                            @endif
+
+                            @if($reschedulePendingReview)
+                                <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-xs font-bold leading-relaxed text-amber-900">
+                                    Yêu cầu đổi lịch sang {{ $appointment->appointment_date?->format('H:i — d/m/Y') }} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.
+                                </div>
+                            @endif
+
                             <form method="POST" action="{{ $updateUrl }}" class="w-full sm:w-auto">
                                 @csrf
                                 <input type="hidden" name="action" value="confirm">
@@ -151,77 +168,23 @@
                         method="POST"
                         action="{{ $updateUrl }}"
                         class="mt-6 space-y-5"
-                        x-data="{
-                            newDate: '{{ $initialDate }}',
-                            newTime: '{{ $initialTime }}',
-                            get combinedDateTime() {
-                                return (this.newDate && this.newTime) ? (this.newDate + 'T' + this.newTime) : '';
-                            }
-                        }"
                     >
                         @csrf
                         <input type="hidden" name="action" value="reschedule">
-                        <input type="hidden" id="new_appointment_date" name="new_appointment_date" value="{{ $initialDate.'T'.$initialTime }}" :value="combinedDateTime">
 
-                        @if($errors->has('new_appointment_date') || $errors->has('new_date') || $errors->has('new_time'))
-                            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
-                                @error('new_appointment_date')
-                                    <p>{{ $message }}</p>
-                                @enderror
-                                @error('new_date')
-                                    <p>{{ $message }}</p>
-                                @enderror
-                                @error('new_time')
-                                    <p>{{ $message }}</p>
-                                @enderror
-                            </div>
-                        @endif
+                        <x-ui.date-time-picker
+                            id="new_appointment_date"
+                            theme="light"
+                            date-input-name="new_date"
+                            time-input-name="new_time"
+                            combined-input-name="new_appointment_date"
+                            :value="$initialDate . ' ' . $initialTime"
+                            :slots="$showroomSlots"
+                        />
 
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
-                                <label for="new_date" class="block text-xs font-semibold text-slate-600">Ngày hẹn mới</label>
-                                <div class="mt-2 flex items-stretch">
-                                    <input
-                                        id="new_date"
-                                        x-ref="dateInput"
-                                        type="date"
-                                        name="new_date"
-                                        autocomplete="off"
-                                        data-lpignore="true"
-                                        x-model="newDate"
-                                        value="{{ $initialDate }}"
-                                        min="{{ now()->format('Y-m-d') }}"
-                                        required
-                                        onclick="try { this.showPicker && this.showPicker(); } catch (e) {}"
-                                        class="h-11 w-full rounded-l-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] cursor-pointer"
-                                    >
-                                    <button
-                                        type="button"
-                                        aria-label="Mở lịch chọn ngày"
-                                        @click="try { $refs.dateInput.showPicker ? $refs.dateInput.showPicker() : $refs.dateInput.focus(); } catch (e) { $refs.dateInput.focus(); }"
-                                        class="inline-flex shrink-0 items-center justify-center rounded-r-xl border border-l-0 border-slate-300 bg-slate-50 px-3.5 text-slate-500 transition-colors hover:border-[#1C69D4] hover:text-[#1C69D4] cursor-pointer"
-                                    >
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="new_time" class="block text-xs font-semibold text-slate-600">Khung giờ showroom (08:00 — 20:00)</label>
-                                <select
-                                    id="new_time"
-                                    name="new_time"
-                                    x-model="newTime"
-                                    class="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-900 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] cursor-pointer"
-                                >
-                                    @foreach($timeSlots as $slot)
-                                        <option value="{{ $slot }}" @selected($initialTime === $slot)>{{ $slot }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+                        @error('new_appointment_date')
+                            <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                        @enderror
 
                         <div>
                             <label for="reschedule_reason" class="block text-xs font-semibold text-slate-600">Ghi chú / Lý do đổi lịch</label>

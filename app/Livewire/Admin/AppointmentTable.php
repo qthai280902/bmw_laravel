@@ -417,6 +417,7 @@ class AppointmentTable extends Component
 
                         $subQuery->orWhere('appointments.customer_order_code', 'like', "%{$keyword}%")
                             ->orWhere('appointments.daily_sequence_code', 'like', "%{$keyword}%")
+                            ->orWhere('appointments.customer_internal_code', 'like', "%{$keyword}%")
                             ->orWhere('appointments.guest_name', 'like', "%{$keyword}%")
                             ->orWhere('appointments.guest_email', 'like', "%{$keyword}%")
                             ->orWhere('appointments.guest_phone', 'like', "%{$keyword}%")

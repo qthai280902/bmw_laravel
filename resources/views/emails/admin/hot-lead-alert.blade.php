@@ -24,20 +24,18 @@
 
     {{-- Unified Internal Alert Card --}}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
-        @if($appointment->customer_order_code || $appointment->daily_sequence_code)
-            <tr>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
-                    Mã hồ sơ kép
-                </td>
-                <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #1C69D4; width: 62%;">
-                    {{ $appointment->customer_order_code ?: '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}
-                    @if($appointment->daily_sequence_code)
-                        <span style="color: #64748B; font-weight: 500;"> &middot; </span>
-                        <span style="color: #0F172A;">{{ $appointment->daily_sequence_code }}</span>
-                    @endif
-                </td>
-            </tr>
-        @endif
+        <tr>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
+                Mã hồ sơ
+            </td>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #1C69D4; width: 62%;">
+                {{ $appointment->publicReferenceCode() }}
+                <span style="color: #64748B; font-weight: 500;"> &middot; </span>
+                <span style="color: #0F172A;">{{ $appointment->internalVoucherCode() }}</span>
+                <span style="color: #64748B; font-weight: 500;"> &middot; </span>
+                <span style="color: #475569;">{{ $appointment->internalCustomerCode() }}</span>
+            </td>
+        </tr>
         <tr>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
                 Khách hàng

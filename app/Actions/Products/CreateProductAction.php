@@ -16,16 +16,20 @@ class CreateProductAction
             // 1. Handle Unique Slug
             $data['slug'] = Product::generateUniqueSlug($data['name']);
 
-            // 1.5 Normalize Specifications
-            if (isset($data['specifications']) && is_array($data['specifications'])) {
+            // 1.5 Normalize Specifications (supports both specifications and specs keys)
+            $rawSpecs = $data['specifications'] ?? ($data['specs'] ?? null);
+            if (is_array($rawSpecs)) {
                 $normalized = [];
-                foreach ($data['specifications'] as $spec) {
-                    if (! empty($spec['key'])) {
-                        $normalized[$spec['key']] = $spec['value'] ?? '';
+                foreach ($rawSpecs as $k => $spec) {
+                    if (is_array($spec) && ! empty($spec['key'])) {
+                        $normalized[trim((string) $spec['key'])] = trim((string) ($spec['value'] ?? ''));
+                    } elseif (is_string($k) && trim($k) !== '' && ! is_array($spec)) {
+                        $normalized[trim($k)] = trim((string) $spec);
                     }
                 }
                 $data['specifications'] = $normalized;
             }
+            unset($data['specs']);
 
             // 2. Create Product
             $product = Product::create($data);

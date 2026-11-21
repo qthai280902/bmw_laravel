@@ -37,15 +37,20 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::firstOrCreate(
+        $topSuperAdmin = User::firstOrCreate(
             ['email' => 'thai@bmw.com'],
             [
                 'name' => 'Nguyễn Quốc Thái - Quản Lý',
                 'role' => User::ROLE_ADMIN,
+                'is_super_admin' => true,
                 'password' => Hash::make('12345678'),
                 'email_verified_at' => now(),
             ]
         );
+
+        if (! $topSuperAdmin->is_super_admin) {
+            $topSuperAdmin->forceFill(['is_super_admin' => true])->saveQuietly();
+        }
 
         // Đội ngũ Tư vấn Bán hàng (Sales) phục vụ điều phối Lead tự động
         foreach ([

@@ -24,9 +24,10 @@ class PostTestDriveFollowupMail extends Mailable implements ShouldQueue
     {
         $this->appointment->loadMissing(['product', 'user']);
         $vehicleLabel = $this->appointment->product?->name ?? 'BMW Showroom';
+        $refCode = $this->appointment->publicReferenceCode();
 
         return new Envelope(
-            subject: "[BMW Concierge] Cảm ơn Quý khách & Bảng dự toán tài chính {$vehicleLabel}",
+            subject: "[BMW Concierge] Cảm ơn Quý khách & Bảng dự toán tài chính {$vehicleLabel} — Mã {$refCode}",
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
             tags: ['post-test-drive-followup'],
         );

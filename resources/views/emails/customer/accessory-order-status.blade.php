@@ -7,9 +7,10 @@
         \App\Models\AccessoryOrder::STATUS_CONFIRMED => ['#1C69D4', '#EFF6FF', '#BFDBFE'],
         default => ['#D97706', '#FFFBEB', '#FDE68A'],
     };
+    $refCode = $order->publicReferenceCode();
 @endphp
 
-@section('title', 'Cập Nhật Đơn Hàng #ACC-' . $order->id . ' | BMW Showroom')
+@section('title', 'Cập Nhật Đơn Hàng ' . $refCode . ' | BMW Showroom')
 @section('accent_color', $accent)
 @section('header_subtitle', 'Cập nhật trạng thái đơn phụ kiện')
 
@@ -21,35 +22,21 @@
 
 @section('content')
     <h1 style="margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0F172A; line-height: 1.35;">
-        Cập nhật đơn hàng #ACC-{{ $order->id }}
+        Cập nhật đơn hàng {{ $refCode }}
     </h1>
     <p style="margin: 0 0 24px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
-        Kính chào Quý khách <strong style="color: #0F172A;">{{ $order->customer_name }}</strong>, đơn hàng phụ kiện <strong style="color: #0F172A;">#ACC-{{ $order->id }}</strong> vừa được cập nhật sang trạng thái: <strong style="color: {{ $accent }};">{{ $order->statusLabel() }}</strong>.
+        Kính chào Quý khách <strong style="color: #0F172A;">{{ $order->customer_name }}</strong>, đơn hàng phụ kiện <strong style="color: #0F172A;">{{ $refCode }}</strong> vừa được cập nhật sang trạng thái: <strong style="color: {{ $accent }};">{{ $order->statusLabel() }}</strong>.
     </p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px;">
         <tr>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
-                Mã đơn hàng
+                Mã tham chiếu đơn hàng
             </td>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #1C69D4; width: 62%;">
-                #ACC-{{ $order->id }}
-                @if($order->customer_order_code)
-                    <span style="color: #64748B; font-weight: 500;"> &middot; </span>
-                    <span style="color: #0F172A;">{{ $order->customer_order_code }}</span>
-                @endif
+                {{ $refCode }}
             </td>
         </tr>
-        @if($order->daily_sequence_code)
-        <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
-                Mã ngày (STT)
-            </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #0F172A;">
-                {{ $order->daily_sequence_code }}
-            </td>
-        </tr>
-        @endif
         <tr>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
                 Phụ kiện chính hãng

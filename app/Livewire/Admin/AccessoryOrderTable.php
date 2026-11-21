@@ -323,8 +323,10 @@ class AccessoryOrderTable extends Component
 
                         $subQuery->orWhere('accessory_orders.customer_order_code', 'like', "%{$keyword}%")
                             ->orWhere('accessory_orders.daily_sequence_code', 'like', "%{$keyword}%")
+                            ->orWhere('accessory_orders.customer_internal_code', 'like', "%{$keyword}%")
                             ->orWhere('accessory_orders.customer_name', 'like', "%{$keyword}%")
                             ->orWhere('accessory_orders.customer_phone', 'like', "%{$keyword}%")
+                            ->orWhere('accessory_orders.customer_email', 'like', "%{$keyword}%")
                             ->orWhereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', "%{$keyword}%"));
                     });
                 },

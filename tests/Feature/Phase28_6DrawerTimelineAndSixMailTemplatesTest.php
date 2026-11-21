@@ -146,7 +146,7 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
             $html = $mail->render();
 
             $this->assertSame(
-                "[BMW Showroom] Cập nhật lịch hẹn #{$appointment->id} — Xác nhận thay đổi từ Quý khách",
+                "[BMW Showroom] Khách hàng điều chỉnh giờ hẹn — Mã {$appointment->publicReferenceCode()}",
                 $mail->envelope()->subject
             );
             $this->assertStringContainsString('#D97706', $html);
@@ -226,27 +226,27 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
         // Kiểm tra Mẫu 4 & 5 Subject
         $reminderMail = new AppointmentReminderMail($appointment);
         $this->assertSame(
-            "[BMW Nhắc Lịch] Còn 24 giờ tới lịch hẹn #{$appointment->id} tại Showroom",
+            "[BMW Nhắc Lịch] Còn 24 giờ tới lịch hẹn tại Showroom — Mã {$appointment->publicReferenceCode()}",
             $reminderMail->envelope()->subject
         );
 
         $followupMail = new PostTestDriveFollowupMail($appointment);
         $this->assertSame(
-            "[BMW Concierge] Cảm ơn Quý khách & Bảng dự toán tài chính {$car->name}",
+            "[BMW Concierge] Cảm ơn Quý khách & Bảng dự toán tài chính {$car->name} — Mã {$appointment->publicReferenceCode()}",
             $followupMail->envelope()->subject
         );
 
         // Kiểm tra Mẫu 6 (Cảnh báo nội bộ CRM)
         $hotLeadMail = new HotLeadAlertMail($appointment);
         $hotHtml = $hotLeadMail->render();
-        $this->assertStringStartsWith('[CRM NỘI BỘ] [HOT LEAD]', (string) $hotLeadMail->envelope()->subject);
+        $this->assertStringStartsWith('[HOT LEAD]', (string) $hotLeadMail->envelope()->subject);
         $this->assertStringContainsString('#DC2626', $hotHtml);
         $this->assertStringContainsString('Nội bộ CRM', $hotHtml);
         $this->assertStringNotContainsStringIgnoringCase('monospace', $hotHtml);
 
         $alertMail = new AppointmentAlertMail($appointment);
         $alertHtml = $alertMail->render();
-        $this->assertStringStartsWith('[CRM NỘI BỘ · LỊCH MỚI]', (string) $alertMail->envelope()->subject);
+        $this->assertStringStartsWith('[BMW Showroom] Yêu cầu đặt lịch mới:', (string) $alertMail->envelope()->subject);
         $this->assertStringContainsString('#DC2626', $alertHtml);
         $this->assertStringContainsString('Nội bộ CRM', $alertHtml);
         $this->assertStringNotContainsStringIgnoringCase('monospace', $alertHtml);

@@ -257,7 +257,7 @@ class Phase26RealtimeNotificationsMailAndPoolTest extends TestCase
 
         Mail::assertSent(AccessoryOrderStatusMail::class, function (AccessoryOrderStatusMail $mail) use ($orderWithEmail): bool {
             $mail->assertHasTo('parts.buyer@example.com');
-            $mail->assertSeeInHtml("#ACC-{$orderWithEmail->id}");
+            $mail->assertSeeInHtml($orderWithEmail->publicReferenceCode());
             $mail->assertSeeInHtml('Đã xác nhận');
             $mail->assertSeeInHtml('25.000.000 VNĐ');
 

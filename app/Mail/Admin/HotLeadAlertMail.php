@@ -24,12 +24,12 @@ class HotLeadAlertMail extends Mailable
         $typeLabel = $this->appointment->type instanceof AppointmentType
             ? $this->appointment->type->label()
             : 'Lịch hẹn';
-        $customerName = $this->appointment->user?->name
-            ?? $this->appointment->guest_name
-            ?? 'Khách hàng';
+        $vehicleLabel = $this->appointment->product?->name
+            ?? ($this->appointment->servicePackageLabel() ?? 'BMW Showroom');
+        $refCode = $this->appointment->publicReferenceCode();
 
         return new Envelope(
-            subject: "[CRM NỘI BỘ] [HOT LEAD] Yêu cầu {$typeLabel} khẩn từ {$customerName} — #{$this->appointment->id}",
+            subject: "[HOT LEAD] Khách hàng tiềm năng đặt lịch {$typeLabel} ({$vehicleLabel}) — Mã {$refCode}",
             tags: ['hot-lead', 'internal-crm'],
             metadata: [
                 'appointment_id' => (string) $this->appointment->id,

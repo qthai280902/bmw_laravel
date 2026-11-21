@@ -108,22 +108,21 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'assigned_to' => $sales->id,
         ]);
 
-        // Layouts strip JetBrains Mono and monospace classes
+        // Layouts strip JetBrains Mono and monospace classes; Public uses sharp 0px (rounded-none)
         $appResponse = $this->get(route('products.index'));
         $appResponse->assertOk()
             ->assertSee('Be Vietnam Pro')
             ->assertDontSee('JetBrains Mono')
-            ->assertDontSee('rounded-none');
+            ->assertSee('rounded-none');
 
         $guestUrl = URL::signedRoute('appointments.guest.manage', ['appointment' => $appointment->id]);
         $guestRes = $this->get($guestUrl);
         $guestRes->assertOk()
             ->assertSee('#F1F5F9', false)
             ->assertSee($appointment->customer_order_code)
-            ->assertSee($appointment->daily_sequence_code)
+            ->assertDontSee($appointment->daily_sequence_code)
             ->assertSee('Trần Quang Minh')
-            ->assertDontSee('JetBrains Mono')
-            ->assertDontSee('rounded-none');
+            ->assertDontSee('JetBrains Mono');
     }
 
     public function test_dual_code_generator_normalizes_phone_increments_integers_past_9_and_resets_daily_sequence(): void
@@ -134,7 +133,7 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
 
         [, $car, $accessory] = $this->createCatalogFixtures();
 
-        // Create 11 appointments for same normalized phone (+84901234567 & 0901234567) to verify #0901234567_9 -> _10 -> _11
+        // Create 11 appointments for same normalized phone (+84901234567 & 0901234567) to verify KH-4567-09 -> -10 -> -11 & CT-YYMMDD-001 -> -011
         $created = [];
         for ($i = 1; $i <= 11; $i++) {
             $created[] = Appointment::create([
@@ -148,15 +147,17 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             ]);
         }
 
-        $this->assertSame('#0901234567_1', $created[0]->customer_order_code);
-        $this->assertSame('#0901234567_9', $created[8]->customer_order_code);
-        $this->assertSame('#0901234567_10', $created[9]->customer_order_code);
-        $this->assertSame('#0901234567_11', $created[10]->customer_order_code);
+        $todayYmd = now('Asia/Ho_Chi_Minh')->format('ymd');
 
-        $todayPrefix = now('Asia/Ho_Chi_Minh')->format('d/m/Y');
-        $this->assertSame("{$todayPrefix}/01", $created[0]->daily_sequence_code);
-        $this->assertSame("{$todayPrefix}/10", $created[9]->daily_sequence_code);
-        $this->assertSame("{$todayPrefix}/11", $created[10]->daily_sequence_code);
+        $this->assertMatchesRegularExpression("/^BMW-{$todayYmd}-[2-9A-HJ-NP-Z]{4}$/", (string) $created[0]->customer_order_code);
+        $this->assertSame('KH-4567-01', $created[0]->customer_internal_code);
+        $this->assertSame('KH-4567-09', $created[8]->customer_internal_code);
+        $this->assertSame('KH-4567-10', $created[9]->customer_internal_code);
+        $this->assertSame('KH-4567-11', $created[10]->customer_internal_code);
+
+        $this->assertSame("CT-{$todayYmd}-001", $created[0]->daily_sequence_code);
+        $this->assertSame("CT-{$todayYmd}-010", $created[9]->daily_sequence_code);
+        $this->assertSame("CT-{$todayYmd}-011", $created[10]->daily_sequence_code);
 
         // AccessoryOrder sequence is independent of Appointments
         $order1 = AccessoryOrder::create([
@@ -171,8 +172,9 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'status' => AccessoryOrder::STATUS_PENDING,
         ]);
 
-        $this->assertSame('#0901234567_1', $order1->customer_order_code);
-        $this->assertSame("{$todayPrefix}/01", $order1->daily_sequence_code);
+        $this->assertMatchesRegularExpression("/^ACC-{$todayYmd}-[2-9A-HJ-NP-Z]{4}$/", (string) $order1->customer_order_code);
+        $this->assertSame('KH-4567-01', $order1->customer_internal_code);
+        $this->assertSame("CT-{$todayYmd}-001", $order1->daily_sequence_code);
 
         // Daily sequence resets on a different day in Asia/Ho_Chi_Minh
         $nextDayOrder = new AccessoryOrder([
@@ -187,9 +189,10 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
         $nextDayOrder->created_at = now('Asia/Ho_Chi_Minh')->addDay()->setTimezone('UTC');
         $nextDayOrder->save();
 
-        $tomorrowPrefix = now('Asia/Ho_Chi_Minh')->addDay()->format('d/m/Y');
-        $this->assertSame('#0901234567_2', $nextDayOrder->customer_order_code);
-        $this->assertSame("{$tomorrowPrefix}/01", $nextDayOrder->daily_sequence_code);
+        $tomorrowYmd = now('Asia/Ho_Chi_Minh')->addDay()->format('ymd');
+        $this->assertMatchesRegularExpression("/^ACC-{$tomorrowYmd}-[2-9A-HJ-NP-Z]{4}$/", (string) $nextDayOrder->customer_order_code);
+        $this->assertSame('KH-4567-02', $nextDayOrder->customer_internal_code);
+        $this->assertSame("CT-{$tomorrowYmd}-001", $nextDayOrder->daily_sequence_code);
     }
 
     public function test_dual_codes_appear_in_all_html_and_plain_text_emails(): void
@@ -220,40 +223,44 @@ class Phase32TypographyDualCodesSalesPerformanceAndHelpTest extends TestCase
             'status' => AccessoryOrder::STATUS_CONFIRMED,
         ]);
 
-        $mailables = [
+        // Customer appointment emails show public reference code and hide internal voucher code
+        foreach ([
             new AppointmentConfirmationMail($appointment, 'received'),
             new GuestAppointmentChangeMail($appointment, 'rescheduled', now()->addDays(1)->setTime(9, 0), now()->addDays(2)->setTime(14, 0)),
             new AppointmentReminderMail($appointment),
             new PostTestDriveFollowupMail($appointment),
+        ] as $customerMailable) {
+            $customerMailable->assertSeeInHtml($appointment->customer_order_code);
+            $customerMailable->assertDontSeeInHtml($appointment->daily_sequence_code);
+            $customerMailable->assertSeeInText($appointment->customer_order_code);
+            $customerMailable->assertDontSeeInText($appointment->daily_sequence_code);
+        }
+
+        // Internal admin appointment emails show all 3 codes
+        foreach ([
             new HotLeadAlertMail($appointment),
             new AppointmentAlertMail($appointment),
-        ];
-
-        foreach ($mailables as $mailable) {
-            $mailable->assertSeeInHtml($appointment->customer_order_code);
-            $mailable->assertSeeInHtml($appointment->daily_sequence_code);
+        ] as $internalMailable) {
+            $internalMailable->assertSeeInHtml($appointment->customer_order_code);
+            $internalMailable->assertSeeInHtml($appointment->daily_sequence_code);
+            $internalMailable->assertSeeInHtml($appointment->customer_internal_code);
         }
 
-        // Plain-text parts on customer/reminder/followup/guest-change also show both codes
+        // Customer accessory order emails show public reference code without #ACC-ID or internal voucher code
         foreach ([
-            new AppointmentConfirmationMail($appointment, 'received'),
-            new GuestAppointmentChangeMail($appointment, 'confirmed', now()->addDays(1), now()->addDays(1)),
-            new AppointmentReminderMail($appointment),
-            new PostTestDriveFollowupMail($appointment),
-        ] as $textMailable) {
-            $textMailable->assertSeeInText($appointment->customer_order_code);
-            $textMailable->assertSeeInText($appointment->daily_sequence_code);
-        }
-
-        foreach ([
-            new AccessoryOrderAlertMail($order),
             new AccessoryOrderConfirmationMail($order),
             new AccessoryOrderStatusMail($order),
-        ] as $orderMail) {
-            $orderMail->assertSeeInHtml("#ACC-{$order->id}");
-            $orderMail->assertSeeInHtml($order->customer_order_code);
-            $orderMail->assertSeeInHtml($order->daily_sequence_code);
+        ] as $customerOrderMail) {
+            $customerOrderMail->assertSeeInHtml($order->customer_order_code);
+            $customerOrderMail->assertDontSeeInHtml("#ACC-{$order->id}");
+            $customerOrderMail->assertDontSeeInHtml($order->daily_sequence_code);
         }
+
+        // Internal admin accessory order email shows all 3 codes
+        $adminOrderMail = new AccessoryOrderAlertMail($order);
+        $adminOrderMail->assertSeeInHtml($order->customer_order_code);
+        $adminOrderMail->assertSeeInHtml($order->daily_sequence_code);
+        $adminOrderMail->assertSeeInHtml($order->customer_internal_code);
     }
 
     public function test_sales_auto_assignment_safe_null_fallback_manual_reassign_notification_and_cache_invalidation(): void

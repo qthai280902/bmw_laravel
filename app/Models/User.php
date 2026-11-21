@@ -31,6 +31,7 @@ class User extends Authenticatable
         'name',
         'email',
         'role',
+        'is_super_admin',
         'password',
         'email_verified_at',
     ];
@@ -54,6 +55,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_super_admin' => 'boolean',
         ];
     }
 
@@ -192,6 +194,16 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->isAdmin() && $this->normalizedRole() === self::ROLE_ADMIN;
+    }
+
+    public function isTopSuperAdmin(): bool
+    {
+        return $this->isSuperAdmin() && (bool) $this->is_super_admin;
+    }
+
+    public function canAccessAccounting(): bool
+    {
+        return $this->isTopSuperAdmin();
     }
 
     public function isSales(): bool

@@ -189,7 +189,10 @@
                                 @if($order->daily_sequence_code)
                                     <p class="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">{{ $order->daily_sequence_code }}</p>
                                 @endif
-                                <p class="mt-1 text-xs font-semibold tabular-nums text-white">#{{ $order->id }} · {{ $order->created_at->format('d/m/Y H:i') }}</p>
+                                @if($order->customer_internal_code)
+                                    <p class="mt-0.5 text-[10px] font-medium tabular-nums text-zinc-400">{{ $order->customer_internal_code }}</p>
+                                @endif
+                                <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $order->created_at->format('d/m/Y H:i') }}</p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -316,6 +319,11 @@
                                     @if($order->daily_sequence_code)
                                         <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-200">
                                             {{ $order->daily_sequence_code }}
+                                        </span>
+                                    @endif
+                                    @if($order->customer_internal_code)
+                                        <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">
+                                            {{ $order->customer_internal_code }}
                                         </span>
                                     @endif
                                     <span class="rounded-full border px-3 py-0.5 text-[11px] font-semibold {{ $order->statusColorClass() }}">

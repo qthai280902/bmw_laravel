@@ -80,6 +80,16 @@ class Product extends Model
     }
 
     /**
+     * Alias accessor for specifications.
+     *
+     * @return array<string, mixed>
+     */
+    public function getSpecsAttribute(): array
+    {
+        return is_array($this->specifications) ? $this->specifications : [];
+    }
+
+    /**
      * Get the category that owns the product.
      */
     public function category(): BelongsTo

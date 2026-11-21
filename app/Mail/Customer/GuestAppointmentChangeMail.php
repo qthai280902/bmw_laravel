@@ -37,9 +37,16 @@ class GuestAppointmentChangeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         $this->appointment->loadMissing(['product.category', 'user']);
+        $refCode = $this->appointment->publicReferenceCode();
+
+        $subject = match ($this->action) {
+            self::ACTION_CONFIRM => "[BMW Showroom] Xác nhận đến hẹn từ khách hàng — Mã {$refCode}",
+            self::ACTION_CANCEL => "[BMW Showroom] Khách hàng đã hủy lịch hẹn — Mã {$refCode}",
+            default => "[BMW Showroom] Khách hàng điều chỉnh giờ hẹn — Mã {$refCode}",
+        };
 
         return new Envelope(
-            subject: "[BMW Showroom] Cập nhật lịch hẹn #{$this->appointment->id} — Xác nhận thay đổi từ Quý khách",
+            subject: $subject,
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
             tags: ['guest-appointment-change', $this->action],
         );

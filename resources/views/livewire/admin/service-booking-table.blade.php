@@ -217,8 +217,10 @@
                                 @if($booking->daily_sequence_code)
                                     <p class="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">{{ $booking->daily_sequence_code }}</p>
                                 @endif
+                                @if($booking->customer_internal_code)
+                                    <p class="mt-0.5 text-[10px] font-medium tabular-nums text-zinc-400">{{ $booking->customer_internal_code }}</p>
+                                @endif
                                 <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $booking->appointment_date->format('d/m/Y · H:i') }}</p>
-                                <p class="mt-0.5 text-[11px] tabular-nums text-zinc-500">ID #{{ $booking->id }}</p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -357,6 +359,11 @@
                                     @if($booking->daily_sequence_code)
                                         <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-200">
                                             {{ $booking->daily_sequence_code }}
+                                        </span>
+                                    @endif
+                                    @if($booking->customer_internal_code)
+                                        <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">
+                                            {{ $booking->customer_internal_code }}
                                         </span>
                                     @endif
                                     <span class="rounded-full border px-3 py-0.5 text-[11px] font-semibold {{ $booking->status->color() }}">

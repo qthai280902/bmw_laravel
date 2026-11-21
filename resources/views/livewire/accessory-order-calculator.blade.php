@@ -1,18 +1,18 @@
 <div>
     @if (session('success'))
-        <div class="mb-8 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-sm font-bold text-emerald-400">
+        <div class="mb-8 rounded-none border border-emerald-500/20 bg-emerald-500/5 p-5 text-sm font-bold text-emerald-400">
             {{ session('success') }}
         </div>
     @endif
 
     @if (session('error'))
-        <div class="mb-8 rounded-xl border border-rose-500/30 bg-rose-500/10 p-5 text-sm font-bold text-rose-300">
+        <div class="mb-8 rounded-none border border-rose-500/30 bg-rose-500/10 p-5 text-sm font-bold text-rose-300">
             {{ session('error') }}
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="mb-8 rounded-xl border border-rose-500/20 bg-rose-500/5 p-5 text-sm font-bold text-rose-300">
+        <div class="mb-8 rounded-none border border-rose-500/20 bg-rose-500/5 p-5 text-sm font-bold text-rose-300">
             Vui lòng kiểm tra lại thông tin đặt hàng.
         </div>
     @endif
@@ -29,7 +29,7 @@
                     type="text"
                     wire:model.live.debounce.300ms="customerName"
                     required
-                    class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
                 @error('customer_name')
                     <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -47,7 +47,7 @@
                     type="text"
                     wire:model.live.debounce.300ms="customerPhone"
                     required
-                    class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
                 @error('customer_phone')
                     <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -66,7 +66,7 @@
                 type="text"
                 wire:model.live.debounce.300ms="customerAddress"
                 required
-                class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
             >
             @error('customer_address')
                 <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -84,7 +84,7 @@
                     name="customer_email"
                     type="email"
                     wire:model.live.debounce.300ms="customerEmail"
-                    class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 >
                 @error('customer_email')
                     <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -96,7 +96,7 @@
 
             <div>
                 <label for="quantity" class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Số lượng *</label>
-                <div class="flex rounded-xl border border-zinc-800 bg-zinc-950">
+                <div class="flex rounded-none border border-zinc-800 bg-zinc-950">
                     <button
                         type="button"
                         wire:click="decrementQuantity"
@@ -131,7 +131,7 @@
         </div>
 
         {{-- Live Cost Breakdown --}}
-        <div class="rounded-xl border border-white/10 bg-[#121215] p-5">
+        <div class="rounded-none border border-white/10 bg-[#121215] p-5">
             <div class="flex items-center justify-between text-xs text-zinc-400">
                 <span class="font-bold uppercase tracking-[0.18em]">Đơn giá × Số lượng</span>
                 <span class="tabular-nums font-semibold text-zinc-200">{{ number_format($product->price) }} VNĐ × {{ $quantity }}</span>
@@ -151,7 +151,7 @@
                 name="notes"
                 wire:model.live.debounce.400ms="notes"
                 rows="5"
-                class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
             ></textarea>
             @error('notes')
                 <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -159,10 +159,10 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 border-t border-white/10 pt-8 sm:grid-cols-[1fr_auto]">
-            <button type="submit" class="rounded-xl bg-[#1C69D4] px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
+            <button type="submit" class="rounded-none bg-[#1C69D4] px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
                 Xác nhận đặt hàng
             </button>
-            <a href="{{ route('accessories.index') }}" class="rounded-xl border border-zinc-700 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-300 transition-colors hover:border-white hover:text-white">
+            <a href="{{ route('accessories.index') }}" class="rounded-none border border-zinc-700 px-8 py-5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-zinc-300 transition-colors hover:border-white hover:text-white">
                 Quay lại phụ kiện
             </a>
         </div>

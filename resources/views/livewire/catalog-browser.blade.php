@@ -7,7 +7,7 @@
                     action="{{ $filterAction }}"
                     method="GET"
                     wire:submit.prevent="$refresh"
-                    class="rounded-2xl border border-white/[0.06] bg-zinc-950/90 p-6 shadow-xl shadow-black/50 backdrop-blur"
+                    class="rounded-none border border-white/[0.06] bg-zinc-950/90 p-6 shadow-xl shadow-black/50 backdrop-blur"
                 >
                     @if($isAccessoryCatalog)
                         <input type="hidden" name="type" value="accessory">
@@ -37,7 +37,7 @@
                                 name="search"
                                 wire:model.live.debounce.350ms="search"
                                 placeholder="{{ $isAccessoryCatalog ? 'Nhập tên phụ kiện...' : 'Nhập tên mẫu xe, dòng xe...' }}"
-                                class="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                class="w-full rounded-none border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                             >
                         </div>
                     </div>
@@ -144,18 +144,18 @@
                                     name="min_price"
                                     wire:model.live.debounce.400ms="minPrice"
                                     placeholder="Từ (VNĐ)"
-                                    class="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                    class="w-full rounded-none border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                                 >
                                 <input
                                     type="number"
                                     name="max_price"
                                     wire:model.live.debounce.400ms="maxPrice"
                                     placeholder="Đến (VNĐ)"
-                                    class="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                    class="w-full rounded-none border border-zinc-800 bg-zinc-900 p-4 text-sm text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                                 >
                                 <button
                                     type="submit"
-                                    class="w-full rounded-lg bg-white py-4 text-[10px] font-black uppercase tracking-[0.25em] text-black transition-all hover:bg-[#1C69D4] hover:text-white"
+                                    class="w-full rounded-none bg-white py-4 text-[10px] font-black uppercase tracking-[0.25em] text-black transition-all hover:bg-[#1C69D4] hover:text-white"
                                 >
                                     Áp dụng
                                 </button>
@@ -196,7 +196,7 @@
 
                 <div wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-200">
                     @if($vehicles->isEmpty())
-                        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/30 px-6 py-20 text-center">
+                        <div class="rounded-none border border-zinc-800 bg-zinc-900/30 px-6 py-20 text-center">
                             <p class="text-[10px] font-black uppercase tracking-[0.35em] text-[#1C69D4]">Không có kết quả</p>
                             <h3 class="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
                                 {{ $isAccessoryCatalog ? 'Chưa tìm thấy phụ kiện phù hợp' : 'Chưa tìm thấy mẫu xe phù hợp' }}
@@ -204,7 +204,7 @@
                             <button
                                 type="button"
                                 wire:click="resetFilters"
-                                class="mt-8 inline-flex rounded-lg border border-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black"
+                                class="mt-8 inline-flex rounded-none border border-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black"
                             >
                                 Xem tất cả
                             </button>

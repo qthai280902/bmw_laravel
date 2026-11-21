@@ -12,11 +12,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-        <!-- Flatpickr -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-        <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
-        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
         <!-- Scripts -->
         @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -116,56 +111,6 @@
                 </div>
             </footer>
         </div>
-        <script>
-            window.initBmwFlatpickr = function () {
-                if (typeof window.flatpickr !== 'function') {
-                    return;
-                }
-
-                document.querySelectorAll('.flatpickr-input').forEach(function (el) {
-                    if (el._flatpickr || el.classList.contains('flatpickr-alt-input')) {
-                        return;
-                    }
-
-                    const wasRequired = el.hasAttribute('required');
-                    el.removeAttribute('required');
-                    el.setAttribute('autocomplete', 'off');
-                    el.setAttribute('data-lpignore', 'true');
-
-                    if (el.value && !/^\d{4}-\d{2}-\d{2}/.test(el.value.trim())) {
-                        el.value = '';
-                    }
-
-                    const fp = window.flatpickr(el, {
-                        enableTime: true,
-                        dateFormat: 'Y-m-d H:i',
-                        altInput: true,
-                        altInputClass: el.className + ' flatpickr-alt-input',
-                        altFormat: 'd/m/Y H:i',
-                        allowInput: false,
-                        minDate: 'today',
-                        time_24hr: true,
-                        onChange: function (_selectedDates, dateStr, instance) {
-                            instance.input.value = dateStr;
-                            instance.input.dispatchEvent(new Event('change', { bubbles: true }));
-                        },
-                    });
-
-                    if (fp && fp.altInput) {
-                        fp.altInput.setAttribute('autocomplete', 'off');
-                        fp.altInput.setAttribute('data-lpignore', 'true');
-                        fp.altInput.setAttribute('data-form-type', 'other');
-                        fp.altInput.setAttribute('name', 'bmw_date_display_' + Math.random().toString(36).slice(2));
-                        if (wasRequired) {
-                            fp.altInput.setAttribute('required', 'required');
-                        }
-                    }
-                });
-            };
-
-            document.addEventListener('DOMContentLoaded', window.initBmwFlatpickr);
-            document.addEventListener('livewire:navigated', window.initBmwFlatpickr);
-        </script>
 
         <x-public.ai-assistant-widget />
 
@@ -195,7 +140,7 @@
                 <div class="flex items-center gap-6">
                     <div class="flex -space-x-3 overflow-hidden">
                         <template x-for="id in ids" :key="id">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-zinc-950 bg-zinc-900 text-[10px] font-black uppercase tracking-normal text-white">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-none border-2 border-zinc-950 bg-zinc-900 text-[10px] font-black uppercase tracking-normal text-white">
                                 BMW
                             </div>
                         </template>
@@ -212,7 +157,7 @@
                     <button @click="localStorage.removeItem('bmw_comparison_ids'); update();" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
                         Xóa tất cả
                     </button>
-                    <button @click="compare()" class="rounded-lg px-10 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all flex-grow md:flex-grow-0">
+                    <button @click="compare()" class="rounded-none px-10 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all flex-grow md:flex-grow-0">
                         So sánh ngay
                     </button>
                 </div>

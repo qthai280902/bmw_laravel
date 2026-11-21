@@ -23,9 +23,7 @@
                 $inlineSrc = $message->embedData($resolvedFallbackPng, 'bmw-showroom-badge.png', 'image/png');
             }
         }
-        $ticketCode = '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT);
-        $customerOrderCode = $appointment->customer_order_code ?: $ticketCode;
-        $dailySequenceCode = $appointment->daily_sequence_code;
+        $customerOrderCode = $appointment->publicReferenceCode();
     @endphp
 
     <h1 style="margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0F172A; line-height: 1.35;">
@@ -61,28 +59,10 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px;">
         <tr>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
-                Mã khách hàng
+                Mã tham chiếu
             </td>
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #4F46E5; width: 62%;">
                 {{ $customerOrderCode }}
-            </td>
-        </tr>
-        @if($dailySequenceCode)
-        <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
-                Mã ngày (STT)
-            </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #0F172A;">
-                {{ $dailySequenceCode }}
-            </td>
-        </tr>
-        @endif
-        <tr>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
-                Mã lịch hẹn
-            </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 600; color: #475569;">
-                {{ $ticketCode }}
             </td>
         </tr>
         <tr>

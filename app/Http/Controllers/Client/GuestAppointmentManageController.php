@@ -44,6 +44,7 @@ class GuestAppointmentManageController extends Controller
         $meta = is_array($appointment->meta_data) ? $appointment->meta_data : [];
         $previousDateLabel = $appointment->appointment_date?->format('H:i — d/m/Y');
         $previousStatusLabel = $appointment->statusLabel();
+        $refCode = $appointment->publicReferenceCode();
 
         if ($action === 'confirm') {
             if ($appointment->status === AppointmentStatus::Cancelled) {
@@ -54,8 +55,13 @@ class GuestAppointmentManageController extends Controller
                 return back()->with('error', 'Lịch hẹn này đã hoàn thành.');
             }
 
-            if ($appointment->status === AppointmentStatus::Pending) {
+            if ($appointment->status === AppointmentStatus::Pending || empty($meta['guest_confirmed_at'])) {
                 $meta['guest_confirmed_at'] = now()->toIso8601String();
+                $meta['guest_confirmed_for_date'] = $appointment->appointment_date?->format('H:i d/m/Y');
+                $meta['reschedule_pending_review'] = false;
+                $meta['invalidated_guest_confirmed_at'] = null;
+                $meta['invalidated_guest_confirmed_for_date'] = null;
+
                 $meta = InteractionTimelineRecorder::appendToMeta(
                     meta: $meta,
                     actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
@@ -81,7 +87,10 @@ class GuestAppointmentManageController extends Controller
                 );
             }
 
-            return back()->with('success', "Cảm ơn Quý khách đã xác nhận lịch hẹn #{$appointment->id}. Showroom BMW sẵn sàng đón tiếp.");
+            $timeLabel = $appointment->appointment_date?->format('H:i d/m/Y');
+            $confirmedAtLabel = now('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
+
+            return back()->with('success', "Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {$timeLabel} (xác nhận lúc {$confirmedAtLabel}) — Mã {$refCode}.");
         }
 
         if ($action === 'reschedule') {
@@ -116,7 +125,18 @@ class GuestAppointmentManageController extends Controller
             }
 
             $newDateLabel = $newDate->format('H:i — d/m/Y');
+
+            if (! empty($meta['guest_confirmed_at'])) {
+                $meta['invalidated_guest_confirmed_at'] = $meta['guest_confirmed_at'];
+                $meta['invalidated_guest_confirmed_for_date'] = $meta['guest_confirmed_for_date']
+                    ?? ($appointment->appointment_date?->format('H:i d/m/Y'));
+                $meta['guest_confirmed_at'] = null;
+                $meta['guest_confirmed_for_date'] = null;
+            }
+
             $meta['rescheduled_at'] = now()->toIso8601String();
+            $meta['guest_rescheduled_at'] = $meta['rescheduled_at'];
+            $meta['reschedule_pending_review'] = true;
             $meta['previous_appointment_date'] = $previousDateLabel;
             if ($cleanReason !== '') {
                 $meta['reschedule_reason'] = $cleanReason;
@@ -154,7 +174,7 @@ class GuestAppointmentManageController extends Controller
                 reason: $cleanReason !== '' ? $cleanReason : null,
             );
 
-            return back()->with('success', "Đã cập nhật thời gian mới cho lịch hẹn #{$appointment->id}: ".$newDateLabel.'.');
+            return back()->with('success', "Yêu cầu đổi lịch sang {$newDateLabel} cho lịch hẹn {$refCode} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.");
         }
 
         if ($appointment->isTerminalStatus()) {
@@ -194,7 +214,7 @@ class GuestAppointmentManageController extends Controller
             reason: $cleanReason !== '' ? $cleanReason : null,
         );
 
-        return back()->with('success', "Lịch hẹn #{$appointment->id} đã được hủy theo yêu cầu của Quý khách.");
+        return back()->with('success', "Lịch hẹn {$refCode} đã được hủy theo yêu cầu của Quý khách.");
     }
 
     private function dispatchGuestChangeMail(

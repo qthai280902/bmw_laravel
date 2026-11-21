@@ -21,11 +21,10 @@ class AccessoryOrderConfirmationMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         $this->order->loadMissing('product');
-
-        $productName = $this->order->product?->name ?? 'Phụ kiện chính hãng BMW';
+        $refCode = $this->order->publicReferenceCode();
 
         return new Envelope(
-            subject: "[BMW Showroom] Xác nhận đơn đặt phụ kiện #{$this->order->id} — {$productName}",
+            subject: "[BMW Lifestyle] Đã tiếp nhận đơn phụ kiện — Mã {$refCode}",
         );
     }
 

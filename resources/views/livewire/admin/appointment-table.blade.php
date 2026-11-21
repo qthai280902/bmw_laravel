@@ -234,8 +234,10 @@
                                 @if($appointment->daily_sequence_code)
                                     <p class="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">{{ $appointment->daily_sequence_code }}</p>
                                 @endif
+                                @if($appointment->customer_internal_code)
+                                    <p class="mt-0.5 text-[10px] font-medium tabular-nums text-zinc-400">{{ $appointment->customer_internal_code }}</p>
+                                @endif
                                 <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $appointment->appointment_date->format('d/m/Y · H:i') }}</p>
-                                <p class="mt-0.5 text-[11px] tabular-nums text-zinc-500">ID #{{ $appointment->id }}</p>
                             </td>
 
                             <td class="px-5 py-4">
@@ -408,6 +410,11 @@
                                     @if($lead->daily_sequence_code)
                                         <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-200">
                                             {{ $lead->daily_sequence_code }}
+                                        </span>
+                                    @endif
+                                    @if($lead->customer_internal_code)
+                                        <span class="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-300">
+                                            {{ $lead->customer_internal_code }}
                                         </span>
                                     @endif
                                     @if($lead->lead_priority)

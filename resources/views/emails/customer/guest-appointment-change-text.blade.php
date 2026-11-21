@@ -5,7 +5,7 @@ BMW SHOWROOM VIETNAM — KHÁCH HÀNG CẬP NHẬT · THAY ĐỔI LỊCH HẸN
 
 Kính chào Quý khách {{ $appointment->customer_name }},
 
-Hệ thống BMW Showroom Vietnam đã tiếp nhận và đồng bộ thay đổi cho lịch hẹn {{ $appointment->customer_order_code ?: '#BMW-' . str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}{{ $appointment->daily_sequence_code ? ' (Mã ngày: ' . $appointment->daily_sequence_code . ')' : '' }} (#BMW-{{ str_pad((string) $appointment->id, 5, '0', STR_PAD_LEFT) }}) tới đội ngũ Cố vấn dịch vụ và Bán hàng.
+Hệ thống BMW Showroom Vietnam đã tiếp nhận và đồng bộ thay đổi cho lịch hẹn {{ $appointment->publicReferenceCode() }} tới đội ngũ Cố vấn dịch vụ và Bán hàng.
 
 ĐỐI CHIẾU THÔNG TIN TRƯỚC & SAU CẬP NHẬT
 --------------------------------------------------------------------

@@ -185,6 +185,24 @@ class AdminPageGuideRegistry
                     'Thay đổi có hiệu lực ngay sau khi lưu mà không cần khởi động lại hệ thống.',
                 ],
             ],
+            'admin.accounting.index' => [
+                'title' => 'Kế toán & Sổ sách (Chỉ Super Admin)',
+                'summary' => 'Quản lý chứng từ tài chính, đối soát gói dữ liệu từng ngày bán hàng (Daily Sales Packs) và xuất sổ CSV.',
+                'bullets' => [
+                    'Phân hệ này chỉ hiển thị duy nhất với tài khoản Super Admin cấp cao nhất; các vai trò khác nhận lỗi 403.',
+                    'Mỗi chứng từ mang Mã chứng từ kế toán (CT-YYMMDD-001), Mã tham chiếu khách hàng (BMW-/SRV-/ACC-) và Mã KH nội bộ (KH-XXXX-NN).',
+                    'Bấm "Mở gói sổ ngày" trên từng thẻ ngày bán hàng để kiểm tra chi tiết và thực hiện Chốt sổ ngày.',
+                    'Nút "Xuất sổ kế toán (.CSV)" có sẵn BOM UTF-8 để mở trực tiếp trên Microsoft Excel không bị lỗi tiếng Việt.',
+                ],
+            ],
+            'admin.accounting.day' => [
+                'title' => 'Chi tiết Gói Sổ Ngày & Chốt sổ',
+                'summary' => 'Đối soát toàn bộ chứng từ phát sinh trong một ngày bán hàng và lưu bản chốt sổ kế toán.',
+                'bullets' => [
+                    'Kiểm tra kỹ trạng thái các đơn phụ kiện và lịch hẹn xe trước khi bấm "Chốt sổ ngày".',
+                    'Có thể xuất riêng tệp CSV của ngày đang xem để lưu trữ chứng từ kế toán theo ngày.',
+                ],
+            ],
         ];
     }
 }

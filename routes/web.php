@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccessoryOrderController;
 use App\Http\Controllers\Admin\AccessoryOrderController as AdminAccessoryOrderController;
+use App\Http\Controllers\Admin\AccountingController;
 use App\Http\Controllers\Admin\AiConversationController as AdminAiConversationController;
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -146,6 +147,14 @@ Route::middleware('auth')->group(function () {
             Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
             Route::resource('users', UserController::class)->only(['index', 'store']);
             Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+        });
+
+        // Accounting & Financial Ledgers (strictly Top Super Admin only)
+        Route::middleware('top_super_admin')->prefix('accounting')->name('accounting.')->group(function () {
+            Route::get('/', [AccountingController::class, 'index'])->name('index');
+            Route::get('/export', [AccountingController::class, 'exportCsv'])->name('export');
+            Route::get('/days/{date}', [AccountingController::class, 'showDay'])->name('day');
+            Route::post('/days/{date}/close', [AccountingController::class, 'closeDay'])->name('close-day');
         });
     });
 });

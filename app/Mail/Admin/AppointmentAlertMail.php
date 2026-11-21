@@ -20,15 +20,15 @@ class AppointmentAlertMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing('user');
+        $this->appointment->loadMissing(['product', 'user']);
 
         $typeLabel = $this->appointment->type?->label() ?? 'Lịch hẹn';
-        $customerName = $this->appointment->user?->name
-            ?? $this->appointment->guest_name
-            ?? 'Khách hàng';
+        $vehicleLabel = $this->appointment->product?->name
+            ?? ($this->appointment->servicePackageLabel() ?? 'BMW Showroom');
+        $refCode = $this->appointment->publicReferenceCode();
 
         return new Envelope(
-            subject: "[CRM NỘI BỘ · LỊCH MỚI] Yêu cầu {$typeLabel} từ {$customerName} — #{$this->appointment->id}",
+            subject: "[BMW Showroom] Yêu cầu đặt lịch mới: {$typeLabel} ({$vehicleLabel}) — Mã {$refCode}",
             tags: ['new-appointment', 'internal-crm'],
         );
     }

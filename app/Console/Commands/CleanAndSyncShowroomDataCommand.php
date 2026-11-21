@@ -101,15 +101,21 @@ class CleanAndSyncShowroomDataCommand extends Command
 
         if ($dryRun) {
             $backfillCounts['appointments'] = Appointment::query()
-                ->where(fn ($q) => $q->whereNull('customer_order_code')->orWhereNull('daily_sequence_code'))
+                ->get(['id', 'customer_order_code', 'daily_sequence_code', 'customer_internal_code'])
+                ->filter(static fn (Appointment $a): bool => ! DocumentCodeGenerator::isModernReferenceCode($a->customer_order_code)
+                    || ! DocumentCodeGenerator::isModernDailyCode($a->daily_sequence_code)
+                    || ! DocumentCodeGenerator::isModernCustomerInternalCode($a->customer_internal_code))
                 ->count();
             $backfillCounts['accessory_orders'] = AccessoryOrder::query()
-                ->where(fn ($q) => $q->whereNull('customer_order_code')->orWhereNull('daily_sequence_code'))
+                ->get(['id', 'customer_order_code', 'daily_sequence_code', 'customer_internal_code'])
+                ->filter(static fn (AccessoryOrder $o): bool => ! DocumentCodeGenerator::isModernReferenceCode($o->customer_order_code)
+                    || ! DocumentCodeGenerator::isModernDailyCode($o->daily_sequence_code)
+                    || ! DocumentCodeGenerator::isModernCustomerInternalCode($o->customer_internal_code))
                 ->count();
             $distributedCounts['appointments'] = Appointment::query()->whereNull('assigned_to')->count();
             $distributedCounts['accessory_orders'] = AccessoryOrder::query()->whereNull('assigned_to')->count();
         } else {
-            $backfillCounts = $codeGenerator->backfillAllMissing();
+            $backfillCounts = $codeGenerator->backfillAllMissing(upgradeLegacy: true);
             $distributedCounts = $salesAssignment->distributeUnassignedEvenly();
         }
 

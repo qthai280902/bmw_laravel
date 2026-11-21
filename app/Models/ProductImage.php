@@ -32,4 +32,21 @@ class ProductImage extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function url(): string
+    {
+        if ($this->relationLoaded('product') && $this->product) {
+            return $this->product->displayImageUrl($this);
+        }
+
+        $raw = trim((string) $this->path);
+        if ($raw === '') {
+            return asset('images/bmw-logo.svg');
+        }
+        if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://') || str_starts_with($raw, '/')) {
+            return $raw;
+        }
+
+        return asset('storage/'.ltrim($raw, '/'));
+    }
 }

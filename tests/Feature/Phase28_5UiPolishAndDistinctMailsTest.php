@@ -302,11 +302,11 @@ class Phase28_5UiPolishAndDistinctMailsTest extends TestCase
         );
 
         $this->assertSame(
-            "[BMW Hệ Thống] Đã ghi nhận yêu cầu #{$appointment->id} — Chờ chuyên viên xác nhận",
+            "[BMW Showroom] Đã tiếp nhận yêu cầu đặt lịch {$appointment->typeLabel()} ({$car->name}) — Mã {$appointment->publicReferenceCode()}",
             $systemMail->envelope()->subject
         );
         $this->assertSame(
-            "[BMW Concierge] XÁC NHẬN CHÍNH THỨC lịch hẹn #{$appointment->id} — Thẻ đón tiếp VIP",
+            "[BMW Showroom] Xác nhận lịch hẹn {$appointment->typeLabel()} ({$car->name}) — Mã {$appointment->publicReferenceCode()}",
             $officialMail->envelope()->subject
         );
         $this->assertSame(

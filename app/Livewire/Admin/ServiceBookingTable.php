@@ -376,6 +376,7 @@ class ServiceBookingTable extends Component
 
                 $builder->orWhere('appointments.customer_order_code', 'like', $like)
                     ->orWhere('appointments.daily_sequence_code', 'like', $like)
+                    ->orWhere('appointments.customer_internal_code', 'like', $like)
                     ->orWhere('appointments.guest_name', 'like', $like)
                     ->orWhere('appointments.guest_phone', 'like', $like)
                     ->orWhere('appointments.guest_email', 'like', $like)

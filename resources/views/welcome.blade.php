@@ -164,7 +164,7 @@
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
                                         {{ $article->published_at?->format('d/m/Y') }}
                                     </p>
-                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white">Đọc tiếp</span>
+                                    <a href="{{ route('articles.show', $article) }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:text-[#70A7FF]">Đọc tiếp</a>
                                 </div>
                             </div>
                         </article>

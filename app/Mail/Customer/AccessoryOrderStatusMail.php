@@ -18,9 +18,10 @@ class AccessoryOrderStatusMail extends Mailable
     public function envelope(): Envelope
     {
         $this->order->loadMissing('product');
+        $refCode = $this->order->publicReferenceCode();
 
         return new Envelope(
-            subject: "[BMW Showroom] Cập nhật đơn phụ kiện #ACC-{$this->order->id} — {$this->order->statusLabel()}",
+            subject: "[BMW Lifestyle] Cập nhật đơn phụ kiện ({$this->order->statusLabel()}) — Mã {$refCode}",
         );
     }
 

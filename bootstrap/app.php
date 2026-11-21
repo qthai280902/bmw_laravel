@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureTopSuperAdmin;
 use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'role' => EnsureUserHasRole::class,
+            'top_super_admin' => EnsureTopSuperAdmin::class,
         ]);
         $middleware->web(append: [
             AddLinkHeadersForPreloadedAssets::class,
