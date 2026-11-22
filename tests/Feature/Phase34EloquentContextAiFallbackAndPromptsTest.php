@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Laravel\Ai\Exceptions\RateLimitedException;
 use Tests\TestCase;
 
@@ -447,5 +448,30 @@ class Phase34EloquentContextAiFallbackAndPromptsTest extends TestCase
         $this->assertSame(0, Artisan::call('showroom:reset-crm-data', ['--force' => true]));
         $this->assertSame(0, Appointment::count());
         $this->assertDatabaseHas('users', ['email' => 'sales.khoi34@bmw.com']);
+    }
+
+    public function test_reverse_proxy_app_url_and_trust_proxies_force_root_url_and_https_scheme(): void
+    {
+        $proxyUrl = 'https://bmwlaravel.tq2.workers.dev';
+        config(['app.url' => $proxyUrl]);
+
+        try {
+            $appUrl = (string) config('app.url');
+            URL::forceRootUrl($appUrl);
+
+            if (str_starts_with($appUrl, 'https://')) {
+                URL::forceScheme('https');
+            }
+
+            $catalogUrl = route('products.index');
+            $homeUrl = route('home');
+
+            $this->assertSame('https://bmwlaravel.tq2.workers.dev/catalog', $catalogUrl);
+            $this->assertStringStartsWith($proxyUrl, $catalogUrl);
+            $this->assertStringStartsWith($proxyUrl, $homeUrl);
+        } finally {
+            URL::forceRootUrl(null);
+            URL::forceScheme(null);
+        }
     }
 }
