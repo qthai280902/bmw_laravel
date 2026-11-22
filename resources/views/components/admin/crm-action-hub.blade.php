@@ -7,6 +7,7 @@
     'confirmHint' => 'Xác nhận hồ sơ & gửi email thông báo',
     'completeLabel' => 'Hoàn tất',
     'completeHint' => 'Đánh dấu hoàn tất quy trình xử lý',
+    'completeAction' => null,
     'cancelLabel' => 'Hủy hồ sơ',
     'completedMessage' => 'Hồ sơ đã hoàn tất — Quy trình xử lý đã đóng và khóa chuyển trạng thái.',
     'cancelledMessage' => 'Hồ sơ đã bị hủy — Không thể khôi phục hoặc duyệt lại.',
@@ -65,7 +66,7 @@
         <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <button
                 type="button"
-                wire:click="updateStatus({{ $recordId }}, 'completed')"
+                wire:click="{{ $completeAction ?: "updateStatus({$recordId}, 'completed')" }}"
                 wire:loading.attr="disabled"
                 data-testid="action-complete-{{ $contextKey }}-{{ $recordId }}"
                 class="flex flex-col items-center justify-center rounded-xl border border-[#1C69D4]/50 bg-[#1C69D4]/20 px-4 py-2.5 text-center transition-colors hover:bg-[#1C69D4] hover:text-white cursor-pointer disabled:opacity-60"

@@ -36,7 +36,7 @@ class GuestAppointmentChangeMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing(['product.category', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
         $refCode = $this->appointment->publicReferenceCode();
 
         $subject = match ($this->action) {
@@ -54,7 +54,7 @@ class GuestAppointmentChangeMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        $this->appointment->loadMissing(['product.category', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         return new Content(
             view: 'emails.customer.guest-appointment-change',
@@ -87,6 +87,8 @@ class GuestAppointmentChangeMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
+        $this->appointment->loadMissing(['product.category', 'user', 'assignedSales']);
+
         if ($this->action === self::ACTION_CANCEL) {
             return [];
         }

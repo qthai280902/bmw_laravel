@@ -6,6 +6,7 @@ use App\Enums\AppointmentStatus;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Http\Controllers\Controller;
 use App\Mail\AppointmentReminderMail;
+use App\Mail\Customer\AppointmentCompletedThankYouMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\GuestAppointmentChangeMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
@@ -32,12 +33,18 @@ class AppointmentController extends Controller
     {
         $validated = $request->validate([
             'status' => ['required', Rule::enum(AppointmentStatus::class)],
+            'completion_outcome' => [
+                'nullable',
+                'string',
+                Rule::in([Appointment::OUTCOME_PURCHASED, Appointment::OUTCOME_VISITED_NO_PURCHASE]),
+            ],
         ]);
 
         try {
             $appointment->transitionStatusWithAutomation(
                 AppointmentStatus::from($validated['status']),
-                $request->user()
+                $request->user(),
+                $validated['completion_outcome'] ?? null,
             );
         } catch (InvalidStatusTransitionException $exception) {
             if ($request->expectsJson()) {
@@ -53,29 +60,42 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Xem trước trực tiếp 5 mẫu email khách hàng của lịch hẹn trên trình duyệt cho Admin/Sales.
+     * Xem trước trực tiếp các mẫu email khách hàng của lịch hẹn trên trình duyệt cho Admin/Sales.
      */
     public function previewMail(Request $request, Appointment $appointment): Mailable
     {
-        $appointment->loadMissing(['product.category', 'user']);
+        $appointment->loadMissing(['product.category', 'user', 'assignedSales']);
 
         $requestedMode = trim((string) $request->query('mode', AppointmentConfirmationMail::MODE_SYSTEM_RECEIVED));
+        $advisor = AppointmentConfirmationMail::resolveAdvisorDisplay(
+            $appointment,
+            $request->user()?->name,
+            $request->user()?->roleLabel(),
+        );
 
         return match ($requestedMode) {
             AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED => new AppointmentConfirmationMail(
                 appointment: $appointment,
                 mode: AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED,
-                confirmedByName: $request->user()?->name,
-                confirmedByRole: $request->user()?->roleLabel(),
+                confirmedByName: $advisor['name'],
+                confirmedByRole: $advisor['role'],
             ),
             'guest_rescheduled' => $this->makeGuestChangePreviewMail($appointment),
             'reminder' => new AppointmentReminderMail($appointment),
             'followup' => new PostTestDriveFollowupMail($appointment),
+            'completed_purchased' => new AppointmentCompletedThankYouMail(
+                appointment: $appointment,
+                outcome: AppointmentCompletedThankYouMail::OUTCOME_PURCHASED,
+            ),
+            'completed_visited' => new AppointmentCompletedThankYouMail(
+                appointment: $appointment,
+                outcome: AppointmentCompletedThankYouMail::OUTCOME_VISITED_NO_PURCHASE,
+            ),
             default => new AppointmentConfirmationMail(
                 appointment: $appointment,
                 mode: AppointmentConfirmationMail::MODE_SYSTEM_RECEIVED,
-                confirmedByName: $request->user()?->name,
-                confirmedByRole: $request->user()?->roleLabel(),
+                confirmedByName: $advisor['name'],
+                confirmedByRole: $advisor['role'],
             ),
         };
     }

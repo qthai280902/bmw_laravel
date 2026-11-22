@@ -3,11 +3,55 @@
 namespace App\Http\Requests;
 
 use App\Models\Product;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class StoreAppointmentRequest extends FormRequest
 {
+    public const SHOWROOM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+    public const SHOWROOM_OPEN_MINUTES = 8 * 60;
+
+    public const SHOWROOM_CLOSE_MINUTES = 18 * 60;
+
+    public static function parseShowroomDateTime(mixed $raw): ?Carbon
+    {
+        if ($raw instanceof CarbonInterface) {
+            return Carbon::instance($raw);
+        }
+
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse(trim($raw), self::SHOWROOM_TIMEZONE);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public static function isWithinShowroomHours(CarbonInterface $dateTime): bool
+    {
+        $minutes = ((int) $dateTime->format('H')) * 60 + ((int) $dateTime->format('i'));
+
+        return $minutes >= self::SHOWROOM_OPEN_MINUTES && $minutes <= self::SHOWROOM_CLOSE_MINUTES;
+    }
+
+    public static function isAfterShowroomNow(CarbonInterface $dateTime): bool
+    {
+        $nowVn = now(self::SHOWROOM_TIMEZONE);
+        $candidate = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $dateTime->format('Y-m-d H:i:s'),
+            self::SHOWROOM_TIMEZONE,
+        );
+
+        return $candidate !== false && $candidate->greaterThan($nowVn);
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -44,7 +88,29 @@ class StoreAppointmentRequest extends FormRequest
             'guest_email' => ['nullable', 'email', 'max:255'],
             'product_id' => [$isProductOptional ? 'nullable' : 'required', 'nullable', 'exists:products,id'],
             'type' => ['required', Rule::in(['test_drive', 'viewing', 'quote', 'maintenance', 'detailing', 'car_wash', 'consult', 'advisor_meeting', 'trade_in'])],
-            'appointment_date' => ['required', 'date', 'after:now'],
+            'appointment_date' => [
+                'required',
+                'date',
+                static function (string $attribute, mixed $value, \Closure $fail): void {
+                    $parsed = self::parseShowroomDateTime($value);
+
+                    if ($parsed === null) {
+                        $fail('Ngày và giờ dự kiến chưa đúng định dạng hợp lệ.');
+
+                        return;
+                    }
+
+                    if (! self::isAfterShowroomNow($parsed)) {
+                        $fail('Ngày và giờ dự kiến phải sau thời điểm hiện tại.');
+
+                        return;
+                    }
+
+                    if (! self::isWithinShowroomHours($parsed)) {
+                        $fail('Khung giờ đón tiếp tại BMW Showroom từ 08:00 đến 18:00. Vui lòng chọn giờ trong khung hoạt động.');
+                    }
+                },
+            ],
             'notes' => ['nullable', 'string', 'max:1000'],
             'meta_data' => ['nullable', 'array'],
             'meta_data.*' => ['nullable', 'string', 'max:500'],

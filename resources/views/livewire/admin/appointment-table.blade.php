@@ -128,7 +128,7 @@
                         type="text"
                         name="search"
                         wire:model.live.debounce.350ms="search"
-                        placeholder="Mã #SĐT_STT, dd/mm/yyyy/NN, tên, SĐT, xe..."
+                        placeholder="Mã BMW/CT/KH, tên, SĐT, xe..."
                         class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
                     >
                 </x-admin.form-field>
@@ -206,6 +206,8 @@
         </form>
     </x-admin.card>
 
+    <x-admin.crm-archive-bar :archive-scope="$archiveScope" :archived-count="$quickStats['archived'] ?? 0" />
+
     <div class="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D121C] shadow-xl shadow-black/40">
         <div class="overflow-x-auto lg:overflow-x-visible" wire:loading.class="opacity-60">
             <table class="w-full lg:table-fixed border-collapse text-left">
@@ -223,10 +225,16 @@
                         @php
                             $customerName = $appointment->user?->name ?? $appointment->guest_name ?? 'Khách vãng lai';
                             $customerEmail = $appointment->user?->email ?? $appointment->guest_email;
+                            $rowMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+                            $hasPendingReschedule = $appointment->hasPendingRescheduleReview();
+                            $cancelAttribution = $appointment->cancellationAttributionLabel();
+                            $completionOutcome = $appointment->completionOutcome();
+                            $careVoucherCode = $appointment->careVoucherCode();
+                            $isCancelledRow = $appointment->status === \App\Enums\AppointmentStatus::Cancelled;
                             $hasAiChat = (bool) ($appointment->ai_conversation_id || filled($appointment->ai_visitor_id) || filled($appointment->ai_chat_summary));
                             $isHotLead = $appointment->lead_priority === \App\Models\Appointment::LEAD_PRIORITY_HOT;
                         @endphp
-                        <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]">
+                        <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group align-middle transition-colors hover:bg-white/[0.03] {{ $isCancelledRow ? 'opacity-60 hover:opacity-85' : '' }}">
                             <td class="whitespace-nowrap px-5 py-4">
                                 @if($appointment->customer_order_code)
                                     <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $appointment->customer_order_code }}</p>
@@ -246,10 +254,20 @@
                                 @if(filled($appointment->guest_phone) && filled($customerEmail))
                                     <p class="mt-0.5 truncate text-[11px] text-zinc-500">{{ $customerEmail }}</p>
                                 @endif
-                                <p class="mt-1.5">
+                                <p class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                     <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ filled($appointment->assigned_sales_name) ? 'border-sky-500/25 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/[0.04] text-zinc-400' }}">
                                         {{ filled($appointment->assigned_sales_name) ? 'Sales: ' . $appointment->assigned_sales_name : 'Chưa gán Sales' }}
                                     </span>
+                                    @if($hasPendingReschedule)
+                                        <span class="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                                            Khách vừa đổi lịch
+                                        </span>
+                                    @endif
+                                    @if($appointment->isArchived())
+                                        <span class="inline-flex items-center rounded-full border border-zinc-500/40 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                            Đã lưu trữ
+                                        </span>
+                                    @endif
                                 </p>
                             </td>
 
@@ -299,6 +317,22 @@
                                 <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $appointment->status->color() }}">
                                     {{ $appointment->status->label() }}
                                 </span>
+                                @if($completionOutcome === \App\Models\Appointment::OUTCOME_PURCHASED)
+                                    <p class="mt-1">
+                                        <span class="inline-flex items-center rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                                            Đã mua xe{{ $careVoucherCode ? ' · ' . $careVoucherCode : '' }}
+                                        </span>
+                                    </p>
+                                @elseif($completionOutcome === \App\Models\Appointment::OUTCOME_VISITED_NO_PURCHASE)
+                                    <p class="mt-1">
+                                        <span class="inline-flex items-center rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                            Chưa mua xe
+                                        </span>
+                                    </p>
+                                @endif
+                                @if($cancelAttribution)
+                                    <p class="mt-1 whitespace-normal text-[10px] font-medium text-rose-300">{{ $cancelAttribution }}</p>
+                                @endif
                             </td>
 
                             <td class="whitespace-nowrap px-5 py-4 text-right">
@@ -314,7 +348,7 @@
                                                 aria-label="Cập nhật trạng thái lịch hẹn #{{ $appointment->id }}"
                                                 :value="$appointment->status->value"
                                                 :options="$appointment->allowedStatusOptions()"
-                                                wire-action="updateStatus"
+                                                wire-action="handleInlineStatusChange"
                                                 :wire-record-id="$appointment->id"
                                             />
                                         </div>
@@ -446,6 +480,11 @@
 
                         <!-- Thân cuộn độc lập (min-h-0 flex-1 overflow-y-auto overscroll-contain) -->
                         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-5">
+                            <x-admin.crm-reschedule-alert-card
+                                :record="$lead"
+                                acknowledge-action="acknowledgeGuestReschedule"
+                            />
+
                             <!-- Khối 1: Tóm tắt khách hàng & Ghi chú AI -->
                             <section class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3">
                                 <p class="text-xs font-semibold text-[#38BDF8]">1. Tóm tắt khách hàng &amp; Ghi chú AI</p>
@@ -484,7 +523,8 @@
                                                 <select
                                                     aria-label="Phân công Sales cho lịch hẹn #{{ $lead->id }}"
                                                     wire:change="assignToSales({{ $lead->id }}, $event.target.value)"
-                                                    class="h-9 flex-1 min-w-[180px] rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                                    @disabled($lead->status === \App\Enums\AppointmentStatus::Cancelled)
+                                                    class="h-9 flex-1 min-w-[180px] rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] {{ $lead->status === \App\Enums\AppointmentStatus::Cancelled ? 'opacity-60 cursor-not-allowed' : '' }}"
                                                 >
                                                     <option value="">-- Chưa phân công --</option>
                                                     @foreach($salesRoster as $salesMember)
@@ -500,9 +540,30 @@
                                     </div>
                                 </div>
 
+                                @if($leadOutcomeLabel = $lead->completionOutcomeLabel())
+                                    <div class="border-t border-white/[0.07] pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                        <span class="font-semibold text-zinc-400">Kết quả đón tiếp tại Showroom:</span>
+                                        @if($lead->completionOutcome() === \App\Models\Appointment::OUTCOME_PURCHASED)
+                                            <span class="inline-flex items-center rounded-full border border-emerald-500/35 bg-emerald-500/15 px-3 py-0.5 text-[11px] font-bold text-emerald-300">
+                                                {{ $leadOutcomeLabel }}{{ $lead->careVoucherCode() ? ' · ' . $lead->careVoucherCode() . ' (hạn ' . $lead->careVoucherExpiresLabel() . ')' : '' }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full border border-white/15 bg-white/[0.05] px-3 py-0.5 text-[11px] font-semibold text-zinc-200">
+                                                {{ $leadOutcomeLabel }} · Chỉ tham quan / lái thử
+                                            </span>
+                                        @endif
+                                    </div>
+                                @endif
+
                                 @if(filled($lead->notes))
                                     <div class="border-t border-white/[0.07] pt-3 text-xs text-zinc-300">
                                         <span class="font-semibold text-zinc-400">Ghi chú khách hàng:</span> {{ $lead->notes }}
+                                    </div>
+                                @endif
+
+                                @if($leadCancelLabel = $lead->cancellationAttributionLabel())
+                                    <div class="border-t border-white/[0.07] pt-3 text-xs text-rose-300">
+                                        <span class="font-semibold text-rose-400">Nguồn hủy hồ sơ:</span> {{ $leadCancelLabel }}
                                     </div>
                                 @endif
 
@@ -564,7 +625,8 @@
                                 confirm-label="Duyệt & Xác nhận"
                                 confirm-hint="Gửi email xác nhận & VIP Pass"
                                 complete-label="Hoàn tất"
-                                complete-hint="Hoàn tất đón tiếp & hẹn thư hậu mãi 2h"
+                                complete-hint="Chọn kết quả mua xe / tham quan & gửi thư hậu mãi"
+                                :complete-action="'openCompletionModal(' . $lead->id . ')'"
                                 cancel-label="Hủy hồ sơ"
                                 completed-message="Lịch hẹn đã hoàn tất đón tiếp — Quy trình xử lý đã đóng và khóa chuyển trạng thái."
                                 cancelled-message="Lịch hẹn đã bị hủy — Không thể khôi phục hoặc duyệt lại."
@@ -581,6 +643,8 @@
                                     @endif
                                 </x-slot>
                             </x-admin.crm-action-hub>
+
+                            <x-admin.crm-drawer-archive-panel :record="$lead" />
 
                             <!-- Khối 5: Xem trước mẫu Email (Chỉ xem — Không gửi thư, thu gọn mặc định) -->
                             @php
@@ -604,6 +668,16 @@
                                         'href' => route('admin.mail-preview.appointment', ['appointment' => $lead, 'mode' => 'reminder']),
                                         'label' => 'Xem thư Nhắc lịch 24h',
                                         'toneClass' => 'border-indigo-500/30 text-indigo-300 hover:border-indigo-400 hover:bg-indigo-500/15',
+                                    ],
+                                    [
+                                        'href' => route('admin.mail-preview.appointment', ['appointment' => $lead, 'mode' => 'completed_purchased']),
+                                        'label' => 'Xem thư Cảm ơn mua xe (Voucher 1T)',
+                                        'toneClass' => 'border-emerald-500/35 text-emerald-200 hover:border-emerald-400 hover:bg-emerald-500/15',
+                                    ],
+                                    [
+                                        'href' => route('admin.mail-preview.appointment', ['appointment' => $lead, 'mode' => 'completed_visited']),
+                                        'label' => 'Xem thư Cảm ơn tham quan',
+                                        'toneClass' => 'border-sky-500/30 text-sky-200 hover:border-sky-400 hover:bg-sky-500/15',
                                     ],
                                     [
                                         'href' => route('admin.mail-preview.appointment', ['appointment' => $lead, 'mode' => 'followup']),
@@ -702,6 +776,108 @@
                     </div>
                 </div>
             </template>
+        </div>
+    @endif
+
+    @if($completionTargetId !== null)
+        <div
+            data-completion-outcome-modal="{{ $completionTargetId }}"
+            x-data
+            @keydown.escape.window="$wire.closeCompletionModal()"
+            class="fixed inset-0 z-[85] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="completion-outcome-modal-title"
+        >
+            <div
+                wire:click="closeCompletionModal"
+                class="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+            ></div>
+
+            <div class="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-[#0B0F17] p-6 text-white shadow-2xl">
+                <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-[#70A7FF]">
+                    Hoàn tất lịch hẹn đón tiếp · {{ $completionTargetReference }}
+                </p>
+                <h3 id="completion-outcome-modal-title" class="mt-1.5 text-lg font-bold text-white">
+                    Ghi nhận kết quả đón tiếp &amp; kịch bản Email hậu mãi
+                </h3>
+                <p class="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                    Vui lòng chọn kết quả thực tế sau buổi đón tiếp khách hàng tại Showroom để hệ thống phát hành đúng thư hậu mãi.
+                </p>
+
+                <div class="mt-5 space-y-3">
+                    <button
+                        type="button"
+                        data-outcome-option="purchased"
+                        wire:click="$set('completionOutcome', 'purchased')"
+                        class="flex w-full items-start gap-3.5 rounded-xl border p-4 text-left transition-colors cursor-pointer {{ $completionOutcome === 'purchased' ? 'border-emerald-500/70 bg-emerald-500/15' : 'border-white/10 bg-[#0D121C] hover:border-white/25' }}"
+                    >
+                        <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ $completionOutcome === 'purchased' ? 'border-emerald-400 bg-emerald-500 text-slate-950' : 'border-zinc-600 bg-transparent' }}">
+                            @if($completionOutcome === 'purchased')
+                                <span class="h-2 w-2 rounded-full bg-slate-950"></span>
+                            @endif
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-bold text-white">Khách đã mua xe / Ký hợp đồng</p>
+                                <span class="rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-200">
+                                    Tặng Voucher BMW Care 1 tháng
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs leading-relaxed text-zinc-300">
+                                Tự động sinh mã đặc quyền <strong class="text-emerald-300">BMW-CARE-XXXXXX</strong> (rửa xe Detailing &amp; chăm sóc bề mặt miễn phí 01 tháng) và gửi thư chúc mừng sở hữu xe.
+                            </p>
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        data-outcome-option="visited_no_purchase"
+                        wire:click="$set('completionOutcome', 'visited_no_purchase')"
+                        class="flex w-full items-start gap-3.5 rounded-xl border p-4 text-left transition-colors cursor-pointer {{ $completionOutcome === 'visited_no_purchase' ? 'border-[#1C69D4]/70 bg-[#1C69D4]/15' : 'border-white/10 bg-[#0D121C] hover:border-white/25' }}"
+                    >
+                        <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ $completionOutcome === 'visited_no_purchase' ? 'border-[#70A7FF] bg-[#1C69D4] text-white' : 'border-zinc-600 bg-transparent' }}">
+                            @if($completionOutcome === 'visited_no_purchase')
+                                <span class="h-2 w-2 rounded-full bg-white"></span>
+                            @endif
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-bold text-white">Khách chỉ tham quan / Lái thử — Chưa mua</p>
+                                <span class="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                    Không kèm Voucher ưu đãi
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs leading-relaxed text-zinc-300">
+                                Gửi thư cảm ơn khách hàng đã dành thời gian ghé thăm Showroom và thông tin Chuyên viên phụ trách (tuyệt đối không đính kèm voucher chăm sóc/rửa xe).
+                            </p>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-2.5 border-t border-white/10 pt-4">
+                    <button
+                        type="button"
+                        data-completion-modal-cancel
+                        wire:click="closeCompletionModal"
+                        wire:loading.attr="disabled"
+                        class="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white cursor-pointer"
+                    >
+                        Hủy bỏ
+                    </button>
+                    <button
+                        type="button"
+                        data-completion-modal-confirm
+                        wire:click="confirmCompletion"
+                        wire:loading.attr="disabled"
+                        wire:target="confirmCompletion"
+                        class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1C69D4] px-5 text-xs font-bold text-white transition-colors hover:bg-[#1557B0] cursor-pointer"
+                    >
+                        <span wire:loading.remove wire:target="confirmCompletion">Xác nhận hoàn tất &amp; gửi thư</span>
+                        <span wire:loading wire:target="confirmCompletion">Đang xử lý...</span>
+                    </button>
+                </div>
+            </div>
         </div>
     @endif
 </div>

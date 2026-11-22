@@ -6,6 +6,7 @@
         $customerOrderCode = $appointment->publicReferenceCode();
         $assignedSales = $appointment->assignedSales;
         $isLocked = $appointment->isTerminalStatus();
+        $isOutdatedLink = (bool) ($isOutdatedLink ?? false);
         $meta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
 
         $metaGuestConfirmedAt = $meta['guest_confirmed_at'] ?? null;
@@ -19,19 +20,26 @@
             ? \Illuminate\Support\Carbon::parse($metaInvalidatedConfirmedAt)->timezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')
             : null;
         $invalidatedForDateLabel = $meta['invalidated_guest_confirmed_for_date'] ?? ($meta['previous_appointment_date'] ?? $appointmentTimeFormatted);
-        $reschedulePendingReview = (bool) ($meta['reschedule_pending_review'] ?? false);
+        $reschedulePendingReview = ! $isLocked && (bool) ($meta['reschedule_pending_review'] ?? false);
+        $isActionFrozen = $isLocked || $isOutdatedLink || $reschedulePendingReview;
 
-        $showroomSlots = ['08:30', '09:30', '10:30', '11:30', '13:30', '14:30', '15:30', '16:30', '17:30'];
-        $defaultSlot = $appointment->appointment_date?->copy()->timezone('Asia/Ho_Chi_Minh')
-            ?? now('Asia/Ho_Chi_Minh')->addDay()->setTime(9, 30);
-        if ($defaultSlot->lessThanOrEqualTo(now('Asia/Ho_Chi_Minh'))) {
+        $cancellationAttribution = $appointment->cancellationAttributionLabel();
+        $cancelReasonText = is_string($meta['cancel_reason'] ?? null) && trim($meta['cancel_reason']) !== ''
+            ? trim($meta['cancel_reason'])
+            : (is_string($meta['auto_cancelled_reason'] ?? null) ? trim($meta['auto_cancelled_reason']) : null);
+
+        $currentSlotVn = $appointment->appointment_date?->copy();
+        $currentDateStr = $currentSlotVn?->format('Y-m-d') ?? '';
+        $currentTimeStr = $currentSlotVn?->format('H:i') ?? '';
+
+        $defaultSlot = $currentSlotVn ? $currentSlotVn->copy() : now('Asia/Ho_Chi_Minh')->addDay()->setTime(9, 30);
+        if (! \App\Http\Requests\StoreAppointmentRequest::isAfterShowroomNow($defaultSlot) || ! \App\Http\Requests\StoreAppointmentRequest::isWithinShowroomHours($defaultSlot)) {
             $defaultSlot = now('Asia/Ho_Chi_Minh')->addDay()->setTime(9, 30);
         }
-        $initialDate = old('new_date', $defaultSlot->format('Y-m-d'));
-        $initialTime = old('new_time', $defaultSlot->format('H:i'));
-        if (! in_array($initialTime, $showroomSlots, true)) {
-            $initialTime = '09:30';
-        }
+        $initialDate = (string) old('new_date', $defaultSlot->format('Y-m-d'));
+        $initialTime = (string) old('new_time', $defaultSlot->format('H:i'));
+        $vnWeekdays = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        $initialFullDateLabel = ($vnWeekdays[\Illuminate\Support\Carbon::parse($initialDate, 'Asia/Ho_Chi_Minh')->dayOfWeek] ?? '').', '.\Illuminate\Support\Carbon::parse($initialDate, 'Asia/Ho_Chi_Minh')->format('d/m/Y');
 
         [$statusBg, $statusBorder, $statusText] = match ($appointment->status) {
             \App\Enums\AppointmentStatus::Confirmed => ['bg-emerald-50', 'border-emerald-200', 'text-emerald-700'],
@@ -44,7 +52,7 @@
     <section class="guest-luxury min-h-screen bg-[#F1F5F9] py-10 px-4 text-slate-900 sm:py-14">
         <div class="mx-auto max-w-2xl space-y-6">
             {{-- Header Card --}}
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6">
                     <div>
                         <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1C69D4]">
@@ -57,25 +65,39 @@
                             Cổng tự phục vụ giúp Quý khách xác nhận lịch đến Showroom hoặc điều chỉnh thời gian thuận tiện nhất.
                         </p>
                     </div>
-                    <span class="inline-flex items-center whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-bold {{ $statusBg }} {{ $statusBorder }} {{ $statusText }}">
+                    <span class="inline-flex items-center whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-bold {{ $statusBg }} {{ $statusBorder }} {{ $statusText }}">
                         {{ $appointment->status->label() }}
                     </span>
                 </div>
 
-                @if(session('success'))
-                    <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm font-semibold text-emerald-800">
+                @if($isOutdatedLink)
+                    <div
+                        data-outdated-link-banner
+                        class="mt-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5 text-sm font-semibold leading-relaxed text-amber-900"
+                    >
+                        Liên kết quản lý lịch hẹn này là phiên bản cũ đã hết hiệu lực do lịch hẹn đã được cập nhật mới hơn. Quý khách vui lòng mở email xác nhận mới nhất từ BMW Showroom để thao tác.
+                    </div>
+                @elseif($reschedulePendingReview)
+                    <div
+                        data-reschedule-pending-banner
+                        class="mt-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5 text-sm font-semibold leading-relaxed text-amber-900"
+                    >
+                        Yêu cầu đổi lịch sang {{ $appointment->appointment_date?->format('H:i — d/m/Y') }} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.
+                    </div>
+                @elseif(session('success'))
+                    <div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm font-semibold text-emerald-800">
                         {{ session('success') }}
                     </div>
                 @endif
 
                 @if(session('error'))
-                    <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3.5 text-sm font-semibold text-rose-800">
+                    <div class="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3.5 text-sm font-semibold text-rose-800">
                         {{ session('error') }}
                     </div>
                 @endif
 
                 {{-- Structured Summary Table --}}
-                <div class="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/70">
+                <div class="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/70">
                     <dl class="divide-y divide-slate-200 text-sm">
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
                             <dt class="font-medium text-slate-500">Mã tham chiếu</dt>
@@ -112,13 +134,27 @@
                             <dt class="font-medium text-slate-500">Địa điểm Showroom</dt>
                             <dd class="text-slate-700">BMW Flagship Showroom, Hà Nội / TP.HCM</dd>
                         </div>
+                        @if($cancellationAttribution)
+                            <div class="grid grid-cols-1 gap-1 bg-rose-50/70 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
+                                <dt class="font-semibold text-rose-700">Nguồn hủy lịch</dt>
+                                <dd class="space-y-0.5">
+                                    <p class="font-bold text-rose-800">{{ $cancellationAttribution }}</p>
+                                    @if($cancelReasonText)
+                                        <p class="text-xs text-rose-700/90">Lý do: {{ $cancelReasonText }}</p>
+                                    @endif
+                                </dd>
+                            </div>
+                        @endif
                     </dl>
                 </div>
 
                 @if(! $isLocked)
-                    <div class="mt-6 space-y-3">
+                    <div
+                        data-guest-confirm-section
+                        class="mt-6 space-y-3 {{ ($isOutdatedLink || $reschedulePendingReview) ? 'opacity-60 pointer-events-none select-none' : '' }}"
+                    >
                         @if($guestConfirmedAtFormatted)
-                            <div class="inline-flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
+                            <div class="inline-flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
                                 <svg class="h-4 w-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
@@ -126,7 +162,7 @@
                             </div>
                         @else
                             @if($invalidatedConfirmedAtFormatted)
-                                <div class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-xs font-medium text-slate-600">
+                                <div class="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2.5 text-xs font-medium text-slate-600">
                                     <span class="line-through opacity-60">
                                         Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {{ $invalidatedForDateLabel }} (xác nhận lúc {{ $invalidatedConfirmedAtFormatted }}).
                                     </span>
@@ -136,16 +172,14 @@
                                 </div>
                             @endif
 
-                            @if($reschedulePendingReview)
-                                <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-xs font-bold leading-relaxed text-amber-900">
-                                    Yêu cầu đổi lịch sang {{ $appointment->appointment_date?->format('H:i — d/m/Y') }} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.
-                                </div>
-                            @endif
-
                             <form method="POST" action="{{ $updateUrl }}" class="w-full sm:w-auto">
                                 @csrf
                                 <input type="hidden" name="action" value="confirm">
-                                <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-[#1C69D4] px-7 py-3.5 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm transition-colors hover:bg-[#1554AD] cursor-pointer sm:w-auto">
+                                <button
+                                    type="submit"
+                                    @disabled($isActionFrozen)
+                                    class="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#1C69D4] px-7 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm transition-colors {{ $isActionFrozen ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#1554AD] cursor-pointer' }} sm:w-auto"
+                                >
                                     Xác nhận chắc chắn đến Showroom
                                 </button>
                             </form>
@@ -155,32 +189,55 @@
             </div>
 
             {{-- Reschedule Card --}}
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div
+                data-guest-reschedule-card
+                class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 {{ (! $isLocked && ($isOutdatedLink || $reschedulePendingReview)) ? 'opacity-60 pointer-events-none select-none' : '' }}"
+            >
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1C69D4]">Đề xuất thời gian khác</p>
                 <h2 class="mt-1.5 text-lg font-bold text-slate-900">Yêu cầu đổi giờ hẹn</h2>
 
                 @if($isLocked)
-                    <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm leading-relaxed text-slate-600">
+                    <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-5 py-4 text-sm leading-relaxed text-slate-600">
                         Lịch hẹn này đang ở trạng thái <strong class="text-slate-900">{{ $appointment->status->label() }}</strong> nên không thể đổi giờ trực tuyến. Nếu cần hỗ trợ thêm, Quý khách vui lòng đặt một lịch hẹn mới tại Showroom BMW.
                     </div>
                 @else
                     <form
                         method="POST"
                         action="{{ $updateUrl }}"
+                        x-data="{
+                            currentDateStr: @js($currentDateStr),
+                            currentTimeStr: @js($currentTimeStr),
+                            proposedDateStr: @js($initialDate),
+                            proposedDate: @js($initialFullDateLabel),
+                            proposedTime: @js($initialTime),
+                            isFrozen: @js($isActionFrozen),
+                            hasChanged() {
+                                if (!this.proposedDateStr || !this.proposedTime) {
+                                    return false;
+                                }
+                                return `${this.proposedDateStr} ${this.proposedTime}` !== `${this.currentDateStr} ${this.currentTimeStr}`;
+                            }
+                        }"
+                        @bmw-datetime-changed.window="if ($event.detail?.id === 'new_appointment_date') { proposedDateStr = $event.detail.date || ''; proposedDate = $event.detail.fullDateLabel || $event.detail.formattedDate || ''; proposedTime = $event.detail.time || ''; }"
                         class="mt-6 space-y-5"
                     >
                         @csrf
                         <input type="hidden" name="action" value="reschedule">
 
-                        <x-ui.date-time-picker
-                            id="new_appointment_date"
-                            theme="light"
-                            date-input-name="new_date"
-                            time-input-name="new_time"
-                            combined-input-name="new_appointment_date"
-                            :value="$initialDate . ' ' . $initialTime"
-                            :slots="$showroomSlots"
-                        />
+                        <div>
+                            <label class="mb-2 block text-xs font-semibold text-slate-600">Ngày &amp; khung giờ đón tiếp mới (08:00 – 18:00)</label>
+                            <x-ui.date-time-picker
+                                id="new_appointment_date"
+                                theme="light"
+                                mode="reschedule"
+                                :disabled="$isActionFrozen"
+                                :anchor-date="$initialDate"
+                                date-input-name="new_date"
+                                time-input-name="new_time"
+                                combined-input-name="new_appointment_date"
+                                :value="$initialDate . ' ' . $initialTime"
+                            />
+                        </div>
 
                         @error('new_appointment_date')
                             <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
@@ -193,12 +250,35 @@
                                 type="text"
                                 name="reason"
                                 value="{{ old('reason') }}"
+                                @disabled($isActionFrozen)
                                 placeholder="Ví dụ: Dời sang buổi chiều cuối tuần..."
-                                class="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                class="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                             >
                         </div>
 
-                        <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-slate-900 px-6 py-3 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#1C69D4] cursor-pointer">
+                        <div
+                            x-show="hasChanged()"
+                            x-cloak
+                            data-reschedule-preview
+                            class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
+                        >
+                            <span class="font-semibold text-slate-500">Lịch hiện tại:</span>
+                            <strong class="text-slate-900 tabular-nums">{{ $appointment->appointment_date?->format('H:i — d/m/Y') ?? 'Chưa ấn định' }}</strong>
+                            <span class="mx-1.5 font-bold text-[#1C69D4]">→</span>
+                            <span class="font-semibold text-slate-500">Lịch đề xuất mới:</span>
+                            <strong
+                                class="text-[#1C69D4] tabular-nums"
+                                x-text="(proposedTime && proposedDate) ? `${proposedTime} — ${proposedDate}` : 'Vui lòng chọn đủ ngày & giờ'"
+                            ></strong>
+                        </div>
+
+                        <button
+                            type="submit"
+                            data-reschedule-submit
+                            :disabled="!hasChanged() || isFrozen"
+                            :class="(!hasChanged() || isFrozen) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#1C69D4] cursor-pointer'"
+                            class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-slate-900 px-6 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors"
+                        >
                             Gửi yêu cầu đổi giờ hẹn
                         </button>
                     </form>
@@ -207,7 +287,10 @@
 
             {{-- Cancel Card --}}
             @if(! $isLocked)
-                <div class="rounded-2xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8">
+                <div
+                    data-guest-cancel-card
+                    class="rounded-xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8 {{ ($isOutdatedLink || $reschedulePendingReview) ? 'opacity-60 pointer-events-none select-none' : '' }}"
+                >
                     <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-rose-600">Thay đổi kế hoạch</p>
                     <h2 class="mt-1.5 text-lg font-bold text-slate-900">Hủy lịch hẹn</h2>
 
@@ -220,11 +303,16 @@
                                 id="cancel_reason"
                                 type="text"
                                 name="reason"
+                                @disabled($isActionFrozen)
                                 placeholder="Vui lòng chia sẻ nếu có thay đổi lịch trình..."
-                                class="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                                class="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
                             >
                         </div>
-                        <button type="submit" class="h-11 whitespace-nowrap rounded-xl border border-rose-200 bg-rose-50 px-6 text-xs font-bold uppercase tracking-[0.12em] text-rose-700 transition-colors hover:bg-rose-600 hover:text-white cursor-pointer">
+                        <button
+                            type="submit"
+                            @disabled($isActionFrozen)
+                            class="h-11 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-6 text-xs font-bold uppercase tracking-[0.12em] text-rose-700 transition-colors {{ $isActionFrozen ? 'opacity-60 cursor-not-allowed' : 'hover:bg-rose-600 hover:text-white cursor-pointer' }}"
+                        >
                             Hủy lịch hẹn
                         </button>
                     </form>

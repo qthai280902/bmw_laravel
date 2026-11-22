@@ -21,6 +21,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\Admin\NewAppointmentLeadNotification;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Mail\Mailables\Attachment;
@@ -394,6 +395,11 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
         $this->assertSame($newDate->format('Y-m-d H:i'), $appointment->appointment_date->format('Y-m-d H:i'));
         $this->assertSame('Bận công tác đột xuất', $appointment->meta_data['reschedule_reason'] ?? null);
 
+        // Advisor acknowledges first reschedule before guest submits another change
+        $ackMeta1 = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        $ackMeta1['reschedule_pending_review'] = false;
+        $appointment->forceFill(['meta_data' => $ackMeta1])->saveQuietly();
+
         // Reschedule also accepts split new_date + new_time pair directly (fallback without JS)
         $splitDate = now()->addDays(6);
         $this->post($appointment->temporaryManageUpdateUrl(), [
@@ -406,6 +412,11 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
         $appointment->refresh();
         $this->assertSame($splitDate->format('Y-m-d').' 16:30', $appointment->appointment_date->format('Y-m-d H:i'));
         $this->assertSame('Đổi sang khung 16:30', $appointment->meta_data['reschedule_reason'] ?? null);
+
+        // Advisor acknowledges second reschedule before guest cancels
+        $ackMeta2 = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        $ackMeta2['reschedule_pending_review'] = false;
+        $appointment->forceFill(['meta_data' => $ackMeta2])->saveQuietly();
 
         // Cancel action
         $this->post($appointment->temporaryManageUpdateUrl(), [

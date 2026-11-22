@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
+use App\Livewire\Concerns\HandlesCrmArchiveActions;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\AccessoryOrder;
 use App\Services\Cache\ShowroomCacheService;
@@ -19,6 +20,7 @@ use Livewire\Component;
 class AccessoryOrderTable extends Component
 {
     use AuthorizesAdminLivewire;
+    use HandlesCrmArchiveActions;
     use WithBmwPagination;
 
     #[Url(as: 'search', except: '')]
@@ -227,6 +229,43 @@ class AccessoryOrderTable extends Component
         }
     }
 
+    public function archiveRecord(int $orderId): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $order = AccessoryOrder::query()->findOrFail($orderId);
+        $this->performArchive($order, 'đơn phụ kiện');
+        unset($this->inspectedOrder);
+    }
+
+    public function unarchiveRecord(int $orderId): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $order = AccessoryOrder::query()->findOrFail($orderId);
+        $this->performUnarchive($order, 'đơn phụ kiện');
+        unset($this->inspectedOrder);
+    }
+
+    public function archiveAllClosed(ShowroomCacheService $cacheService): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $this->errorMessage = null;
+
+        $count = AccessoryOrder::query()
+            ->activeRecords()
+            ->whereIn('status', [AccessoryOrder::STATUS_COMPLETED, AccessoryOrder::STATUS_CANCELLED])
+            ->toBase()
+            ->update([
+                'archived_at' => now(),
+                'archived_by' => auth()->id(),
+            ]);
+
+        $cacheService->flushDashboard();
+        $this->resetPage();
+        $this->flashMessage = $count > 0
+            ? "Đã chuyển {$count} đơn phụ kiện đã đóng vào Kho lưu trữ CRM."
+            : 'Không có đơn phụ kiện đã đóng nào cần lưu trữ thêm.';
+    }
+
     public function inspectOrder(int $orderId): void
     {
         $this->authorizeCrm();
@@ -249,7 +288,7 @@ class AccessoryOrderTable extends Component
         }
 
         return AccessoryOrder::query()
-            ->with(['product.category', 'assignedSales'])
+            ->with(['product.category', 'assignedSales', 'archivedBy:id,name'])
             ->find($this->inspectedOrderId);
     }
 
@@ -265,10 +304,11 @@ class AccessoryOrderTable extends Component
         $statsRow = AccessoryOrder::query()
             ->toBase()
             ->selectRaw(
-                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count,
-                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as confirmed_count,
-                 SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
-                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed_count',
+                'SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as pending_count,
+                 SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as confirmed_count,
+                 SUM(CASE WHEN archived_at IS NULL AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
+                 SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as completed_count,
+                 SUM(CASE WHEN archived_at IS NOT NULL THEN 1 ELSE 0 END) as archived_count',
                 [
                     AccessoryOrder::STATUS_PENDING,
                     AccessoryOrder::STATUS_CONFIRMED,
@@ -285,6 +325,11 @@ class AccessoryOrderTable extends Component
             ->leftJoin('users as assigned_sales', 'accessory_orders.assigned_to', '=', 'assigned_sales.id')
             ->select('accessory_orders.*', 'assigned_sales.name as assigned_sales_name')
             ->with(['product:id,name,price,stock'])
+            ->when(
+                $this->archiveScope === 'archived',
+                fn ($query) => $query->archived(),
+                fn ($query) => $query->activeRecords(),
+            )
             ->when(
                 $normalizedStatus !== '',
                 fn ($query) => $query->where('accessory_orders.status', $normalizedStatus),
@@ -352,6 +397,7 @@ class AccessoryOrderTable extends Component
                 'confirmed' => (int) ($statsRow->confirmed_count ?? 0),
                 'today' => (int) ($statsRow->today_count ?? 0),
                 'completed' => (int) ($statsRow->completed_count ?? 0),
+                'archived' => (int) ($statsRow->archived_count ?? 0),
             ],
         ]);
     }

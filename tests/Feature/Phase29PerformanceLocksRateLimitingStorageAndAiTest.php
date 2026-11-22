@@ -555,7 +555,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
                     'guest_email' => "guest{$i}@bmw.test",
                     'type' => 'consult',
                     'product_id' => $car->id,
-                    'appointment_date' => now()->addDays(3)->format('Y-m-d H:i:s'),
+                    'appointment_date' => now()->addDays(3)->setTime(10, 0)->format('Y-m-d H:i:s'),
                 ]);
         }
 
@@ -565,7 +565,7 @@ class Phase29PerformanceLocksRateLimitingStorageAndAiTest extends TestCase
                 'guest_phone' => '0909888777',
                 'type' => 'consult',
                 'product_id' => $car->id,
-                'appointment_date' => now()->addDays(3)->format('Y-m-d H:i:s'),
+                'appointment_date' => now()->addDays(3)->setTime(10, 0)->format('Y-m-d H:i:s'),
             ])->assertStatus(429);
 
         $accCat = Category::factory()->create(['name' => 'Phụ kiện Throttle', 'slug' => 'phu-kien-throttle-p29']);

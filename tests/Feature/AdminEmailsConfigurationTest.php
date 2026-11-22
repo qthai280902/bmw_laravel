@@ -79,7 +79,7 @@ class AdminEmailsConfigurationTest extends TestCase
             'guest_email' => 'vip.client@example.com',
             'product_id' => $car->id,
             'type' => AppointmentType::TestDrive->value,
-            'appointment_date' => now()->addDay()->format('Y-m-d H:i'),
+            'appointment_date' => now()->addDay()->setTime(10, 0)->format('Y-m-d H:i'),
             'notes' => 'Mua ngay trong tuần này, đặt cọc gấp.',
         ])->assertRedirect(route('appointments.success'));
 

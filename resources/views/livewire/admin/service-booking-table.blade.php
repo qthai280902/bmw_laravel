@@ -121,7 +121,7 @@
                         type="text"
                         name="search"
                         wire:model.live.debounce.350ms="search"
-                        placeholder="Mã #SĐT_STT, dd/mm/yyyy/NN, tên, SĐT, biển số..."
+                        placeholder="Mã SRV/CT/KH, tên, SĐT, biển số..."
                         class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
                     >
                 </x-admin.form-field>
@@ -189,6 +189,8 @@
         </form>
     </x-admin.card>
 
+    <x-admin.crm-archive-bar :archive-scope="$archiveScope" :archived-count="$quickStats['archived'] ?? 0" />
+
     <div class="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D121C] shadow-xl shadow-black/40">
         <div class="overflow-x-auto lg:overflow-x-visible" wire:loading.class="opacity-60">
             <table class="w-full lg:table-fixed border-collapse text-left">
@@ -208,8 +210,12 @@
                                 ?? ($booking->meta_data['customer_car_model'] ?? 'Xe BMW của khách');
                             $servicePackage = $booking->servicePackageLabel();
                             $customerEmail = $booking->user?->email ?? $booking->guest_email;
+                            $rowMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($booking->meta_data);
+                            $hasPendingReschedule = $booking->hasPendingRescheduleReview();
+                            $cancelAttribution = $booking->cancellationAttributionLabel();
+                            $isCancelledServiceRow = $booking->status === \App\Enums\AppointmentStatus::Cancelled;
                         @endphp
-                        <tr wire:key="admin-service-booking-{{ $booking->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]">
+                        <tr wire:key="admin-service-booking-{{ $booking->id }}" class="group align-middle transition-colors hover:bg-white/[0.03] {{ $isCancelledServiceRow ? 'opacity-60 hover:opacity-85' : '' }}">
                             <td class="whitespace-nowrap px-5 py-4">
                                 @if($booking->customer_order_code)
                                     <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $booking->customer_order_code }}</p>
@@ -229,10 +235,20 @@
                                 @if(filled($booking->guest_phone) && filled($customerEmail))
                                     <p class="mt-0.5 truncate text-[11px] text-zinc-500">{{ $customerEmail }}</p>
                                 @endif
-                                <p class="mt-1.5">
+                                <p class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                     <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ filled($booking->assigned_sales_name) ? 'border-sky-500/25 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/[0.04] text-zinc-400' }}">
                                         {{ filled($booking->assigned_sales_name) ? 'Sales: ' . $booking->assigned_sales_name : 'Chưa gán Sales' }}
                                     </span>
+                                    @if($hasPendingReschedule)
+                                        <span class="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                                            Khách vừa đổi lịch
+                                        </span>
+                                    @endif
+                                    @if($booking->isArchived())
+                                        <span class="inline-flex items-center rounded-full border border-zinc-500/40 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                            Đã lưu trữ
+                                        </span>
+                                    @endif
                                 </p>
                             </td>
 
@@ -252,6 +268,9 @@
                                 <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $booking->status->color() }}">
                                     {{ $booking->status->label() }}
                                 </span>
+                                @if($cancelAttribution)
+                                    <p class="mt-1 whitespace-normal text-[10px] font-medium text-rose-300">{{ $cancelAttribution }}</p>
+                                @endif
                             </td>
 
                             <td class="whitespace-nowrap px-5 py-4 text-right">
@@ -390,6 +409,11 @@
                         </header>
 
                         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-5">
+                            <x-admin.crm-reschedule-alert-card
+                                :record="$booking"
+                                acknowledge-action="acknowledgeGuestReschedule"
+                            />
+
                             <section class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3">
                                 <p class="text-xs font-semibold text-[#38BDF8]">1. Thông tin khách hàng &amp; Gói dịch vụ</p>
                                 <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 text-xs">
@@ -434,7 +458,8 @@
                                             <select
                                                 aria-label="Phân công Sales cho lịch dịch vụ #{{ $booking->id }}"
                                                 wire:change="assignToSales({{ $booking->id }}, $event.target.value)"
-                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                                @disabled($booking->status === \App\Enums\AppointmentStatus::Cancelled)
+                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] {{ $booking->status === \App\Enums\AppointmentStatus::Cancelled ? 'opacity-60 cursor-not-allowed' : '' }}"
                                             >
                                                 <option value="">-- Chưa phân công --</option>
                                                 @foreach($salesRoster as $salesMember)
@@ -448,6 +473,11 @@
                                         @endif
                                     </div>
                                 </div>
+                                @if($bookingCancelLabel = $booking->cancellationAttributionLabel())
+                                    <div class="border-t border-white/[0.07] pt-3 text-xs text-rose-300">
+                                        <span class="font-semibold text-rose-400">Nguồn hủy hồ sơ:</span> {{ $bookingCancelLabel }}
+                                    </div>
+                                @endif
                             </section>
 
                             <section class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3">
@@ -466,6 +496,11 @@
                                         </p>
                                     </div>
                                 </div>
+                                @if($bookingCancelLabel = $booking->cancellationAttributionLabel())
+                                    <div class="border-t border-white/[0.07] pt-3 text-xs text-rose-300">
+                                        <span class="font-semibold text-rose-400">Nguồn hủy hồ sơ:</span> {{ $bookingCancelLabel }}
+                                    </div>
+                                @endif
                             </section>
 
                             <x-admin.interaction-timeline
@@ -487,6 +522,8 @@
                                 cancelled-message="Lịch dịch vụ đã bị hủy — Không thể khôi phục hoặc duyệt lại."
                                 :error-message="$errorMessage"
                             />
+
+                            <x-admin.crm-drawer-archive-panel :record="$booking" />
 
                             @php
                                 $servicePreviewItems = [

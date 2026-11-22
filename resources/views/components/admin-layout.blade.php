@@ -26,6 +26,7 @@
                 'ai-conversations' => 'Lịch sử trợ lý AI',
                 'users' => 'Nhân sự',
                 'customers' => 'Khách hàng',
+                'accounting' => 'Kế toán & Sổ sách',
             ];
             $sectionLabels['site-settings'] = 'Thiết lập giao diện';
             $currentSection = request()->segment(2);

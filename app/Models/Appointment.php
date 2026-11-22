@@ -7,10 +7,14 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Events\AppointmentStatusChanged;
 use App\Exceptions\InvalidStatusTransitionException;
+use App\Mail\Customer\AppointmentCompletedThankYouMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
+use App\Models\Concerns\HasCrmArchiveAndAttribution;
+use App\Notifications\Admin\GuestRescheduledAppointmentNotification;
 use App\Services\Crm\DocumentCodeGenerator;
 use App\Services\Crm\InteractionTimelineRecorder;
+use App\Services\Mail\GmailQuotaGuard;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
@@ -18,15 +22,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Throwable;
 
 #[CollectedBy(AppointmentCollection::class)]
 class Appointment extends Model implements Attachable
 {
+    use HasCrmArchiveAndAttribution;
     use HasFactory;
 
     public const LEAD_PRIORITY_HOT = 'hot';
@@ -34,6 +43,10 @@ class Appointment extends Model implements Attachable
     public const LEAD_PRIORITY_WARM = 'warm';
 
     public const LEAD_PRIORITY_NORMAL = 'normal';
+
+    public const OUTCOME_PURCHASED = 'purchased';
+
+    public const OUTCOME_VISITED_NO_PURCHASE = 'visited_no_purchase';
 
     /**
      * Sensitive internal attributes hidden from JSON/array serialization.
@@ -71,6 +84,8 @@ class Appointment extends Model implements Attachable
         'confirmation_email_sent_at',
         'reminder_sent_at',
         'followup_email_sent_at',
+        'archived_at',
+        'archived_by',
     ];
 
     protected function casts(): array
@@ -83,6 +98,7 @@ class Appointment extends Model implements Attachable
             'confirmation_email_sent_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
             'followup_email_sent_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -357,12 +373,98 @@ class Appointment extends Model implements Attachable
         return is_string($raw) && trim($raw) !== '' ? trim($raw) : null;
     }
 
+    public function currentManageVersion(): int
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+
+        return max(1, (int) ($meta['manage_version'] ?? 1));
+    }
+
+    public function hasPendingRescheduleReview(): bool
+    {
+        if ($this->isTerminalStatus()) {
+            return false;
+        }
+
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+
+        return (bool) ($meta['reschedule_pending_review'] ?? false);
+    }
+
+    public function completionOutcome(): ?string
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $outcome = $meta['completion_outcome'] ?? null;
+
+        return in_array($outcome, [self::OUTCOME_PURCHASED, self::OUTCOME_VISITED_NO_PURCHASE], true)
+            ? $outcome
+            : null;
+    }
+
+    public function completionOutcomeLabel(): ?string
+    {
+        return match ($this->completionOutcome()) {
+            self::OUTCOME_PURCHASED => 'Đã mua xe',
+            self::OUTCOME_VISITED_NO_PURCHASE => 'Chưa mua xe',
+            default => null,
+        };
+    }
+
+    public function careVoucherCode(): ?string
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $code = $meta['care_voucher_code'] ?? null;
+
+        return is_string($code) && trim($code) !== '' ? trim($code) : null;
+    }
+
+    public function careVoucherExpiresLabel(): ?string
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $raw = $meta['care_voucher_expires_at'] ?? null;
+
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($raw)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y');
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public function markRescheduleNotificationsAsRead(): void
+    {
+        try {
+            $unread = DatabaseNotification::query()
+                ->where('type', GuestRescheduledAppointmentNotification::class)
+                ->whereNull('read_at')
+                ->get();
+
+            foreach ($unread as $notification) {
+                $data = is_array($notification->data) ? $notification->data : [];
+                if ((int) ($data['appointment_id'] ?? 0) === (int) $this->id) {
+                    $notification->markAsRead();
+                }
+            }
+        } catch (Throwable $exception) {
+            Log::warning('Failed marking reschedule notifications as read.', [
+                'appointment_id' => $this->id,
+                'exception' => $exception::class,
+            ]);
+        }
+    }
+
     public function temporaryManageUrl(): string
     {
         return URL::temporarySignedRoute(
             'appointments.guest.manage',
             now()->addDays(14),
-            ['appointment' => $this->id]
+            [
+                'appointment' => $this->id,
+                'v' => $this->currentManageVersion(),
+            ]
         );
     }
 
@@ -371,7 +473,10 @@ class Appointment extends Model implements Attachable
         return URL::temporarySignedRoute(
             'appointments.guest.update',
             now()->addDays(14),
-            ['appointment' => $this->id]
+            [
+                'appointment' => $this->id,
+                'v' => $this->currentManageVersion(),
+            ]
         );
     }
 
@@ -428,7 +533,7 @@ class Appointment extends Model implements Attachable
     {
         $this->loadMissing(['product.category', 'user']);
 
-        if ($this->followup_email_sent_at !== null) {
+        if ($this->followup_email_sent_at !== null || $this->completionOutcome() !== null) {
             return false;
         }
 
@@ -461,9 +566,13 @@ class Appointment extends Model implements Attachable
 
             return true;
         } catch (Throwable $exception) {
-            Log::warning('Failed scheduling post-test-drive followup email.', [
+            Log::error('Failed scheduling post-test-drive followup email.', [
                 'appointment_id' => $this->id,
+                'recipient' => $recipientEmail,
+                'trace_id' => Context::get('trace_id'),
                 'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'trace' => substr($exception->getTraceAsString(), 0, 1200),
             ]);
 
             return false;
@@ -476,7 +585,7 @@ class Appointment extends Model implements Attachable
             return false;
         }
 
-        $this->loadMissing(['product.category', 'user']);
+        $this->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         $recipientEmail = trim((string) ($this->user?->email ?? $this->guest_email ?? ''));
 
@@ -484,12 +593,14 @@ class Appointment extends Model implements Attachable
             return false;
         }
 
+        $advisor = AppointmentConfirmationMail::resolveAdvisorDisplay($this, $actor?->name, $actor?->roleLabel());
+
         try {
             Mail::to($recipientEmail)->send(new AppointmentConfirmationMail(
                 appointment: $this,
                 mode: AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED,
-                confirmedByName: $actor?->name,
-                confirmedByRole: $actor?->roleLabel(),
+                confirmedByName: $advisor['name'],
+                confirmedByRole: $advisor['role'],
             ));
 
             $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
@@ -502,7 +613,7 @@ class Appointment extends Model implements Attachable
                 actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
                 actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
                 title: 'Gửi Thư Xác Nhận Chính Thức (Thẻ VIP Pass)',
-                detail: "Đã phát hành Thẻ đón tiếp VIP và gửi email xác nhận chính thức tới {$recipientEmail}.",
+                detail: "Đã phát hành Thẻ đón tiếp VIP và gửi email xác nhận chính thức tới {$recipientEmail} (Phiên bản link v={$this->currentManageVersion()}).",
                 channel: 'Email',
             );
             $this->forceFill([
@@ -511,18 +622,99 @@ class Appointment extends Model implements Attachable
 
             return true;
         } catch (Throwable $exception) {
-            Log::warning('Failed sending official admin confirmation email.', [
+            Log::error('Failed sending official admin confirmation email.', [
                 'appointment_id' => $this->id,
+                'recipient' => $recipientEmail,
+                'trace_id' => Context::get('trace_id'),
                 'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'trace' => substr($exception->getTraceAsString(), 0, 1200),
             ]);
 
             return false;
         }
     }
 
-    public function transitionStatusWithAutomation(AppointmentStatus $newStatus, ?User $actor = null): bool
-    {
-        $transitionResult = DB::transaction(function () use ($newStatus, $actor): ?array {
+    public function sendCompletedThankYouEmail(
+        string $outcome,
+        ?string $voucherCode = null,
+        ?string $voucherExpiresLabel = null,
+    ): bool {
+        $this->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
+
+        $recipientEmail = trim((string) ($this->user?->email ?? $this->guest_email ?? ''));
+
+        if ($recipientEmail === '' || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        try {
+            $quotaGuard = app(GmailQuotaGuard::class);
+            if (! $quotaGuard->canSendMarketingEmail()) {
+                Log::warning('Sending transactional AppointmentCompletedThankYouMail while Gmail soft limit is reached.', [
+                    'appointment_id' => $this->id,
+                    'outcome' => $outcome,
+                    'sent_today' => $quotaGuard->getSentCountForDate(),
+                    'soft_limit' => $quotaGuard->dailySoftLimit(),
+                ]);
+            }
+
+            Mail::to($recipientEmail)->send(new AppointmentCompletedThankYouMail(
+                appointment: $this,
+                outcome: $outcome,
+                voucherCode: $voucherCode,
+                voucherExpiresLabel: $voucherExpiresLabel,
+            ));
+
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+            $meta['completed_thank_you_sent_at'] = now()->toIso8601String();
+            $title = $outcome === self::OUTCOME_PURCHASED
+                ? 'Gửi thư chúc mừng sở hữu xe & Voucher BMW Care 1 tháng'
+                : 'Gửi thư cảm ơn khách hàng đã tham quan & trải nghiệm';
+            $detail = $outcome === self::OUTCOME_PURCHASED
+                ? "Đã gửi email chúc mừng tới {$recipientEmail} kèm mã đặc quyền {$voucherCode} (hiệu lực đến {$voucherExpiresLabel})."
+                : "Đã gửi email tri ân khách hàng đã ghé Showroom trải nghiệm tới {$recipientEmail} (không kèm voucher khuyến mãi).";
+
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                actorLabel: 'Hệ thống tự động',
+                title: $title,
+                detail: $detail,
+                channel: 'Email',
+            );
+
+            $this->forceFill([
+                'followup_email_sent_at' => now(),
+                'meta_data' => $meta,
+            ])->saveQuietly();
+
+            return true;
+        } catch (Throwable $exception) {
+            Log::error('Failed sending post-visit completed thank-you email.', [
+                'appointment_id' => $this->id,
+                'recipient' => $recipientEmail,
+                'outcome' => $outcome,
+                'trace_id' => Context::get('trace_id'),
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'trace' => substr($exception->getTraceAsString(), 0, 1200),
+            ]);
+
+            return false;
+        }
+    }
+
+    public function transitionStatusWithAutomation(
+        AppointmentStatus $newStatus,
+        ?User $actor = null,
+        ?string $completionOutcome = null,
+    ): bool {
+        $normalizedOutcome = in_array($completionOutcome, [self::OUTCOME_PURCHASED, self::OUTCOME_VISITED_NO_PURCHASE], true)
+            ? $completionOutcome
+            : null;
+
+        $transitionResult = DB::transaction(function () use ($newStatus, $actor, $normalizedOutcome): ?array {
             /** @var self $locked */
             $locked = static::query()
                 ->whereKey($this->id)
@@ -555,14 +747,49 @@ class Appointment extends Model implements Attachable
             }
 
             $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
+            $voucherCode = null;
+            $voucherExpiresLabel = null;
+
+            if ($newStatus === AppointmentStatus::Cancelled) {
+                $meta['reschedule_pending_review'] = false;
+                $meta = InteractionTimelineRecorder::withCancellationFromActor($meta, $actor);
+            }
+
+            if ($newStatus === AppointmentStatus::Completed) {
+                $meta['reschedule_pending_review'] = false;
+
+                if ($normalizedOutcome !== null && ! $locked->isServiceBooking()) {
+                    $meta['completion_outcome'] = $normalizedOutcome;
+
+                    if ($normalizedOutcome === self::OUTCOME_PURCHASED) {
+                        $voucherCode = 'BMW-CARE-'.strtoupper(Str::random(6));
+                        $expiresAt = now('Asia/Ho_Chi_Minh')->addMonth();
+                        $voucherExpiresLabel = $expiresAt->format('d/m/Y');
+
+                        $meta['purchased_at'] = now()->toIso8601String();
+                        $meta['care_voucher_code'] = $voucherCode;
+                        $meta['care_voucher_expires_at'] = $expiresAt->toIso8601String();
+                    } else {
+                        $meta['visited_at'] = now()->toIso8601String();
+                        $meta['care_voucher_code'] = null;
+                        $meta['care_voucher_expires_at'] = null;
+                    }
+                }
+            }
+
+            $timelineDetail = match (true) {
+                $newStatus === AppointmentStatus::Confirmed => 'Chuyên viên Showroom đã duyệt lịch hẹn và kích hoạt quy trình gửi Thẻ đón tiếp VIP.',
+                $newStatus === AppointmentStatus::Completed && $normalizedOutcome === self::OUTCOME_PURCHASED => "Khách hàng đã ký hợp đồng mua xe tại Showroom. Cấp đặc quyền BMW Care 1 tháng ({$voucherCode}, hạn {$voucherExpiresLabel}).",
+                $newStatus === AppointmentStatus::Completed && $normalizedOutcome === self::OUTCOME_VISITED_NO_PURCHASE => 'Khách hàng đã hoàn tất buổi tham quan / lái thử tại Showroom (chưa phát sinh giao dịch mua xe).',
+                default => "Cập nhật trạng thái xử lý trên bảng điều phối CRM sang {$newStatus->label()}.",
+            };
+
             $meta = InteractionTimelineRecorder::appendToMeta(
                 meta: $meta,
                 actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
                 actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
                 title: "Chuyển trạng thái: {$oldLabel} → {$newStatus->label()}",
-                detail: $newStatus === AppointmentStatus::Confirmed
-                    ? 'Chuyên viên Showroom đã duyệt lịch hẹn và kích hoạt quy trình gửi Thẻ đón tiếp VIP.'
-                    : "Cập nhật trạng thái xử lý trên bảng điều phối CRM sang {$newStatus->label()}.",
+                detail: $timelineDetail,
                 channel: 'CRM',
             );
 
@@ -576,12 +803,19 @@ class Appointment extends Model implements Attachable
 
             return [
                 'oldStatus' => $oldStatus,
-                'fresh' => $locked->fresh(['product', 'user']) ?? $locked,
+                'fresh' => $locked->fresh(['product', 'user', 'assignedSales']) ?? $locked,
+                'voucherCode' => $voucherCode,
+                'voucherExpiresLabel' => $voucherExpiresLabel,
+                'isService' => $locked->isServiceBooking(),
             ];
         });
 
         if ($transitionResult === null) {
             return false;
+        }
+
+        if (in_array($newStatus, [AppointmentStatus::Cancelled, AppointmentStatus::Completed], true)) {
+            $this->markRescheduleNotificationsAsRead();
         }
 
         event(new AppointmentStatusChanged(
@@ -596,7 +830,15 @@ class Appointment extends Model implements Attachable
         }
 
         if ($newStatus === AppointmentStatus::Completed) {
-            $this->schedulePostTestDriveFollowup();
+            if ($normalizedOutcome !== null && ! $transitionResult['isService']) {
+                $this->sendCompletedThankYouEmail(
+                    outcome: $normalizedOutcome,
+                    voucherCode: $transitionResult['voucherCode'],
+                    voucherExpiresLabel: $transitionResult['voucherExpiresLabel'],
+                );
+            } else {
+                $this->schedulePostTestDriveFollowup();
+            }
         }
 
         return true;

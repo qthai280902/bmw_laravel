@@ -2,8 +2,24 @@
 
 @php
     $officialMode = (bool) ($isAdminConfirmed ?? (($mode ?? 'system_received') === 'admin_confirmed'));
-    $advisorName = filled($confirmedByName ?? null) ? trim((string) $confirmedByName) : 'Đội ngũ Chuyên viên BMW Concierge';
-    $advisorRole = filled($confirmedByRole ?? null) ? trim((string) $confirmedByRole) : 'BMW Showroom Vietnam';
+    if (! isset($advisorFormatted) || ! isset($advisorName)) {
+        if (method_exists(\App\Mail\Customer\AppointmentConfirmationMail::class, 'resolveAdvisorDisplay')) {
+            $advisorDisplay = \App\Mail\Customer\AppointmentConfirmationMail::resolveAdvisorDisplay(
+                $appointment,
+                $confirmedByName ?? null,
+                $confirmedByRole ?? null,
+            );
+            $advisorName = $advisorDisplay['name'];
+            $advisorRole = $advisorDisplay['role'];
+            $advisorFormatted = $advisorDisplay['formatted'];
+        } else {
+            $advisorName = filled($confirmedByName ?? null) ? trim((string) $confirmedByName) : 'Đội ngũ Chuyên viên BMW Concierge';
+            $advisorRole = filled($confirmedByRole ?? null) ? trim((string) $confirmedByRole) : 'BMW Showroom Vietnam';
+            $advisorFormatted = ($advisorRole !== '' && mb_stripos($advisorName, $advisorRole, 0, 'UTF-8') === false)
+                ? "{$advisorName} ({$advisorRole})"
+                : $advisorName;
+        }
+    }
     $car = $car ?? $appointment->product;
     $resolvedInlinePath = $inlineImagePath ?? $car?->localImagePath();
     $resolvedFallbackPng = $fallbackBadgePng ?? \App\Mail\Customer\AppointmentConfirmationMail::fallbackBadgePngBytes();
@@ -57,7 +73,7 @@
                         </tr>
                         <tr>
                             <td style="padding: 4px 0; font-size: 13px; color: #065F46;">Chuyên viên phụ trách</td>
-                            <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #0F172A;">{{ $advisorName }} ({{ $advisorRole }})</td>
+                            <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #0F172A;">{{ $advisorFormatted }}</td>
                         </tr>
                         <tr>
                             <td style="padding: 4px 0; font-size: 13px; color: #065F46;">Đặc quyền đón tiếp</td>
@@ -133,6 +149,14 @@
                 </td>
             </tr>
         @endif
+        <tr>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
+                Chuyên viên phụ trách
+            </td>
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 600; color: #0F172A;">
+                {{ $advisorFormatted }}
+            </td>
+        </tr>
         <tr>
             <td style="padding: 13px 18px; font-size: 13px; font-weight: 500; color: #64748B;">
                 Địa điểm

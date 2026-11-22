@@ -30,8 +30,16 @@ class CleanupAndFollowupAppointmentsCommand extends Command implements Isolatabl
                 /** @var Appointment $appointment */
                 foreach ($appointments as $appointment) {
                     $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+                    $meta['reschedule_pending_review'] = false;
                     $meta['auto_cancelled_reason'] = 'Tự động hủy do quá hạn 24 giờ chưa xác nhận';
                     $meta['auto_cancelled_at'] = now()->toIso8601String();
+                    $meta = InteractionTimelineRecorder::withCancellationMetadata(
+                        meta: $meta,
+                        actorType: 'system',
+                        actorName: 'Hệ thống tự động',
+                        actorRole: 'Hệ thống',
+                        cancelledAt: $meta['auto_cancelled_at'],
+                    );
                     $meta = InteractionTimelineRecorder::appendToMeta(
                         meta: $meta,
                         actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
@@ -45,6 +53,7 @@ class CleanupAndFollowupAppointmentsCommand extends Command implements Isolatabl
                         'status' => AppointmentStatus::Cancelled->value,
                         'meta_data' => $meta,
                     ])->saveQuietly();
+                    $appointment->markRescheduleNotificationsAsRead();
 
                     $cancelledCount++;
                 }
@@ -59,6 +68,10 @@ class CleanupAndFollowupAppointmentsCommand extends Command implements Isolatabl
             ->chunkById(50, function (Collection $appointments) use (&$followupScheduledCount): void {
                 /** @var Appointment $appointment */
                 foreach ($appointments as $appointment) {
+                    if ($appointment->completionOutcome() !== null) {
+                        continue;
+                    }
+
                     if ($appointment->schedulePostTestDriveFollowup()) {
                         $followupScheduledCount++;
                     }

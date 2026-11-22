@@ -19,7 +19,7 @@ class HotLeadAlertMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing(['product', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         $typeLabel = $this->appointment->type instanceof AppointmentType
             ? $this->appointment->type->label()
@@ -45,7 +45,7 @@ class HotLeadAlertMail extends Mailable
 
     public function content(): Content
     {
-        $this->appointment->loadMissing(['product', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         return new Content(
             view: 'emails.admin.hot-lead-alert',

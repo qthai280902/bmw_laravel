@@ -1,8 +1,24 @@
 @php
     $car = $car ?? $appointment->product;
     $officialMode = (bool) ($isAdminConfirmed ?? (($mode ?? 'system_received') === 'admin_confirmed'));
-    $advisorName = filled($confirmedByName ?? null) ? trim((string) $confirmedByName) : 'Đội ngũ Chuyên viên BMW Concierge';
-    $advisorRole = filled($confirmedByRole ?? null) ? trim((string) $confirmedByRole) : 'BMW Showroom Vietnam';
+    if (! isset($advisorFormatted) || ! isset($advisorName)) {
+        if (method_exists(\App\Mail\Customer\AppointmentConfirmationMail::class, 'resolveAdvisorDisplay')) {
+            $advisorDisplay = \App\Mail\Customer\AppointmentConfirmationMail::resolveAdvisorDisplay(
+                $appointment,
+                $confirmedByName ?? null,
+                $confirmedByRole ?? null,
+            );
+            $advisorName = $advisorDisplay['name'];
+            $advisorRole = $advisorDisplay['role'];
+            $advisorFormatted = $advisorDisplay['formatted'];
+        } else {
+            $advisorName = filled($confirmedByName ?? null) ? trim((string) $confirmedByName) : 'Đội ngũ Chuyên viên BMW Concierge';
+            $advisorRole = filled($confirmedByRole ?? null) ? trim((string) $confirmedByRole) : 'BMW Showroom Vietnam';
+            $advisorFormatted = ($advisorRole !== '' && mb_stripos($advisorName, $advisorRole, 0, 'UTF-8') === false)
+                ? "{$advisorName} ({$advisorRole})"
+                : $advisorName;
+        }
+    }
 @endphp
 @if($officialMode)
 BMW CONCIERGE — XÁC NHẬN CHÍNH THỨC LỊCH HẸN (VIP CONCIERGE PASS)
@@ -11,7 +27,7 @@ BMW CONCIERGE — XÁC NHẬN CHÍNH THỨC LỊCH HẸN (VIP CONCIERGE PASS)
 Kính chào Quý khách {{ $appointment->customer_name }},
 
 Lịch hẹn của Quý khách đã được Chuyên viên BMW xác nhận chính thức.
-- Chuyên viên phụ trách: {{ $advisorName }} ({{ $advisorRole }})
+- Chuyên viên phụ trách: {{ $advisorFormatted }}
 - Hotline đón tiếp trực tiếp: 1900 123 456
 - Chuẩn bị đón tiếp tại Showroom: Khu vực đỗ xe VIP, xe mẫu và kỹ thuật viên đã được giữ suất đúng khung giờ hẹn của Quý khách.
 @else
@@ -30,6 +46,7 @@ THÔNG TIN LỊCH HẸN
 - Gói dịch vụ chăm sóc: {{ $appointment->servicePackageLabel() }}
 @endif
 - Thời gian hẹn: {{ $appointment->appointment_date?->format('H:i — d/m/Y') }}
+- Chuyên viên phụ trách: {{ $advisorFormatted }}
 @if($car)
 - Dòng xe quan tâm: {{ $car->name }}
 @if($car->price)

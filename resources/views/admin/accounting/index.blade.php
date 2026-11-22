@@ -43,33 +43,44 @@
 
     {{-- Bộ lọc kỳ kế toán & phân hệ --}}
     <x-admin.card class="mb-6">
-        <form method="GET" action="{{ route('admin.accounting.index') }}" class="space-y-4">
-            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-                <x-admin.form-field name="period" label="Kỳ kế toán">
-                    <select id="period" name="period" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                        @foreach($periodOptions as $val => $label)
-                            <option value="{{ $val }}" @selected($period === $val)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </x-admin.form-field>
+        <form
+            method="GET"
+            action="{{ route('admin.accounting.index') }}"
+            x-data="{ period: @js($period) }"
+            class="space-y-4"
+        >
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-12 md:items-end">
+                <div class="md:col-span-3">
+                    <x-admin.form-field name="period" label="Kỳ kế toán">
+                        <select id="period" name="period" x-model="period" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                            @foreach($periodOptions as $val => $label)
+                                <option value="{{ $val }}" @selected($period === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-admin.form-field>
+                </div>
 
-                <x-admin.form-field name="module" label="Phân hệ chứng từ">
-                    <select id="module" name="module" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                        @foreach($moduleOptions as $val => $label)
-                            <option value="{{ $val }}" @selected($module === $val)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </x-admin.form-field>
+                <div class="md:col-span-3">
+                    <x-admin.form-field name="module" label="Phân hệ chứng từ">
+                        <select id="module" name="module" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                            @foreach($moduleOptions as $val => $label)
+                                <option value="{{ $val }}" @selected($module === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-admin.form-field>
+                </div>
 
-                <x-admin.form-field name="status" label="Trạng thái hạch toán">
-                    <select id="status" name="status" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
-                        @foreach($statusOptions as $val => $label)
-                            <option value="{{ $val }}" @selected($status === $val)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </x-admin.form-field>
+                <div class="md:col-span-3">
+                    <x-admin.form-field name="status" label="Trạng thái hạch toán">
+                        <select id="status" name="status" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                            @foreach($statusOptions as $val => $label)
+                                <option value="{{ $val }}" @selected($status === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-admin.form-field>
+                </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center justify-end gap-2 md:col-span-3">
                     <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
                         Lọc sổ sách
                     </button>
@@ -79,53 +90,73 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-3.5 border-t border-white/[0.06] pt-3.5 sm:grid-cols-2 lg:max-w-lg">
+            <div
+                x-show="period === 'custom'"
+                x-cloak
+                class="grid grid-cols-1 gap-3.5 border-t border-white/[0.06] pt-3.5 sm:grid-cols-2"
+            >
                 <x-admin.form-field name="date_from" label="Từ ngày">
-                    <input id="date_from" type="date" name="date_from" value="{{ $dateFrom }}" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    <input id="date_from" type="date" name="date_from" value="{{ $dateFrom }}" :disabled="period !== 'custom'" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                 </x-admin.form-field>
                 <x-admin.form-field name="date_to" label="Đến ngày">
-                    <input id="date_to" type="date" name="date_to" value="{{ $dateTo }}" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
+                    <input id="date_to" type="date" name="date_to" value="{{ $dateTo }}" :disabled="period !== 'custom'" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                 </x-admin.form-field>
             </div>
         </form>
     </x-admin.card>
 
-    {{-- 5 Chỉ số KPI Tài chính --}}
+    {{-- 5 Chỉ số KPI Tài chính (Clean Executive Cards) --}}
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div class="rounded-2xl border border-emerald-500/25 bg-[#0D121C] p-5 shadow-lg">
-            <p class="text-[11px] font-semibold text-emerald-400">1. Doanh thu phụ kiện thực thu</p>
-            <p class="mt-2 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['completed_accessory_revenue'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-400">Đơn phụ kiện đã hoàn thành</p>
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
+            <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                <span>Doanh thu phụ kiện thực thu</span>
+            </p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['completed_accessory_revenue'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">Đơn phụ kiện đã hoàn thành</p>
         </div>
 
-        <div class="rounded-2xl border border-sky-500/25 bg-[#0D121C] p-5 shadow-lg">
-            <p class="text-[11px] font-semibold text-sky-400">2. Giá trị phụ kiện đang xử lý</p>
-            <p class="mt-2 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['processing_accessory_value'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-400">Chờ duyệt &amp; Đã xác nhận</p>
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
+            <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                <span class="h-2 w-2 rounded-full bg-sky-400"></span>
+                <span>Giá trị phụ kiện đang xử lý</span>
+            </p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['processing_accessory_value'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">Chờ duyệt &amp; Đã xác nhận</p>
         </div>
 
-        <div class="rounded-2xl border border-[#1C69D4]/30 bg-[#0D121C] p-5 shadow-lg">
-            <p class="text-[11px] font-semibold text-[#70A7FF]">3. Giá trị đặt cọc xe tiềm năng</p>
-            <p class="mt-2 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['vehicle_committed_deposit'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-400">Giá xe tham chiếu: {{ number_format($kpis['vehicle_reference_value'], 0, ',', '.') }} ₫</p>
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
+            <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                <span class="h-2 w-2 rounded-full bg-[#1C69D4]"></span>
+                <span>Giá trị đặt cọc xe tiềm năng</span>
+            </p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['vehicle_committed_deposit'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">Giá xe tham chiếu: {{ number_format($kpis['vehicle_reference_value'], 0, ',', '.') }} ₫</p>
         </div>
 
-        <div class="rounded-2xl border border-rose-500/25 bg-[#0D121C] p-5 shadow-lg">
-            <p class="text-[11px] font-semibold text-rose-400">4. Giá trị giao dịch bị Hủy</p>
-            <p class="mt-2 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['cancelled_lost_value'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-400">Đơn hàng &amp; đặt cọc đã hủy</p>
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
+            <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                <span class="h-2 w-2 rounded-full bg-rose-400"></span>
+                <span>Giá trị giao dịch bị Hủy</span>
+            </p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['cancelled_lost_value'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">Đơn hàng &amp; đặt cọc đã hủy</p>
         </div>
 
-        <div class="rounded-2xl border border-amber-500/25 bg-[#0D121C] p-5 shadow-lg">
-            <p class="text-[11px] font-semibold text-amber-300">5. Tỷ lệ hoàn tất chứng từ</p>
-            <p class="mt-2 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['completion_rate'], 1) }}%</p>
-            <p class="mt-1 text-[11px] text-zinc-400">{{ $kpis['completed_vouchers_count'] }} / {{ $kpis['total_vouchers_count'] }} chứng từ hoàn tất</p>
+        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
+            <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+                <span>Tỷ lệ hoàn tất chứng từ</span>
+            </p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['completion_rate'], 1) }}%</p>
+            <p class="mt-1 text-[11px] text-zinc-500">{{ $kpis['completed_vouchers_count'] }} / {{ $kpis['total_vouchers_count'] }} chứng từ hoàn tất</p>
         </div>
     </div>
 
     {{-- Biểu đồ Tài chính & Sản lượng theo ngày (SVG thuần + Alpine Tooltip) --}}
     @php
         $maxChartVal = max(1, collect($chartPoints)->map(fn ($p) => max($p['completed_revenue'], $p['committed_value']))->max() ?? 1);
+        $hasChartActivity = ($kpis['total_vouchers_count'] ?? 0) > 0;
     @endphp
     <x-admin.card class="mb-6">
         <div
@@ -149,7 +180,13 @@
                 </div>
             </div>
 
-            <div class="relative rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-4">
+            @if(! $hasChartActivity)
+                <x-admin.empty-state
+                    title="Chưa có dữ liệu doanh thu trong kỳ"
+                    description="Chưa phát sinh lịch hẹn, dịch vụ hay đơn phụ kiện nào trong khoảng thời gian đã chọn."
+                />
+            @else
+                <div class="relative rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-4">
                 <div
                     x-show="activePoint !== null"
                     x-cloak
@@ -210,7 +247,8 @@
                         </g>
                     @endforeach
                 </svg>
-            </div>
+                </div>
+            @endif
         </div>
     </x-admin.card>
 

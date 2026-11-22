@@ -20,7 +20,7 @@ class AppointmentAlertMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing(['product', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         $typeLabel = $this->appointment->type?->label() ?? 'Lịch hẹn';
         $vehicleLabel = $this->appointment->product?->name
@@ -35,6 +35,8 @@ class AppointmentAlertMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
+
         return new Content(
             view: 'emails.admin.appointment-alert',
         );

@@ -38,7 +38,7 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing(['product.category', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         $refCode = $this->appointment->publicReferenceCode();
         $isService = $this->appointment->isServiceBooking();
@@ -64,7 +64,8 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
+        $advisor = self::resolveAdvisorDisplay($this->appointment, $this->confirmedByName, $this->confirmedByRole);
 
         return new Content(
             view: 'emails.customer.appointment-confirmation',
@@ -72,12 +73,75 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
             with: [
                 'mode' => $this->mode,
                 'isAdminConfirmed' => $this->isAdminConfirmed(),
-                'confirmedByName' => $this->confirmedByName,
-                'confirmedByRole' => $this->confirmedByRole,
+                'confirmedByName' => $advisor['name'],
+                'confirmedByRole' => $advisor['role'],
+                'advisorName' => $advisor['name'],
+                'advisorRole' => $advisor['role'],
+                'advisorFormatted' => $advisor['formatted'],
                 'inlineImagePath' => $this->appointment->product?->localImagePath(),
                 'fallbackBadgePng' => self::fallbackBadgePngBytes(),
             ],
         );
+    }
+
+    /**
+     * Resolve advisor attribution prioritizing assignedSales over the clicking actor,
+     * and deduplicate role labels when the advisor's name already contains the role/title.
+     *
+     * @return array{name: string, role: string, formatted: string}
+     */
+    public static function resolveAdvisorDisplay(
+        Appointment $appointment,
+        ?string $fallbackName = null,
+        ?string $fallbackRole = null,
+    ): array {
+        $appointment->loadMissing('assignedSales');
+        $assigned = $appointment->assigned_to !== null ? $appointment->assignedSales : null;
+
+        if ($assigned !== null && $assigned->exists) {
+            $name = trim((string) $assigned->name);
+            $sameAdvisorAsFallback = filled($fallbackName)
+                && mb_strtolower(trim((string) $fallbackName), 'UTF-8') === mb_strtolower($name, 'UTF-8');
+            $role = ($sameAdvisorAsFallback && filled($fallbackRole))
+                ? trim((string) $fallbackRole)
+                : trim((string) $assigned->roleLabel());
+        } elseif (filled($fallbackName)) {
+            $name = trim((string) $fallbackName);
+            $role = filled($fallbackRole) ? trim((string) $fallbackRole) : 'BMW Showroom Vietnam';
+        } else {
+            $name = 'Đội ngũ Chuyên viên BMW Concierge';
+            $role = 'BMW Showroom Vietnam';
+        }
+
+        return [
+            'name' => $name,
+            'role' => $role,
+            'formatted' => self::formatAdvisorLabel($name, $role),
+        ];
+    }
+
+    public static function formatAdvisorLabel(string $name, string $role): string
+    {
+        $cleanName = trim($name);
+        $cleanRole = trim($role);
+
+        if ($cleanRole === '' || $cleanName === '') {
+            return $cleanName !== '' ? $cleanName : 'Đội ngũ Chuyên viên BMW Concierge';
+        }
+
+        if (mb_stripos($cleanName, $cleanRole, 0, 'UTF-8') !== false) {
+            return $cleanName;
+        }
+
+        if (str_contains($cleanName, ' - ')) {
+            $parts = explode(' - ', $cleanName);
+            $suffix = trim((string) end($parts));
+            if ($suffix !== '' && (mb_stripos($cleanRole, $suffix, 0, 'UTF-8') !== false || mb_stripos($suffix, $cleanRole, 0, 'UTF-8') !== false)) {
+                return $cleanName;
+            }
+        }
+
+        return "{$cleanName} ({$cleanRole})";
     }
 
     public static function salesReplyToAddress(): Address
@@ -116,7 +180,7 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        $this->appointment->loadMissing(['product.category']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         $attachments = [$this->appointment];
         $product = $this->appointment->product;

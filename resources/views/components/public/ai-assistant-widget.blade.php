@@ -25,8 +25,11 @@
     x-init="init()"
     @keydown.escape.window="if (panelOpen) minimize()"
     x-cloak
-    class="fixed z-[70] text-white"
-    :class="sideTabVisible ? 'right-0 bottom-28 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2' : 'right-3 bottom-4 sm:right-5 sm:bottom-5'"
+    class="fixed text-white"
+    :class="[
+        panelOpen ? 'z-[70]' : 'z-30',
+        sideTabVisible ? 'right-0 bottom-28 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2' : 'right-3 bottom-4 sm:right-5 sm:bottom-5'
+    ]"
 >
     <div class="sr-only">
         <p>BMW AI Assistant sẵn sàng tư vấn</p>
@@ -358,7 +361,7 @@
         <button
             type="button"
             data-ai-launcher
-            class="ai-assistant-launcher flex items-center gap-3 border border-white/10 bg-black/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-300 hover:border-[#1C69D4] hover:shadow-[0_0_25px_rgba(28,105,212,0.4)]"
+            class="ai-assistant-launcher relative z-30 flex items-center gap-3 border border-white/10 bg-black/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-300 hover:border-[#1C69D4] hover:shadow-[0_0_25px_rgba(28,105,212,0.4)]"
             @click="openPanel()"
             aria-label="Mở BMW AI Assistant"
         >

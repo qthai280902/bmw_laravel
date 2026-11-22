@@ -6,6 +6,7 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
+use App\Livewire\Concerns\HandlesCrmArchiveActions;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\AiChatSession;
 use App\Models\Appointment;
@@ -22,6 +23,7 @@ use Livewire\Component;
 class AppointmentTable extends Component
 {
     use AuthorizesAdminLivewire;
+    use HandlesCrmArchiveActions;
     use WithBmwPagination;
 
     #[Url(as: 'search', except: '')]
@@ -52,6 +54,12 @@ class AppointmentTable extends Component
     public bool $onlyToday = false;
 
     public ?int $inspectedAppointmentId = null;
+
+    public ?int $completionTargetId = null;
+
+    public string $completionTargetReference = '';
+
+    public string $completionOutcome = Appointment::OUTCOME_PURCHASED;
 
     public ?string $flashMessage = null;
 
@@ -181,7 +189,68 @@ class AppointmentTable extends Component
         $this->resetPage();
     }
 
-    public function updateStatus(int $appointmentId, string $status): void
+    public function openCompletionModal(int $appointmentId): void
+    {
+        $this->authorizeCrm();
+        $this->resetErrorBag(['status', 'statusTransition', 'completionOutcome']);
+        $this->errorMessage = null;
+
+        $appointment = Appointment::query()->findOrFail($appointmentId);
+
+        if ($appointment->status !== AppointmentStatus::Confirmed) {
+            $this->updateStatus($appointmentId, AppointmentStatus::Completed->value);
+
+            return;
+        }
+
+        $this->completionTargetId = $appointment->id;
+        $this->completionTargetReference = $appointment->publicReferenceCode();
+        $this->completionOutcome = Appointment::OUTCOME_PURCHASED;
+    }
+
+    public function closeCompletionModal(): void
+    {
+        $this->completionTargetId = null;
+        $this->completionTargetReference = '';
+        $this->completionOutcome = Appointment::OUTCOME_PURCHASED;
+    }
+
+    public function confirmCompletion(): void
+    {
+        $this->authorizeCrm();
+
+        if ($this->completionTargetId === null) {
+            return;
+        }
+
+        if (! in_array($this->completionOutcome, [Appointment::OUTCOME_PURCHASED, Appointment::OUTCOME_VISITED_NO_PURCHASE], true)) {
+            $this->errorMessage = 'Vui lòng chọn kết quả đón tiếp trước khi hoàn tất lịch hẹn.';
+            $this->addError('completionOutcome', $this->errorMessage);
+
+            return;
+        }
+
+        $targetId = $this->completionTargetId;
+        $outcome = $this->completionOutcome;
+        $this->closeCompletionModal();
+
+        $this->updateStatus($targetId, AppointmentStatus::Completed->value, $outcome);
+    }
+
+    public function handleInlineStatusChange(int $appointmentId, string $status): void
+    {
+        $this->authorizeCrm();
+
+        if ($status === AppointmentStatus::Completed->value) {
+            $this->openCompletionModal($appointmentId);
+
+            return;
+        }
+
+        $this->updateStatus($appointmentId, $status);
+    }
+
+    public function updateStatus(int $appointmentId, string $status, ?string $completionOutcome = null): void
     {
         $this->authorizeCrm();
         $this->resetErrorBag(['status', 'statusTransition']);
@@ -207,7 +276,8 @@ class AppointmentTable extends Component
         $nextStatus = AppointmentStatus::from((string) $validator->validated()['status']);
 
         try {
-            $transitioned = $appointment->transitionStatusWithAutomation($nextStatus, auth()->user());
+            $transitioned = $appointment->transitionStatusWithAutomation($nextStatus, auth()->user(), $completionOutcome);
+            unset($this->inspectedAppointment);
 
             if (! $transitioned) {
                 $staleMessage = "Lịch hẹn #{$appointment->id} hiện đã ở trạng thái '{$nextStatus->label()}' trước đó (có thể đã được nhân sự khác xử lý).";
@@ -218,7 +288,14 @@ class AppointmentTable extends Component
                 return;
             }
 
-            $this->flashMessage = "Đã cập nhật trạng thái lịch hẹn #{$appointment->id} thành công.";
+            if ($nextStatus === AppointmentStatus::Completed && $completionOutcome === Appointment::OUTCOME_PURCHASED) {
+                $voucher = $appointment->careVoucherCode();
+                $this->flashMessage = "Đã hoàn tất lịch hẹn #{$appointment->id} (Khách đã mua xe · Mã BMW Care: {$voucher}).";
+            } elseif ($nextStatus === AppointmentStatus::Completed && $completionOutcome === Appointment::OUTCOME_VISITED_NO_PURCHASE) {
+                $this->flashMessage = "Đã hoàn tất lịch hẹn #{$appointment->id} (Khách đã tham quan / chưa mua xe · Đã gửi thư cảm ơn).";
+            } else {
+                $this->flashMessage = "Đã cập nhật trạng thái lịch hẹn #{$appointment->id} thành công.";
+            }
         } catch (InvalidStatusTransitionException $exception) {
             $this->flashMessage = null;
             $this->errorMessage = $exception->getMessage();
@@ -246,6 +323,50 @@ class AppointmentTable extends Component
             $this->flashMessage = null;
             $this->errorMessage = $exception->getMessage();
         }
+    }
+
+    public function acknowledgeGuestReschedule(int $appointmentId): void
+    {
+        $appointment = Appointment::query()->findOrFail($appointmentId);
+        $this->acknowledgeAppointmentReschedule($appointment, 'lịch hẹn');
+        unset($this->inspectedAppointment);
+    }
+
+    public function archiveRecord(int $appointmentId): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $appointment = Appointment::query()->findOrFail($appointmentId);
+        $this->performArchive($appointment, 'lịch hẹn');
+        unset($this->inspectedAppointment);
+    }
+
+    public function unarchiveRecord(int $appointmentId): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $appointment = Appointment::query()->findOrFail($appointmentId);
+        $this->performUnarchive($appointment, 'lịch hẹn');
+        unset($this->inspectedAppointment);
+    }
+
+    public function archiveAllClosed(ShowroomCacheService $cacheService): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $this->errorMessage = null;
+
+        $count = Appointment::query()
+            ->activeRecords()
+            ->whereIn('status', [AppointmentStatus::Completed->value, AppointmentStatus::Cancelled->value])
+            ->toBase()
+            ->update([
+                'archived_at' => now(),
+                'archived_by' => auth()->id(),
+            ]);
+
+        $cacheService->flushDashboard();
+        $this->resetPage();
+        $this->flashMessage = $count > 0
+            ? "Đã chuyển {$count} lịch hẹn đã đóng vào Kho lưu trữ CRM."
+            : 'Không có lịch hẹn đã đóng nào cần lưu trữ thêm.';
     }
 
     public function resendConfirmationEmail(int $appointmentId): void
@@ -313,7 +434,7 @@ class AppointmentTable extends Component
         }
 
         return Appointment::query()
-            ->with(['user', 'product', 'assignedSales', 'aiChatSession.messages'])
+            ->with(['user', 'product', 'assignedSales', 'archivedBy:id,name', 'aiChatSession.messages'])
             ->find($this->inspectedAppointmentId);
     }
 
@@ -351,10 +472,11 @@ class AppointmentTable extends Component
         $statsRow = Appointment::query()
             ->toBase()
             ->selectRaw(
-                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count,
-                 SUM(CASE WHEN lead_priority = ? THEN 1 ELSE 0 END) as hot_count,
-                 SUM(CASE WHEN appointment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
-                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed_count',
+                'SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as pending_count,
+                 SUM(CASE WHEN archived_at IS NULL AND lead_priority = ? THEN 1 ELSE 0 END) as hot_count,
+                 SUM(CASE WHEN archived_at IS NULL AND appointment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
+                 SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as completed_count,
+                 SUM(CASE WHEN archived_at IS NOT NULL THEN 1 ELSE 0 END) as archived_count',
                 [
                     AppointmentStatus::Pending->value,
                     Appointment::LEAD_PRIORITY_HOT,
@@ -371,6 +493,11 @@ class AppointmentTable extends Component
             ->leftJoin('users as assigned_sales', 'appointments.assigned_to', '=', 'assigned_sales.id')
             ->select('appointments.*', 'assigned_sales.name as assigned_sales_name')
             ->with(['user', 'product'])
+            ->when(
+                $this->archiveScope === 'archived',
+                fn ($query) => $query->archived(),
+                fn ($query) => $query->activeRecords(),
+            )
             ->when(
                 $this->status !== '',
                 fn ($query) => $query->where('appointments.status', $this->status),
@@ -450,6 +577,7 @@ class AppointmentTable extends Component
                 'hot' => (int) ($statsRow->hot_count ?? 0),
                 'today' => (int) ($statsRow->today_count ?? 0),
                 'completed' => (int) ($statsRow->completed_count ?? 0),
+                'archived' => (int) ($statsRow->archived_count ?? 0),
             ],
         ]);
     }

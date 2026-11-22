@@ -20,7 +20,7 @@ class AccessoryOrderConfirmationMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $this->order->loadMissing('product');
+        $this->order->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'assignedSales']);
         $refCode = $this->order->publicReferenceCode();
 
         return new Envelope(
@@ -30,6 +30,8 @@ class AccessoryOrderConfirmationMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $this->order->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'assignedSales']);
+
         return new Content(
             view: 'emails.customer.accessory-order-confirmation',
         );

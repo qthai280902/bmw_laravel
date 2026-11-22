@@ -19,7 +19,7 @@ class AppointmentReminderMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing(['product', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
         $refCode = $this->appointment->publicReferenceCode();
 
         return new Envelope(
@@ -30,7 +30,7 @@ class AppointmentReminderMail extends Mailable
 
     public function content(): Content
     {
-        $this->appointment->loadMissing(['product.primaryImage', 'product.images', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         return new Content(
             view: 'mail.appointments.reminder',
@@ -47,6 +47,8 @@ class AppointmentReminderMail extends Mailable
      */
     public function attachments(): array
     {
+        $this->appointment->loadMissing(['product.category', 'user', 'assignedSales']);
+
         return [$this->appointment];
     }
 }

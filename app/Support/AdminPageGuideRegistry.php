@@ -40,7 +40,7 @@ class AdminPageGuideRegistry
                 'title' => 'Điều phối Lịch hẹn Showroom',
                 'summary' => 'Quản lý khách đặt lái thử, tư vấn xe mới và bàn giao xe theo quy trình một chiều.',
                 'bullets' => [
-                    'Mỗi lịch hẹn có Mã kép: #SĐT_STT để tra cứu theo khách và dd/mm/yyyy/NN để điều phối theo ngày.',
+                    'Mỗi lịch hẹn có hệ thống mã bảo mật: BMW-YYMMDD-XXXX (công khai), CT-YYMMDD-001 (chứng từ) và KH-XXXX-NN (nội bộ).',
                     'Chuyển trạng thái theo đúng vòng đời: Chờ duyệt → Đã xác nhận → Hoàn thành hoặc Đã hủy.',
                     'Admin có thể điều phối hoặc bàn giao Sales phụ trách trực tiếp trong Quick Inspector Drawer.',
                 ],
@@ -49,7 +49,7 @@ class AdminPageGuideRegistry
                 'title' => 'Điều phối Dịch vụ Chăm sóc xe',
                 'summary' => 'Theo dõi lịch bảo dưỡng, sửa chữa và chăm sóc xe định kỳ tại xưởng BMW.',
                 'bullets' => [
-                    'Tra cứu nhanh bằng SĐT, tên xe, Mã khách hàng (#SĐT_STT) hoặc Mã ngày (dd/mm/yyyy/NN).',
+                    'Tra cứu nhanh bằng SĐT, tên xe, Mã tham chiếu (SRV-YYMMDD-XXXX), Mã chứng từ (CT-YYMMDD-001) hoặc Mã KH (KH-XXXX-NN).',
                     'Mở Drawer chi tiết để xem trước các email xác nhận, nhắc lịch và hậu mãi sẽ gửi cho khách.',
                 ],
             ],
@@ -58,7 +58,7 @@ class AdminPageGuideRegistry
                 'summary' => 'Xử lý đơn đặt mua phụ kiện chính hãng kèm trừ và hoàn tồn kho tự động an toàn.',
                 'bullets' => [
                     'Hủy đơn hàng sẽ tự động hoàn lại đúng số lượng tồn kho cho sản phẩm.',
-                    'Tìm kiếm hỗ trợ cả mã đơn #ACC-ID, Mã khách hàng (#SĐT_STT) và Mã ngày (dd/mm/yyyy/NN).',
+                    'Tìm kiếm hỗ trợ cả mã đơn ACC-YYMMDD-XXXX, Mã chứng từ (CT-YYMMDD-001) và Mã khách hàng (KH-XXXX-NN).',
                 ],
             ],
             'admin.accessory-orders.show' => [

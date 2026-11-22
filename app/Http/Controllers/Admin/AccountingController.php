@@ -441,6 +441,12 @@ class AccountingController extends Controller
                     'sales_name' => $order->assignedSales?->exists ? $order->assignedSales->name : 'Chưa gán',
                     'status' => (string) $order->status,
                     'status_label' => $order->statusLabel(),
+                    'is_archived' => $order->isArchived(),
+                    'cancellation_label' => $order->cancellationAttributionLabel(),
+                    'completion_outcome' => null,
+                    'completion_outcome_label' => null,
+                    'care_voucher_code' => null,
+                    'care_voucher_expires_label' => null,
                 ];
             }
         }
@@ -497,6 +503,12 @@ class AccountingController extends Controller
                     'sales_name' => $appointment->assignedSales?->exists ? $appointment->assignedSales->name : 'Chưa gán',
                     'status' => $statusVal,
                     'status_label' => $appointment->statusLabel(),
+                    'is_archived' => $appointment->isArchived(),
+                    'cancellation_label' => $appointment->cancellationAttributionLabel(),
+                    'completion_outcome' => $appointment->completionOutcome(),
+                    'completion_outcome_label' => $appointment->completionOutcomeLabel(),
+                    'care_voucher_code' => $appointment->careVoucherCode(),
+                    'care_voucher_expires_label' => $appointment->careVoucherExpiresLabel(),
                 ];
             }
         }

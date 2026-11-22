@@ -149,6 +149,29 @@
                                 <span class="inline-flex rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-[11px] font-semibold text-zinc-200">
                                     {{ $v['status_label'] }}
                                 </span>
+                                @if(($v['completion_outcome'] ?? null) === \App\Models\Appointment::OUTCOME_PURCHASED)
+                                    <p class="mt-1">
+                                        <span class="inline-flex rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                                            {{ $v['completion_outcome_label'] }}{{ ! empty($v['care_voucher_code']) ? ' · ' . $v['care_voucher_code'] : '' }}{{ ! empty($v['care_voucher_expires_label']) ? ' (hạn ' . $v['care_voucher_expires_label'] . ')' : '' }}
+                                        </span>
+                                    </p>
+                                @elseif(($v['completion_outcome'] ?? null) === \App\Models\Appointment::OUTCOME_VISITED_NO_PURCHASE)
+                                    <p class="mt-1">
+                                        <span class="inline-flex rounded-full border border-white/15 bg-white/[0.05] px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                            {{ $v['completion_outcome_label'] }}
+                                        </span>
+                                    </p>
+                                @endif
+                                @if(! empty($v['cancellation_label']))
+                                    <p class="mt-1 text-[10px] font-medium text-rose-300">{{ $v['cancellation_label'] }}</p>
+                                @endif
+                                @if(! empty($v['is_archived']))
+                                    <p class="mt-1">
+                                        <span class="inline-flex rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+                                            Đã lưu trữ
+                                        </span>
+                                    </p>
+                                @endif
                             </td>
                         </tr>
                     @empty

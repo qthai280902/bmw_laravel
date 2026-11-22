@@ -3,6 +3,7 @@
 namespace App\Services\Crm;
 
 use App\Enums\AppointmentStatus;
+use App\Exceptions\InvalidStatusTransitionException;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\User;
@@ -86,6 +87,14 @@ class SalesAssignmentService
         ?int $salesUserId,
         User $actor,
     ): ?User {
+        $isCancelled = $record instanceof Appointment
+            ? (($record->status instanceof AppointmentStatus ? $record->status : AppointmentStatus::tryFrom((string) $record->status)) === AppointmentStatus::Cancelled)
+            : ((string) $record->status === AccessoryOrder::STATUS_CANCELLED);
+
+        if ($isCancelled) {
+            throw new InvalidStatusTransitionException('Hồ sơ đã bị hủy và bị khóa thao tác nghiệp vụ, không thể thay đổi phân công chuyên viên Sales.');
+        }
+
         $previousSalesId = $record->assigned_to !== null ? (int) $record->assigned_to : null;
         $assignee = null;
 

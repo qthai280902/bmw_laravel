@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\User;
 use App\Services\Admin\AdminNotificationDispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -22,17 +23,27 @@ class SendAppointmentNotifications implements ShouldQueue
 
     public function handle(AppointmentCreated $event): void
     {
-        $appointment = $event->appointment->loadMissing(['product.category', 'user']);
+        $appointment = $event->appointment->loadMissing([
+            'product.category',
+            'product.primaryImage',
+            'product.images',
+            'user',
+            'assignedSales',
+        ]);
 
-        $recipientEmail = $appointment->user?->email ?? $appointment->guest_email;
+        $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
-        if (! empty($recipientEmail)) {
+        if ($recipientEmail !== '' && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
             try {
                 Mail::to($recipientEmail)->send(new AppointmentConfirmationMail($appointment));
             } catch (Throwable $exception) {
-                Log::warning('Failed sending customer appointment confirmation email.', [
+                Log::error('Failed sending customer appointment confirmation email.', [
                     'appointment_id' => $appointment->id,
+                    'recipient' => $recipientEmail,
+                    'trace_id' => Context::get('trace_id'),
                     'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                    'trace' => substr($exception->getTraceAsString(), 0, 1200),
                 ]);
             }
         }
@@ -43,9 +54,13 @@ class SendAppointmentNotifications implements ShouldQueue
             Mail::to($showroomAdmins)
                 ->send(new AppointmentAlertMail($appointment));
         } catch (Throwable $exception) {
-            Log::warning('Failed sending admin appointment alert email.', [
+            Log::error('Failed sending admin appointment alert email.', [
                 'appointment_id' => $appointment->id,
+                'recipients' => $showroomAdmins,
+                'trace_id' => Context::get('trace_id'),
                 'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'trace' => substr($exception->getTraceAsString(), 0, 1200),
             ]);
         }
 
@@ -78,9 +93,12 @@ class SendAppointmentNotifications implements ShouldQueue
 
             Mail::to($recipients)->send(new HotLeadAlertMail($appointment));
         } catch (Throwable $exception) {
-            Log::warning('Failed sending HOT LEAD alert email.', [
+            Log::error('Failed sending HOT LEAD alert email.', [
                 'appointment_id' => $appointment->id,
+                'trace_id' => Context::get('trace_id'),
                 'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'trace' => substr($exception->getTraceAsString(), 0, 1200),
             ]);
         }
     }

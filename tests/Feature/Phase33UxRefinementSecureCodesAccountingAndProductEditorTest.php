@@ -22,6 +22,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
 use App\Services\Crm\DocumentCodeGenerator;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -165,16 +166,21 @@ class Phase33UxRefinementSecureCodesAccountingAndProductEditorTest extends TestC
         $this->assertTrue((bool) ($appointment->meta_data['reschedule_pending_review'] ?? false));
 
         $newAppointmentLabel = $appointment->appointment_date->format('H:i — d/m/Y');
+        $v2ManageUrl = $appointment->temporaryManageUrl();
 
-        $this->get($manageUrl)
+        $this->get($v2ManageUrl)
             ->assertOk()
             ->assertSee('line-through opacity-60', false)
             ->assertSee('Đã hết hiệu lực do thay đổi lịch hẹn')
             ->assertSee("Yêu cầu đổi lịch sang {$newAppointmentLabel} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.")
             ->assertSee('Xác nhận chắc chắn đến Showroom');
 
-        // 3. Guest can re-confirm for the new schedule
-        $this->post($updateUrl, ['action' => 'confirm'])->assertRedirect();
+        // 3. After showroom advisor acknowledges the reschedule, guest can re-confirm for the new schedule on the latest v=2 link
+        $ackMeta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        $ackMeta['reschedule_pending_review'] = false;
+        $appointment->forceFill(['meta_data' => $ackMeta])->saveQuietly();
+
+        $this->post($appointment->temporaryManageUpdateUrl(), ['action' => 'confirm'])->assertRedirect();
         $appointment->refresh();
         $this->assertNotEmpty($appointment->meta_data['guest_confirmed_at'] ?? null);
         $this->assertFalse((bool) ($appointment->meta_data['reschedule_pending_review'] ?? false));
@@ -305,18 +311,17 @@ class Phase33UxRefinementSecureCodesAccountingAndProductEditorTest extends TestC
             ->assertSee('rounded-none', false)
             ->assertDontSee('rounded-2xl', false);
 
-        // 3. Booking page renders 2-step Vietnamese Date & Time Picker without Flatpickr CDN and with past-slot auto-reset guard
+        // 3. Booking page renders Smart Split Popover Vietnamese Date & Time Picker with Digital Input & Dual Wheel without Flatpickr CDN
         $bookingRes = $this->get(route('appointments.create'));
         $bookingRes->assertOk()
             ->assertDontSee('cdn.jsdelivr.net/npm/flatpickr', false)
-            ->assertSee('Bước 1 · Chọn ngày hẹn')
-            ->assertSee('Hôm nay')
-            ->assertSee('Ngày mai')
-            ->assertSee('Ngày kia')
-            ->assertSee('Bước 2 · Chọn khung giờ đón tiếp (08:30 – 17:30)')
-            ->assertSee('data-time-slot="08:30"', false)
-            ->assertSee('data-time-slot="17:30"', false)
-            ->assertSee('if (this.selectedTime !== \'\' && this.isSlotDisabled(this.selectedTime))', false)
+            ->assertSee('data-picker-trigger="datetime"', false)
+            ->assertSee('data-picker-popover="split"', false)
+            ->assertSee('data-time-digital-hour', false)
+            ->assertSee('data-time-digital-minute', false)
+            ->assertSee('data-wheel-hours', false)
+            ->assertSee('data-wheel-minutes', false)
+            ->assertSee('data-picker-apply', false)
             ->assertSee('rounded-none', false);
     }
 
@@ -371,7 +376,7 @@ class Phase33UxRefinementSecureCodesAccountingAndProductEditorTest extends TestC
         $indexRes = $this->actingAs($topSuperAdmin)->get(route('admin.accounting.index'));
         $indexRes->assertOk()
             ->assertSee('Kế toán &amp; Sổ sách', false)
-            ->assertSee('1. Doanh thu phụ kiện thực thu')
+            ->assertSee('Doanh thu phụ kiện thực thu')
             ->assertSee('29.000.000 ₫')
             ->assertSee('Gói dữ liệu từng ngày bán hàng (Daily Sales Packs)')
             ->assertSee('Mở gói sổ ngày');

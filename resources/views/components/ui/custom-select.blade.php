@@ -11,6 +11,7 @@
     'wireAction' => null,
     'wireRecordId' => null,
     'compact' => false,
+    'theme' => 'auto',
     'ariaLabel' => null,
     'errorField' => null,
     'showError' => false,
@@ -94,9 +95,19 @@
         'placeholder' => (string) ($placeholder ?? 'Chọn một mục...'),
     ], JSON_UNESCAPED_UNICODE);
 
+    $isPublicTheme = $theme === 'public-dark';
+
     $triggerSizeClasses = $compact
         ? 'h-9 px-3 text-[10px] font-black uppercase tracking-[0.14em]'
-        : 'h-10 px-3.5 text-xs font-semibold';
+        : ($isPublicTheme ? 'h-11 px-4 text-sm font-medium' : 'h-10 px-3.5 text-xs font-semibold');
+
+    $triggerSurfaceClasses = $isPublicTheme
+        ? 'rounded-none border border-white/15 bg-[#0D1117] text-white hover:border-[#1C69D4] focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]'
+        : 'rounded-none border border-[#242B38] bg-[#0B0F17] text-zinc-100 hover:border-[#1C69D4] focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]';
+
+    $panelSurfaceClasses = $isPublicTheme
+        ? 'fixed z-50 overflow-hidden rounded-none border border-white/15 bg-[#0D1117] shadow-[0_22px_50px_rgba(0,0,0,0.85)]'
+        : 'fixed z-[140] overflow-hidden rounded-none border border-[#242B38] bg-[#0E131D] shadow-[0_22px_50px_rgba(0,0,0,0.85)]';
 
     $resolvedErrorField = $errorField ?? $name ?? $wireModel;
 @endphp
@@ -134,7 +145,7 @@
         @if($disabled) disabled @endif
         :disabled="disabledState"
         @click="toggle()"
-        class="flex w-full items-center justify-between gap-2.5 rounded-none border border-[#242B38] bg-[#0B0F17] text-left text-zinc-100 transition-colors hover:border-[#1C69D4] focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {{ $triggerSizeClasses }}"
+        class="flex w-full items-center justify-between gap-2.5 text-left transition-colors focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {{ $triggerSurfaceClasses }} {{ $triggerSizeClasses }}"
         :class="open ? 'border-[#1C69D4] ring-1 ring-[#1C69D4]' : ''"
     >
         <span class="truncate" x-text="selectedLabel">{{ collect($normalized)->flatMap(fn ($i) => ($i['type'] ?? '') === 'group' ? $i['options'] : [$i])->firstWhere('value', $initialValue)['label'] ?? ($placeholder ?? 'Chọn một mục...') }}</span>
@@ -156,7 +167,7 @@
             data-custom-select-panel
             @click.outside="if (!$refs.trigger || !$refs.trigger.contains($event.target)) close()"
             :style="panelStyle"
-            class="fixed z-[140] overflow-hidden rounded-none border border-[#242B38] bg-[#0E131D] shadow-[0_22px_50px_rgba(0,0,0,0.85)]"
+            class="{{ $panelSurfaceClasses }}"
         >
             <ul
                 role="listbox"

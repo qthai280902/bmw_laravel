@@ -54,3 +54,8 @@ Schedule::command('showroom:prune-orphan-media')
     ->weeklyOn(0, '04:00')
     ->timezone('Asia/Ho_Chi_Minh')
     ->withoutOverlapping();
+
+Schedule::command('showroom:archive-stale-records')
+    ->dailyAt('02:30')
+    ->timezone('Asia/Ho_Chi_Minh')
+    ->withoutOverlapping();

@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Notifications\Admin\GuestRescheduledAppointmentNotification;
 use App\Notifications\Admin\LeadAssignedNotification;
 use App\Notifications\Admin\MailDeliveryFailureNotification;
 use App\Notifications\Admin\NewAccessoryOrderNotification;
@@ -133,6 +134,46 @@ class AdminNotificationDispatcher
             Log::warning('Failed dispatching sales lead assignment notification.', [
                 'record_id' => $record->id,
                 'assignee_id' => $assignee->id,
+                'exception' => $exception::class,
+            ]);
+        }
+    }
+
+    public function notifyGuestRescheduled(
+        Appointment $appointment,
+        ?string $previousDateLabel,
+        string $newDateLabel,
+        ?string $reason = null,
+    ): void {
+        try {
+            $admins = User::query()
+                ->where('role', User::ROLE_ADMIN)
+                ->get();
+
+            $recipients = $admins;
+
+            if ($appointment->assigned_to !== null) {
+                $assignedSales = User::query()->find($appointment->assigned_to);
+                if ($assignedSales && ! $recipients->contains('id', $assignedSales->id)) {
+                    $recipients = $recipients->push($assignedSales);
+                }
+            }
+
+            if ($recipients->isEmpty()) {
+                return;
+            }
+
+            Notification::send(
+                $recipients,
+                new GuestRescheduledAppointmentNotification($appointment, $previousDateLabel, $newDateLabel, $reason)
+            );
+
+            foreach ($recipients as $recipient) {
+                $this->forgetDigestCache((int) $recipient->id);
+            }
+        } catch (Throwable $exception) {
+            Log::warning('Failed dispatching guest reschedule notification.', [
+                'appointment_id' => $appointment->id,
                 'exception' => $exception::class,
             ]);
         }

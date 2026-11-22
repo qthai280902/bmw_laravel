@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Collections\AccessoryOrderCollection;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Mail\Customer\AccessoryOrderStatusMail;
+use App\Models\Concerns\HasCrmArchiveAndAttribution;
 use App\Services\Cache\ShowroomCacheService;
 use App\Services\Crm\DocumentCodeGenerator;
 use App\Services\Crm\InteractionTimelineRecorder;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -21,6 +23,7 @@ use Throwable;
 #[CollectedBy(AccessoryOrderCollection::class)]
 class AccessoryOrder extends Model
 {
+    use HasCrmArchiveAndAttribution;
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
@@ -48,6 +51,8 @@ class AccessoryOrder extends Model
         'admin_notes',
         'meta_data',
         'confirmed_at',
+        'archived_at',
+        'archived_by',
     ];
 
     protected $appends = ['total_amount'];
@@ -69,6 +74,7 @@ class AccessoryOrder extends Model
             'quantity' => 'integer',
             'meta_data' => 'array',
             'confirmed_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -283,6 +289,10 @@ class AccessoryOrder extends Model
             }
 
             if ($previousStatus !== $status || ($updateNotes && filled($adminNotes))) {
+                if ($previousStatus !== $status && $status === self::STATUS_CANCELLED) {
+                    $meta = InteractionTimelineRecorder::withCancellationFromActor($meta, $actor);
+                }
+
                 $detail = $previousStatus !== $status
                     ? "Cập nhật đơn #ACC-{$locked->id} từ {$previousLabel} sang {$nextLabel}."
                     : "Cập nhật ghi chú xử lý nội bộ cho đơn #ACC-{$locked->id}.";
@@ -314,7 +324,7 @@ class AccessoryOrder extends Model
 
         if ($result['statusChanged'] && filled($this->customer_email)) {
             try {
-                $this->loadMissing('product');
+                $this->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'assignedSales']);
                 Mail::to($this->customer_email)->send(new AccessoryOrderStatusMail($this));
 
                 InteractionTimelineRecorder::record(
@@ -326,10 +336,14 @@ class AccessoryOrder extends Model
                     channel: 'Email',
                 );
             } catch (Throwable $exception) {
-                Log::warning('Failed sending accessory order status update email.', [
+                Log::error('Failed sending accessory order status update email.', [
                     'order_id' => $this->id,
+                    'recipient' => $this->customer_email,
                     'status' => $status,
+                    'trace_id' => Context::get('trace_id'),
                     'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                    'trace' => substr($exception->getTraceAsString(), 0, 1200),
                 ]);
             }
         }

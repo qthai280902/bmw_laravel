@@ -428,6 +428,96 @@ class InteractionTimelineRecorder
         return $normalized;
     }
 
+    /**
+     * Chuẩn hóa ghi nhận nguồn hủy hồ sơ vào mảng meta_data.
+     *
+     * @param  array<string, mixed>  $meta
+     * @return array<string, mixed>
+     */
+    public static function withCancellationMetadata(
+        array $meta,
+        string $actorType,
+        string $actorName,
+        ?string $actorRole = null,
+        ?string $cancelledAt = null
+    ): array {
+        $normalizedType = in_array($actorType, ['customer', 'staff', 'system'], true)
+            ? $actorType
+            : 'system';
+
+        $cleanName = trim($actorName) !== '' ? trim($actorName) : ($normalizedType === 'system' ? 'Hệ thống tự động' : 'Nhân sự Showroom');
+        $timestamp = $cancelledAt ?: now()->toIso8601String();
+
+        $meta['cancelled_at'] = $meta['cancelled_at'] ?? $timestamp;
+        $meta['cancelled_by_type'] = $normalizedType;
+        $meta['cancelled_by_name'] = $cleanName;
+
+        if ($actorRole !== null && trim($actorRole) !== '') {
+            $meta['cancelled_by_role'] = trim($actorRole);
+        } elseif ($normalizedType === 'customer') {
+            $meta['cancelled_by_role'] = 'Khách hàng';
+        } elseif ($normalizedType === 'system') {
+            $meta['cancelled_by_role'] = 'Hệ thống';
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Ghi nhận nguồn hủy từ User (Quản trị viên / Sales) hoặc Hệ thống vào meta_data.
+     *
+     * @param  array<string, mixed>  $meta
+     * @return array<string, mixed>
+     */
+    public static function withCancellationFromActor(array $meta, ?User $actor): array
+    {
+        if ($actor === null) {
+            return self::withCancellationMetadata($meta, 'system', 'Hệ thống tự động', 'Hệ thống');
+        }
+
+        $role = $actor->isSales() ? 'Sales' : 'Quản trị viên';
+
+        return self::withCancellationMetadata($meta, 'staff', (string) $actor->name, $role);
+    }
+
+    /**
+     * Chuỗi mô tả nguồn hủy hiển thị thống nhất trên Bảng CRM, Drawer, Khách hàng & Sổ Kế toán.
+     */
+    public static function cancellationAttributionLabel(mixed $meta, ?string $status): ?string
+    {
+        if ($status !== 'cancelled') {
+            return null;
+        }
+
+        $normalized = self::normalizeMetaArray($meta);
+        $type = is_string($normalized['cancelled_by_type'] ?? null)
+            ? trim($normalized['cancelled_by_type'])
+            : '';
+        $name = is_string($normalized['cancelled_by_name'] ?? null)
+            ? trim($normalized['cancelled_by_name'])
+            : '';
+        $role = is_string($normalized['cancelled_by_role'] ?? null)
+            ? trim($normalized['cancelled_by_role'])
+            : '';
+
+        if ($type === '' && ! empty($normalized['auto_cancelled_at'])) {
+            $type = 'system';
+        }
+
+        return match ($type) {
+            'customer' => 'Khách hàng tự hủy',
+            'system' => 'Hệ thống tự hủy quá hạn',
+            'staff' => (static function () use ($role, $name): string {
+                $prefix = str_contains(mb_strtolower($role), 'sales')
+                    ? 'Sales hủy'
+                    : 'Quản trị viên hủy';
+
+                return $name !== '' ? "{$prefix}: {$name}" : $prefix;
+            })(),
+            default => null,
+        };
+    }
+
     private static function defaultActorLabel(string $actorType): string
     {
         return match ($actorType) {

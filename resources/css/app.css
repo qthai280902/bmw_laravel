@@ -676,3 +676,10 @@ select:-webkit-autofill:focus {
 .admin-cockpit ::-webkit-scrollbar-thumb {
     border-radius: 9999px;
 }
+
+.guest-luxury {
+    --radius-xl: 0.75rem;
+    --radius-lg: 0.5rem;
+    --radius-md: 0.375rem;
+    --radius-sm: 0.25rem;
+}

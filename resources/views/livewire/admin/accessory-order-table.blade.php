@@ -109,7 +109,7 @@
                         type="text"
                         name="search"
                         wire:model.live.debounce.350ms="search"
-                        placeholder="Mã #SĐT_STT, dd/mm/yyyy/NN, #12, tên, SĐT..."
+                        placeholder="Mã ACC/CT/KH, tên, SĐT, phụ kiện..."
                         class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-2 focus:ring-[#1C69D4]/40"
                     >
                 </x-admin.form-field>
@@ -167,6 +167,8 @@
         </form>
     </x-admin.card>
 
+    <x-admin.crm-archive-bar :archive-scope="$archiveScope" :archived-count="$quickStats['archived'] ?? 0" />
+
     <div class="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D121C] shadow-xl shadow-black/40">
         <div class="overflow-x-auto lg:overflow-x-visible" wire:loading.class="opacity-60">
             <table class="w-full lg:table-fixed border-collapse text-left">
@@ -181,7 +183,10 @@
                 </thead>
                 <tbody class="divide-y divide-white/[0.06]">
                     @forelse($orders as $order)
-                        <tr wire:key="admin-accessory-order-{{ $order->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]">
+                        @php
+                            $isCancelledOrderRow = (string) $order->status === \App\Models\AccessoryOrder::STATUS_CANCELLED;
+                        @endphp
+                        <tr wire:key="admin-accessory-order-{{ $order->id }}" class="group align-middle transition-colors hover:bg-white/[0.03] {{ $isCancelledOrderRow ? 'opacity-60 hover:opacity-85' : '' }}">
                             <td class="whitespace-nowrap px-5 py-4">
                                 @if($order->customer_order_code)
                                     <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $order->customer_order_code }}</p>
@@ -198,10 +203,15 @@
                             <td class="px-5 py-4">
                                 <p class="truncate text-sm font-bold text-white">{{ $order->customer_name }}</p>
                                 <p class="mt-0.5 truncate text-xs tabular-nums text-zinc-300">{{ $order->customer_phone }}</p>
-                                <p class="mt-1.5">
+                                <p class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                     <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ filled($order->assigned_sales_name) ? 'border-sky-500/25 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/[0.04] text-zinc-400' }}">
                                         {{ filled($order->assigned_sales_name) ? 'Sales: ' . $order->assigned_sales_name : 'Chưa gán Sales' }}
                                     </span>
+                                    @if($order->isArchived())
+                                        <span class="inline-flex items-center rounded-full border border-zinc-500/40 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                            Đã lưu trữ
+                                        </span>
+                                    @endif
                                 </p>
                             </td>
 
@@ -217,6 +227,9 @@
                                 <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $order->statusColorClass() }}">
                                     {{ $order->statusLabel() }}
                                 </span>
+                                @if($orderCancelLabel = $order->cancellationAttributionLabel())
+                                    <p class="mt-1 whitespace-normal text-[10px] font-medium text-rose-300">{{ $orderCancelLabel }}</p>
+                                @endif
                             </td>
 
                             <td class="whitespace-nowrap px-5 py-4 text-right">
@@ -381,7 +394,8 @@
                                             <select
                                                 aria-label="Phân công Sales cho đơn phụ kiện #{{ $order->id }}"
                                                 wire:change="assignToSales({{ $order->id }}, $event.target.value)"
-                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                                @disabled((string) $order->status === \App\Models\AccessoryOrder::STATUS_CANCELLED)
+                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] {{ (string) $order->status === \App\Models\AccessoryOrder::STATUS_CANCELLED ? 'opacity-60 cursor-not-allowed' : '' }}"
                                             >
                                                 <option value="">-- Chưa phân công --</option>
                                                 @foreach($salesRoster as $salesMember)
@@ -395,6 +409,11 @@
                                         @endif
                                     </div>
                                 </div>
+                                @if($orderDrawerCancel = $order->cancellationAttributionLabel())
+                                    <div class="border-t border-white/[0.07] pt-3 text-xs text-rose-300">
+                                        <span class="font-semibold text-rose-400">Nguồn hủy đơn:</span> {{ $orderDrawerCancel }}
+                                    </div>
+                                @endif
                             </section>
 
                             <section class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3">
@@ -436,6 +455,8 @@
                                     </a>
                                 </x-slot>
                             </x-admin.crm-action-hub>
+
+                            <x-admin.crm-drawer-archive-panel :record="$order" />
 
                             @php
                                 $accessoryPreviewItems = [

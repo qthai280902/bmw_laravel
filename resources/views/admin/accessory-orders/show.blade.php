@@ -37,6 +37,16 @@
                     <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Sales phụ trách</p>
                         <p class="mt-2 text-sm font-bold text-white">{{ $order->assignedSales?->exists ? $order->assignedSales->name : 'Chưa phân công' }}</p>
+                        @if($order->isArchived())
+                            <p class="mt-1.5">
+                                <span class="rounded-full border border-amber-500/35 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-200">
+                                    Đã lưu trữ
+                                </span>
+                            </p>
+                        @endif
+                        @if($showCancelLabel = $order->cancellationAttributionLabel())
+                            <p class="mt-1.5 text-xs font-semibold text-rose-300">{{ $showCancelLabel }}</p>
+                        @endif
                     </div>
                     <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/70 p-5">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Số điện thoại</p>
@@ -57,8 +67,18 @@
                 </div>
             </x-admin.card>
 
-            <x-admin.card>
-                <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-400">Xử lý đơn</p>
+            @php
+                $isCancelledOrder = (string) $order->status === \App\Models\AccessoryOrder::STATUS_CANCELLED;
+            @endphp
+            <x-admin.card class="{{ $isCancelledOrder ? 'opacity-65' : '' }}">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-400">Xử lý đơn</p>
+                    @if($isCancelledOrder)
+                        <span class="rounded-full border border-rose-500/35 bg-rose-500/15 px-3 py-0.5 text-[10px] font-semibold text-rose-300">
+                            Đã hủy · Khóa thao tác nghiệp vụ
+                        </span>
+                    @endif
+                </div>
                 <form method="POST" action="{{ route('admin.accessory-orders.update-status', $order) }}" class="mt-6 space-y-6">
                     @csrf
                     @method('PATCH')
@@ -70,7 +90,7 @@
                             <div class="flex items-center justify-between rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-xs">
                                 <span class="font-bold text-white">{{ $order->statusLabel() }}</span>
                                 <span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-400">
-                                    Đã đóng · Chỉ sửa ghi chú
+                                    {{ $isCancelledOrder ? 'Đã hủy · Đã khóa chỉnh sửa' : 'Đã đóng · Chỉ sửa ghi chú' }}
                                 </span>
                             </div>
                         @else
@@ -88,14 +108,23 @@
 
                     <div>
                         <label class="mb-2 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Ghi chú nội bộ</label>
-                        <textarea name="admin_notes" rows="6" class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">{{ old('admin_notes', $order->admin_notes) }}</textarea>
+                        <textarea
+                            name="admin_notes"
+                            rows="6"
+                            @disabled($isCancelledOrder)
+                            class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-sm text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] {{ $isCancelledOrder ? 'opacity-60 cursor-not-allowed' : '' }}"
+                        >{{ old('admin_notes', $order->admin_notes) }}</textarea>
                         @error('admin_notes')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <button type="submit" class="rounded-xl bg-[#1C69D4] px-8 py-3.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white shadow-sm shadow-[#1C69D4]/25 transition-all hover:bg-[#2575e6] cursor-pointer">
-                        Cập nhật đơn
+                    <button
+                        type="submit"
+                        @disabled($isCancelledOrder)
+                        class="rounded-xl bg-[#1C69D4] px-8 py-3.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white shadow-sm shadow-[#1C69D4]/25 transition-all {{ $isCancelledOrder ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-[#2575e6] cursor-pointer' }}"
+                    >
+                        {{ $isCancelledOrder ? 'Đã khóa cập nhật (Đơn đã hủy)' : 'Cập nhật đơn' }}
                     </button>
                 </form>
             </x-admin.card>

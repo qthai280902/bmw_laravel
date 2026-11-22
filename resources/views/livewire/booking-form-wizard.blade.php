@@ -70,6 +70,7 @@
             <x-ui.custom-select
                 id="type-select"
                 name="type"
+                theme="public-dark"
                 :value="$type"
                 :options="$typeGroupedOptions"
                 wire-model="type"
@@ -88,7 +89,7 @@
                             name="guest_name"
                             wire:model.live.debounce.300ms="guestName"
                             required
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="h-11 w-full rounded-none border border-white/15 bg-[#0D1117] px-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('guestName')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -102,7 +103,7 @@
                             name="guest_phone"
                             wire:model.live.debounce.300ms="guestPhone"
                             required
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="h-11 w-full rounded-none border border-white/15 bg-[#0D1117] px-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('guestPhone')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -115,7 +116,7 @@
                             type="email"
                             name="guest_email"
                             wire:model.live.debounce.300ms="guestEmail"
-                            class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                            class="h-11 w-full rounded-none border border-white/15 bg-[#0D1117] px-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                         >
                         @error('guestEmail')
                             <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -138,6 +139,7 @@
                     <x-ui.custom-select
                         id="service_package_selector"
                         name="service_package"
+                        theme="public-dark"
                         :value="$servicePackage"
                         :options="$servicePackageSelectOptions"
                         wire-model="servicePackage"
@@ -186,6 +188,7 @@
                         </label>
                         <x-ui.custom-select
                             id="category_selector"
+                            theme="public-dark"
                             :value="$categoryType"
                             :options="$categoryTypeOptions"
                             wire-model="categoryType"
@@ -199,6 +202,7 @@
                         <x-ui.custom-select
                             id="product_selector"
                             name="product_id"
+                            theme="public-dark"
                             :value="$productId"
                             :options="$productSelectOptions"
                             :disabled="$categoryType === ''"
@@ -239,6 +243,7 @@
                 <x-ui.date-time-picker
                     id="appointment_date"
                     theme="dark"
+                    mode="create"
                     wire-model="appointmentDate"
                     combined-input-name="appointment_date"
                     :value="$appointmentDate"
@@ -254,7 +259,7 @@
                     name="notes"
                     wire:model.live.debounce.400ms="notes"
                     rows="4"
-                    class="w-full rounded-none border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                    class="w-full rounded-none border border-white/15 bg-[#0D1117] px-4 py-3 text-sm text-white transition-colors focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
                 ></textarea>
                 @error('notes')
                     <p class="mt-2 text-xs font-bold text-rose-400">{{ $message }}</p>
@@ -262,10 +267,73 @@
             </div>
         </section>
 
-        <div class="border-t border-white/10 pt-8">
-            <button type="submit" class="w-full rounded-none bg-[#1C69D4] px-8 py-5 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white hover:text-black">
-                Xác nhận gửi yêu cầu
-            </button>
+        @php
+            $summaryBaseType = $requestedType?->label() ?? 'Đặt lịch Showroom';
+            $summarySubItem = $this->isService
+                ? ($servicePackage !== '' ? $servicePackage : ($customerCarModel !== '' ? $customerCarModel : null))
+                : ($this->selectedProduct?->name ?? null);
+            $summaryCategoryLabel = $summarySubItem ? "{$summaryBaseType} — {$summarySubItem}" : $summaryBaseType;
+
+            $initialSummaryDateLabel = '';
+            $initialSummaryTimeLabel = '';
+            if (trim((string) $appointmentDate) !== '') {
+                try {
+                    $parsedSummaryDt = \Illuminate\Support\Carbon::parse($appointmentDate, 'Asia/Ho_Chi_Minh');
+                    $vnWeekdays = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                    $initialSummaryDateLabel = ($vnWeekdays[$parsedSummaryDt->dayOfWeek] ?? '').', '.$parsedSummaryDt->format('d/m/Y');
+                    $initialSummaryTimeLabel = $parsedSummaryDt->format('H:i');
+                } catch (\Throwable) {
+                }
+            }
+        @endphp
+
+        <div
+            x-data="{
+                summaryDateLabel: @js($initialSummaryDateLabel),
+                summaryTimeLabel: @js($initialSummaryTimeLabel),
+            }"
+            @bmw-datetime-changed.window="if ($event.detail?.id === 'appointment_date') { summaryDateLabel = $event.detail.fullDateLabel || ''; summaryTimeLabel = $event.detail.time || ''; }"
+            class="space-y-5 pt-2"
+        >
+            <div
+                data-booking-summary-card
+                class="rounded-none border border-white/15 bg-[#0D1117] p-5"
+            >
+                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-[#70A7FF]">
+                    Thông tin lịch hẹn
+                </p>
+
+                <dl class="mt-4 divide-y divide-white/[0.08] text-sm">
+                    <div class="flex items-center justify-between gap-4 py-2.5">
+                        <dt class="text-xs font-medium text-zinc-400">Hạng mục</dt>
+                        <dd class="text-right text-xs font-bold text-white">{{ $summaryCategoryLabel }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 py-2.5">
+                        <dt class="text-xs font-medium text-zinc-400">Ngày hẹn</dt>
+                        <dd
+                            data-summary-date
+                            class="text-right text-xs font-bold tabular-nums"
+                            :class="summaryDateLabel ? 'text-white' : 'text-zinc-500 font-medium'"
+                            x-text="summaryDateLabel || 'Chưa chọn'"
+                        >{{ $initialSummaryDateLabel ?: 'Chưa chọn' }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 py-2.5">
+                        <dt class="text-xs font-medium text-zinc-400">Giờ hẹn</dt>
+                        <dd
+                            data-summary-time
+                            class="text-right text-sm font-black tabular-nums"
+                            :class="summaryTimeLabel ? 'text-[#70A7FF]' : 'text-zinc-500 font-medium'"
+                            x-text="summaryTimeLabel || '--:--'"
+                        >{{ $initialSummaryTimeLabel ?: '--:--' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="border-t border-white/10 pt-5">
+                <button type="submit" class="w-full rounded-none bg-[#1C69D4] px-8 py-4 text-xs font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-[#1557B0] cursor-pointer">
+                    Xác nhận lịch hẹn
+                </button>
+            </div>
         </div>
     </form>
 </div>

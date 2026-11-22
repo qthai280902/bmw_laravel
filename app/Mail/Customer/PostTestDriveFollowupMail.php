@@ -22,7 +22,7 @@ class PostTestDriveFollowupMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $this->appointment->loadMissing(['product', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
         $vehicleLabel = $this->appointment->product?->name ?? 'BMW Showroom';
         $refCode = $this->appointment->publicReferenceCode();
 
@@ -35,7 +35,7 @@ class PostTestDriveFollowupMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        $this->appointment->loadMissing(['product.category', 'user']);
+        $this->appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
 
         return new Content(
             view: 'mail.appointments.followup',

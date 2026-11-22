@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Client;
 
 use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAppointmentRequest;
 use App\Mail\Customer\GuestAppointmentChangeMail;
 use App\Models\Appointment;
+use App\Services\Admin\AdminNotificationDispatcher;
 use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
@@ -19,18 +22,23 @@ use Throwable;
 
 class GuestAppointmentManageController extends Controller
 {
-    public function show(Appointment $appointment): View
+    public function show(Request $request, Appointment $appointment): View
     {
         $appointment->loadMissing(['product.category', 'user', 'assignedSales']);
 
         return view('appointments.guest-manage', [
             'appointment' => $appointment,
             'updateUrl' => $appointment->temporaryManageUpdateUrl(),
+            'isOutdatedLink' => $this->isLinkOutdated($request, $appointment),
         ]);
     }
 
     public function update(Request $request, Appointment $appointment): RedirectResponse
     {
+        if ($this->isLinkOutdated($request, $appointment)) {
+            return back()->with('error', 'Liên kết quản lý lịch hẹn này là phiên bản cũ đã hết hiệu lực. Quý khách vui lòng mở email xác nhận mới nhất từ BMW Showroom.');
+        }
+
         $validated = $request->validate([
             'action' => ['required', 'string', Rule::in(['confirm', 'reschedule', 'cancel'])],
             'new_appointment_date' => ['nullable', 'string'],
@@ -45,6 +53,10 @@ class GuestAppointmentManageController extends Controller
         $previousDateLabel = $appointment->appointment_date?->format('H:i — d/m/Y');
         $previousStatusLabel = $appointment->statusLabel();
         $refCode = $appointment->publicReferenceCode();
+
+        if (! $appointment->isTerminalStatus() && (bool) ($meta['reschedule_pending_review'] ?? false)) {
+            return back()->with('error', 'Yêu cầu đổi lịch trước đó của Quý khách đang chờ Chuyên viên BMW Showroom tiếp nhận và gửi thư xác nhận mới.');
+        }
 
         if ($action === 'confirm') {
             if ($appointment->status === AppointmentStatus::Cancelled) {
@@ -110,17 +122,31 @@ class GuestAppointmentManageController extends Controller
                 ]);
             }
 
-            try {
-                $newDate = Carbon::parse($rawDateTime);
-            } catch (Throwable) {
+            $parsedNewDate = StoreAppointmentRequest::parseShowroomDateTime($rawDateTime);
+
+            if ($parsedNewDate === null) {
                 throw ValidationException::withMessages([
                     'new_appointment_date' => 'Định dạng ngày giờ hẹn mới không hợp lệ.',
                 ]);
             }
 
-            if ($newDate->lessThanOrEqualTo(now())) {
+            if (! StoreAppointmentRequest::isAfterShowroomNow($parsedNewDate)) {
                 throw ValidationException::withMessages([
                     'new_appointment_date' => 'Thời gian hẹn mới phải lớn hơn thời điểm hiện tại. Vui lòng chọn ngày hoặc khung giờ tiếp theo.',
+                ]);
+            }
+
+            if (! StoreAppointmentRequest::isWithinShowroomHours($parsedNewDate)) {
+                throw ValidationException::withMessages([
+                    'new_appointment_date' => 'Khung giờ đón tiếp tại BMW Showroom từ 08:00 đến 18:00. Vui lòng chọn giờ trong khung hoạt động.',
+                ]);
+            }
+
+            $newDate = Carbon::parse($parsedNewDate->format('Y-m-d H:i:s'));
+
+            if ($appointment->appointment_date !== null && $appointment->appointment_date->format('Y-m-d H:i') === $newDate->format('Y-m-d H:i')) {
+                throw ValidationException::withMessages([
+                    'new_appointment_date' => 'Khung giờ đề xuất trùng với lịch hẹn hiện tại. Vui lòng chọn ngày hoặc khung giờ khác.',
                 ]);
             }
 
@@ -134,6 +160,8 @@ class GuestAppointmentManageController extends Controller
                 $meta['guest_confirmed_for_date'] = null;
             }
 
+            $nextVersion = $appointment->currentManageVersion() + 1;
+            $meta['manage_version'] = $nextVersion;
             $meta['rescheduled_at'] = now()->toIso8601String();
             $meta['guest_rescheduled_at'] = $meta['rescheduled_at'];
             $meta['reschedule_pending_review'] = true;
@@ -143,8 +171,8 @@ class GuestAppointmentManageController extends Controller
             }
 
             $timelineDetail = $previousDateLabel
-                ? "Đổi lịch hẹn: {$previousDateLabel} → {$newDateLabel}."
-                : "Đổi sang khung giờ mới: {$newDateLabel}.";
+                ? "Đổi lịch hẹn: {$previousDateLabel} → {$newDateLabel} (v={$nextVersion})."
+                : "Đổi sang khung giờ mới: {$newDateLabel} (v={$nextVersion}).";
             if ($cleanReason !== '') {
                 $timelineDetail .= " Ghi chú: {$cleanReason}";
             }
@@ -164,6 +192,13 @@ class GuestAppointmentManageController extends Controller
                 'meta_data' => $meta,
             ])->save();
 
+            app(AdminNotificationDispatcher::class)->notifyGuestRescheduled(
+                appointment: $appointment,
+                previousDateLabel: $previousDateLabel,
+                newDateLabel: $newDateLabel,
+                reason: $cleanReason !== '' ? $cleanReason : null,
+            );
+
             $this->dispatchGuestChangeMail(
                 appointment: $appointment,
                 action: GuestAppointmentChangeMail::ACTION_RESCHEDULE,
@@ -174,7 +209,9 @@ class GuestAppointmentManageController extends Controller
                 reason: $cleanReason !== '' ? $cleanReason : null,
             );
 
-            return back()->with('success', "Yêu cầu đổi lịch sang {$newDateLabel} cho lịch hẹn {$refCode} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.");
+            return redirect()
+                ->to($appointment->temporaryManageUrl())
+                ->with('success', "Yêu cầu đổi lịch sang {$newDateLabel} cho lịch hẹn {$refCode} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.");
         }
 
         if ($appointment->isTerminalStatus()) {
@@ -183,7 +220,13 @@ class GuestAppointmentManageController extends Controller
                 : 'Lịch hẹn này đã được hủy trước đó.');
         }
 
-        $meta['cancelled_at'] = now()->toIso8601String();
+        $meta['reschedule_pending_review'] = false;
+        $meta = InteractionTimelineRecorder::withCancellationMetadata(
+            meta: $meta,
+            actorType: 'customer',
+            actorName: (string) ($appointment->customer_name ?: 'Khách hàng'),
+            actorRole: 'Khách hàng',
+        );
         if ($cleanReason !== '') {
             $meta['cancel_reason'] = $cleanReason;
         }
@@ -203,6 +246,8 @@ class GuestAppointmentManageController extends Controller
             'status' => AppointmentStatus::Cancelled->value,
             'meta_data' => $meta,
         ])->save();
+
+        $appointment->markRescheduleNotificationsAsRead();
 
         $this->dispatchGuestChangeMail(
             appointment: $appointment,
@@ -226,7 +271,7 @@ class GuestAppointmentManageController extends Controller
         ?string $newStatusLabel,
         ?string $reason,
     ): void {
-        $appointment->loadMissing(['product.category', 'user']);
+        $appointment->loadMissing(['product.category', 'product.primaryImage', 'product.images', 'user', 'assignedSales']);
         $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
         if ($recipientEmail === '' || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
@@ -253,11 +298,27 @@ class GuestAppointmentManageController extends Controller
                 channel: 'Email',
             );
         } catch (Throwable $exception) {
-            Log::warning('Failed sending guest appointment change email.', [
+            Log::error('Failed sending guest appointment change email.', [
                 'appointment_id' => $appointment->id,
+                'recipient' => $recipientEmail,
                 'action' => $action,
+                'trace_id' => Context::get('trace_id'),
                 'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'trace' => substr($exception->getTraceAsString(), 0, 1200),
             ]);
         }
+    }
+
+    private function isLinkOutdated(Request $request, Appointment $appointment): bool
+    {
+        $currentVersion = $appointment->currentManageVersion();
+        $rawQueryV = $request->query('v');
+
+        if ($rawQueryV === null) {
+            return $currentVersion > 1;
+        }
+
+        return ((int) $rawQueryV) < $currentVersion;
     }
 }

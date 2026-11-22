@@ -6,6 +6,7 @@ use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Livewire\Concerns\AuthorizesAdminLivewire;
+use App\Livewire\Concerns\HandlesCrmArchiveActions;
 use App\Livewire\Concerns\WithBmwPagination;
 use App\Models\Appointment;
 use App\Services\Cache\ShowroomCacheService;
@@ -22,6 +23,7 @@ use Livewire\Component;
 class ServiceBookingTable extends Component
 {
     use AuthorizesAdminLivewire;
+    use HandlesCrmArchiveActions;
     use WithBmwPagination;
 
     #[Url(as: 'search', except: '')]
@@ -244,6 +246,57 @@ class ServiceBookingTable extends Component
         }
     }
 
+    public function acknowledgeGuestReschedule(int $bookingId): void
+    {
+        $booking = Appointment::query()
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->findOrFail($bookingId);
+        $this->acknowledgeAppointmentReschedule($booking, 'lịch dịch vụ');
+        unset($this->inspectedBooking);
+    }
+
+    public function archiveRecord(int $bookingId): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $booking = Appointment::query()
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->findOrFail($bookingId);
+        $this->performArchive($booking, 'lịch dịch vụ');
+        unset($this->inspectedBooking);
+    }
+
+    public function unarchiveRecord(int $bookingId): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $booking = Appointment::query()
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->findOrFail($bookingId);
+        $this->performUnarchive($booking, 'lịch dịch vụ');
+        unset($this->inspectedBooking);
+    }
+
+    public function archiveAllClosed(ShowroomCacheService $cacheService): void
+    {
+        $this->authorizeTopSuperAdmin();
+        $this->errorMessage = null;
+
+        $count = Appointment::query()
+            ->activeRecords()
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->whereIn('status', [AppointmentStatus::Completed->value, AppointmentStatus::Cancelled->value])
+            ->toBase()
+            ->update([
+                'archived_at' => now(),
+                'archived_by' => auth()->id(),
+            ]);
+
+        $cacheService->flushDashboard();
+        $this->resetPage();
+        $this->flashMessage = $count > 0
+            ? "Đã chuyển {$count} lịch dịch vụ đã đóng vào Kho lưu trữ CRM."
+            : 'Không có lịch dịch vụ đã đóng nào cần lưu trữ thêm.';
+    }
+
     public function resendConfirmationEmail(int $appointmentId): void
     {
         $this->authorizeCrm();
@@ -300,7 +353,7 @@ class ServiceBookingTable extends Component
         }
 
         return Appointment::query()
-            ->with(['product', 'user', 'assignedSales'])
+            ->with(['product', 'user', 'assignedSales', 'archivedBy:id,name'])
             ->whereIn('type', $this->allowedServiceTypeValues())
             ->find($this->inspectedBookingId);
     }
@@ -318,10 +371,11 @@ class ServiceBookingTable extends Component
             ->toBase()
             ->whereIn('type', $serviceTypeValues)
             ->selectRaw(
-                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count,
-                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as confirmed_count,
-                 SUM(CASE WHEN appointment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
-                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed_count',
+                'SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as pending_count,
+                 SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as confirmed_count,
+                 SUM(CASE WHEN archived_at IS NULL AND appointment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count,
+                 SUM(CASE WHEN archived_at IS NULL AND status = ? THEN 1 ELSE 0 END) as completed_count,
+                 SUM(CASE WHEN archived_at IS NOT NULL THEN 1 ELSE 0 END) as archived_count',
                 [
                     AppointmentStatus::Pending->value,
                     AppointmentStatus::Confirmed->value,
@@ -338,7 +392,12 @@ class ServiceBookingTable extends Component
             ->leftJoin('users as assigned_sales', 'appointments.assigned_to', '=', 'assigned_sales.id')
             ->select('appointments.*', 'assigned_sales.name as assigned_sales_name')
             ->with(['product', 'user'])
-            ->whereIn('appointments.type', $serviceTypeValues);
+            ->whereIn('appointments.type', $serviceTypeValues)
+            ->when(
+                $this->archiveScope === 'archived',
+                fn (Builder $builder) => $builder->archived(),
+                fn (Builder $builder) => $builder->activeRecords(),
+            );
 
         if (in_array($this->status, array_column(AppointmentStatus::cases(), 'value'), true)) {
             $query->where('appointments.status', $this->status);
@@ -415,6 +474,7 @@ class ServiceBookingTable extends Component
                 'confirmed' => (int) ($statsRow->confirmed_count ?? 0),
                 'today' => (int) ($statsRow->today_count ?? 0),
                 'completed' => (int) ($statsRow->completed_count ?? 0),
+                'archived' => (int) ($statsRow->archived_count ?? 0),
             ],
         ]);
     }

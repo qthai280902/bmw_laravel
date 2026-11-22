@@ -135,7 +135,7 @@ class Phase17AiConversationTest extends TestCase
                 'guest_email' => 'thai@example.com',
                 'product_id' => $product->id,
                 'type' => 'test_drive',
-                'appointment_date' => now()->addDay()->format('Y-m-d H:i'),
+                'appointment_date' => now()->addDay()->setTime(10, 0)->format('Y-m-d H:i'),
                 'ai_visitor_id' => 'visitor-booking-001',
             ])
             ->assertRedirect(route('appointments.success'));
@@ -212,7 +212,7 @@ class Phase17AiConversationTest extends TestCase
                 'guest_phone' => '0909000333',
                 'product_id' => $product->id,
                 'type' => 'quote',
-                'appointment_date' => now()->addDay()->format('Y-m-d H:i'),
+                'appointment_date' => now()->addDay()->setTime(10, 0)->format('Y-m-d H:i'),
             ])
             ->assertRedirect(route('appointments.success'));
 
