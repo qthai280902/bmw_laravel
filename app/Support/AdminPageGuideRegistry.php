@@ -156,10 +156,33 @@ class AdminPageGuideRegistry
             ],
             'admin.users.index' => [
                 'title' => 'Quản trị Nhân sự & Phân quyền',
-                'summary' => 'Cấp tài khoản, điều chỉnh vai trò (Admin / Sales / Marketing) và theo dõi hiệu suất Sales.',
+                'summary' => 'Cấp tài khoản, điều chỉnh vai trò (Admin / Sales / Marketing), khóa/mở khóa và theo dõi hiệu suất đội ngũ.',
                 'bullets' => [
-                    'Bấm "Xem thống kê" trên từng nhân viên Sales để mở biểu đồ hiệu suất và danh sách hồ sơ.',
-                    'Mọi thay đổi vai trò sẽ tự động làm mới danh sách chia lead tự động.',
+                    'Bấm vào tên nhân sự hoặc nút "Xem hồ sơ" để mở trang chi tiết nhân sự 360° kèm KPI và nhật ký hoạt động.',
+                    'Tài khoản bị khóa (is_active = false) bị chặn đăng nhập ngay lập tức và tự động loại khỏi danh sách chia Lead tự động.',
+                    'Tài khoản Top Super Admin được bảo vệ tối cao; Admin thường không được sửa, đổi mật khẩu hoặc khóa Top Super Admin.',
+                ],
+            ],
+            'admin.users.show' => [
+                'title' => 'Hồ sơ Chi tiết Nhân sự Showroom',
+                'summary' => 'Tổng hợp thông tin chức danh, phòng ban, phân quyền, 4 chỉ số KPI vận hành, hồ sơ đang phụ trách và nhật ký hoạt động.',
+                'bullets' => [
+                    'Top Super Admin có toàn quyền cập nhật thông tin, đặt lại mật khẩu, đổi vai trò và khóa/mở khóa tài khoản nhân sự khác.',
+                    'Nhân sự Sales và Marketing có thể tự kiểm tra thông tin hồ sơ và lịch sử hoạt động cá nhân của chính mình.',
+                ],
+            ],
+            'admin.users.create' => [
+                'title' => 'Tạo Hồ sơ Nhân sự Mới',
+                'summary' => 'Khởi tạo tài khoản nhân sự nội bộ đầy đủ thông tin liên hệ, chức danh, phòng ban và vai trò.',
+                'bullets' => [
+                    'Sử dụng email đuôi @bmw.com hoặc email nằm trong danh sách cho phép để kích hoạt quyền truy cập cổng quản trị.',
+                ],
+            ],
+            'admin.users.edit' => [
+                'title' => 'Chỉnh sửa Hồ sơ & Bảo mật Nhân sự',
+                'summary' => 'Cập nhật họ tên, số điện thoại, chức danh, phòng ban, ghi chú quản trị, vai trò và đặt lại mật khẩu khi cần.',
+                'bullets' => [
+                    'Bỏ trống ô mật khẩu mới nếu chỉ muốn cập nhật thông tin hành chính mà giữ nguyên mật khẩu hiện tại.',
                 ],
             ],
             'admin.users.performance' => [

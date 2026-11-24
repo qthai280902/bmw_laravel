@@ -7,6 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class CustomerPromotionMail extends Mailable
@@ -34,6 +35,15 @@ class CustomerPromotionMail extends Mailable
         return new Content(
             view: 'mail.promotions.offer',
             text: 'mail.promotions.offer-text',
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-BMW-Mail-Kind' => 'promotion_campaign',
+            ],
         );
     }
 

@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\PromotionCampaignDispatched;
 use App\Mail\CustomerPromotionMail;
+use App\Models\CustomerEmailLog;
 use App\Models\CustomerInstallmentPlan;
 use App\Services\Admin\AdminNotificationDispatcher;
 use App\Services\Mail\EmailTemplateRenderer;
@@ -15,6 +16,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Throwable;
 
 class SendPromotionCampaignEmails implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
@@ -110,13 +112,36 @@ class SendPromotionCampaignEmails implements ShouldBeEncrypted, ShouldBeUnique, 
             $interpolatedTitle = $renderer->interpolate($event->offerTitle, $variables);
             $interpolatedContent = $renderer->interpolate($event->offerContent, $variables);
 
+            $finalTitle = $interpolatedTitle !== '' ? $interpolatedTitle : $event->offerTitle;
+            $finalContent = $interpolatedContent !== '' ? $interpolatedContent : $event->offerContent;
+
             try {
                 Mail::to($email)->send(new CustomerPromotionMail(
                     customerName: $customerName,
                     vehicleName: $vehicleName,
-                    offerTitle: $interpolatedTitle !== '' ? $interpolatedTitle : $event->offerTitle,
-                    offerContent: $interpolatedContent !== '' ? $interpolatedContent : $event->offerContent,
+                    offerTitle: $finalTitle,
+                    offerContent: $finalContent,
                 ));
+
+                $recipientPhone = CustomerInstallmentPlan::normalizePhoneDigits(
+                    (string) (($recipient['phone'] ?? '') ?: ($plan?->customer_phone ?? ''))
+                );
+
+                CustomerEmailLog::query()->create([
+                    'customer_phone' => $recipientPhone !== '' ? $recipientPhone : null,
+                    'customer_email' => mb_strtolower($email),
+                    'customer_name' => $customerName,
+                    'mail_type' => CustomerEmailLog::TYPE_PROMOTION_CAMPAIGN,
+                    'template_code' => null,
+                    'subject' => Str::limit("[BMW Showroom] {$finalTitle}", 250, ''),
+                    'body_excerpt' => Str::limit(trim((string) preg_replace('/\s+/u', ' ', strip_tags($finalContent))), 260),
+                    'sent_by' => $event->sentBy,
+                    'sent_at' => now(),
+                    'meta_data' => [
+                        'campaign_id' => $event->campaignId,
+                        'vehicle_name' => $vehicleName,
+                    ],
+                ]);
             } catch (Throwable $exception) {
                 Log::warning('Failed dispatching promotion email to customer.', [
                     'campaign_id' => $event->campaignId,

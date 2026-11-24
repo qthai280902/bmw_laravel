@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class AccessoryOrderConfirmationMail extends Mailable implements ShouldQueue
@@ -34,6 +35,16 @@ class AccessoryOrderConfirmationMail extends Mailable implements ShouldQueue
 
         return new Content(
             view: 'emails.customer.accessory-order-confirmation',
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-BMW-Mail-Kind' => 'accessory_order_confirmation',
+                'X-BMW-Order-ID' => (string) $this->order->id,
+            ],
         );
     }
 

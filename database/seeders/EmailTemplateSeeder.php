@@ -20,8 +20,8 @@ class EmailTemplateSeeder extends Seeder
                 'body_content' => "Kính chào Quý khách {{customer_name}},\n\nBMW Showroom Vietnam xin trân trọng nhắc Quý khách về kỳ thanh toán hợp đồng tài chính cho mẫu xe {{vehicle_name}} tại {{bank_name}}.\n\nQuý khách vui lòng kiểm tra số dư tài khoản thanh toán trước ngày {{next_due_date}} để đảm bảo giao dịch trích nợ tự động diễn ra thuận lợi và duy trì lịch sử tín dụng ưu tiên.\n\nMọi hỗ trợ tra cứu lịch trả nợ hoặc chứng từ ngân hàng, Quý khách vui lòng phản hồi trực tiếp email này để Chuyên viên {{advisor_name}} đồng hành ngay lập tức.",
                 'highlight_title' => 'Thông tin kỳ thanh toán sắp tới',
                 'highlight_content' => "Ngân hàng đối tác: {{bank_name}}\nSố tiền dự kiến kỳ này: {{monthly_payment}}\nLãi suất áp dụng hiện tại: {{interest_rate}}\nNgày đến hạn thanh toán: {{next_due_date}}",
-                'cta_label' => 'LIÊN HỆ CHUYÊN VIÊN TÀI CHÍNH',
-                'cta_url' => url('/booking'),
+                'cta_label' => 'Tra cứu chi tiết lịch trả góp',
+                'cta_url' => '{{portal_lookup_url}}',
                 'accent_color' => '#1C69D4',
                 'status' => EmailTemplate::STATUS_ACTIVE,
             ],
@@ -35,8 +35,8 @@ class EmailTemplateSeeder extends Seeder
                 'body_content' => "Kính chào Quý khách {{customer_name}},\n\nBMW Showroom Vietnam cùng đối tác tài chính {{bank_name}} xin gửi thông báo cập nhật chính sách lãi suất áp dụng cho hồ sơ trả góp mẫu xe {{vehicle_name}} của Quý khách.\n\nMức lãi suất mới được cập nhật là {{interest_rate}} với khoản thanh toán tham chiếu hàng tháng {{monthly_payment}} (kỳ gần nhất ngày {{next_due_date}}).\n\nNếu Quý khách có nhu cầu tái cấu trúc kỳ hạn hoặc kiểm tra phương án tất toán ưu đãi, Chuyên viên {{advisor_name}} luôn sẵn sàng hỗ trợ qua Hotline {{showroom_hotline}}.",
                 'highlight_title' => 'Chi tiết cập nhật lãi suất & kỳ hạn',
                 'highlight_content' => "Mẫu xe: {{vehicle_name}}\nNgân hàng: {{bank_name}}\nLãi suất áp dụng mới: {{interest_rate}}\nSố tiền dự kiến / tháng: {{monthly_payment}}",
-                'cta_label' => 'ĐẶT LỊCH TƯ VẤN TÀI CHÍNH',
-                'cta_url' => url('/booking'),
+                'cta_label' => 'Tra cứu chi tiết lịch trả góp',
+                'cta_url' => '{{portal_lookup_url}}',
                 'accent_color' => '#0284C7',
                 'status' => EmailTemplate::STATUS_ACTIVE,
             ],
@@ -58,10 +58,20 @@ class EmailTemplateSeeder extends Seeder
         ];
 
         foreach ($templates as $attributes) {
-            EmailTemplate::query()->firstOrCreate(
+            $template = EmailTemplate::query()->firstOrCreate(
                 ['code' => $attributes['code']],
                 $attributes,
             );
+
+            if (in_array($attributes['code'], ['installment-due-reminder', 'installment-interest-adjustment'], true)) {
+                $existingUrl = trim((string) ($template->cta_url ?? ''));
+                if ($existingUrl === '' || ! str_contains($existingUrl, 'portal_lookup_url')) {
+                    $template->update([
+                        'cta_label' => 'Tra cứu chi tiết lịch trả góp',
+                        'cta_url' => '{{portal_lookup_url}}',
+                    ]);
+                }
+            }
         }
     }
 }

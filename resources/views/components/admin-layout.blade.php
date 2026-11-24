@@ -234,15 +234,18 @@
                 <div class="shrink-0 border-t border-white/[0.08] bg-[#0D121C] p-3">
                     <div class="rounded-2xl border border-white/[0.08] bg-[#070A10]/90 p-3 shadow-sm" :class="collapsed ? 'lg:p-2' : ''">
                         <div class="mb-3 flex items-center gap-3" :class="collapsed ? 'lg:mb-2 lg:justify-center' : ''">
-                            <div
+                            <a
+                                href="{{ Auth::user()->canManageSystem() ? route('admin.users.show', Auth::user()) : route('admin.staff.profile', Auth::user()) }}"
                                 title="{{ Auth::user()->name }} ({{ Auth::user()->roleLabel() }})"
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1C69D4]/30 bg-[#1C69D4]/15 font-bold text-xs text-[#38BDF8]"
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1C69D4]/30 bg-[#1C69D4]/15 font-bold text-xs text-[#38BDF8] transition-colors hover:border-[#1C69D4]"
                             >
                                 {{ Str::of(Auth::user()->name)->substr(0, 1) }}
-                            </div>
+                            </a>
                             <div class="sidebar-user-meta min-w-0 flex-1">
                                 <div class="flex items-center justify-between gap-2">
-                                    <p class="truncate text-xs font-semibold text-white">{{ Auth::user()->name }}</p>
+                                    <a href="{{ Auth::user()->canManageSystem() ? route('admin.users.show', Auth::user()) : route('admin.staff.profile', Auth::user()) }}" class="truncate text-xs font-semibold text-white transition-colors hover:text-[#70A7FF]">
+                                        {{ Auth::user()->name }}
+                                    </a>
                                     <span class="shrink-0 whitespace-nowrap rounded-full border border-[#1C69D4]/30 bg-[#1C69D4]/15 px-2.5 py-0.5 text-[10px] font-semibold text-[#70A7FF]">
                                         {{ Auth::user()->roleLabel() }}
                                     </span>

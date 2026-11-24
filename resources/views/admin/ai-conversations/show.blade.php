@@ -1,15 +1,10 @@
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="route('admin.ai-conversations.index')"
         eyebrow="AI Conversation Detail"
         title="{{ $session->displayLabel() }}"
         description="Timeline trao đổi giữa khách và BMW AI Assistant, kèm metadata an toàn để đội showroom follow-up."
-    >
-        <x-slot name="actions">
-            <a href="{{ route('admin.ai-conversations.index') }}" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                Quay lại
-            </a>
-        </x-slot>
-    </x-admin.page-header>
+    />
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_24rem]">
         <x-admin.card class="!p-0 overflow-hidden">

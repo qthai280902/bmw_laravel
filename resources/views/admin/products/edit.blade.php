@@ -1,5 +1,6 @@
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="route('admin.products.index')"
         eyebrow="Cập nhật sản phẩm"
         title="Chỉnh sửa"
         accent="Sản phẩm"
@@ -9,9 +10,6 @@
             <div class="flex flex-wrap items-center gap-2.5">
                 <a href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white">
                     Xem trang public
-                </a>
-                <a href="{{ route('admin.products.index') }}" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                    Quay lại
                 </a>
             </div>
         </x-slot>

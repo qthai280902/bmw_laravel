@@ -9,6 +9,15 @@
             <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tổng nhân sự</p>
             <p class="mt-1 text-2xl font-black text-white">{{ $users->total() }}</p>
         </x-slot>
+
+        <x-slot name="actions">
+            <a
+                href="{{ route('admin.users.create') }}"
+                class="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-xs font-bold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]"
+            >
+                <span>+ Hồ sơ nhân sự đầy đủ</span>
+            </a>
+        </x-slot>
     </x-admin.page-header>
 
     <!-- Create Staff Card -->
@@ -85,22 +94,34 @@
                         @php
                             $isCurrentAdmin = Auth::id() === $user->id;
                             $currentRole = $user->normalizedRole();
+                            $isProtectedTopAdmin = $user->isTopSuperAdmin() && ! Auth::user()?->isTopSuperAdmin();
                         @endphp
-                        <tr class="group transition-colors hover:bg-[#131A29]/60">
+                        <tr class="group transition-colors hover:bg-[#131A29]/60 {{ ! $user->isActiveAccount() ? 'opacity-70' : '' }}">
                             <td class="px-6 py-4.5">
                                 <div class="flex items-center gap-3.5">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-all group-hover:border-[#1C69D4]">
+                                    <a href="{{ route('admin.users.show', $user) }}" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-all group-hover:border-[#1C69D4]">
                                         <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                                    </div>
+                                    </a>
                                     <div class="min-w-0">
-                                        <div class="mb-1 flex flex-wrap items-center gap-2 text-sm font-black uppercase leading-none tracking-wider text-white transition-colors group-hover:text-[#70A7FF]">
-                                            <span class="truncate">{{ $user->name }}</span>
+                                        <div class="mb-1 flex flex-wrap items-center gap-2 text-sm font-black uppercase leading-none tracking-wider text-white">
+                                            <a href="{{ route('admin.users.show', $user) }}" class="truncate transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]">
+                                                {{ $user->name }}
+                                            </a>
                                             @if($isCurrentAdmin)
                                                 <span class="whitespace-nowrap rounded-full border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-2 py-0.5 text-[9px] font-semibold text-[#70A7FF]">Bạn</span>
                                             @endif
+                                            @if($user->isTopSuperAdmin())
+                                                <span class="whitespace-nowrap rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-300">Top Super Admin</span>
+                                            @endif
+                                            @if(! $user->isActiveAccount())
+                                                <span class="whitespace-nowrap rounded-full border border-rose-500/40 bg-rose-500/15 px-2 py-0.5 text-[9px] font-bold text-rose-300">Đang khóa</span>
+                                            @endif
                                         </div>
-                                        <div class="whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                                            ID NHÂN VIÊN: #STF-{{ str_pad((string) $user->id, 4, '0', STR_PAD_LEFT) }}
+                                        <div class="flex flex-wrap items-center gap-2 whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                                            <span>ID NHÂN VIÊN: #STF-{{ str_pad((string) $user->id, 4, '0', STR_PAD_LEFT) }}</span>
+                                            @if(filled($user->job_title))
+                                                <span>· {{ $user->job_title }}</span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -110,45 +131,59 @@
                                     <svg class="h-3.5 w-3.5 shrink-0 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                     <span class="text-xs font-medium text-zinc-300">{{ $user->email }}</span>
                                 </div>
+                                @if(filled($user->phone))
+                                    <p class="mt-1 text-[11px] tabular-nums text-zinc-400">SĐT: {{ $user->phone }}</p>
+                                @endif
                                 @if(! $user->isAdmin())
                                     <p class="mt-1 text-[10px] font-semibold text-amber-400">Chưa có đuôi @bmw.com hoặc trong ADMIN_EMAILS</p>
                                 @endif
                             </td>
                             <td class="min-w-[240px] whitespace-nowrap px-6 py-5">
-                                <form method="POST" action="{{ route('admin.users.update-role', $user) }}" class="inline-flex items-center gap-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <div class="w-40">
-                                        <x-ui.custom-select
-                                            compact
-                                            name="role"
-                                            aria-label="Vai trò của {{ $user->name }}"
-                                            :value="$currentRole"
-                                            :options="$roles"
-                                        />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        class="h-9 whitespace-nowrap rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer"
-                                    >
-                                        Lưu
-                                    </button>
-                                </form>
+                                @if($isProtectedTopAdmin)
+                                    <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/35 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-300">
+                                        {{ $user->roleLabel() }} · Bảo vệ tối cao
+                                    </span>
+                                @else
+                                    <form method="POST" action="{{ route('admin.users.update-role', $user) }}" class="inline-flex items-center gap-2">
+                                        @csrf
+                                        @method('PATCH')
+                                        <div class="w-40">
+                                            <x-ui.custom-select
+                                                compact
+                                                name="role"
+                                                aria-label="Vai trò của {{ $user->name }}"
+                                                :value="$currentRole"
+                                                :options="$roles"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            class="h-9 whitespace-nowrap rounded-lg border border-white/10 bg-[#070A10] px-3.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:border-[#1C69D4] hover:text-[#70A7FF] cursor-pointer"
+                                        >
+                                            Lưu
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-6 py-5 text-center">
                                 <div class="inline-flex flex-col items-center gap-1.5">
                                     <span class="rounded-full border border-white/10 bg-[#070A10] px-2.5 py-0.5 text-[10px] font-semibold tabular-nums text-zinc-300">
                                         Đang giữ: {{ ($user->active_appointments_count ?? 0) + ($user->active_orders_count ?? 0) }} hồ sơ
                                     </span>
-                                    <a
-                                        href="{{ route('admin.users.performance', $user) }}"
-                                        class="inline-flex items-center gap-1.5 rounded-lg border border-[#38BDF8]/30 bg-[#38BDF8]/10 px-3 py-1.5 text-[11px] font-semibold text-[#38BDF8] transition-colors hover:border-[#38BDF8] hover:bg-[#38BDF8] hover:text-black"
-                                    >
-                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        <span>Xem thống kê</span>
-                                    </a>
+                                    <div class="flex flex-wrap items-center justify-center gap-1.5">
+                                        <a
+                                            href="{{ route('admin.users.show', $user) }}"
+                                            class="inline-flex items-center gap-1 rounded-lg border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-3 py-1.5 text-[11px] font-semibold text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white"
+                                        >
+                                            <span>Xem hồ sơ</span>
+                                        </a>
+                                        <a
+                                            href="{{ route('admin.users.performance', $user) }}"
+                                            class="inline-flex items-center gap-1 rounded-lg border border-[#38BDF8]/30 bg-[#38BDF8]/10 px-3 py-1.5 text-[11px] font-semibold text-[#38BDF8] transition-colors hover:border-[#38BDF8] hover:bg-[#38BDF8] hover:text-black"
+                                        >
+                                            <span>Xem thống kê</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </td>
                             <td class="whitespace-nowrap px-6 py-5 text-right text-[10px] font-bold uppercase tracking-widest tabular-nums text-zinc-400">

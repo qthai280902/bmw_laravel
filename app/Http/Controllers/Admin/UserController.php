@@ -53,6 +53,16 @@ class UserController extends Controller
     }
 
     /**
+     * Tạo mới tài khoản nhân sự nội bộ (biểu mẫu đầy đủ).
+     */
+    public function create(): View
+    {
+        return view('admin.users.create', [
+            'roles' => User::roles(),
+        ]);
+    }
+
+    /**
      * Tạo mới tài khoản nhân sự nội bộ.
      */
     public function store(Request $request, ShowroomCacheService $cacheService): RedirectResponse
@@ -60,15 +70,24 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:24'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'string', Rule::in(User::roleValues())],
+            'job_title' => ['nullable', 'string', 'max:100'],
+            'department' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $email = mb_strtolower(trim($validated['email']));
         $user = User::query()->create([
             'name' => trim($validated['name']),
             'email' => $email,
+            'phone' => isset($validated['phone']) && trim($validated['phone']) !== '' ? trim($validated['phone']) : null,
             'role' => $validated['role'],
+            'job_title' => isset($validated['job_title']) && trim($validated['job_title']) !== '' ? trim($validated['job_title']) : null,
+            'department' => isset($validated['department']) && trim($validated['department']) !== '' ? trim($validated['department']) : null,
+            'notes' => isset($validated['notes']) && trim($validated['notes']) !== '' ? trim($validated['notes']) : null,
+            'is_active' => true,
             'password' => Hash::make($validated['password']),
             'email_verified_at' => now(),
         ]);
@@ -82,11 +101,172 @@ class UserController extends Controller
             $request->user()
         );
 
+        if ($request->boolean('_from_create_page')) {
+            return redirect()
+                ->route('admin.users.show', $user)
+                ->with('success', "Đã tạo hồ sơ nhân sự {$user->name} ({$user->roleLabel()}).");
+        }
+
         return back()->with('success', "Đã tạo nhân sự {$user->name} ({$user->roleLabel()}).");
     }
 
     /**
-     * Cập nhật vai trò nhân sự (chặn tự hạ quyền Quản Lý của chính mình).
+     * Trang Chi tiết Thông tin Nhân sự (/admin/users/{user}).
+     */
+    public function show(Request $request, User $user): View
+    {
+        $actingUser = $request->user();
+        if (! $actingUser || (! $actingUser->canManageSystem() && (int) $actingUser->id !== (int) $user->id)) {
+            abort(403, 'Bạn chỉ có quyền xem hồ sơ nhân sự của chính mình.');
+        }
+
+        $appointments = Appointment::query()
+            ->with(['user:id,name,email,phone', 'product:id,name,price'])
+            ->where('assigned_to', $user->id)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $orders = AccessoryOrder::query()
+            ->with(['product:id,name,price'])
+            ->where('assigned_to', $user->id)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $allAssignedItems = $this->normalizeAssignedItems($appointments, $orders);
+
+        $totalLeads = $appointments->count() + $orders->count();
+        $openLeads = $appointments->filter(static fn (Appointment $a): bool => in_array($a->status, [AppointmentStatus::Pending, AppointmentStatus::Confirmed], true))->count()
+            + $orders->filter(static fn (AccessoryOrder $o): bool => in_array((string) $o->status, [AccessoryOrder::STATUS_PENDING, AccessoryOrder::STATUS_CONFIRMED], true))->count();
+
+        $completedAppointmentsCount = $appointments->where('status', AppointmentStatus::Completed)->count();
+        $purchasedVehiclesCount = $appointments
+            ->filter(static fn (Appointment $a): bool => $a->status === AppointmentStatus::Completed && $a->completionOutcome() === Appointment::OUTCOME_PURCHASED)
+            ->count();
+
+        $completedOrdersCount = $orders->where('status', AccessoryOrder::STATUS_COMPLETED)->count();
+        $accessoryRevenue = (int) $orders->completedRevenue();
+        $purchasedVehicleValue = (int) $appointments
+            ->filter(static fn (Appointment $a): bool => $a->status === AppointmentStatus::Completed && $a->completionOutcome() === Appointment::OUTCOME_PURCHASED)
+            ->sum(static fn (Appointment $a): int => (int) ($a->product?->price ?? 0));
+
+        $activityLogs = AdminActivityLog::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->limit(15)
+            ->get();
+
+        $canMutate = $actingUser->canManageSystem()
+            && (! $user->isTopSuperAdmin() || $actingUser->isTopSuperAdmin());
+        $canToggleLock = $canMutate && ! $actingUser->is($user);
+        $canViewPerformance = $actingUser->canManageSystem()
+            || ($actingUser->isSales() && (int) $actingUser->id === (int) $user->id);
+
+        return view('admin.users.show', [
+            'staffUser' => $user,
+            'roles' => User::roles(),
+            'canMutate' => $canMutate,
+            'canToggleLock' => $canToggleLock,
+            'canViewPerformance' => $canViewPerformance,
+            'kpis' => [
+                'total_leads' => $totalLeads,
+                'open_leads' => $openLeads,
+                'completed_appointments' => $completedAppointmentsCount,
+                'purchased_vehicles' => $purchasedVehiclesCount,
+                'accessory_orders' => $orders->count(),
+                'completed_orders' => $completedOrdersCount,
+                'contributed_revenue' => $accessoryRevenue + $purchasedVehicleValue,
+                'accessory_revenue' => $accessoryRevenue,
+            ],
+            'recentItems' => $allAssignedItems->take(15),
+            'activityLogs' => $activityLogs,
+        ]);
+    }
+
+    /**
+     * Trang chỉnh sửa hồ sơ & mật khẩu nhân sự.
+     */
+    public function edit(Request $request, User $user): View
+    {
+        $actingUser = $request->user();
+        $this->assertCanMutateTargetUser($actingUser, $user);
+
+        return view('admin.users.edit', [
+            'staffUser' => $user,
+            'roles' => User::roles(),
+            'isSelf' => $actingUser !== null && $actingUser->is($user),
+        ]);
+    }
+
+    /**
+     * Lưu cập nhật hồ sơ, vai trò & mật khẩu nhân sự.
+     */
+    public function update(
+        Request $request,
+        User $user,
+        AdminNotificationDispatcher $dispatcher,
+        ShowroomCacheService $cacheService,
+    ): RedirectResponse {
+        $actingUser = $request->user();
+        $this->assertCanMutateTargetUser($actingUser, $user);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:24'],
+            'role' => ['required', 'string', Rule::in(User::roleValues())],
+            'job_title' => ['nullable', 'string', 'max:100'],
+            'department' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        if ($actingUser && $actingUser->is($user) && $validated['role'] !== User::ROLE_ADMIN) {
+            return back()
+                ->withInput()
+                ->withErrors(['role' => 'Không thể tự hạ vai trò Quản Lý của chính mình xuống Sales hoặc Marketing.'])
+                ->with('error', 'Không thể tự hạ vai trò Quản Lý của chính mình xuống Sales hoặc Marketing.');
+        }
+
+        $payload = [
+            'name' => trim($validated['name']),
+            'email' => mb_strtolower(trim($validated['email'])),
+            'phone' => isset($validated['phone']) && trim($validated['phone']) !== '' ? trim($validated['phone']) : null,
+            'role' => $validated['role'],
+            'job_title' => isset($validated['job_title']) && trim($validated['job_title']) !== '' ? trim($validated['job_title']) : null,
+            'department' => isset($validated['department']) && trim($validated['department']) !== '' ? trim($validated['department']) : null,
+            'notes' => isset($validated['notes']) && trim($validated['notes']) !== '' ? trim($validated['notes']) : null,
+        ];
+
+        $passwordChanged = false;
+        if (! empty($validated['password'])) {
+            $payload['password'] = Hash::make($validated['password']);
+            $passwordChanged = true;
+        }
+
+        $user->update($payload);
+
+        $dispatcher->forgetDigestCache((int) $user->id);
+        $cacheService->flushSalesRoster();
+
+        $summary = "Cập nhật hồ sơ nhân sự {$user->name} ({$user->email} · {$user->roleLabel()})"
+            .($passwordChanged ? ' kèm đặt lại mật khẩu.' : '.');
+
+        StaffAccountUpdated::dispatch(
+            $user->fresh() ?? $user,
+            'staff.updated',
+            $summary,
+            $actingUser,
+        );
+
+        return redirect()
+            ->route('admin.users.show', $user)
+            ->with('success', "Đã cập nhật thông tin nhân sự {$user->name}.");
+    }
+
+    /**
+     * Cập nhật vai trò nhân sự (chặn tự hạ quyền Quản Lý của chính mình & bảo vệ Top Super Admin).
      */
     public function updateRole(
         Request $request,
@@ -94,11 +274,13 @@ class UserController extends Controller
         AdminNotificationDispatcher $dispatcher,
         ShowroomCacheService $cacheService
     ): RedirectResponse {
+        $actingUser = $request->user();
+        $this->assertCanMutateTargetUser($actingUser, $user);
+
         $validated = $request->validate([
             'role' => ['required', 'string', Rule::in(User::roleValues())],
         ]);
 
-        $actingUser = $request->user();
         if ($actingUser && $actingUser->is($user) && $validated['role'] !== User::ROLE_ADMIN) {
             return back()
                 ->withErrors(['role' => 'Không thể tự hạ vai trò Quản Lý của chính mình xuống Sales hoặc Marketing.'])
@@ -122,6 +304,56 @@ class UserController extends Controller
         );
 
         return back()->with('success', "Đã cập nhật vai trò cho {$user->name} thành {$user->roleLabel()}.");
+    }
+
+    /**
+     * Khóa / Mở khóa tài khoản nhân sự (chặn tự khóa chính mình & bảo vệ Top Super Admin).
+     */
+    public function toggleActive(
+        Request $request,
+        User $user,
+        AdminNotificationDispatcher $dispatcher,
+        ShowroomCacheService $cacheService,
+    ): RedirectResponse {
+        $actingUser = $request->user();
+        $this->assertCanMutateTargetUser($actingUser, $user);
+
+        if ($actingUser && $actingUser->is($user)) {
+            return back()
+                ->withErrors(['is_active' => 'Không thể tự khóa tài khoản của chính mình.'])
+                ->with('error', 'Không thể tự khóa tài khoản của chính mình.');
+        }
+
+        $nextActive = ! $user->isActiveAccount();
+        $user->update(['is_active' => $nextActive]);
+
+        $dispatcher->forgetDigestCache((int) $user->id);
+        $cacheService->flushSalesRoster();
+
+        StaffAccountUpdated::dispatch(
+            $user->fresh() ?? $user,
+            $nextActive ? 'staff.unlocked' : 'staff.locked',
+            ($nextActive ? 'Mở khóa tài khoản nhân sự ' : 'Khóa tạm thời tài khoản nhân sự ')."{$user->name} ({$user->email}).",
+            $actingUser,
+        );
+
+        return back()->with(
+            'success',
+            $nextActive
+                ? "Đã mở khóa hoạt động cho tài khoản {$user->name}."
+                : "Đã khóa tài khoản {$user->name}. Nhân sự này sẽ không thể đăng nhập hoặc nhận Lead tự động."
+        );
+    }
+
+    private function assertCanMutateTargetUser(?User $actingUser, User $targetUser): void
+    {
+        if (! $actingUser || ! $actingUser->canManageSystem()) {
+            abort(403, 'Bạn không có quyền quản trị tài khoản nhân sự.');
+        }
+
+        if ($targetUser->isTopSuperAdmin() && ! $actingUser->isTopSuperAdmin()) {
+            abort(403, 'Chỉ Top Super Admin mới có quyền chỉnh sửa, đổi mật khẩu, đổi vai trò hoặc khóa tài khoản Top Super Admin.');
+        }
     }
 
     /**

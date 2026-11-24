@@ -187,7 +187,21 @@ class EmailTemplateController extends Controller
             'highlight_title' => ['nullable', 'string', 'max:180'],
             'highlight_content' => ['nullable', 'string', 'max:3000'],
             'cta_label' => ['nullable', 'string', 'max:120'],
-            'cta_url' => ['nullable', 'url', 'max:255'],
+            'cta_url' => [
+                'nullable',
+                'string',
+                'max:255',
+                static function (string $attribute, mixed $value, \Closure $fail): void {
+                    $raw = trim((string) $value);
+                    if ($raw === '') {
+                        return;
+                    }
+                    $interpolated = app(EmailTemplateRenderer::class)->interpolate($raw, EmailTemplateRenderer::sampleVariables());
+                    if (! filter_var($interpolated, FILTER_VALIDATE_URL) && ! str_starts_with($interpolated, '/')) {
+                        $fail('Đường dẫn CTA phải là URL hợp lệ (bắt đầu bằng http://, https:// hoặc biến {{portal_lookup_url}}).');
+                    }
+                },
+            ],
             'accent_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ], [
             'name.required' => 'Vui lòng nhập tên mẫu Email.',
@@ -196,7 +210,6 @@ class EmailTemplateController extends Controller
             'subject.required' => 'Vui lòng nhập tiêu đề Email.',
             'heading.required' => 'Vui lòng nhập tiêu đề chính trong nội dung thư.',
             'body_content.required' => 'Vui lòng nhập nội dung Email.',
-            'cta_url.url' => 'Đường dẫn CTA phải là URL hợp lệ (bắt đầu bằng http:// hoặc https://).',
             'accent_color.regex' => 'Màu nhấn phải có định dạng mã màu HEX (ví dụ: #1C69D4).',
         ]);
     }

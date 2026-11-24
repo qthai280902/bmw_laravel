@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class AppointmentReminderMail extends Mailable
@@ -38,6 +39,16 @@ class AppointmentReminderMail extends Mailable
             with: [
                 'inlineImagePath' => $this->appointment->product?->localImagePath(),
                 'fallbackBadgePng' => AppointmentConfirmationMail::fallbackBadgePngBytes(),
+            ],
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-BMW-Mail-Kind' => 'appointment_reminder',
+                'X-BMW-Appointment-ID' => (string) $this->appointment->id,
             ],
         );
     }

@@ -100,6 +100,7 @@
                                 <li><a href="{{ route('experiences.index') }}" class="transition-colors hover:text-white">Trải nghiệm</a></li>
                                 <li><a href="{{ route('articles.index') }}" class="transition-colors hover:text-white">Tìm hiểu thêm</a></li>
                                 <li><a href="{{ route('offers.exclusive') }}" class="transition-colors hover:text-white">Ưu đãi</a></li>
+                                <li><a href="{{ route('customer.lookup.index') }}" class="transition-colors hover:text-white">Tra cứu hồ sơ</a></li>
                                 <li><a href="{{ route('contact.index') }}" class="transition-colors hover:text-white">Liên hệ showroom</a></li>
                             </ul>
                         </div>

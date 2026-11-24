@@ -43,29 +43,25 @@
 
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="route('admin.customers.index')"
+        back-label="Danh sách khách hàng"
         eyebrow="Customer 360° · Hồ sơ Khách hàng"
         :title="$profile['name']"
         accent="360°"
         :description="'SĐT: ' . $profile['phone'] . ' · Email: ' . ($profile['email'] ?: 'Chưa có') . ' · Sales phụ trách: ' . $profile['primary_sales']"
     >
-        <x-slot name="actions">
-            <div class="flex flex-wrap items-center gap-2">
-                @if($profile['phone'] !== 'N/A')
+        @if($profile['phone'] !== 'N/A')
+            <x-slot name="actions">
+                <div class="flex flex-wrap items-center gap-2">
                     <a
                         href="tel:{{ $profile['phone'] }}"
                         class="inline-flex h-10 items-center gap-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/15 px-4 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-slate-950"
                     >
                         Gọi khách
                     </a>
-                @endif
-                <a
-                    href="{{ route('admin.customers.index') }}"
-                    class="inline-flex h-10 items-center rounded-xl border border-white/10 bg-[#131A29] px-4 text-xs font-semibold text-zinc-200 transition-colors hover:border-white/25 hover:text-white"
-                >
-                    ← Danh sách khách hàng
-                </a>
-            </div>
-        </x-slot>
+                </div>
+            </x-slot>
+        @endif
     </x-admin.page-header>
 
     <!-- 360° KPI Summary Strip -->
@@ -93,6 +89,46 @@
         <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] px-4 py-3.5">
             <p class="text-[11px] font-semibold text-zinc-400">Phiên Chat AI</p>
             <p class="mt-1 text-2xl font-extrabold tabular-nums text-violet-300">{{ $kpis['ai_sessions'] }}</p>
+        </div>
+    </div>
+
+    <!-- Top Installment Debt & Schedule Summary Strip -->
+    <div class="mb-6 rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5" data-customer-installment-overview>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3.5">
+            <div class="flex flex-wrap items-center gap-2.5">
+                <p class="text-xs font-bold uppercase tracking-wider text-[#38BDF8]">Tổng quan Tín dụng &amp; Trả góp BMW Financial</p>
+                <span class="rounded-full border px-3 py-0.5 text-[11px] font-bold {{ $installmentOverview['status_badge_class'] }}">
+                    {{ $installmentOverview['status_label'] }}
+                </span>
+            </div>
+            <a href="{{ route('customer.lookup.index') }}" target="_blank" rel="noopener" class="text-xs font-semibold text-[#70A7FF] hover:underline">
+                Mở cổng tra cứu khách hàng (/tra-cuu) &rarr;
+            </a>
+        </div>
+
+        <div class="mt-3.5 grid grid-cols-2 gap-3.5 md:grid-cols-4 text-xs">
+            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+                <p class="text-[11px] text-zinc-400">Dư nợ gốc còn lại</p>
+                <p class="mt-1 text-base font-extrabold tabular-nums text-white">{{ number_format($installmentOverview['remaining_principal'], 0, ',', '.') }} đ</p>
+            </div>
+            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+                <p class="text-[11px] text-zinc-400">Tổng tiền dự kiến còn lại</p>
+                <p class="mt-1 text-base font-extrabold tabular-nums text-sky-300">{{ number_format($installmentOverview['estimated_remaining_total'], 0, ',', '.') }} đ</p>
+            </div>
+            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+                <p class="text-[11px] text-zinc-400">Số kỳ còn lại</p>
+                <p class="mt-1 text-base font-extrabold tabular-nums text-[#70A7FF]">
+                    @if($installmentOverview['term_months'] > 0)
+                        Còn {{ $installmentOverview['remaining_installments'] }} / {{ $installmentOverview['term_months'] }} kỳ
+                    @else
+                        0 / 0 kỳ
+                    @endif
+                </p>
+            </div>
+            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+                <p class="text-[11px] text-zinc-400">Ngày đến hạn kỳ tới</p>
+                <p class="mt-1 text-base font-extrabold tabular-nums text-emerald-300">{{ $installmentOverview['next_due_date_label'] }}</p>
+            </div>
         </div>
     </div>
 
@@ -156,6 +192,14 @@
                             />
                         </x-admin.form-field>
 
+                        <x-admin.form-field name="vehicle_price" label="Giá xe niêm yết (VNĐ)">
+                            <input type="number" name="vehicle_price" value="{{ old('vehicle_price') }}" min="0" step="1000000" placeholder="Ví dụ: 3500000000" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none">
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="down_payment" label="Trả trước đối ứng (VNĐ)">
+                            <input type="number" name="down_payment" value="{{ old('down_payment') }}" min="0" step="1000000" placeholder="Ví dụ: 1500000000" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none">
+                        </x-admin.form-field>
+
                         <x-admin.form-field name="loan_amount" label="Tổng khoản vay (VNĐ) *">
                             <input type="number" name="loan_amount" value="{{ old('loan_amount', 2000000000) }}" min="1000000" step="1000000" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                         </x-admin.form-field>
@@ -166,6 +210,18 @@
 
                         <x-admin.form-field name="interest_rate" label="Lãi suất (%/năm) *">
                             <input type="number" name="interest_rate" value="{{ old('interest_rate', '7.9') }}" min="0" max="50" step="0.01" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="interest_method" label="Phương thức tính lãi">
+                            <x-ui.custom-select
+                                name="interest_method"
+                                :value="(string) old('interest_method', \App\Models\CustomerInstallmentPlan::METHOD_REDUCING_BALANCE)"
+                                :options="$interestMethodOptions"
+                            />
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="start_date" label="Ngày bắt đầu hợp đồng">
+                            <input type="date" name="start_date" value="{{ old('start_date', now()->format('Y-m-d')) }}" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                         </x-admin.form-field>
 
                         <x-admin.form-field name="next_due_date" label="Ngày đến hạn kỳ tiếp theo">
@@ -201,10 +257,11 @@
                         @foreach($installmentPlans as $plan)
                             @php
                                 $updateParams = array_merge($showRouteParams, ['plan' => $plan->id]);
-                                $progress = $plan->progressPercent();
+                                $planCalc = $installmentSchedules[$plan->id] ?? null;
+                                $progress = $planCalc['progress_percent'] ?? $plan->progressPercent();
                             @endphp
                             <div
-                                x-data="{ editing: false }"
+                                x-data="{ editing: false, showSchedule: false }"
                                 class="rounded-2xl border border-white/[0.08] bg-[#070A10]/80 p-4 space-y-3"
                             >
                                 <div class="flex flex-wrap items-start justify-between gap-3">
@@ -214,6 +271,9 @@
                                             <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold {{ $plan->statusColorClass() }}">
                                                 {{ $plan->statusLabel() }}
                                             </span>
+                                            <span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                                {{ $plan->interestMethodLabel() }}
+                                            </span>
                                         </div>
                                         <p class="mt-1 text-xs text-zinc-400">
                                             {{ $plan->product?->name ?? 'Hợp đồng tài chính BMW' }}
@@ -222,22 +282,40 @@
                                             @endif
                                         </p>
                                     </div>
-                                    <button
-                                        type="button"
-                                        @click="editing = !editing"
-                                        class="h-8 rounded-lg border border-white/10 bg-[#131A29] px-3 text-[11px] font-semibold text-zinc-300 hover:border-[#1C69D4] hover:text-white cursor-pointer"
-                                        x-text="editing ? 'Đóng sửa' : 'Cập nhật kỳ / lãi suất'"
-                                    ></button>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        @if($planCalc)
+                                            <button
+                                                type="button"
+                                                @click="showSchedule = !showSchedule"
+                                                class="h-8 rounded-lg border border-[#38BDF8]/35 bg-[#38BDF8]/10 px-3 text-[11px] font-semibold text-[#38BDF8] hover:bg-[#38BDF8] hover:text-black cursor-pointer"
+                                                x-text="showSchedule ? 'Ẩn lịch từng tháng' : 'Lịch từng tháng (Kỳ 1 → {{ $planCalc['term_months'] }})'"
+                                            ></button>
+                                        @endif
+                                        <button
+                                            type="button"
+                                            @click="editing = !editing"
+                                            class="h-8 rounded-lg border border-white/10 bg-[#131A29] px-3 text-[11px] font-semibold text-zinc-300 hover:border-[#1C69D4] hover:text-white cursor-pointer"
+                                            x-text="editing ? 'Đóng sửa' : 'Cập nhật kỳ / lãi suất'"
+                                        ></button>
+                                    </div>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
+                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 text-xs">
                                     <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
-                                        <p class="text-[10px] text-zinc-400">Tổng dư nợ vay</p>
+                                        <p class="text-[10px] text-zinc-400">Tổng khoản vay</p>
                                         <p class="mt-1 font-bold tabular-nums text-white">{{ number_format($plan->loan_amount, 0, ',', '.') }} đ</p>
                                     </div>
+                                    <div class="rounded-xl border border-[#1C69D4]/30 bg-[#1C69D4]/10 p-3">
+                                        <p class="text-[10px] text-[#70A7FF]">Dư nợ gốc còn lại</p>
+                                        <p class="mt-1 font-bold tabular-nums text-white">{{ number_format($planCalc['remaining_principal'] ?? 0, 0, ',', '.') }} đ</p>
+                                    </div>
                                     <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
-                                        <p class="text-[10px] text-zinc-400">Trả hàng tháng</p>
-                                        <p class="mt-1 font-bold tabular-nums text-sky-300">{{ number_format($plan->monthly_payment, 0, ',', '.') }} đ</p>
+                                        <p class="text-[10px] text-zinc-400">Dự kiến còn đóng</p>
+                                        <p class="mt-1 font-bold tabular-nums text-sky-300">{{ number_format($planCalc['estimated_remaining_total'] ?? 0, 0, ',', '.') }} đ</p>
+                                    </div>
+                                    <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
+                                        <p class="text-[10px] text-zinc-400">Trả tham chiếu / tháng</p>
+                                        <p class="mt-1 font-bold tabular-nums text-zinc-200">{{ number_format($plan->monthly_payment, 0, ',', '.') }} đ</p>
                                     </div>
                                     <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
                                         <p class="text-[10px] text-zinc-400">Lãi suất áp dụng</p>
@@ -245,14 +323,14 @@
                                     </div>
                                     <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
                                         <p class="text-[10px] text-zinc-400">Kỳ đến hạn kế tiếp</p>
-                                        <p class="mt-1 font-bold tabular-nums text-emerald-300">{{ $plan->next_due_date?->format('d/m/Y') ?? 'Đã tất toán' }}</p>
+                                        <p class="mt-1 font-bold tabular-nums text-emerald-300">{{ $planCalc['next_due_date_label'] ?? ($plan->next_due_date?->format('d/m/Y') ?? 'Đã tất toán') }}</p>
                                     </div>
                                 </div>
 
                                 <div>
                                     <div class="mb-1.5 flex items-center justify-between text-[11px]">
                                         <span class="font-semibold text-zinc-300">
-                                            Tiến độ thanh toán: <strong class="tabular-nums text-white">{{ $plan->paid_installments }}/{{ $plan->term_months }} kỳ</strong> (còn {{ $plan->remainingInstallments() }} kỳ)
+                                            Tiến độ thanh toán: <strong class="tabular-nums text-white">{{ $planCalc['paid_installments'] ?? $plan->paid_installments }}/{{ $plan->term_months }} kỳ</strong> (còn {{ $planCalc['remaining_installments'] ?? $plan->remainingInstallments() }} kỳ)
                                         </span>
                                         <span class="font-bold tabular-nums text-[#70A7FF]">{{ $progress }}%</span>
                                     </div>
@@ -263,6 +341,61 @@
 
                                 @if(filled($plan->notes))
                                     <p class="text-xs text-zinc-400"><strong class="text-zinc-300">Ghi chú:</strong> {{ $plan->notes }}</p>
+                                @endif
+
+                                {{-- Monthly Amortization Schedule Table --}}
+                                @if($planCalc && ! empty($planCalc['schedule']))
+                                    <div x-show="showSchedule" x-collapse class="pt-2">
+                                        <div class="max-h-96 overflow-auto rounded-xl border border-white/10 bg-[#0D121C]">
+                                            <table class="w-full min-w-[680px] border-collapse text-left text-[11px]">
+                                                <thead class="sticky top-0 z-10 border-b border-white/10 bg-[#070A10] text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                                                    <tr>
+                                                        <th class="px-3 py-2.5">Kỳ</th>
+                                                        <th class="px-3 py-2.5">Hạn đóng</th>
+                                                        <th class="px-3 py-2.5 text-right">Dư nợ đầu kỳ</th>
+                                                        <th class="px-3 py-2.5 text-right">Gốc</th>
+                                                        <th class="px-3 py-2.5 text-right">Lãi</th>
+                                                        <th class="px-3 py-2.5 text-right">Tổng đóng</th>
+                                                        <th class="px-3 py-2.5 text-right">Dư nợ cuối</th>
+                                                        <th class="px-3 py-2.5 text-right">Trạng thái</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-white/[0.06]">
+                                                    @foreach($planCalc['schedule'] as $sRow)
+                                                        @php
+                                                            $sStatus = $sRow['status'];
+                                                            $sStrike = $sStatus === 'paid' ? 'opacity-50 line-through' : '';
+                                                            $sRowBg = match ($sStatus) {
+                                                                'current' => 'border-l-2 border-l-[#1C69D4] bg-[#1C69D4]/10',
+                                                                'overdue' => 'border-l-2 border-l-rose-500 bg-rose-500/10',
+                                                                default => '',
+                                                            };
+                                                        @endphp
+                                                        <tr class="{{ $sRowBg }}">
+                                                            <td class="px-3 py-2 font-bold tabular-nums text-white {{ $sStrike }}">Kỳ {{ $sRow['period'] }}</td>
+                                                            <td class="px-3 py-2 tabular-nums text-zinc-300 {{ $sStrike }}">{{ $sRow['due_date_label'] }}</td>
+                                                            <td class="px-3 py-2 text-right tabular-nums text-zinc-400 {{ $sStrike }}">{{ number_format($sRow['opening_balance'], 0, ',', '.') }}</td>
+                                                            <td class="px-3 py-2 text-right tabular-nums text-zinc-200 {{ $sStrike }}">{{ number_format($sRow['principal_amount'], 0, ',', '.') }}</td>
+                                                            <td class="px-3 py-2 text-right tabular-nums text-amber-300 {{ $sStrike }}">{{ number_format($sRow['interest_amount'], 0, ',', '.') }}</td>
+                                                            <td class="px-3 py-2 text-right font-bold tabular-nums text-white {{ $sStrike }}">{{ number_format($sRow['total_payment'], 0, ',', '.') }}</td>
+                                                            <td class="px-3 py-2 text-right tabular-nums text-zinc-400 {{ $sStrike }}">{{ number_format($sRow['closing_balance'], 0, ',', '.') }}</td>
+                                                            <td class="whitespace-nowrap px-3 py-2 text-right">
+                                                                @if($sStatus === 'paid')
+                                                                    <span class="rounded-md border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">Đã thanh toán</span>
+                                                                @elseif($sStatus === 'overdue')
+                                                                    <span class="rounded-md border border-rose-500/40 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-300">Quá hạn</span>
+                                                                @elseif($sStatus === 'current')
+                                                                    <span class="rounded-md border border-[#1C69D4]/45 bg-[#1C69D4]/20 px-2 py-0.5 text-[10px] font-bold text-[#70A7FF]">Kỳ sắp tới</span>
+                                                                @else
+                                                                    <span class="text-[10px] text-zinc-500">Chưa đến kỳ</span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 @endif
 
                                 <!-- Inline Edit Form -->
@@ -282,6 +415,14 @@
                                             <input type="text" name="bank_name" value="{{ $plan->bank_name }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs text-white">
                                         </div>
                                         <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Giá xe (VNĐ)</label>
+                                            <input type="number" name="vehicle_price" value="{{ $plan->vehicle_price }}" min="0" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Trả trước (VNĐ)</label>
+                                            <input type="number" name="down_payment" value="{{ $plan->down_payment }}" min="0" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                        </div>
+                                        <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Tổng vay (VNĐ)</label>
                                             <input type="number" name="loan_amount" value="{{ $plan->loan_amount }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
                                         </div>
@@ -292,6 +433,10 @@
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Lãi suất (%/năm)</label>
                                             <input type="number" step="0.01" name="interest_rate" value="{{ $plan->interest_rate }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Phương thức tính lãi</label>
+                                            <x-ui.custom-select compact name="interest_method" :value="$plan->interest_method ?: 'reducing_balance'" :options="$interestMethodOptions" />
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Đã đóng / Tổng kỳ</label>
@@ -306,7 +451,11 @@
                                             <input type="date" name="next_due_date" value="{{ $plan->next_due_date?->format('Y-m-d') }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Ngày bắt đầu hợp đồng</label>
+                                            <input type="date" name="start_date" value="{{ $plan->start_date?->format('Y-m-d') }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                        </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Trạng thái</label>
                                             <x-ui.custom-select compact name="status" :value="$plan->status" :options="$installmentStatusOptions" />
@@ -342,6 +491,9 @@
                     </button>
                     <button type="button" @click="tab = 'ai'" :class="tab === 'ai' ? 'border-[#1C69D4] bg-[#1C69D4]/20 text-white' : 'border-white/10 bg-[#070A10] text-zinc-400 hover:text-white'" class="rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer">
                         Hội thoại AI ({{ $aiSessions->count() }})
+                    </button>
+                    <button type="button" @click="tab = 'emails'" :class="tab === 'emails' ? 'border-[#1C69D4] bg-[#1C69D4]/20 text-white' : 'border-white/10 bg-[#070A10] text-zinc-400 hover:text-white'" class="rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer">
+                        Lịch sử thư đã gửi ({{ $emailLogs->count() }})
                     </button>
                 </div>
 
@@ -450,6 +602,45 @@
                         </div>
                     @empty
                         <p class="py-6 text-center text-xs text-zinc-500">Chưa có phiên hội thoại AI nào liên kết với khách hàng này.</p>
+                    @endforelse
+                </div>
+
+                <!-- Tab 5: Sent Email History (customer_email_logs) -->
+                <div x-show="tab === 'emails'" class="space-y-3" style="display: none;" data-customer-email-logs-tab>
+                    @forelse($emailLogs as $log)
+                        <div class="rounded-xl border border-white/[0.07] bg-[#070A10]/70 p-4 space-y-2">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold {{ $log->typeBadgeClass() }}">
+                                            {{ $log->typeLabel() }}
+                                        </span>
+                                        @if(filled($log->template_code))
+                                            <span class="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-zinc-300">
+                                                Mẫu: {{ $log->template_code }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="mt-1.5 text-sm font-bold text-white">{{ $log->subject }}</p>
+                                </div>
+                                <div class="shrink-0 text-right text-[11px] text-zinc-400">
+                                    <p class="font-semibold tabular-nums text-zinc-300">{{ $log->sent_at?->format('H:i · d/m/Y') }}</p>
+                                    <p class="mt-0.5 text-[10px] text-zinc-500">
+                                        Người gửi: {{ $log->sender?->name ?? 'Hệ thống tự động' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-zinc-400">
+                                Tới: <span class="font-semibold text-[#70A7FF]">{{ $log->customer_email }}</span>
+                            </p>
+                            @if(filled($log->body_excerpt))
+                                <p class="rounded-lg border border-white/[0.05] bg-[#0D121C] px-3 py-2 text-xs leading-relaxed text-zinc-300">
+                                    {{ $log->body_excerpt }}
+                                </p>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="py-6 text-center text-xs text-zinc-500">Chưa có lịch sử Email nào được ghi nhận cho khách hàng này.</p>
                     @endforelse
                 </div>
             </x-admin.card>

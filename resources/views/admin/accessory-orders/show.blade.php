@@ -1,16 +1,11 @@
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="route('admin.accessory-orders.index')"
         eyebrow="Accessory order #{{ $order->id }}"
         title="Chi tiết"
         accent="Đơn phụ kiện"
         :description="$order->customer_name"
-    >
-        <x-slot name="actions">
-            <a href="{{ route('admin.accessory-orders.index') }}" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white">
-                Quay lại
-            </a>
-        </x-slot>
-    </x-admin.page-header>
+    />
 
     <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_420px]">
         <div class="space-y-8">

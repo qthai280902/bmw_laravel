@@ -1,5 +1,7 @@
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="route('admin.email-templates.index')"
+        back-label="Quay lại kho mẫu"
         eyebrow="Email Template Studio · {{ $template->code }}"
         title="Chỉnh sửa"
         accent="Mẫu Email"

@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class PostTestDriveFollowupMail extends Mailable implements ShouldQueue
@@ -42,6 +43,16 @@ class PostTestDriveFollowupMail extends Mailable implements ShouldQueue
             text: 'mail.appointments.followup-text',
             with: [
                 'estimate' => $this->appointment->financialEstimate(),
+            ],
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-BMW-Mail-Kind' => 'post_test_drive_followup',
+                'X-BMW-Appointment-ID' => (string) $this->appointment->id,
             ],
         );
     }

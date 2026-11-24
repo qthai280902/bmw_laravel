@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Ai\ShowroomAssistantController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Client\AppointmentController;
+use App\Http\Controllers\Client\CustomerPortalLookupController;
 use App\Http\Controllers\Client\GuestAppointmentManageController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
@@ -51,6 +52,14 @@ Route::post('/accessories/{product:slug}/order', [AccessoryOrderController::clas
 Route::get('/offers', [PageController::class, 'exclusiveOffers'])->name('offers.exclusive');
 Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('policy.privacy');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact.index');
+
+// Customer Self-Service Lookup Portal (/tra-cuu)
+Route::get('/tra-cuu', [CustomerPortalLookupController::class, 'index'])
+    ->middleware('throttle:60,1')
+    ->name('customer.lookup.index');
+Route::post('/tra-cuu', [CustomerPortalLookupController::class, 'search'])
+    ->middleware('throttle:20,1')
+    ->name('customer.lookup.search');
 
 // Public Booking Routes
 Route::get('/booking', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -111,6 +120,8 @@ Route::middleware('auth')->group(function () {
             Route::post('articles/ai-assist', [AdminArticleController::class, 'aiAssist'])->name('articles.ai-assist');
             Route::resource('articles', AdminArticleController::class)->except(['show']);
             Route::post('customers/promotions', [CustomerController::class, 'sendPromotions'])->name('customers.promotions.store');
+            Route::get('customers/purchased-suggestions', [CustomerController::class, 'purchasedSuggestions'])
+                ->name('customers.purchased-suggestions');
 
             // Email Template Studio (admin + marketing only; sales receives 403)
             Route::prefix('email-templates')->name('email-templates.')->group(function () {
@@ -152,17 +163,24 @@ Route::middleware('auth')->group(function () {
             ->middleware('role:admin,sales,marketing')
             ->name('customers.index');
 
-        // System & Staff Management (admin only)
+        // System & Staff Management (admin only — declared BEFORE wildcard users/{user} below)
         Route::middleware('role:admin')->group(function () {
             Route::post('customers/distribute-sales', [CustomerController::class, 'distributeSales'])->name('customers.distribute-sales');
             Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
             Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
-            Route::resource('users', UserController::class)->only(['index', 'store']);
+            Route::get('users', [UserController::class, 'index'])->name('users.index');
+            Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+            Route::post('users', [UserController::class, 'store'])->name('users.store');
+            Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+            Route::match(['put', 'patch'], 'users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+            Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
         });
 
-        // Customer 360° Detail, Installment Plans & Quick 1-to-1 Email (placed below all static /admin/customers/* routes)
+        // Customer 360° Detail, Installment Plans, Quick 1-to-1 Email & Staff Self/Admin Profile
         Route::middleware('role:admin,sales,marketing')->group(function () {
+            Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+            Route::get('staff-profile/{user}', [UserController::class, 'show'])->name('staff.profile');
             Route::get('customers/{phone}', [CustomerController::class, 'show'])->name('customers.show');
             Route::post('customers/{phone}/installments', [CustomerController::class, 'storeInstallment'])->name('customers.installments.store');
             Route::patch('customers/{phone}/installments/{plan}', [CustomerController::class, 'updateInstallment'])->name('customers.installments.update');

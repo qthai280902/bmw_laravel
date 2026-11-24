@@ -5,6 +5,8 @@
     'description' => null,
     'metric' => null,
     'guideKey' => null,
+    'backUrl' => null,
+    'backLabel' => 'Quay lại',
 ])
 
 @php
@@ -14,6 +16,21 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => 'mb-8 border-b border-white/[0.08] pb-6']) }}>
+    @if($backUrl)
+        <div class="mb-3.5">
+            <a
+                href="{{ $backUrl }}"
+                data-admin-back-link
+                class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#0D121C] px-3.5 py-1.5 text-xs font-semibold text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-white"
+            >
+                <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>{{ $backLabel }}</span>
+            </a>
+        </div>
+    @endif
+
     <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div class="max-w-4xl">
             @if($eyebrow)

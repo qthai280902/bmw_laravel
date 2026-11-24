@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
@@ -15,9 +16,25 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // ĐƠN GIẢN HÓA: Kiểm tra email admin hoặc một thuộc tính role nếu có.
-        // Ở đây chúng ta dùng logic email kết thúc bằng @bmw.com cho đơn giản.
-        if (! $request->user()?->isAdmin()) {
+        $user = $request->user();
+
+        if ($user && ! $user->isActiveAccount()) {
+            Auth::guard('web')->logout();
+
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return redirect()
+                ->route('login')
+                ->withErrors([
+                    'email' => 'Tài khoản nhân sự của bạn đã bị tạm khóa. Vui lòng liên hệ Top Super Admin.',
+                ])
+                ->with('error', 'Tài khoản nhân sự của bạn đã bị tạm khóa.');
+        }
+
+        if (! $user?->isAdmin()) {
             abort(403, 'Unauthorized access to BMW Admin Portal.');
         }
 

@@ -4,6 +4,7 @@ namespace App\Services\Mail;
 
 use App\Models\CustomerInstallmentPlan;
 use App\Models\EmailTemplate;
+use Illuminate\Support\Facades\Route;
 
 class EmailTemplateRenderer
 {
@@ -55,6 +56,11 @@ class EmailTemplateRenderer
                 'sample' => '1900 123 456',
                 'fallback' => '1900 123 456',
             ],
+            'portal_lookup_url' => [
+                'label' => 'Cổng tra cứu hồ sơ & trả góp',
+                'sample' => url('/tra-cuu'),
+                'fallback' => url('/tra-cuu'),
+            ],
         ];
     }
 
@@ -98,6 +104,10 @@ class EmailTemplateRenderer
             ? $installmentPlan->next_due_date->format('d/m/Y')
             : '';
 
+        $portalLookupUrl = Route::has('customer.lookup.index')
+            ? route('customer.lookup.index')
+            : url('/tra-cuu');
+
         $base = [
             'customer_name' => trim((string) $customerName),
             'vehicle_name' => $resolvedVehicle,
@@ -107,6 +117,7 @@ class EmailTemplateRenderer
             'monthly_payment' => $resolvedMonthly,
             'next_due_date' => $resolvedNextDue,
             'showroom_hotline' => '1900 123 456',
+            'portal_lookup_url' => $portalLookupUrl,
         ];
 
         $merged = [];

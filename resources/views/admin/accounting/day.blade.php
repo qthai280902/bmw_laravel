@@ -1,5 +1,7 @@
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="route('admin.accounting.index')"
+        back-label="Quay lại Sổ tổng hợp"
         eyebrow="Gói Sổ Kế Toán Ngày · Chỉ Super Admin"
         title="Sổ Chi Tiết Ngày"
         :accent="$dateLabel"
@@ -7,12 +9,6 @@
     >
         <x-slot name="actions">
             <div class="flex flex-wrap items-center gap-2.5">
-                <a
-                    href="{{ route('admin.accounting.index') }}"
-                    class="inline-flex h-10 items-center rounded-xl border border-white/10 bg-[#131A29] px-4 text-xs font-semibold text-zinc-200 transition-colors hover:border-white/25 hover:text-white"
-                >
-                    Quay lại Sổ tổng hợp
-                </a>
                 <a
                     href="{{ route('admin.accounting.export', ['date' => $date]) }}"
                     class="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-5 text-xs font-semibold text-white transition-colors hover:bg-emerald-500"

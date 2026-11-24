@@ -1,5 +1,7 @@
 <x-admin-layout>
     <x-admin.page-header
+        :back-url="Auth::user()?->canManageSystem() ? route('admin.users.index') : route('admin.staff.profile', $staffUser)"
+        :back-label="Auth::user()?->canManageSystem() ? 'Danh sách nhân sự' : 'Hồ sơ cá nhân'"
         eyebrow="Hiệu suất Sales"
         title="Thống kê"
         :accent="$staffUser->name"
@@ -9,20 +11,6 @@
             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Tổng hồ sơ trong kỳ</p>
             <p class="mt-1 text-2xl font-black tabular-nums text-white">{{ number_format($kpis['total']) }}</p>
         </x-slot>
-
-        @if(Auth::user()?->canManageSystem())
-            <x-slot name="actions">
-                <a
-                    href="{{ route('admin.users.index') }}"
-                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#0D121C] px-4 text-xs font-semibold text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-white"
-                >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                    <span>Danh sách nhân sự</span>
-                </a>
-            </x-slot>
-        @endif
     </x-admin.page-header>
 
     {{-- Filter Bar --}}

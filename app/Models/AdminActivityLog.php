@@ -47,7 +47,10 @@ class AdminActivityLog extends Model
             'promotion.dispatched' => 'Gửi ưu đãi',
             'appointment.status_changed' => 'Cập nhật lịch hẹn',
             'staff.created' => 'Tạo nhân sự',
+            'staff.updated' => 'Cập nhật nhân sự',
             'staff.role_updated' => 'Đổi vai trò',
+            'staff.locked' => 'Khóa tài khoản',
+            'staff.unlocked' => 'Mở khóa tài khoản',
             'product.updated' => 'Cập nhật sản phẩm',
             default => $this->action,
         };

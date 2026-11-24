@@ -1445,6 +1445,9 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
     const initialAudience = parsed.audience || 'all';
     const initialOnlyCompleted = initialAudience === 'completed' || Boolean(parsed.onlyCompleted);
     const initialTemplates = Array.isArray(parsed.templates) ? parsed.templates : [];
+    const initialSelectedRecipients = Array.isArray(parsed.initialSelectedRecipients)
+        ? parsed.initialSelectedRecipients
+        : [];
 
     return {
         audience: initialAudience,
@@ -1455,6 +1458,96 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
         selectedTemplateCode: '',
         offerTitle: parsed.offerTitle || '',
         offerContent: parsed.offerContent || '',
+        suggestionsUrl: parsed.suggestionsUrl || '',
+        searchQuery: '',
+        suggestions: [],
+        suggestionsOpen: false,
+        suggestionsLoading: false,
+        selectedRecipients: initialSelectedRecipients,
+        _abortCtrl: null,
+
+        async fetchPurchasedSuggestions() {
+            if (!this.suggestionsUrl || typeof fetch !== 'function') {
+                return;
+            }
+
+            if (this._abortCtrl) {
+                this._abortCtrl.abort();
+            }
+            this._abortCtrl = new AbortController();
+            this.suggestionsLoading = true;
+
+            try {
+                const url = new URL(this.suggestionsUrl, window.location.origin);
+                if (this.searchQuery.trim() !== '') {
+                    url.searchParams.set('q', this.searchQuery.trim());
+                }
+
+                const res = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: { Accept: 'application/json' },
+                    signal: this._abortCtrl.signal,
+                });
+
+                if (!res.ok) {
+                    this.suggestions = [];
+                    this.suggestionsOpen = false;
+                    return;
+                }
+
+                const payload = await res.json().catch(() => []);
+                const list = Array.isArray(payload)
+                    ? payload
+                    : (Array.isArray(payload?.suggestions) ? payload.suggestions : []);
+
+                this.suggestions = list;
+                this.suggestionsOpen = true;
+            } catch (err) {
+                if (err?.name !== 'AbortError') {
+                    this.suggestions = [];
+                    this.suggestionsOpen = false;
+                }
+            } finally {
+                this.suggestionsLoading = false;
+            }
+        },
+
+        isRecipientSelected(email) {
+            const norm = String(email || '').trim().toLowerCase();
+            return this.selectedRecipients.some((item) => String(item.email || '').trim().toLowerCase() === norm);
+        },
+
+        selectRecipientChip(item) {
+            if (!item || !item.email) {
+                return;
+            }
+            const norm = String(item.email).trim().toLowerCase();
+            if (!this.isRecipientSelected(norm)) {
+                this.selectedRecipients.push({
+                    key: item.key || norm,
+                    name: item.name || 'Quý khách',
+                    email: norm,
+                    phone: item.phone || '',
+                    vehicle_label: item.vehicle_label || 'Các dòng xe BMW',
+                    purchase_badge: item.purchase_badge || 'Khách đã mua hàng',
+                });
+            }
+            this.searchQuery = '';
+            this.suggestionsOpen = false;
+        },
+
+        removeRecipientChip(email) {
+            const norm = String(email || '').trim().toLowerCase();
+            this.selectedRecipients = this.selectedRecipients.filter(
+                (item) => String(item.email || '').trim().toLowerCase() !== norm
+            );
+        },
+
+        clearSelectedRecipients() {
+            this.selectedRecipients = [];
+            this.searchQuery = '';
+            this.suggestionsOpen = false;
+        },
 
         applyEmailTemplate(code) {
             const targetCode = typeof code === 'string' ? code : this.selectedTemplateCode;
@@ -1505,6 +1598,17 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
         },
 
         get matchedRecipients() {
+            if (this.selectedRecipients.length > 0) {
+                return this.selectedRecipients.map((chip, idx) => ({
+                    key: chip.key || chip.email || `chip-${idx}`,
+                    name: chip.name || 'Quý khách',
+                    email: chip.email || '',
+                    vehicle: chip.vehicle_label || chip.purchase_badge || 'Khách đã mua hàng',
+                    completed: true,
+                    has_installment: false,
+                }));
+            }
+
             if (this.audience === 'by_product' && !this.productId) {
                 return [];
             }

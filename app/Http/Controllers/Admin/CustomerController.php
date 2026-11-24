@@ -9,14 +9,17 @@ use App\Mail\Customer\TemplatedCustomerMail;
 use App\Models\AccessoryOrder;
 use App\Models\AiChatSession;
 use App\Models\Appointment;
+use App\Models\CustomerEmailLog;
 use App\Models\CustomerInstallmentPlan;
 use App\Models\EmailTemplate;
 use App\Models\Product;
 use App\Services\Cache\ShowroomCacheService;
 use App\Services\Crm\InteractionTimelineRecorder;
 use App\Services\Crm\SalesAssignmentService;
+use App\Services\Finance\InstallmentScheduleCalculator;
 use App\Services\Mail\EmailTemplateRenderer;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -150,8 +153,12 @@ class CustomerController extends Controller
         ));
     }
 
-    public function show(Request $request, string $phone, EmailTemplateRenderer $renderer): View
-    {
+    public function show(
+        Request $request,
+        string $phone,
+        EmailTemplateRenderer $renderer,
+        InstallmentScheduleCalculator $scheduleCalculator,
+    ): View {
         $emailQuery = trim((string) $request->query('email', ''));
         $bundle = $this->resolveCustomerBundle($phone, $emailQuery);
 
@@ -171,6 +178,13 @@ class CustomerController extends Controller
         $primaryInstallment = $bundle['installmentPlans']
             ->first(static fn (CustomerInstallmentPlan $p): bool => in_array($p->status, [CustomerInstallmentPlan::STATUS_ACTIVE, CustomerInstallmentPlan::STATUS_OVERDUE], true))
             ?? $bundle['installmentPlans']->first();
+
+        $installmentSchedules = [];
+        foreach ($bundle['installmentPlans'] as $planItem) {
+            $installmentSchedules[$planItem->id] = $scheduleCalculator->calculate($planItem);
+        }
+
+        $installmentOverview = $this->buildInstallmentOverview($bundle['installmentPlans'], $installmentSchedules);
 
         $latestAppointment = $bundle['appointments']->first();
         $defaultVehicleName = $latestAppointment?->product?->name
@@ -195,11 +209,15 @@ class CustomerController extends Controller
             'serviceBookings' => $bundle['serviceBookings'],
             'accessoryOrders' => $bundle['accessoryOrders'],
             'installmentPlans' => $bundle['installmentPlans'],
+            'installmentSchedules' => $installmentSchedules,
+            'installmentOverview' => $installmentOverview,
+            'emailLogs' => $bundle['emailLogs'],
             'aiSessions' => $bundle['aiSessions'],
             'kpis' => $bundle['kpis'],
             'activeEmailTemplates' => $activeEmailTemplates,
             'vehicleProducts' => $vehicleProducts,
             'installmentStatusOptions' => CustomerInstallmentPlan::statusOptions(),
+            'interestMethodOptions' => CustomerInstallmentPlan::interestMethodOptions(),
             'previewVariables' => $previewVariables,
         ]);
     }
@@ -214,11 +232,15 @@ class CustomerController extends Controller
             'bank_name' => ['required', 'string', 'max:150'],
             'product_id' => ['nullable', 'integer', Rule::exists('products', 'id')],
             'appointment_id' => ['nullable', 'integer', Rule::exists('appointments', 'id')],
+            'vehicle_price' => ['nullable', 'integer', 'min:0'],
+            'down_payment' => ['nullable', 'integer', 'min:0'],
             'loan_amount' => ['required', 'integer', 'min:1000000'],
             'monthly_payment' => ['required', 'integer', 'min:100000'],
             'interest_rate' => ['required', 'numeric', 'min:0', 'max:50'],
+            'interest_method' => ['nullable', 'string', Rule::in(array_keys(CustomerInstallmentPlan::interestMethodOptions()))],
             'term_months' => ['required', 'integer', 'min:1', 'max:240'],
             'paid_installments' => ['required', 'integer', 'min:0', 'lte:term_months'],
+            'start_date' => ['nullable', 'date'],
             'next_due_date' => ['nullable', 'date'],
             'status' => ['required', 'string', Rule::in(array_keys(CustomerInstallmentPlan::statusOptions()))],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -240,11 +262,15 @@ class CustomerController extends Controller
             'product_id' => $validated['product_id'] ?? null,
             'appointment_id' => $validated['appointment_id'] ?? null,
             'bank_name' => trim((string) $validated['bank_name']),
+            'vehicle_price' => isset($validated['vehicle_price']) && $validated['vehicle_price'] !== '' ? (int) $validated['vehicle_price'] : null,
+            'down_payment' => isset($validated['down_payment']) && $validated['down_payment'] !== '' ? (int) $validated['down_payment'] : null,
             'loan_amount' => (int) $validated['loan_amount'],
             'monthly_payment' => (int) $validated['monthly_payment'],
             'interest_rate' => (float) $validated['interest_rate'],
+            'interest_method' => $validated['interest_method'] ?? CustomerInstallmentPlan::METHOD_REDUCING_BALANCE,
             'term_months' => (int) $validated['term_months'],
             'paid_installments' => (int) $validated['paid_installments'],
+            'start_date' => $validated['start_date'] ?? null,
             'next_due_date' => $validated['next_due_date'] ?? null,
             'status' => (string) $validated['status'],
             'notes' => isset($validated['notes']) ? trim((string) $validated['notes']) : null,
@@ -280,11 +306,15 @@ class CustomerController extends Controller
 
         $validated = $request->validate([
             'bank_name' => ['required', 'string', 'max:150'],
+            'vehicle_price' => ['nullable', 'integer', 'min:0'],
+            'down_payment' => ['nullable', 'integer', 'min:0'],
             'loan_amount' => ['required', 'integer', 'min:1000000'],
             'monthly_payment' => ['required', 'integer', 'min:100000'],
             'interest_rate' => ['required', 'numeric', 'min:0', 'max:50'],
+            'interest_method' => ['nullable', 'string', Rule::in(array_keys(CustomerInstallmentPlan::interestMethodOptions()))],
             'term_months' => ['required', 'integer', 'min:1', 'max:240'],
             'paid_installments' => ['required', 'integer', 'min:0', 'lte:term_months'],
+            'start_date' => ['nullable', 'date'],
             'next_due_date' => ['nullable', 'date'],
             'status' => ['required', 'string', Rule::in(array_keys(CustomerInstallmentPlan::statusOptions()))],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -292,7 +322,7 @@ class CustomerController extends Controller
             'paid_installments.lte' => 'Số kỳ đã thanh toán không được vượt quá tổng số kỳ hạn.',
         ]);
 
-        $plan->update([
+        $updatePayload = [
             'bank_name' => trim((string) $validated['bank_name']),
             'loan_amount' => (int) $validated['loan_amount'],
             'monthly_payment' => (int) $validated['monthly_payment'],
@@ -302,7 +332,22 @@ class CustomerController extends Controller
             'next_due_date' => $validated['next_due_date'] ?? null,
             'status' => (string) $validated['status'],
             'notes' => isset($validated['notes']) ? trim((string) $validated['notes']) : null,
-        ]);
+        ];
+
+        if ($request->has('vehicle_price')) {
+            $updatePayload['vehicle_price'] = $validated['vehicle_price'] !== null ? (int) $validated['vehicle_price'] : null;
+        }
+        if ($request->has('down_payment')) {
+            $updatePayload['down_payment'] = $validated['down_payment'] !== null ? (int) $validated['down_payment'] : null;
+        }
+        if (! empty($validated['interest_method'])) {
+            $updatePayload['interest_method'] = $validated['interest_method'];
+        }
+        if ($request->has('start_date')) {
+            $updatePayload['start_date'] = $validated['start_date'] ?? null;
+        }
+
+        $plan->update($updatePayload);
 
         $latestAppointment = $bundle['appointments']->first();
         if ($latestAppointment instanceof Appointment) {
@@ -371,18 +416,40 @@ class CustomerController extends Controller
             installmentPlan: $selectedPlan,
         );
 
+        $subjectOverride = isset($validated['subject_override']) && trim((string) $validated['subject_override']) !== ''
+            ? trim((string) $validated['subject_override'])
+            : null;
+        $bodyOverride = isset($validated['body_override']) && trim((string) $validated['body_override']) !== ''
+            ? trim((string) $validated['body_override'])
+            : null;
+
+        $rendered = $renderer->renderTemplate($template, $variables, $subjectOverride, $bodyOverride);
         $recipientEmail = trim((string) $validated['recipient_email']);
 
         Mail::to($recipientEmail)->queue(new TemplatedCustomerMail(
             template: $template,
             variables: $variables,
-            subjectOverride: isset($validated['subject_override']) && trim((string) $validated['subject_override']) !== ''
-                ? trim((string) $validated['subject_override'])
-                : null,
-            bodyOverride: isset($validated['body_override']) && trim((string) $validated['body_override']) !== ''
-                ? trim((string) $validated['body_override'])
-                : null,
+            subjectOverride: $subjectOverride,
+            bodyOverride: $bodyOverride,
         ));
+
+        CustomerEmailLog::query()->create([
+            'customer_phone' => $bundle['profile']['phone_digits'] !== '' ? $bundle['profile']['phone_digits'] : null,
+            'customer_email' => mb_strtolower($recipientEmail),
+            'customer_name' => $bundle['profile']['name'],
+            'mail_type' => $template->category === EmailTemplate::CATEGORY_INSTALLMENT
+                ? CustomerEmailLog::TYPE_INSTALLMENT_REMINDER
+                : CustomerEmailLog::TYPE_TEMPLATED_1TO1,
+            'template_code' => $template->code,
+            'subject' => Str::limit($rendered['subject'], 250, ''),
+            'body_excerpt' => Str::limit(trim((string) preg_replace('/\s+/u', ' ', strip_tags($rendered['body_content']))), 260),
+            'sent_by' => Auth::id(),
+            'sent_at' => now(),
+            'meta_data' => [
+                'template_id' => $template->id,
+                'installment_plan_id' => $selectedPlan?->id,
+            ],
+        ]);
 
         if ($latestAppointment instanceof Appointment) {
             InteractionTimelineRecorder::record(
@@ -398,6 +465,59 @@ class CustomerController extends Controller
         return redirect()
             ->route('admin.customers.show', $this->customerShowRouteParams($bundle['routePhone'], $bundle['routeEmail']))
             ->with('success', "Đã xếp hàng đợi gửi Email \"{$template->name}\" tới {$recipientEmail}.");
+    }
+
+    public function purchasedSuggestions(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) $request->query('q', ''));
+        $queryLower = mb_strtolower($rawQuery);
+        $rawDigits = preg_replace('/\D+/', '', $rawQuery) ?? '';
+        $canonicalDigits = CustomerInstallmentPlan::normalizePhoneDigits($rawQuery);
+        if ($rawDigits !== '' && str_starts_with($rawDigits, '0084') && strlen($rawDigits) >= 5) {
+            $canonicalDigits = '0'.substr($rawDigits, 4);
+        } elseif ($rawDigits !== '' && str_starts_with($rawDigits, '84') && strlen($rawDigits) >= 3) {
+            $canonicalDigits = '0'.substr($rawDigits, 2);
+        }
+
+        $eligibleMap = $this->buildEligiblePurchasedCustomersMap();
+
+        $matched = collect($eligibleMap)
+            ->filter(static function (array $item) use ($queryLower, $rawDigits, $canonicalDigits): bool {
+                if ($queryLower === '') {
+                    return true;
+                }
+
+                if (str_contains(mb_strtolower($item['email']), $queryLower)
+                    || str_contains(mb_strtolower($item['name']), $queryLower)
+                    || str_contains(mb_strtolower($item['phone']), $queryLower)) {
+                    return true;
+                }
+
+                if ($rawDigits !== '' && $item['phone_digits'] !== '') {
+                    if (str_contains($item['phone_digits'], $rawDigits)) {
+                        return true;
+                    }
+
+                    if ($canonicalDigits !== '' && str_contains($item['phone_digits'], $canonicalDigits)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            ->take(10)
+            ->map(static fn (array $item): array => [
+                'key' => $item['email'],
+                'name' => $item['name'],
+                'email' => $item['email'],
+                'phone' => $item['phone'] !== '' ? $item['phone'] : 'N/A',
+                'vehicle_label' => $item['vehicle_label'],
+                'purchase_badge' => $item['purchase_badge'],
+            ])
+            ->values()
+            ->all();
+
+        return response()->json($matched);
     }
 
     public function distributeSales(Request $request, SalesAssignmentService $assignmentService): RedirectResponse
@@ -427,24 +547,59 @@ class CustomerController extends Controller
             'content' => ['required', 'string', 'max:4000'],
             'audience' => ['required', 'string', Rule::in(['all', 'completed', 'by_product', 'installment'])],
             'product_id' => ['nullable', 'integer', Rule::exists('products', 'id')],
+            'selected_recipient_emails' => ['nullable', 'array'],
+            'selected_recipient_emails.*' => ['string', 'email', 'max:190'],
         ]);
 
-        if ($validated['audience'] === 'by_product' && empty($validated['product_id'])) {
-            return back()
-                ->withInput()
-                ->withErrors(['product_id' => 'Vui lòng chọn mẫu xe cụ thể để lọc khách hàng mục tiêu.']);
-        }
+        $selectedEmails = collect($validated['selected_recipient_emails'] ?? [])
+            ->map(static fn (string $email): string => mb_strtolower(trim($email)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-        $productId = ! empty($validated['product_id']) ? (int) $validated['product_id'] : null;
-        $onlyCompleted = $validated['audience'] === 'completed' || $request->boolean('only_completed');
-        $onlyInstallment = $validated['audience'] === 'installment';
+        if ($selectedEmails !== []) {
+            $eligibleMap = $this->buildEligiblePurchasedCustomersMap();
+            $recipients = [];
 
-        $recipients = $this->resolvePromotionRecipients($productId, $onlyCompleted, $onlyInstallment);
+            foreach ($selectedEmails as $selectedEmail) {
+                if (! isset($eligibleMap[$selectedEmail])) {
+                    continue;
+                }
 
-        if ($recipients === []) {
-            return back()
-                ->withInput()
-                ->with('error', 'Không tìm thấy khách hàng nào có email hợp lệ khớp điều kiện lọc.');
+                $entry = $eligibleMap[$selectedEmail];
+                $recipients[] = [
+                    'email' => $entry['email'],
+                    'name' => $entry['name'],
+                    'vehicle_name' => $entry['vehicle_label'],
+                    'advisor_name' => $entry['advisor_name'],
+                    'phone' => $entry['phone_digits'],
+                ];
+            }
+
+            if ($recipients === []) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Không tìm thấy khách hàng đã mua hàng hợp lệ nào trong danh sách đã chọn.');
+            }
+        } else {
+            if ($validated['audience'] === 'by_product' && empty($validated['product_id'])) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['product_id' => 'Vui lòng chọn mẫu xe cụ thể để lọc khách hàng mục tiêu.']);
+            }
+
+            $productId = ! empty($validated['product_id']) ? (int) $validated['product_id'] : null;
+            $onlyCompleted = $validated['audience'] === 'completed' || $request->boolean('only_completed');
+            $onlyInstallment = $validated['audience'] === 'installment';
+
+            $recipients = $this->resolvePromotionRecipients($productId, $onlyCompleted, $onlyInstallment);
+
+            if ($recipients === []) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Không tìm thấy khách hàng nào có email hợp lệ khớp điều kiện lọc.');
+            }
         }
 
         event(new PromotionCampaignDispatched(
@@ -452,6 +607,7 @@ class CustomerController extends Controller
             offerTitle: trim(strip_tags($validated['title'])),
             offerContent: trim($validated['content']),
             recipients: $recipients,
+            sentBy: Auth::id(),
         ));
 
         return redirect()
@@ -638,6 +794,30 @@ class CustomerController extends Controller
             ->filter(static fn (CustomerInstallmentPlan $p): bool => in_array($p->status, [CustomerInstallmentPlan::STATUS_ACTIVE, CustomerInstallmentPlan::STATUS_OVERDUE], true))
             ->count();
 
+        if ($resolvedPhoneDigits !== '' && ! in_array($resolvedPhoneDigits, $knownPhoneDigits, true)) {
+            $knownPhoneDigits[] = $resolvedPhoneDigits;
+        }
+        if ($resolvedEmail !== '' && ! in_array(mb_strtolower($resolvedEmail), $knownEmails, true)) {
+            $knownEmails[] = mb_strtolower($resolvedEmail);
+        }
+
+        $emailLogs = CustomerEmailLog::query()
+            ->with('sender:id,name')
+            ->orderByDesc('sent_at')
+            ->orderByDesc('id')
+            ->get()
+            ->filter(static function (CustomerEmailLog $log) use ($knownPhoneDigits, $knownEmails): bool {
+                $logPhone = CustomerInstallmentPlan::normalizePhoneDigits($log->customer_phone);
+                $logEmail = mb_strtolower(trim((string) $log->customer_email));
+
+                if ($logPhone !== '' && in_array($logPhone, $knownPhoneDigits, true)) {
+                    return true;
+                }
+
+                return $logEmail !== '' && in_array($logEmail, $knownEmails, true);
+            })
+            ->values();
+
         return [
             'profile' => [
                 'name' => $resolvedName,
@@ -653,6 +833,7 @@ class CustomerController extends Controller
             'serviceBookings' => $serviceBookings,
             'accessoryOrders' => $accessoryOrders,
             'installmentPlans' => $installmentPlans,
+            'emailLogs' => $emailLogs,
             'aiSessions' => $aiSessions,
             'kpis' => [
                 'appointments' => $vehicleAppointments->count(),
@@ -776,6 +957,7 @@ class CustomerController extends Controller
                         ?? ($appointment->meta_data['customer_car_model'] ?? 'Các dòng xe BMW')
                     )),
                     'advisor_name' => (string) ($appointment->assignedSales?->name ?? ''),
+                    'phone' => CustomerInstallmentPlan::normalizePhoneDigits($appointment->guest_phone),
                     '_priority' => $appointment->status === AppointmentStatus::Completed ? 0 : 1,
                     '_date' => $appointment->appointment_date?->getTimestamp() ?? 0,
                     '_id' => (int) $appointment->id,
@@ -801,6 +983,7 @@ class CustomerController extends Controller
                         'name' => trim((string) $plan->customer_name) ?: 'Quý khách',
                         'vehicle_name' => trim((string) ($plan->product?->name ?? 'Các dòng xe BMW')),
                         'advisor_name' => '',
+                        'phone' => CustomerInstallmentPlan::normalizePhoneDigits($plan->customer_phone),
                         '_priority' => 2,
                         '_date' => $plan->created_at?->getTimestamp() ?? 0,
                         '_id' => (int) $plan->id,
@@ -822,6 +1005,7 @@ class CustomerController extends Controller
                 'name' => $item['name'],
                 'vehicle_name' => $item['vehicle_name'],
                 'advisor_name' => $item['advisor_name'] ?? '',
+                'phone' => $item['phone'] ?? '',
             ])
             ->values()
             ->all();
@@ -925,5 +1109,305 @@ class CustomerController extends Controller
         }
 
         return $tuples;
+    }
+
+    /**
+     * Build top-level installment overview banner metrics for Customer 360°.
+     *
+     * @param  Collection<int, CustomerInstallmentPlan>  $plans
+     * @param  array<int, array<string, mixed>>  $schedulesByPlanId
+     * @return array{
+     *     status_state: string,
+     *     status_label: string,
+     *     status_badge_class: string,
+     *     remaining_principal: int,
+     *     estimated_remaining_total: int,
+     *     remaining_installments: int,
+     *     term_months: int,
+     *     next_due_date_label: string
+     * }
+     */
+    private function buildInstallmentOverview(Collection $plans, array $schedulesByPlanId): array
+    {
+        if ($plans->isEmpty()) {
+            return [
+                'status_state' => 'none',
+                'status_label' => 'Không trả góp',
+                'status_badge_class' => 'border-white/15 bg-white/5 text-zinc-300',
+                'remaining_principal' => 0,
+                'estimated_remaining_total' => 0,
+                'remaining_installments' => 0,
+                'term_months' => 0,
+                'next_due_date_label' => 'Không phát sinh',
+            ];
+        }
+
+        $hasOverdue = $plans->contains(function (CustomerInstallmentPlan $p) use ($schedulesByPlanId): bool {
+            if ($p->status === CustomerInstallmentPlan::STATUS_OVERDUE) {
+                return true;
+            }
+            $calc = $schedulesByPlanId[$p->id] ?? null;
+            if (! is_array($calc) || empty($calc['schedule'])) {
+                return false;
+            }
+
+            foreach ($calc['schedule'] as $row) {
+                if (($row['status'] ?? '') === 'overdue') {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        $openPlans = $plans->filter(static fn (CustomerInstallmentPlan $p): bool => in_array(
+            $p->status,
+            [CustomerInstallmentPlan::STATUS_ACTIVE, CustomerInstallmentPlan::STATUS_OVERDUE],
+            true
+        ));
+
+        if ($hasOverdue) {
+            $statusState = 'overdue';
+            $statusLabel = 'Quá hạn';
+            $statusBadgeClass = 'border-rose-500/40 bg-rose-500/15 text-rose-300';
+        } elseif ($openPlans->isNotEmpty()) {
+            $statusState = 'active';
+            $statusLabel = 'Đang trả góp';
+            $statusBadgeClass = 'border-sky-500/40 bg-sky-500/15 text-sky-300';
+        } else {
+            $statusState = 'completed';
+            $statusLabel = 'Đã hoàn tất';
+            $statusBadgeClass = 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300';
+        }
+
+        $remainingPrincipal = 0;
+        $estimatedRemainingTotal = 0;
+
+        foreach ($openPlans as $openPlan) {
+            $calc = $schedulesByPlanId[$openPlan->id] ?? null;
+            if (is_array($calc)) {
+                $remainingPrincipal += (int) ($calc['remaining_principal'] ?? 0);
+                $estimatedRemainingTotal += (int) ($calc['estimated_remaining_total'] ?? 0);
+            }
+        }
+
+        /** @var CustomerInstallmentPlan $primaryPlan */
+        $primaryPlan = $openPlans->first() ?? $plans->first();
+        $primaryCalc = $schedulesByPlanId[$primaryPlan->id] ?? [];
+
+        return [
+            'status_state' => $statusState,
+            'status_label' => $statusLabel,
+            'status_badge_class' => $statusBadgeClass,
+            'remaining_principal' => $remainingPrincipal,
+            'estimated_remaining_total' => $estimatedRemainingTotal,
+            'remaining_installments' => (int) ($primaryCalc['remaining_installments'] ?? 0),
+            'term_months' => (int) ($primaryCalc['term_months'] ?? (int) $primaryPlan->term_months),
+            'next_due_date_label' => (string) ($primaryCalc['next_due_date_label'] ?? 'Đã tất toán'),
+        ];
+    }
+
+    /**
+     * Build deduplicated map of strictly eligible purchased/service-completed customers across all 4 sources.
+     *
+     * @return array<string, array{
+     *     email: string,
+     *     name: string,
+     *     phone: string,
+     *     phone_digits: string,
+     *     vehicle_label: string,
+     *     purchase_badge: string,
+     *     advisor_name: string
+     * }>
+     */
+    private function buildEligiblePurchasedCustomersMap(): array
+    {
+        $allAppointments = Appointment::query()
+            ->with(['user:id,name,email,phone', 'product:id,name', 'assignedSales:id,name'])
+            ->orderByDesc('appointment_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $allPlans = CustomerInstallmentPlan::query()
+            ->with(['product:id,name'])
+            ->orderByDesc('id')
+            ->get();
+
+        $completedOrders = AccessoryOrder::query()
+            ->with(['product:id,name', 'assignedSales:id,name'])
+            ->where('status', AccessoryOrder::STATUS_COMPLETED)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        // Cross-link Phone <-> Email across showroom records so phone-only plans/orders resolve valid emails
+        $phoneToEmail = [];
+        $emailToPhone = [];
+
+        foreach ($allAppointments as $appt) {
+            $email = mb_strtolower(trim((string) ($appt->guest_email ?? $appt->user?->email ?? '')));
+            $rawPhone = trim((string) ($appt->guest_phone ?: $appt->user?->phone ?: ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && $digits !== '') {
+                $phoneToEmail[$digits] ??= $email;
+                $emailToPhone[$email] ??= $rawPhone;
+            }
+        }
+
+        foreach ($completedOrders as $order) {
+            $email = mb_strtolower(trim((string) ($order->customer_email ?? '')));
+            $rawPhone = trim((string) ($order->customer_phone ?? ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && $digits !== '') {
+                $phoneToEmail[$digits] ??= $email;
+                $emailToPhone[$email] ??= $rawPhone;
+            }
+        }
+
+        foreach ($allPlans as $plan) {
+            $email = mb_strtolower(trim((string) ($plan->customer_email ?? '')));
+            $rawPhone = trim((string) ($plan->customer_phone ?? ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && $digits !== '') {
+                $phoneToEmail[$digits] ??= $email;
+                $emailToPhone[$email] ??= $rawPhone;
+            }
+        }
+
+        $candidates = [];
+
+        // Source 1: Purchased Vehicles (status = completed & completion_outcome = purchased)
+        foreach ($allAppointments as $appt) {
+            if ($appt->status !== AppointmentStatus::Completed || $appt->isServiceBooking()) {
+                continue;
+            }
+            if ($appt->completionOutcome() !== Appointment::OUTCOME_PURCHASED) {
+                continue;
+            }
+
+            $rawPhone = trim((string) ($appt->guest_phone ?: $appt->user?->phone ?: ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+            $email = mb_strtolower(trim((string) ($appt->guest_email ?? $appt->user?->email ?? ($digits !== '' ? ($phoneToEmail[$digits] ?? '') : ''))));
+
+            if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+
+            $vehicleLabel = trim((string) ($appt->product?->name ?? 'Xe BMW chính hãng'));
+            $candidates[] = [
+                'email' => $email,
+                'name' => trim((string) ($appt->user?->name ?? $appt->guest_name ?? 'Quý khách')) ?: 'Quý khách',
+                'phone' => $rawPhone !== '' ? $rawPhone : ($emailToPhone[$email] ?? ''),
+                'phone_digits' => $digits !== '' ? $digits : CustomerInstallmentPlan::normalizePhoneDigits($emailToPhone[$email] ?? ''),
+                'vehicle_label' => $vehicleLabel,
+                'purchase_badge' => 'Đã mua xe · '.Str::limit($vehicleLabel, 28),
+                'advisor_name' => $appt->assigned_to !== null && $appt->assignedSales?->exists ? (string) $appt->assignedSales->name : '',
+                '_priority' => 1,
+                '_ts' => $appt->appointment_date?->getTimestamp() ?? 0,
+            ];
+        }
+
+        // Source 2: Customer Installment Plans
+        foreach ($allPlans as $plan) {
+            $rawPhone = trim((string) ($plan->customer_phone ?? ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+            $email = mb_strtolower(trim((string) ($plan->customer_email ?: ($digits !== '' ? ($phoneToEmail[$digits] ?? '') : ''))));
+
+            if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+
+            $vehicleLabel = trim((string) ($plan->product?->name ?? 'Các dòng xe BMW'));
+            $candidates[] = [
+                'email' => $email,
+                'name' => trim((string) $plan->customer_name) ?: 'Quý khách',
+                'phone' => $rawPhone !== '' ? $rawPhone : ($emailToPhone[$email] ?? ''),
+                'phone_digits' => $digits !== '' ? $digits : CustomerInstallmentPlan::normalizePhoneDigits($emailToPhone[$email] ?? ''),
+                'vehicle_label' => $vehicleLabel,
+                'purchase_badge' => 'Trả góp · '.Str::limit($plan->bank_name, 26),
+                'advisor_name' => '',
+                '_priority' => 2,
+                '_ts' => $plan->created_at?->getTimestamp() ?? 0,
+            ];
+        }
+
+        // Source 3: Completed Accessory Orders
+        foreach ($completedOrders as $order) {
+            $rawPhone = trim((string) ($order->customer_phone ?? ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+            $email = mb_strtolower(trim((string) ($order->customer_email ?: ($digits !== '' ? ($phoneToEmail[$digits] ?? '') : ''))));
+
+            if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+
+            $productLabel = trim((string) ($order->product?->name ?? 'Phụ kiện BMW'));
+            $candidates[] = [
+                'email' => $email,
+                'name' => trim((string) $order->customer_name) ?: 'Quý khách',
+                'phone' => $rawPhone !== '' ? $rawPhone : ($emailToPhone[$email] ?? ''),
+                'phone_digits' => $digits !== '' ? $digits : CustomerInstallmentPlan::normalizePhoneDigits($emailToPhone[$email] ?? ''),
+                'vehicle_label' => $productLabel,
+                'purchase_badge' => 'Phụ kiện hoàn tất · '.Str::limit($productLabel, 24),
+                'advisor_name' => $order->assigned_to !== null && $order->assignedSales?->exists ? (string) $order->assignedSales->name : '',
+                '_priority' => 3,
+                '_ts' => $order->created_at?->getTimestamp() ?? 0,
+            ];
+        }
+
+        // Source 4: Completed Service Bookings
+        foreach ($allAppointments as $srv) {
+            if ($srv->status !== AppointmentStatus::Completed || ! $srv->isServiceBooking()) {
+                continue;
+            }
+
+            $rawPhone = trim((string) ($srv->guest_phone ?: $srv->user?->phone ?: ''));
+            $digits = CustomerInstallmentPlan::normalizePhoneDigits($rawPhone);
+            $email = mb_strtolower(trim((string) ($srv->guest_email ?? $srv->user?->email ?? ($digits !== '' ? ($phoneToEmail[$digits] ?? '') : ''))));
+
+            if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+
+            $serviceLabel = trim((string) ($srv->servicePackageLabel() ?: $srv->typeLabel()));
+            $vehicleLabel = trim((string) ($srv->product?->name ?? ($srv->meta_data['customer_car_model'] ?? 'Dòng xe BMW')));
+            $candidates[] = [
+                'email' => $email,
+                'name' => trim((string) ($srv->user?->name ?? $srv->guest_name ?? 'Quý khách')) ?: 'Quý khách',
+                'phone' => $rawPhone !== '' ? $rawPhone : ($emailToPhone[$email] ?? ''),
+                'phone_digits' => $digits !== '' ? $digits : CustomerInstallmentPlan::normalizePhoneDigits($emailToPhone[$email] ?? ''),
+                'vehicle_label' => $vehicleLabel !== '' ? $vehicleLabel : 'Các dòng xe BMW',
+                'purchase_badge' => 'Dịch vụ hoàn tất · '.Str::limit($serviceLabel, 24),
+                'advisor_name' => $srv->assigned_to !== null && $srv->assignedSales?->exists ? (string) $srv->assignedSales->name : '',
+                '_priority' => 4,
+                '_ts' => $srv->appointment_date?->getTimestamp() ?? 0,
+            ];
+        }
+
+        usort($candidates, static fn (array $a, array $b): int => [$a['_priority'], $b['_ts']] <=> [$b['_priority'], $a['_ts']]);
+
+        $map = [];
+        foreach ($candidates as $candidate) {
+            $email = $candidate['email'];
+            if (isset($map[$email])) {
+                if ($map[$email]['advisor_name'] === '' && $candidate['advisor_name'] !== '') {
+                    $map[$email]['advisor_name'] = $candidate['advisor_name'];
+                }
+                if ($map[$email]['phone'] === '' && $candidate['phone'] !== '') {
+                    $map[$email]['phone'] = $candidate['phone'];
+                    $map[$email]['phone_digits'] = $candidate['phone_digits'];
+                }
+
+                continue;
+            }
+
+            unset($candidate['_priority'], $candidate['_ts']);
+            $map[$email] = $candidate;
+        }
+
+        return $map;
     }
 }

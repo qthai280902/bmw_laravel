@@ -14,6 +14,10 @@ class CustomerInstallmentPlan extends Model
 
     public const STATUS_OVERDUE = 'overdue';
 
+    public const METHOD_REDUCING_BALANCE = 'reducing_balance';
+
+    public const METHOD_FLAT = 'flat';
+
     protected $fillable = [
         'customer_phone',
         'customer_email',
@@ -21,11 +25,15 @@ class CustomerInstallmentPlan extends Model
         'product_id',
         'appointment_id',
         'bank_name',
+        'vehicle_price',
+        'down_payment',
         'loan_amount',
         'monthly_payment',
         'interest_rate',
+        'interest_method',
         'term_months',
         'paid_installments',
+        'start_date',
         'next_due_date',
         'status',
         'notes',
@@ -35,11 +43,14 @@ class CustomerInstallmentPlan extends Model
     protected function casts(): array
     {
         return [
+            'vehicle_price' => 'integer',
+            'down_payment' => 'integer',
             'loan_amount' => 'integer',
             'monthly_payment' => 'integer',
             'interest_rate' => 'float',
             'term_months' => 'integer',
             'paid_installments' => 'integer',
+            'start_date' => 'date',
             'next_due_date' => 'date',
         ];
     }
@@ -106,6 +117,46 @@ class CustomerInstallmentPlan extends Model
 
     public static function normalizePhoneDigits(?string $phone): string
     {
-        return preg_replace('/\D+/', '', (string) $phone) ?? '';
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
+
+        return self::canonicalizeVnPhoneDigits($digits);
+    }
+
+    /**
+     * Canonicalize Vietnam phone numbers (+84 / 84 / 0084 -> leading 0) while preserving non-VN numbers.
+     */
+    public static function canonicalizeVnPhoneDigits(string $digits): string
+    {
+        if ($digits === '') {
+            return '';
+        }
+
+        if (str_starts_with($digits, '0084') && strlen($digits) >= 12) {
+            return '0'.substr($digits, 4);
+        }
+
+        if (str_starts_with($digits, '84') && strlen($digits) >= 10) {
+            return '0'.substr($digits, 2);
+        }
+
+        return $digits;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function interestMethodOptions(): array
+    {
+        return [
+            self::METHOD_REDUCING_BALANCE => 'Dư nợ giảm dần',
+            self::METHOD_FLAT => 'Lãi suất cố định',
+        ];
+    }
+
+    public function interestMethodLabel(): string
+    {
+        $method = (string) ($this->interest_method ?: self::METHOD_REDUCING_BALANCE);
+
+        return self::interestMethodOptions()[$method] ?? 'Dư nợ giảm dần';
     }
 }

@@ -300,6 +300,7 @@
                     'templates' => $campaignTemplatesPayload,
                     'offerTitle' => (string) old('title', ''),
                     'offerContent' => (string) old('content', ''),
+                    'suggestionsUrl' => route('admin.customers.purchased-suggestions'),
                 ];
             @endphp
             <script id="bmw-promotion-campaign-config" type="application/json">{!! json_encode($promotionCampaignConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) !!}</script>
@@ -377,6 +378,92 @@
                         <div class="flex flex-col justify-between space-y-5 rounded-2xl border border-white/[0.08] bg-[#070A10] p-5 lg:col-span-5">
                             <div class="space-y-4">
                                 <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Bộ lọc đối tượng mục tiêu</p>
+
+                                <!-- Autocomplete Tìm & Đề xuất Khách đã mua hàng -->
+                                <div class="space-y-2.5 rounded-xl border border-[#38BDF8]/25 bg-[#0D121C] p-3.5" @click.outside="suggestionsOpen = false">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <label for="promo-purchased-search" class="text-[11px] font-bold text-[#38BDF8]">
+                                            Chọn đích danh khách đã mua hàng
+                                        </label>
+                                        <button
+                                            type="button"
+                                            x-show="selectedRecipients.length > 0"
+                                            @click="clearSelectedRecipients()"
+                                            class="text-[10px] font-bold text-rose-300 underline-offset-4 hover:text-rose-200 hover:underline cursor-pointer"
+                                        >
+                                            Xóa chọn thủ công
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input
+                                            id="promo-purchased-search"
+                                            type="text"
+                                            x-model="searchQuery"
+                                            @input.debounce.200ms="fetchPurchasedSuggestions()"
+                                            @focus="fetchPurchasedSuggestions()"
+                                            @keydown.escape="suggestionsOpen = false"
+                                            autocomplete="off"
+                                            placeholder="Tìm khách đã mua theo Email, SĐT hoặc Tên..."
+                                            class="h-10 w-full rounded-lg border border-white/10 bg-[#070A10] pl-9 pr-3.5 text-xs font-medium text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4]"
+                                        >
+                                        <svg class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.2-5.2m1.7-4.3a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                                        </svg>
+
+                                        <div
+                                            x-show="suggestionsOpen"
+                                            style="display: none;"
+                                            data-purchased-suggestions-dropdown
+                                            class="absolute left-0 right-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-white/15 bg-[#0D121C] p-1.5 shadow-2xl shadow-black/80"
+                                        >
+                                            <template x-if="suggestionsLoading">
+                                                <p class="px-3 py-2.5 text-xs text-zinc-400">Đang tìm khách đã mua hàng...</p>
+                                            </template>
+
+                                            <template x-if="!suggestionsLoading && suggestions.length === 0">
+                                                <p class="px-3 py-2.5 text-xs text-zinc-500">Không có khách hàng đã mua hàng khớp từ khóa.</p>
+                                            </template>
+
+                                            <template x-for="item in suggestions" :key="item.key">
+                                                <button
+                                                    type="button"
+                                                    @click="selectRecipientChip(item)"
+                                                    class="flex w-full items-start justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[#131A29] cursor-pointer"
+                                                >
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="truncate text-xs font-bold text-white" x-text="item.name"></p>
+                                                        <p class="truncate text-[11px] text-zinc-400">
+                                                            <span x-text="item.email"></span>
+                                                            <span class="text-zinc-600">·</span>
+                                                            <span class="tabular-nums" x-text="item.phone"></span>
+                                                        </p>
+                                                    </div>
+                                                    <span
+                                                        class="shrink-0 rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+                                                        x-text="item.purchase_badge"
+                                                    ></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Selected Chips + Hidden Form Inputs -->
+                                    <div x-show="selectedRecipients.length > 0" class="flex flex-wrap gap-1.5 pt-1" style="display: none;">
+                                        <template x-for="chip in selectedRecipients" :key="chip.email">
+                                            <span class="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-[#1C69D4]/45 bg-[#1C69D4]/15 px-2.5 py-1 text-[11px] font-semibold text-[#70A7FF]">
+                                                <input type="hidden" name="selected_recipient_emails[]" :value="chip.email">
+                                                <span class="truncate" x-text="chip.name + ' (' + chip.email + ')'"></span>
+                                                <button
+                                                    type="button"
+                                                    @click="removeRecipientChip(chip.email)"
+                                                    class="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-zinc-300 hover:bg-rose-500/30 hover:text-white cursor-pointer"
+                                                    aria-label="Gỡ khách hàng"
+                                                >&times;</button>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
 
                                 <x-admin.form-field name="audience" label="Nhóm đối tượng">
                                     <x-ui.custom-select

@@ -30,8 +30,13 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'role',
+        'job_title',
+        'department',
         'is_super_admin',
+        'is_active',
+        'notes',
         'password',
         'email_verified_at',
     ];
@@ -56,6 +61,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'is_super_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -91,7 +97,7 @@ class User extends Authenticatable
      */
     public function scopeSales(Builder $query): Builder
     {
-        return $query->admins()->where('role', self::ROLE_SALES);
+        return $query->admins()->where('role', self::ROLE_SALES)->where('is_active', true);
     }
 
     /**
@@ -176,7 +182,16 @@ class User extends Authenticatable
      */
     public function scopeSalesAndAdmins(Builder $query): Builder
     {
-        return $query->admins()->whereIn('role', [self::ROLE_ADMIN, self::ROLE_SALES]);
+        return $query->admins()->where('is_active', true)->whereIn('role', [self::ROLE_ADMIN, self::ROLE_SALES]);
+    }
+
+    public function isActiveAccount(): bool
+    {
+        if (! array_key_exists('is_active', $this->attributes)) {
+            return true;
+        }
+
+        return (bool) $this->attributes['is_active'];
     }
 
     public function isAdmin(): bool

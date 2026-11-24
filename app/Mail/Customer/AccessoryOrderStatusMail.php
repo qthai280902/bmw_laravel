@@ -7,6 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class AccessoryOrderStatusMail extends Mailable
@@ -31,6 +32,16 @@ class AccessoryOrderStatusMail extends Mailable
 
         return new Content(
             view: 'emails.customer.accessory-order-status',
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'X-BMW-Mail-Kind' => 'accessory_order_status',
+                'X-BMW-Order-ID' => (string) $this->order->id,
+            ],
         );
     }
 

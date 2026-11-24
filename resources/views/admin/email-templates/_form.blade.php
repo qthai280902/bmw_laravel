@@ -203,19 +203,17 @@
             <x-admin.form-field name="cta_url" label="Đường dẫn nút CTA">
                 <input
                     id="cta_url"
-                    type="url"
+                    type="text"
                     name="cta_url"
                     x-model="form.cta_url"
-                    placeholder="https://..."
+                    @focus="activeTarget = 'cta_url'"
+                    placeholder="https://... hoặc &#123;&#123;portal_lookup_url&#125;&#125;"
                     class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4]"
                 >
             </x-admin.form-field>
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-white/[0.08] pt-4">
-            <a href="{{ route('admin.email-templates.index') }}" class="inline-flex h-10 items-center rounded-xl border border-white/10 bg-[#131A29] px-5 text-xs font-semibold text-zinc-300 hover:border-white/25 hover:text-white">
-                Quay lại kho mẫu
-            </a>
             <button type="submit" class="inline-flex h-10 items-center rounded-xl bg-[#1C69D4] px-6 text-xs font-bold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#1657B0] cursor-pointer">
                 {{ $submitLabel ?? 'Lưu mẫu Email' }}
             </button>
