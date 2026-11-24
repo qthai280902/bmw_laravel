@@ -64,7 +64,11 @@ Hồ sơ kỹ thuật BMW-{{ $car->slug }}-Brochure.html và tệp lịch hẹn 
 Tệp lịch hẹn (.ics) đã được đính kèm trong email này để Quý khách thêm nhanh vào Lịch cá nhân.
 @endif
 
+@if($officialMode)
 Quý khách có thể bấm Trả lời (Reply) trực tiếp email này hoặc gọi Hotline Concierge: 1900 123 456.
+@else
+LƯU Ý (EMAIL TỰ ĐỘNG 1 CHIỀU — NO-REPLY): Đây là thư tiếp nhận tự động từ hệ thống, vui lòng không trả lời (Reply) trực tiếp email này. Để đổi lịch hoặc hủy hẹn, vui lòng sử dụng liên kết Quản lý lịch hẹn ở trên hoặc gọi Hotline Concierge: 1900 123 456.
+@endif
 
 Trân trọng,
 BMW Showroom Vietnam

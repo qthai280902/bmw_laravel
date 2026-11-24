@@ -518,6 +518,192 @@ class InteractionTimelineRecorder
         };
     }
 
+    /**
+     * Gom nhóm 100% sự kiện tương tác thành các chu kỳ nghiệp vụ (lifecycle cycles)
+     * mà không bao giờ bỏ sót bất kỳ log sự kiện nào.
+     *
+     * @param  list<array{
+     *     actor_type: string,
+     *     actor_label: string,
+     *     title: string,
+     *     detail: string,
+     *     channel: string,
+     *     occurred_at: string,
+     *     occurred_at_iso: string
+     * }>  $events
+     * @return list<array{
+     *     index: int,
+     *     key: string,
+     *     kind: string,
+     *     label: string,
+     *     tone: string,
+     *     flow_summary: string,
+     *     time_range: string,
+     *     event_count: int,
+     *     is_latest: bool,
+     *     events: list<array<string, mixed>>
+     * }>
+     */
+    public static function groupEventsIntoLifecycles(array $events): array
+    {
+        if ($events === []) {
+            return [];
+        }
+
+        $rawGroups = [];
+        $rescheduleCycleCount = 0;
+
+        foreach ($events as $event) {
+            $kind = self::classifyTimelineEventKind($event);
+            $actorType = (string) ($event['actor_type'] ?? self::ACTOR_SYSTEM);
+            $lastIndex = count($rawGroups) - 1;
+            $currentGroup = $lastIndex >= 0 ? $rawGroups[$lastIndex] : null;
+
+            $startsNewRescheduleRound = $kind === 'reschedule'
+                && $actorType === self::ACTOR_CUSTOMER
+                && $currentGroup !== null
+                && $currentGroup['kind'] === 'reschedule';
+
+            $shouldMerge = false;
+            if ($currentGroup !== null && ! $startsNewRescheduleRound) {
+                if ($currentGroup['kind'] === $kind) {
+                    $shouldMerge = true;
+                } elseif (
+                    $currentGroup['kind'] === 'reschedule'
+                    && $kind === 'intake'
+                    && in_array($actorType, [self::ACTOR_SYSTEM, self::ACTOR_ADMIN], true)
+                ) {
+                    // Các bước hệ thống gửi thư / chuyên viên xác nhận lại ngay sau khi khách đổi lịch thuộc cùng chu kỳ đổi lịch
+                    $shouldMerge = true;
+                } elseif (
+                    $currentGroup['kind'] === 'closure'
+                    && $actorType === self::ACTOR_SYSTEM
+                    && $kind !== 'reschedule'
+                ) {
+                    $shouldMerge = true;
+                }
+            }
+
+            if ($shouldMerge) {
+                $rawGroups[$lastIndex]['events'][] = $event;
+
+                continue;
+            }
+
+            if ($kind === 'reschedule') {
+                $rescheduleCycleCount++;
+            }
+
+            $rawGroups[] = [
+                'kind' => $kind,
+                'reschedule_seq' => $kind === 'reschedule' ? $rescheduleCycleCount : 0,
+                'events' => [$event],
+            ];
+        }
+
+        $totalGroups = count($rawGroups);
+        $cycles = [];
+
+        foreach ($rawGroups as $idx => $group) {
+            $groupEvents = $group['events'];
+            $kind = $group['kind'];
+
+            $flowParts = [];
+            foreach ($groupEvents as $ev) {
+                $shortActor = match ($ev['actor_type'] ?? self::ACTOR_SYSTEM) {
+                    self::ACTOR_CUSTOMER => 'Khách hàng',
+                    self::ACTOR_ADMIN => 'Chuyên viên',
+                    default => 'Hệ thống',
+                };
+                if ($flowParts === [] || end($flowParts) !== $shortActor) {
+                    $flowParts[] = $shortActor;
+                }
+            }
+
+            $firstTime = trim((string) ($groupEvents[0]['occurred_at'] ?? ''));
+            $lastTime = trim((string) ($groupEvents[count($groupEvents) - 1]['occurred_at'] ?? ''));
+            $timeRange = ($firstTime !== '' && $lastTime !== '' && $firstTime !== $lastTime)
+                ? "{$firstTime} → {$lastTime}"
+                : ($firstTime !== '' ? $firstTime : $lastTime);
+
+            $hasCancellation = false;
+            $hasCompletion = false;
+            foreach ($groupEvents as $ev) {
+                $haystack = mb_strtolower(((string) ($ev['title'] ?? '')).' '.((string) ($ev['detail'] ?? '')), 'UTF-8');
+                if (str_contains($haystack, 'hủy')) {
+                    $hasCancellation = true;
+                }
+                if (str_contains($haystack, 'hoàn tất') || str_contains($haystack, 'hoàn thành') || str_contains($haystack, 'cảm ơn') || str_contains($haystack, 'voucher')) {
+                    $hasCompletion = true;
+                }
+            }
+
+            $label = match ($kind) {
+                'reschedule' => $rescheduleCycleCount > 1
+                    ? "Khách đổi lịch lần {$group['reschedule_seq']} ↔ Hệ thống ↔ Chuyên viên"
+                    : 'Khách đổi lịch ↔ Hệ thống ↔ Chuyên viên',
+                'closure' => $hasCancellation && ! $hasCompletion
+                    ? 'Hủy hồ sơ & Thông báo'
+                    : 'Đón tiếp, Hoàn tất & Hậu mãi',
+                'dispatch' => 'Điều phối, Nhắc lịch & Lưu trữ',
+                default => 'Tiếp nhận & Xác nhận hồ sơ',
+            };
+
+            $tone = match ($kind) {
+                'reschedule' => 'amber',
+                'closure' => $hasCancellation && ! $hasCompletion ? 'rose' : 'emerald',
+                'dispatch' => 'zinc',
+                default => 'blue',
+            };
+
+            $cycles[] = [
+                'index' => $idx + 1,
+                'key' => 'cycle-'.($idx + 1),
+                'kind' => $kind,
+                'label' => $label,
+                'tone' => $tone,
+                'flow_summary' => implode(' → ', $flowParts),
+                'time_range' => $timeRange,
+                'event_count' => count($groupEvents),
+                'is_latest' => $idx === ($totalGroups - 1),
+                'events' => $groupEvents,
+            ];
+        }
+
+        return $cycles;
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     */
+    private static function classifyTimelineEventKind(array $event): string
+    {
+        $haystack = mb_strtolower(
+            trim(((string) ($event['title'] ?? '')).' '.((string) ($event['detail'] ?? '')).' '.((string) ($event['channel'] ?? ''))),
+            'UTF-8'
+        );
+
+        foreach (['đổi lịch', 'dời lịch', 'đổi giờ', 'đổi thời gian', 'reschedul', 'khách vừa đổi'] as $needle) {
+            if (str_contains($haystack, $needle)) {
+                return 'reschedule';
+            }
+        }
+
+        foreach (['hoàn tất', 'hoàn thành', 'đã hủy', 'hủy lịch', 'hủy đơn', 'hủy hồ sơ', 'tự hủy', 'cảm ơn', 'voucher', 'bmw care', 'hậu mãi', 'follow-up', 'bàn giao'] as $needle) {
+            if (str_contains($haystack, $needle)) {
+                return 'closure';
+            }
+        }
+
+        foreach (['phân công', 'gán sales', 'gỡ phân công', 'lưu trữ', 'khôi phục', 'nhắc lịch', 'email chăm sóc', 'gửi email từ mẫu'] as $needle) {
+            if (str_contains($haystack, $needle)) {
+                return 'dispatch';
+            }
+        }
+
+        return 'intake';
+    }
+
     private static function defaultActorLabel(string $actorType): string
     {
         return match ($actorType) {

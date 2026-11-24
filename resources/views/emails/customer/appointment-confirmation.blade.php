@@ -37,6 +37,9 @@
 @section('title', $officialMode ? 'Xác Nhận Chính Thức Lịch Hẹn | BMW Concierge' : 'Đã Tiếp Nhận Yêu Cầu Đặt Lịch | BMW Showroom Vietnam')
 @section('accent_color', $officialMode ? '#059669' : '#1C69D4')
 @section('header_subtitle', $officialMode ? 'VIP Concierge Pass · Thẻ đón tiếp' : 'ĐÃ TIẾP NHẬN YÊU CẦU ĐẶT LỊCH')
+@if(! $officialMode)
+    @section('hide_reply_hint', '1')
+@endif
 
 @section('badge')
     @if($officialMode)
@@ -186,4 +189,15 @@
             </td>
         </tr>
     </table>
+
+    @if(! $officialMode)
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 22px; background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px;">
+            <tr>
+                <td style="padding: 14px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; color: #475569; line-height: 1.6;">
+                    <strong style="color: #0F172A;">Lưu ý (Email tự động 1 chiều — No-Reply):</strong>
+                    Thư này được gửi tự động bởi hệ thống tiếp nhận BMW Showroom, hộp thư này không tiếp nhận phản hồi trực tiếp. Vui lòng <strong>không bấm Trả lời (Reply)</strong> email này; mọi thao tác xác nhận, đổi lịch hoặc hủy hẹn xin thực hiện qua nút <strong>Xác nhận / Quản lý lịch hẹn</strong> ở trên hoặc liên hệ Hotline <strong>1900 123 456</strong>.
+                </td>
+            </tr>
+        </table>
+    @endif
 @endsection

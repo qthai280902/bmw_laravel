@@ -203,6 +203,38 @@ class AdminPageGuideRegistry
                     'Có thể xuất riêng tệp CSV của ngày đang xem để lưu trữ chứng từ kế toán theo ngày.',
                 ],
             ],
+            'admin.customers.show' => [
+                'title' => 'Hồ sơ Khách hàng 360° & Hợp đồng Trả góp',
+                'summary' => 'Theo dõi toàn diện lịch hẹn, đơn phụ kiện, hội thoại AI, lịch thanh toán trả góp ngân hàng và gửi email chăm sóc 1-1.',
+                'bullets' => [
+                    'Tạo và cập nhật nhanh tiến độ đóng kỳ hạn, ngày đến hạn kế tiếp và lãi suất cho từng hồ sơ trả góp của khách hàng.',
+                    'Chọn mẫu Email đang hoạt động (Active) ở cột bên phải để điền sẵn biến khách hàng/lãi suất và gửi thư chăm sóc trực tiếp.',
+                    'Nhân viên Sales chỉ được xem và chăm sóc các khách hàng thuộc phạm vi phụ trách của mình.',
+                ],
+            ],
+            'admin.email-templates.index' => [
+                'title' => 'Kho mẫu Email (Email Template Studio)',
+                'summary' => 'Soạn thảo, xem trước trực quan và quản lý tập trung các mẫu thư nhắc trả góp, điều chỉnh lãi suất và ưu đãi BMW.',
+                'bullets' => [
+                    'Các mẫu ở trạng thái "Đang dùng (Active)" sẽ xuất hiện ngay trong hồ sơ Khách hàng 360° và Trung tâm Chiến dịch Email.',
+                    'Sử dụng nút "Nhân bản" để tạo nhanh biến thể mới từ mẫu chuẩn mà không làm ảnh hưởng mẫu gốc.',
+                ],
+            ],
+            'admin.email-templates.create' => [
+                'title' => 'Tạo mới Mẫu Email Chăm sóc Khách hàng',
+                'summary' => 'Thiết kế nội dung thư chuẩn BMW Concierge với biến tự động và khung xem trước HTML trực tiếp.',
+                'bullets' => [
+                    'Bấm vào các thẻ biến nhanh (như {{customer_name}}, {{interest_rate}}, {{next_due_date}}) để chèn chính xác vào tiêu đề hoặc nội dung.',
+                    'Hệ thống tự động thay thế toàn bộ biến bằng dữ liệu thật của từng khách khi gửi và đảm bảo không lộ cú pháp {{...}}.',
+                ],
+            ],
+            'admin.email-templates.edit' => [
+                'title' => 'Chỉnh sửa Mẫu Email & Live Preview',
+                'summary' => 'Cập nhật nội dung, màu nhấn, nút hành động CTA và trạng thái hoạt động của mẫu Email.',
+                'bullets' => [
+                    'Chuyển trạng thái sang "Bản nháp" hoặc "Lưu trữ" nếu muốn tạm ẩn mẫu khỏi danh sách gửi thư 1-1 và chiến dịch.',
+                ],
+            ],
         ];
     }
 }

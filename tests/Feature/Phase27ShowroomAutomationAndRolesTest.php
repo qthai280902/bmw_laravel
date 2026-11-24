@@ -251,7 +251,7 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
             'guest_email' => 'vip27@example.com',
             'product_id' => $car->id,
             'type' => AppointmentType::TestDrive->value,
-            'appointment_date' => now()->addDays(2)->format('Y-m-d H:i'),
+            'appointment_date' => now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i'),
             'notes' => 'Tôi muốn mua ngay và đặt cọc trong tuần này.',
         ])->assertRedirect(route('appointments.success'));
 
@@ -704,7 +704,7 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
                     'guest_email' => "client{$i}@example.com",
                     'product_id' => $car->id,
                     'type' => AppointmentType::TestDrive->value,
-                    'appointment_date' => now()->addDays(2)->format('Y-m-d H:i'),
+                    'appointment_date' => now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i'),
                 ])
                 ->assertRedirect(route('appointments.success'));
         }
@@ -722,7 +722,7 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
                 'guest_email' => 'client6@example.com',
                 'product_id' => $car->id,
                 'type' => AppointmentType::TestDrive->value,
-                'appointment_date' => now()->addDays(2)->format('Y-m-d H:i'),
+                'appointment_date' => now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i'),
             ])
             ->assertStatus(429);
 

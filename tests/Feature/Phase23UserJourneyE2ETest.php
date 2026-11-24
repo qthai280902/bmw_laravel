@@ -187,7 +187,7 @@ class Phase23UserJourneyE2ETest extends TestCase
             'is_active' => true,
         ]);
 
-        $futureDate = now()->addDays(2)->format('Y-m-d H:i');
+        $futureDate = now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i');
 
         // Booking page renders all modes cleanly including /booking?type=service
         $this->get(route('appointments.create', ['type' => 'service']))

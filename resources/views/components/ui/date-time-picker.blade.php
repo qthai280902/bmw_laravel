@@ -434,7 +434,7 @@
         <input type="hidden" id="{{ $timeInputName }}" name="{{ $timeInputName }}" :value="selectedTime">
     @endif
 
-    <div class="relative" @click.outside="openPopover = false">
+    <div class="relative" :class="openPopover ? 'z-[85]' : 'z-10'" @click.outside="openPopover = false">
         <button
             type="button"
             data-picker-trigger="datetime"
@@ -475,7 +475,8 @@
             x-transition.opacity.duration.120ms
             data-picker-popover="split"
             :class="openUpward ? 'bottom-full mb-2' : 'top-full mt-2'"
-            class="absolute left-0 right-0 z-50 {{ $popoverRadiusClass }} border p-4 shadow-2xl {{ $isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/15 bg-[#0D1117] text-white' }}"
+            style="{{ $isLight ? 'background-color: #ffffff; opacity: 1;' : 'background-color: #090D14; opacity: 1;' }}"
+            class="absolute left-0 right-0 z-[90] {{ $popoverRadiusClass }} border p-4 shadow-[0_24px_60px_rgba(0,0,0,0.9)] {{ $isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/20 bg-[#090D14] text-white' }}"
         >
             <div class="grid grid-cols-1 gap-4 md:grid-cols-[1.35fr_1fr]">
                 {{-- Cột trái: Lịch tháng Tiếng Việt --}}

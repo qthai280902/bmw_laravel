@@ -124,6 +124,9 @@ return [
         'name' => env('MAIL_REPLY_TO_NAME', 'BMW Showroom Tư Vấn'),
     ],
 
+    'noreply_address' => ($noreply = trim((string) env('MAIL_NOREPLY_ADDRESS', ''))) !== '' ? $noreply : null,
+    'noreply_name' => env('MAIL_NOREPLY_NAME', 'BMW Showroom (Không phản hồi)'),
+
     'showroom_admin' => env('MAIL_SHOWROOM_ADMIN', 'advisor@bmw.com'),
 
     'showroom_admins' => array_values(array_unique(array_filter(array_map(

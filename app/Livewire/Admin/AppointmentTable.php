@@ -59,7 +59,7 @@ class AppointmentTable extends Component
 
     public string $completionTargetReference = '';
 
-    public string $completionOutcome = Appointment::OUTCOME_PURCHASED;
+    public string $completionOutcome = '';
 
     public ?string $flashMessage = null;
 
@@ -205,14 +205,28 @@ class AppointmentTable extends Component
 
         $this->completionTargetId = $appointment->id;
         $this->completionTargetReference = $appointment->publicReferenceCode();
-        $this->completionOutcome = Appointment::OUTCOME_PURCHASED;
+        $this->completionOutcome = '';
+    }
+
+    public function selectCompletionOutcome(string $outcome): void
+    {
+        $this->authorizeCrm();
+
+        if (! in_array($outcome, [Appointment::OUTCOME_PURCHASED, Appointment::OUTCOME_VISITED_NO_PURCHASE], true)) {
+            return;
+        }
+
+        $this->completionOutcome = $outcome;
+        $this->resetErrorBag('completionOutcome');
+        $this->errorMessage = null;
     }
 
     public function closeCompletionModal(): void
     {
         $this->completionTargetId = null;
         $this->completionTargetReference = '';
-        $this->completionOutcome = Appointment::OUTCOME_PURCHASED;
+        $this->completionOutcome = '';
+        $this->resetErrorBag('completionOutcome');
     }
 
     public function confirmCompletion(): void

@@ -95,7 +95,13 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
         ]);
 
         // 2. Reply-To, plain-text, and inline embedData/cid in Confirmation, Reminder & Promotion mails
-        $confirmMail = new AppointmentConfirmationMail($appointment);
+        // System auto-received mail is strictly 1-way No-Reply; Official admin-confirmed mail keeps advisor Reply-To
+        $autoConfirmMail = new AppointmentConfirmationMail($appointment, AppointmentConfirmationMail::MODE_SYSTEM_RECEIVED);
+        $this->assertSame([], $autoConfirmMail->envelope()->replyTo);
+        $autoConfirmMail->assertSeeInText('Nguyen Mail Resilience');
+        $autoConfirmMail->assertSeeInText('BMW 530i M Sport');
+
+        $confirmMail = new AppointmentConfirmationMail($appointment, AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED);
         $confirmMail->assertHasReplyTo('sales.lead@bmw.com', 'BMW Showroom Tư Vấn');
         $confirmMail->assertSeeInText('Nguyen Mail Resilience');
         $confirmMail->assertSeeInText('BMW 530i M Sport');

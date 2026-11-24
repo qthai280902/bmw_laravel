@@ -1444,17 +1444,40 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
 
     const initialAudience = parsed.audience || 'all';
     const initialOnlyCompleted = initialAudience === 'completed' || Boolean(parsed.onlyCompleted);
+    const initialTemplates = Array.isArray(parsed.templates) ? parsed.templates : [];
 
     return {
         audience: initialAudience,
         productId: parsed.productId ? String(parsed.productId) : '',
         onlyCompleted: initialOnlyCompleted,
         records: Array.isArray(parsed.records) ? parsed.records : [],
+        templates: initialTemplates,
+        selectedTemplateCode: '',
+        offerTitle: parsed.offerTitle || '',
+        offerContent: parsed.offerContent || '',
+
+        applyEmailTemplate(code) {
+            const targetCode = typeof code === 'string' ? code : this.selectedTemplateCode;
+            this.selectedTemplateCode = targetCode || '';
+            if (!this.selectedTemplateCode) {
+                return;
+            }
+            const tpl = this.templates.find((item) => item.code === this.selectedTemplateCode);
+            if (!tpl) {
+                return;
+            }
+            this.offerTitle = tpl.subject || '';
+            this.offerContent = tpl.body_content || '';
+            if (tpl.category === 'installment') {
+                this.audience = 'installment';
+                this.onlyCompleted = false;
+            }
+        },
 
         onAudienceChange() {
             if (this.audience === 'completed') {
                 this.onlyCompleted = true;
-            } else if (this.audience === 'all') {
+            } else if (this.audience === 'all' || this.audience === 'installment') {
                 this.onlyCompleted = false;
             }
         },
@@ -1477,6 +1500,10 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
             return this.audience === 'completed' || this.onlyCompleted;
         },
 
+        get requireInstallment() {
+            return this.audience === 'installment';
+        },
+
         get matchedRecipients() {
             if (this.audience === 'by_product' && !this.productId) {
                 return [];
@@ -1487,6 +1514,10 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
             const matched = [];
 
             for (const row of this.records) {
+                if (this.requireInstallment && !row.has_installment) {
+                    continue;
+                }
+
                 if (this.requireCompleted && !row.completed) {
                     continue;
                 }
@@ -1506,6 +1537,7 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
                     email: row.email || '',
                     vehicle: row.vehicle || 'Các dòng xe BMW',
                     completed: Boolean(row.completed),
+                    has_installment: Boolean(row.has_installment),
                 });
             }
 
@@ -1518,6 +1550,199 @@ window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config')
 
         get previewRecipients() {
             return this.matchedRecipients.slice(0, 5);
+        },
+    };
+};
+
+window.bmwAdminSidebarShell = () => ({
+    sidebarOpen: false,
+    collapsed: false,
+    width: 256,
+    resizing: false,
+    _moveHandler: null,
+    _upHandler: null,
+
+    init() {
+        try {
+            this.collapsed = localStorage.getItem('bmw_admin_sidebar_collapsed') === '1';
+            const saved = parseInt(localStorage.getItem('bmw_admin_sidebar_width') || '256', 10);
+            this.width = Number.isFinite(saved) ? Math.min(360, Math.max(200, saved)) : 256;
+        } catch {
+            this.collapsed = false;
+            this.width = 256;
+        }
+        this.applySidebarState();
+    },
+
+    applySidebarState() {
+        const clamped = Math.min(360, Math.max(200, Number(this.width) || 256));
+        this.width = clamped;
+        document.documentElement.style.setProperty('--admin-sidebar-w', `${clamped}px`);
+        if (this.collapsed) {
+            document.documentElement.dataset.sidebarCollapsed = 'true';
+        } else {
+            delete document.documentElement.dataset.sidebarCollapsed;
+        }
+    },
+
+    toggleCollapse() {
+        this.collapsed = !this.collapsed;
+        try {
+            localStorage.setItem('bmw_admin_sidebar_collapsed', this.collapsed ? '1' : '0');
+        } catch {}
+        this.applySidebarState();
+    },
+
+    resetWidth() {
+        this.width = 256;
+        this.collapsed = false;
+        try {
+            localStorage.setItem('bmw_admin_sidebar_width', '256');
+            localStorage.setItem('bmw_admin_sidebar_collapsed', '0');
+        } catch {}
+        this.applySidebarState();
+    },
+
+    startResize(event) {
+        if (this.collapsed) {
+            return;
+        }
+        this.resizing = true;
+        document.documentElement.classList.add('admin-sidebar-resizing');
+
+        const startX = event.clientX;
+        const startWidth = this.width;
+
+        this._moveHandler = (moveEvent) => {
+            const nextWidth = Math.min(360, Math.max(200, Math.round(startWidth + (moveEvent.clientX - startX))));
+            this.width = nextWidth;
+            document.documentElement.style.setProperty('--admin-sidebar-w', `${nextWidth}px`);
+        };
+
+        this._upHandler = () => {
+            this.resizing = false;
+            document.documentElement.classList.remove('admin-sidebar-resizing');
+            try {
+                localStorage.setItem('bmw_admin_sidebar_width', String(this.width));
+            } catch {}
+            window.removeEventListener('mousemove', this._moveHandler);
+            window.removeEventListener('mouseup', this._upHandler);
+            this._moveHandler = null;
+            this._upHandler = null;
+        };
+
+        window.addEventListener('mousemove', this._moveHandler);
+        window.addEventListener('mouseup', this._upHandler);
+    },
+});
+
+window.bmwCustomerQuickEmail = (configScriptId = 'bmw-quick-email-config') => {
+    let parsed = {};
+    const configEl = document.getElementById(configScriptId);
+    if (configEl) {
+        try {
+            parsed = JSON.parse(configEl.textContent || '{}');
+        } catch {
+            parsed = {};
+        }
+    }
+
+    return {
+        templates: parsed.templates && typeof parsed.templates === 'object' ? parsed.templates : {},
+        baseVars: parsed.baseVars && typeof parsed.baseVars === 'object' ? parsed.baseVars : {},
+        planVars: parsed.planVars && typeof parsed.planVars === 'object' ? parsed.planVars : {},
+        selectedTemplateId: parsed.selectedTemplateId ? String(parsed.selectedTemplateId) : '',
+        selectedPlanId: parsed.selectedPlanId ? String(parsed.selectedPlanId) : '',
+        subjectOverride: parsed.subjectOverride ? String(parsed.subjectOverride) : '',
+        bodyOverride: parsed.bodyOverride ? String(parsed.bodyOverride) : '',
+
+        init() {
+            this.$watch('selectedTemplateId', () => this.loadSelectedTemplate());
+            this.$watch('selectedPlanId', () => {
+                if (this.selectedTemplateId) {
+                    this.loadSelectedTemplate();
+                }
+            });
+        },
+
+        activeVars() {
+            const extra = this.selectedPlanId && this.planVars[String(this.selectedPlanId)]
+                ? this.planVars[String(this.selectedPlanId)]
+                : {};
+            return { ...this.baseVars, ...extra };
+        },
+
+        interpolate(text) {
+            if (!text) {
+                return '';
+            }
+            const vars = this.activeVars();
+            return String(text).replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, k) => (
+                vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : ''
+            ));
+        },
+
+        loadSelectedTemplate() {
+            const tpl = this.templates[String(this.selectedTemplateId)];
+            if (!tpl) {
+                return;
+            }
+            this.subjectOverride = this.interpolate(tpl.subject || '');
+            this.bodyOverride = this.interpolate(tpl.body_content || '');
+        },
+    };
+};
+
+window.bmwEmailTemplateForm = (configScriptId = 'bmw-email-template-form-config') => {
+    let parsed = {};
+    const configEl = document.getElementById(configScriptId);
+    if (configEl) {
+        try {
+            parsed = JSON.parse(configEl.textContent || '{}');
+        } catch {
+            parsed = {};
+        }
+    }
+
+    return {
+        form: {
+            name: parsed.name || '',
+            code: parsed.code || '',
+            category: parsed.category || 'promotion',
+            status: parsed.status || 'active',
+            subject: parsed.subject || '',
+            eyebrow: parsed.eyebrow || 'BMW Client Relations',
+            heading: parsed.heading || '',
+            body_content: parsed.body_content || '',
+            highlight_title: parsed.highlight_title || '',
+            highlight_content: parsed.highlight_content || '',
+            cta_label: parsed.cta_label || '',
+            cta_url: parsed.cta_url || '',
+            accent_color: parsed.accent_color || '#1C69D4',
+            samples: parsed.samples && typeof parsed.samples === 'object' ? parsed.samples : {},
+            categories: parsed.categories && typeof parsed.categories === 'object' ? parsed.categories : {},
+        },
+        activeTarget: 'body_content',
+
+        interpolate(text) {
+            if (!text) {
+                return '';
+            }
+            return String(text).replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, key) => (
+                this.form.samples[key] || ''
+            ));
+        },
+
+        insertVariable(token) {
+            const key = this.activeTarget || 'body_content';
+            const snippet = `\u007B\u007B${token}\u007D\u007D`;
+            const current = this.form[key] || '';
+            this.form[key] = current + (current && !current.endsWith(' ') ? ' ' : '') + snippet;
+        },
+
+        previewParagraphs() {
+            const rendered = this.interpolate(this.form.body_content);
+            return rendered.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
         },
     };
 };

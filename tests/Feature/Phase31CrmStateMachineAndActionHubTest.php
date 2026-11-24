@@ -471,7 +471,7 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
         $this->post($testDrive->temporaryManageUpdateUrl(), ['action' => 'cancel'])->assertSessionHas('error');
         $this->post($testDrive->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
-            'new_appointment_date' => now()->addDays(5)->format('Y-m-d H:i'),
+            'new_appointment_date' => now()->addDays(5)->setTime(10, 0)->format('Y-m-d H:i'),
         ])->assertSessionHas('error');
         $this->assertSame(AppointmentStatus::Completed, $testDrive->fresh()->status);
 
@@ -587,7 +587,7 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
         ]);
 
         $this->post($guestSelfServe->temporaryManageUpdateUrl(), ['action' => 'confirm'])->assertRedirect();
-        $newGuestDate = now()->addDays(6)->format('Y-m-d H:i');
+        $newGuestDate = now()->addDays(6)->setTime(10, 0)->format('Y-m-d H:i');
         $this->post($guestSelfServe->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
             'new_appointment_date' => $newGuestDate,

@@ -88,7 +88,7 @@ class Phase26RealtimeNotificationsMailAndPoolTest extends TestCase
             'guest_email' => 'hotlead@example.com',
             'product_id' => $car->id,
             'type' => AppointmentType::TestDrive->value,
-            'appointment_date' => now()->addDays(2)->format('Y-m-d H:i'),
+            'appointment_date' => now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i'),
             'ai_visitor_id' => $visitorId,
             'notes' => 'Mua ngay trong tuần, đặt cọc gấp.',
         ])->assertRedirect(route('appointments.success'));
@@ -179,7 +179,7 @@ class Phase26RealtimeNotificationsMailAndPoolTest extends TestCase
             'guest_email' => 'vip.hung@example.com',
             'product_id' => $car->id,
             'type' => AppointmentType::Quote->value,
-            'appointment_date' => now()->addDay()->format('Y-m-d H:i'),
+            'appointment_date' => now()->addDay()->setTime(10, 0)->format('Y-m-d H:i'),
             'notes' => 'Tôi cần chốt xe mua ngay và đặt cọc trong tuần này.',
         ])->assertRedirect(route('appointments.success'));
 

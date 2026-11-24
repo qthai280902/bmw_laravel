@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             ProductImageExpansionSeeder::class,
             ArticleSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }

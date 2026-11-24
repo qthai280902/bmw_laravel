@@ -196,7 +196,7 @@ class Phase25_2HybridPersistentGuestAndCrmHandoverTest extends TestCase
                 'guest_email' => 'handover@example.com',
                 'product_id' => $car->id,
                 'type' => AppointmentType::TestDrive->value,
-                'appointment_date' => now()->addDays(2)->format('Y-m-d H:i'),
+                'appointment_date' => now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i'),
                 'notes' => 'Đặt lịch lái thử cuối tuần',
             ])
             ->assertRedirect(route('appointments.success'));

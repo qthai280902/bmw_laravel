@@ -4,7 +4,9 @@ namespace App\Listeners;
 
 use App\Events\PromotionCampaignDispatched;
 use App\Mail\CustomerPromotionMail;
+use App\Models\CustomerInstallmentPlan;
 use App\Services\Admin\AdminNotificationDispatcher;
+use App\Services\Mail\EmailTemplateRenderer;
 use App\Services\Mail\GmailQuotaGuard;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -51,6 +53,29 @@ class SendPromotionCampaignEmails implements ShouldBeEncrypted, ShouldBeUnique, 
     public function handle(PromotionCampaignDispatched $event): void
     {
         $quotaGuard = app(GmailQuotaGuard::class);
+        $renderer = app(EmailTemplateRenderer::class);
+
+        $recipientEmails = collect($event->recipients)
+            ->map(static fn (array $r): string => mb_strtolower(trim((string) ($r['email'] ?? ''))))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $installmentPlansByEmail = $recipientEmails !== []
+            ? CustomerInstallmentPlan::query()
+                ->with('product:id,name')
+                ->whereIn(
+                    'id',
+                    CustomerInstallmentPlan::query()
+                        ->selectRaw('MAX(id)')
+                        ->whereIn('status', [CustomerInstallmentPlan::STATUS_ACTIVE, CustomerInstallmentPlan::STATUS_OVERDUE])
+                        ->whereNotNull('customer_email')
+                        ->groupBy('customer_email')
+                )
+                ->get()
+                ->keyBy(static fn (CustomerInstallmentPlan $plan): string => mb_strtolower(trim((string) $plan->customer_email)))
+            : collect();
 
         foreach ($event->recipients as $recipient) {
             if (! $quotaGuard->canSendMarketingEmail()) {
@@ -70,12 +95,27 @@ class SendPromotionCampaignEmails implements ShouldBeEncrypted, ShouldBeUnique, 
                 continue;
             }
 
+            $customerName = trim((string) ($recipient['name'] ?? 'Quý khách')) ?: 'Quý khách';
+            $vehicleName = trim((string) ($recipient['vehicle_name'] ?? 'Các dòng xe BMW')) ?: 'Các dòng xe BMW';
+            $advisorName = trim((string) ($recipient['advisor_name'] ?? ''));
+            $plan = $installmentPlansByEmail->get(mb_strtolower($email));
+
+            $variables = $renderer->buildVariables(
+                customerName: $customerName,
+                vehicleName: $vehicleName,
+                advisorName: $advisorName !== '' ? $advisorName : null,
+                installmentPlan: $plan,
+            );
+
+            $interpolatedTitle = $renderer->interpolate($event->offerTitle, $variables);
+            $interpolatedContent = $renderer->interpolate($event->offerContent, $variables);
+
             try {
                 Mail::to($email)->send(new CustomerPromotionMail(
-                    customerName: (string) ($recipient['name'] ?? 'Quý khách'),
-                    vehicleName: (string) ($recipient['vehicle_name'] ?? 'Các dòng xe BMW'),
-                    offerTitle: $event->offerTitle,
-                    offerContent: $event->offerContent,
+                    customerName: $customerName,
+                    vehicleName: $vehicleName,
+                    offerTitle: $interpolatedTitle !== '' ? $interpolatedTitle : $event->offerTitle,
+                    offerContent: $interpolatedContent !== '' ? $interpolatedContent : $event->offerContent,
                 ));
             } catch (Throwable $exception) {
                 Log::warning('Failed dispatching promotion email to customer.', [

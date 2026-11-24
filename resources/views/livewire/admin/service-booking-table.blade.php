@@ -16,8 +16,10 @@
         'mine' => 'Hồ sơ của tôi',
         'unassigned' => 'Chưa phân công',
     ];
+    $salesAssignOptions = ['' => '-- Chưa phân công --'];
     foreach ($salesRoster as $salesMember) {
         $salesFilterOptions[(string) $salesMember->id] = $salesMember->name;
+        $salesAssignOptions[(string) $salesMember->id] = $salesMember->name;
     }
 
     $datePresetOptions = [
@@ -196,11 +198,11 @@
             <table class="w-full lg:table-fixed border-collapse text-left">
                 <thead>
                     <tr class="border-b border-white/[0.08] bg-[#070A10]/60">
-                        <th class="w-[17%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Mã kép &amp; Thời điểm</th>
-                        <th class="w-[23%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng &amp; Sales</th>
-                        <th class="w-[26%] px-5 py-3.5 text-xs font-semibold text-zinc-400">Xe &amp; Gói dịch vụ</th>
-                        <th class="w-[14%] px-5 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
-                        <th class="w-[20%] px-5 py-3.5 text-right text-xs font-semibold text-zinc-400">Thao tác</th>
+                        <th class="w-[16%] px-4 py-3.5 text-xs font-semibold text-zinc-400">Mã kép &amp; Thời điểm</th>
+                        <th class="w-[21%] px-4 py-3.5 text-xs font-semibold text-zinc-400">Khách hàng &amp; Sales</th>
+                        <th class="w-[22%] px-4 py-3.5 text-xs font-semibold text-zinc-400">Xe &amp; Gói dịch vụ</th>
+                        <th class="w-[17%] px-4 py-3.5 text-center text-xs font-semibold text-zinc-400">Trạng thái</th>
+                        <th class="w-[24%] px-4 py-3.5 text-right text-xs font-semibold text-zinc-400">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/[0.06]">
@@ -264,23 +266,27 @@
                                 @endif
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4 text-center">
-                                <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $booking->status->color() }}">
-                                    {{ $booking->status->label() }}
-                                </span>
-                                @if($cancelAttribution)
-                                    <p class="mt-1 whitespace-normal text-[10px] font-medium text-rose-300">{{ $cancelAttribution }}</p>
-                                @endif
+                            <td class="px-4 py-4 align-middle">
+                                <div class="mx-auto flex min-w-[140px] max-w-[180px] flex-col items-center gap-1.5 text-center">
+                                    <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $booking->status->color() }}">
+                                        {{ $booking->status->label() }}
+                                    </span>
+                                    @if($cancelAttribution)
+                                        <p class="max-w-full break-words text-[10px] font-medium leading-snug text-rose-300" title="{{ $cancelAttribution }}">
+                                            {{ $cancelAttribution }}
+                                        </p>
+                                    @endif
+                                </div>
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4 text-right">
+                            <td class="shrink-0 whitespace-nowrap px-4 py-4 text-right">
                                 <div class="inline-flex items-center justify-end gap-2">
                                     @if($booking->isTerminalStatus())
-                                        <span class="inline-flex h-9 items-center rounded-xl border border-white/10 bg-[#070A10] px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                                        <span class="inline-flex h-9 items-center rounded-xl border border-white/10 bg-[#070A10] px-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
                                             {{ $booking->status === \App\Enums\AppointmentStatus::Completed ? 'Đã đóng · Hoàn tất' : 'Đã đóng · Đã hủy' }}
                                         </span>
                                     @else
-                                        <div class="w-36">
+                                        <div class="w-32">
                                             <x-ui.custom-select
                                                 compact
                                                 aria-label="Cập nhật trạng thái lịch chăm sóc xe #{{ $booking->id }}"
@@ -455,19 +461,17 @@
                                     <div class="sm:col-span-2 border-t border-white/[0.06] pt-3">
                                         <p class="text-[11px] font-medium text-zinc-400">Sales / Cố vấn phụ trách</p>
                                         @if(auth()->user()?->canManageSystem())
-                                            <select
-                                                aria-label="Phân công Sales cho lịch dịch vụ #{{ $booking->id }}"
-                                                wire:change="assignToSales({{ $booking->id }}, $event.target.value)"
-                                                @disabled($booking->status === \App\Enums\AppointmentStatus::Cancelled)
-                                                class="mt-1.5 h-9 w-full rounded-lg border border-white/15 bg-[#070A10] px-3 text-xs font-semibold text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] {{ $booking->status === \App\Enums\AppointmentStatus::Cancelled ? 'opacity-60 cursor-not-allowed' : '' }}"
-                                            >
-                                                <option value="">-- Chưa phân công --</option>
-                                                @foreach($salesRoster as $salesMember)
-                                                    <option value="{{ $salesMember->id }}" @selected((int) $booking->assigned_to === (int) $salesMember->id)>
-                                                        {{ $salesMember->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <div class="mt-1.5">
+                                                <x-ui.custom-select
+                                                    compact
+                                                    aria-label="Phân công Sales cho lịch dịch vụ #{{ $booking->id }}"
+                                                    :value="$booking->assigned_to ? (string) $booking->assigned_to : ''"
+                                                    :options="$salesAssignOptions"
+                                                    wire-action="assignToSales"
+                                                    :wire-record-id="$booking->id"
+                                                    :disabled="$booking->status === \App\Enums\AppointmentStatus::Cancelled"
+                                                />
+                                            </div>
                                         @else
                                             <p class="mt-1 font-semibold text-sky-300">{{ $booking->assignedSales?->name ?? 'Chưa phân công' }}</p>
                                         @endif
@@ -503,7 +507,7 @@
                                 @endif
                             </section>
 
-                            <x-admin.interaction-timeline
+                            <x-admin.crm-interaction-timeline
                                 :events="$timelineEvents"
                                 heading="3. Lịch sử tương tác Khách hàng ↔ Hệ thống"
                             />

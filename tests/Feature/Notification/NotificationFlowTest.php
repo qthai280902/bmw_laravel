@@ -38,7 +38,7 @@ class NotificationFlowTest extends TestCase
             'guest_email' => 'customer@example.com',
             'product_id' => $vehicle->id,
             'type' => AppointmentType::TestDrive->value,
-            'appointment_date' => now()->addDay()->format('Y-m-d H:i'),
+            'appointment_date' => now()->addDay()->setTime(10, 0)->format('Y-m-d H:i'),
             'notes' => 'Muon lai thu buoi sang.',
         ])->assertRedirect(route('appointments.success'));
 

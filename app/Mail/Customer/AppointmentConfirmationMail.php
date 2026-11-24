@@ -13,6 +13,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
+use Symfony\Component\Mime\Email;
 
 class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 {
@@ -56,9 +57,26 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
                 : "[BMW Showroom] Đã tiếp nhận yêu cầu đặt lịch {$typeLabel} ({$vehicleLabel}) — Mã {$refCode}";
         }
 
+        $using = [];
+
+        if ($this->isAdminConfirmed()) {
+            $replyTo = [self::salesReplyToAddress()];
+        } else {
+            $noreplyAddress = trim((string) config('mail.noreply_address', ''));
+            if ($noreplyAddress !== '') {
+                $replyTo = [new Address($noreplyAddress, (string) config('mail.noreply_name', 'BMW Showroom (Không phản hồi)'))];
+            } else {
+                $replyTo = [];
+                $using[] = static function (Email $message): void {
+                    $message->getHeaders()->remove('Reply-To');
+                };
+            }
+        }
+
         return new Envelope(
             subject: $subject,
-            replyTo: [self::salesReplyToAddress()],
+            replyTo: $replyTo,
+            using: $using,
         );
     }
 
@@ -166,12 +184,20 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
     public function headers(): Headers
     {
+        $textHeaders = [
+            'X-BMW-Mail-Kind' => 'appointment_confirmation',
+            'X-BMW-Mail-Mode' => $this->mode,
+            'X-BMW-Appointment-ID' => (string) $this->appointment->id,
+        ];
+
+        if (! $this->isAdminConfirmed()) {
+            $textHeaders['Auto-Submitted'] = 'auto-generated';
+            $textHeaders['Precedence'] = 'bulk';
+            $textHeaders['X-Auto-Response-Suppress'] = 'All';
+        }
+
         return new Headers(
-            text: [
-                'X-BMW-Mail-Kind' => 'appointment_confirmation',
-                'X-BMW-Mail-Mode' => $this->mode,
-                'X-BMW-Appointment-ID' => (string) $this->appointment->id,
-            ],
+            text: $textHeaders,
         );
     }
 

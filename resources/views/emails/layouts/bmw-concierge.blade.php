@@ -56,7 +56,12 @@
                                 <strong style="color: #0F172A; font-weight: 600;">BMW Showroom Flagship</strong> &mdash; 123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh
                             </p>
                             <p style="margin: 0 0 6px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; color: #64748B; line-height: 1.55;">
-                                Hotline: <a href="tel:1900123456" style="color: #0F172A; text-decoration: none; font-weight: 600;">1900 123 456</a> &bull; Quý khách có thể bấm <strong>Trả lời (Reply)</strong> trực tiếp email này để trao đổi với Chuyên viên.
+                                Hotline: <a href="tel:1900123456" style="color: #0F172A; text-decoration: none; font-weight: 600;">1900 123 456</a> &bull;
+                                @if($__env->hasSection('hide_reply_hint'))
+                                    Đây là email thông báo tự động một chiều, vui lòng không phản hồi trực tiếp thư này.
+                                @else
+                                    Quý khách có thể bấm <strong>Trả lời (Reply)</strong> trực tiếp email này để trao đổi với Chuyên viên.
+                                @endif
                             </p>
                             <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; color: #94A3B8; line-height: 1.5;">
                                 &copy; {{ date('Y') }} BMW Showroom Vietnam. Sheer Driving Pleasure.

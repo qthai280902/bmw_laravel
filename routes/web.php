@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ServiceBookingController;
 use App\Http\Controllers\Admin\SiteSettingController;
@@ -110,6 +111,17 @@ Route::middleware('auth')->group(function () {
             Route::post('articles/ai-assist', [AdminArticleController::class, 'aiAssist'])->name('articles.ai-assist');
             Route::resource('articles', AdminArticleController::class)->except(['show']);
             Route::post('customers/promotions', [CustomerController::class, 'sendPromotions'])->name('customers.promotions.store');
+
+            // Email Template Studio (admin + marketing only; sales receives 403)
+            Route::prefix('email-templates')->name('email-templates.')->group(function () {
+                Route::get('/', [EmailTemplateController::class, 'index'])->name('index');
+                Route::get('/create', [EmailTemplateController::class, 'create'])->name('create');
+                Route::post('/', [EmailTemplateController::class, 'store'])->name('store');
+                Route::get('/{emailTemplate}/edit', [EmailTemplateController::class, 'edit'])->name('edit');
+                Route::put('/{emailTemplate}', [EmailTemplateController::class, 'update'])->name('update');
+                Route::post('/{emailTemplate}/duplicate', [EmailTemplateController::class, 'duplicate'])->name('duplicate');
+                Route::patch('/{emailTemplate}/status', [EmailTemplateController::class, 'updateStatus'])->name('status');
+            });
         });
 
         // CRM & Sales Operations Portal (admin + sales)
@@ -147,6 +159,14 @@ Route::middleware('auth')->group(function () {
             Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
             Route::resource('users', UserController::class)->only(['index', 'store']);
             Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+        });
+
+        // Customer 360° Detail, Installment Plans & Quick 1-to-1 Email (placed below all static /admin/customers/* routes)
+        Route::middleware('role:admin,sales,marketing')->group(function () {
+            Route::get('customers/{phone}', [CustomerController::class, 'show'])->name('customers.show');
+            Route::post('customers/{phone}/installments', [CustomerController::class, 'storeInstallment'])->name('customers.installments.store');
+            Route::patch('customers/{phone}/installments/{plan}', [CustomerController::class, 'updateInstallment'])->name('customers.installments.update');
+            Route::post('customers/{phone}/send-email', [CustomerController::class, 'sendQuickEmail'])->name('customers.send-email');
         });
 
         // Accounting & Financial Ledgers (strictly Top Super Admin only)

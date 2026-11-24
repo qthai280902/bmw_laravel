@@ -49,7 +49,7 @@
                                 type="text"
                                 name="search"
                                 value="{{ request('search') }}"
-                                placeholder="Tên, Email, SĐT hoặc #SĐT_STT..."
+                                placeholder="Tên, Email, SĐT hoặc mã BMW/CT/KH..."
                                 x-data
                                 data-last-search="{{ request('search', '') }}"
                                 @input.debounce.450ms="if ($el.value !== ($el.dataset.lastSearch || '')) { $el.dataset.lastSearch = $el.value; $el.form.submit(); }"
@@ -141,46 +141,62 @@
 
             <!-- CRM Table -->
             <x-admin.card class="!p-0 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[840px] border-collapse text-left">
+                <div class="overflow-x-auto lg:overflow-x-visible">
+                    <table class="w-full lg:table-fixed border-collapse text-left">
                         <thead>
                             <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
-                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Thông tin khách hàng</th>
-                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Liên lạc</th>
-                                <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Tương tác</th>
-                                <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Gần nhất</th>
+                                <th class="w-[31%] px-4 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Thông tin khách hàng</th>
+                                <th class="w-[27%] px-4 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Liên lạc</th>
+                                <th class="w-[11%] px-3 py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Tương tác</th>
+                                <th class="w-[14%] px-4 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Gần nhất</th>
+                                <th class="w-[17%] px-4 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Hồ sơ 360°</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/[0.06]">
                             @forelse($customers as $customer)
+                                @php
+                                    $normalizedPhone = \App\Models\CustomerInstallmentPlan::normalizePhoneDigits($customer->phone);
+                                    $detailPhoneParam = $normalizedPhone !== '' ? $normalizedPhone : 'khach-hang';
+                                    $detailParams = ['phone' => $detailPhoneParam];
+                                    if (filled($customer->email)) {
+                                        $detailParams['email'] = $customer->email;
+                                    }
+                                    $detailUrl = route('admin.customers.show', $detailParams);
+                                    $emailLower = mb_strtolower(trim((string) ($customer->email ?? '')));
+                                    $hasInstallment = ($emailLower !== '' && isset($installmentEmails[$emailLower]))
+                                        || ($normalizedPhone !== '' && isset($installmentPhones[$normalizedPhone]));
+                                @endphp
                                 <tr class="group transition-colors hover:bg-[#131A29]/60">
-                                    <td class="px-6 py-4.5">
-                                        <div class="flex items-center gap-4">
+                                    <td class="px-4 py-4">
+                                        <div class="flex items-center gap-3 min-w-0">
                                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-colors group-hover:border-[#1C69D4]">
                                                 <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
                                             </div>
-                                            <div class="min-w-0">
-                                                <div class="mb-1 truncate text-sm font-black uppercase leading-none tracking-wider text-white transition-colors group-hover:text-[#70A7FF]">
+                                            <div class="min-w-0 flex-1">
+                                                <a href="{{ $detailUrl }}" class="mb-1 block truncate text-sm font-black uppercase leading-none tracking-wider text-white transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]" title="{{ $customer->name }}">
                                                     {{ $customer->name }}
-                                                </div>
+                                                </a>
                                                 <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-zinc-400">
                                                     @if(($customer->priority_rank ?? 4) === 1)
                                                         <span class="rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-rose-300">HOT LEAD</span>
                                                     @elseif(($customer->priority_rank ?? 4) === 2)
                                                         <span class="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-amber-300">TIỀM NĂNG</span>
                                                     @endif
-                                                    <span class="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-sky-300">
+                                                    @if($hasInstallment)
+                                                        <span class="rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-emerald-300">Trả góp</span>
+                                                    @endif
+                                                    <span class="truncate max-w-full rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-sky-300">
                                                         {{ filled($customer->assigned_sales_name) ? 'Sales: ' . $customer->assigned_sales_name : 'Chưa gán Sales' }}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-5">
-                                        <div class="space-y-1">
-                                            <div class="flex items-center gap-2">
+                                    <td class="px-4 py-4">
+                                        <div class="space-y-1 min-w-0">
+                                            <div class="flex items-center gap-2 min-w-0">
                                                 <svg class="h-3.5 w-3.5 shrink-0 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                                <span class="text-xs font-medium text-zinc-300">{{ $customer->email }}</span>
+                                                <span class="truncate text-xs font-medium text-zinc-300" title="{{ $customer->email }}">{{ $customer->email }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <svg class="h-3.5 w-3.5 shrink-0 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
@@ -188,13 +204,13 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4.5 text-center whitespace-nowrap">
-                                        <div class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-[#070A10] px-3 py-1">
+                                    <td class="px-3 py-4 text-center whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-[#070A10] px-2.5 py-1">
                                             <span class="text-[10px] font-bold tabular-nums text-white">{{ $customer->interactions_count }}</span>
                                             <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Lượt</span>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-5 text-right whitespace-nowrap">
+                                    <td class="px-4 py-4 text-right whitespace-nowrap">
                                         <div class="text-xs font-bold uppercase tracking-wider tabular-nums text-zinc-300">
                                             {{ \Carbon\Carbon::parse($customer->last_interaction)->format('d/m/Y') }}
                                         </div>
@@ -202,10 +218,21 @@
                                             {{ \Carbon\Carbon::parse($customer->last_interaction)->diffForHumans() }}
                                         </div>
                                     </td>
+                                    <td class="px-4 py-4 text-right whitespace-nowrap">
+                                        <a
+                                            href="{{ $detailUrl }}"
+                                            class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-3 text-[11px] font-semibold text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white"
+                                        >
+                                            <span>Xem chi tiết</span>
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-16 text-center">
+                                    <td colspan="5" class="px-6 py-16 text-center">
                                         <x-admin.empty-state
                                             title="Chưa có dữ liệu khách hàng"
                                             description="Các khách hàng đặt lịch hẹn hoặc tư vấn tại Showroom sẽ tự động xuất hiện tại đây."
@@ -231,10 +258,15 @@
                 $initialAudience = old('audience', 'all');
                 $initialProductId = old('product_id') !== null && old('product_id') !== '' ? (int) old('product_id') : null;
                 $initialOnlyCompleted = $initialAudience === 'completed' || (bool) old('only_completed', false);
+                $initialOnlyInstallment = $initialAudience === 'installment';
                 $initialMatchedRecipients = $initialAudience === 'by_product' && $initialProductId === null
                     ? collect()
                     : collect($promotionAudienceTuples)
-                        ->filter(function (array $row) use ($initialOnlyCompleted, $initialProductId): bool {
+                        ->filter(function (array $row) use ($initialOnlyCompleted, $initialOnlyInstallment, $initialProductId): bool {
+                            if ($initialOnlyInstallment && empty($row['has_installment'])) {
+                                return false;
+                            }
+
                             if ($initialOnlyCompleted && ! $row['completed']) {
                                 return false;
                             }
@@ -248,11 +280,26 @@
                         ->unique('key')
                         ->values();
                 $initialMatchedCount = $initialMatchedRecipients->count();
+                $campaignTemplateOptions = ['' => '-- Chọn mẫu từ Kho mẫu Email --'];
+                $campaignTemplatesPayload = [];
+                foreach ($activeEmailTemplates ?? [] as $emailTemplate) {
+                    $campaignTemplateOptions[$emailTemplate->code] = $emailTemplate->name . ' (' . $emailTemplate->categoryLabel() . ')';
+                    $campaignTemplatesPayload[] = [
+                        'code' => $emailTemplate->code,
+                        'name' => $emailTemplate->name,
+                        'category' => $emailTemplate->category,
+                        'subject' => $emailTemplate->subject,
+                        'body_content' => $emailTemplate->body_content,
+                    ];
+                }
                 $promotionCampaignConfig = [
                     'audience' => $initialAudience,
                     'productId' => (string) old('product_id', ''),
                     'onlyCompleted' => $initialOnlyCompleted,
                     'records' => $promotionAudienceTuples,
+                    'templates' => $campaignTemplatesPayload,
+                    'offerTitle' => (string) old('title', ''),
+                    'offerContent' => (string) old('content', ''),
                 ];
             @endphp
             <script id="bmw-promotion-campaign-config" type="application/json">{!! json_encode($promotionCampaignConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) !!}</script>
@@ -276,11 +323,36 @@
 
                         <!-- Cột trái (7/12): Soạn nội dung ưu đãi -->
                         <div class="space-y-5 lg:col-span-7">
+                            @if(($activeEmailTemplates ?? collect())->isNotEmpty())
+                                <div class="rounded-xl border border-[#1C69D4]/25 bg-[#1C69D4]/10 p-4">
+                                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                        <label for="promo-template-loader" class="text-[11px] font-bold text-[#70A7FF]">
+                                            Nạp nhanh từ Kho mẫu Email
+                                        </label>
+                                        <a href="{{ route('admin.email-templates.index') }}" class="text-[11px] font-semibold text-zinc-300 underline-offset-4 hover:text-white hover:underline">
+                                            Quản lý Kho mẫu Email →
+                                        </a>
+                                    </div>
+                                    <x-ui.custom-select
+                                        id="promo-template-loader"
+                                        name="_template_loader"
+                                        x-model="selectedTemplateCode"
+                                        @change="applyEmailTemplate(selectedTemplateCode)"
+                                        value=""
+                                        :options="$campaignTemplateOptions"
+                                    />
+                                    <p class="mt-2 text-[11px] text-zinc-400">
+                                        Các biến như <code class="text-sky-300">&#123;&#123;customer_name&#125;&#125;</code>, <code class="text-sky-300">&#123;&#123;vehicle_name&#125;&#125;</code>, <code class="text-sky-300">&#123;&#123;interest_rate&#125;&#125;</code>, <code class="text-sky-300">&#123;&#123;next_due_date&#125;&#125;</code> sẽ tự động điền theo từng khách hàng khi phát thư.
+                                    </p>
+                                </div>
+                            @endif
+
                             <x-admin.form-field name="title" label="Tiêu đề ưu đãi">
                                 <input
                                     id="promo-title"
                                     type="text"
                                     name="title"
+                                    x-model="offerTitle"
                                     value="{{ old('title') }}"
                                     required
                                     placeholder="Ví dụ: Tặng gói rửa xe & kiểm tra tổng quát 20 hạng mục miễn phí"
@@ -293,6 +365,7 @@
                                     id="promo-content"
                                     name="content"
                                     rows="8"
+                                    x-model="offerContent"
                                     required
                                     placeholder="Nhập nội dung chi tiết ưu đãi, thời gian áp dụng và quyền lợi dành riêng cho khách hàng BMW..."
                                     class="w-full rounded-xl border border-white/10 bg-[#070A10] px-4 py-3 text-xs leading-relaxed text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
@@ -315,6 +388,7 @@
                                         :options="[
                                             'all' => 'Tất cả khách hàng có email',
                                             'completed' => 'Chỉ khách đã hoàn thành lịch hẹn (Completed)',
+                                            'installment' => 'Khách hàng đang có hồ sơ trả góp',
                                             'by_product' => 'Theo dòng xe cụ thể',
                                         ]"
                                     />
