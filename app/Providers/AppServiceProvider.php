@@ -43,9 +43,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (! $this->app->runningUnitTests() && ($appUrl = config('app.url'))) {
-            URL::forceRootUrl($appUrl);
+            $isHttps = str_starts_with($appUrl, 'https://');
 
-            if (str_starts_with($appUrl, 'https://')) {
+            if ($isHttps || $this->app->runningInConsole()) {
+                URL::forceRootUrl($appUrl);
+            }
+
+            if ($isHttps) {
                 URL::forceScheme('https');
             }
         }
