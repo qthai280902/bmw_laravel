@@ -34,6 +34,9 @@ class CustomerController extends Controller
 {
     public function index(Request $request, ShowroomCacheService $cacheService): View
     {
+        $currentUser = Auth::user();
+        $isSalesUser = $currentUser?->isSales() ?? false;
+
         $search = trim((string) $request->query('search', ''));
         $rawStatus = trim((string) $request->query('status', ''));
         $validStatuses = array_column(AppointmentStatus::cases(), 'value');
@@ -41,7 +44,7 @@ class CustomerController extends Controller
         $productIdFilter = $request->filled('product_id') && is_numeric($request->query('product_id'))
             ? (int) $request->query('product_id')
             : null;
-        $salesIdFilter = trim((string) $request->query('sales_id', ''));
+        $salesIdFilter = $isSalesUser ? '' : trim((string) $request->query('sales_id', ''));
         $recentFilter = trim((string) $request->query('recent', ''));
         if (! in_array($recentFilter, ['', '7d', '30d', 'this_month'], true)) {
             $recentFilter = '';
@@ -69,6 +72,7 @@ class CustomerController extends Controller
         )
             ->leftJoin('users', 'appointments.user_id', '=', 'users.id')
             ->leftJoin('users as assigned_sales', 'appointments.assigned_to', '=', 'assigned_sales.id')
+            ->when($isSalesUser, fn ($query) => $query->where('appointments.assigned_to', (int) $currentUser->id))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('appointments.guest_name', 'like', "%{$search}%")
@@ -87,7 +91,7 @@ class CustomerController extends Controller
             ->when($productIdFilter !== null, fn ($query) => $query->where('appointments.product_id', $productIdFilter))
             ->when($leadPriorityFilter !== '', fn ($query) => $query->where('appointments.lead_priority', $leadPriorityFilter))
             ->when($recentStart !== null, fn ($query) => $query->where('appointments.appointment_date', '>=', $recentStart->toDateTimeString()))
-            ->when($salesIdFilter !== '', function ($query) use ($salesIdFilter) {
+            ->when(! $isSalesUser && $salesIdFilter !== '', function ($query) use ($salesIdFilter) {
                 if ($salesIdFilter === 'mine') {
                     $query->where('appointments.assigned_to', Auth::id());
                 } elseif ($salesIdFilter === 'unassigned') {
@@ -107,9 +111,10 @@ class CustomerController extends Controller
             ->get(['id', 'name', 'type']);
 
         $statuses = AppointmentStatus::cases();
-        $salesRoster = $cacheService->salesRoster();
-        $unassignedTotal = Appointment::query()->whereNull('assigned_to')->count()
-            + AccessoryOrder::query()->whereNull('assigned_to')->count();
+        $salesRoster = $isSalesUser ? collect() : $cacheService->salesRoster();
+        $unassignedTotal = $currentUser?->canManageSystem()
+            ? Appointment::query()->whereNull('assigned_to')->count() + AccessoryOrder::query()->whereNull('assigned_to')->count()
+            : 0;
 
         [$installmentEmails, $installmentPhones] = $this->openInstallmentIdentitySets();
 

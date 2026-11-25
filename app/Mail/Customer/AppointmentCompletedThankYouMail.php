@@ -47,6 +47,7 @@ class AppointmentCompletedThankYouMail extends Mailable implements ShouldQueue
         return new Envelope(
             subject: $subject,
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
+            using: [AppointmentConfirmationMail::deduplicateReplyToUsing()],
         );
     }
 

@@ -155,11 +155,28 @@ class ShowroomAssistantService
                 );
 
                 $rawText = '';
+                $nonGeminiEmittedChunk = false;
                 foreach ($stream as $event) {
                     if ($event instanceof TextDelta && $event->delta !== '') {
+                        $nonGeminiEmittedChunk = true;
                         $rawText .= $event->delta;
                         yield ['event' => 'chunk', 'data' => ['delta' => $event->delta]];
                     }
+                }
+
+                if ($this->isIncompleteStreamFragment($rawText, false)) {
+                    $truncatedPayload = $this->fallbackResponse($suggestions, 'stream_truncated');
+                    if ($nonGeminiEmittedChunk) {
+                        $truncatedPayload['replace_text'] = true;
+                        $truncatedPayload['used_fallback'] = true;
+                    }
+
+                    yield [
+                        'event' => 'done',
+                        'data' => $this->withTrackerProduct($truncatedPayload, $trackerProduct),
+                    ];
+
+                    return;
                 }
 
                 yield [
@@ -177,9 +194,15 @@ class ShowroomAssistantService
                     'provider' => $provider,
                 ]);
 
+                $fallbackPayload = $this->fallbackResponse($suggestions, 'provider_error');
+                if (($rawText ?? '') !== '') {
+                    $fallbackPayload['replace_text'] = true;
+                    $fallbackPayload['used_fallback'] = true;
+                }
+
                 yield [
                     'event' => 'done',
-                    'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct),
+                    'data' => $this->withTrackerProduct($fallbackPayload, $trackerProduct),
                 ];
 
                 return;
@@ -213,6 +236,7 @@ class ShowroomAssistantService
 
         $totalAttempts = 0;
         $totalRateLimited = 0;
+        $anyChunkEmitted = false;
 
         foreach ($modelsToTry as $modelIndex => $activeModel) {
             $isFallbackPass = $modelIndex > 0;
@@ -255,9 +279,25 @@ class ShowroomAssistantService
                     foreach ($stream as $streamEvent) {
                         if ($streamEvent instanceof TextDelta && $streamEvent->delta !== '') {
                             $emittedChunk = true;
+                            $anyChunkEmitted = true;
                             $rawText .= $streamEvent->delta;
                             yield ['event' => 'chunk', 'data' => ['delta' => $streamEvent->delta]];
                         }
+                    }
+
+                    if ($this->isIncompleteStreamFragment($rawText, false)) {
+                        $truncatedPayload = $this->fallbackResponse($suggestions, 'stream_truncated');
+                        if ($emittedChunk) {
+                            $truncatedPayload['replace_text'] = true;
+                            $truncatedPayload['used_fallback'] = true;
+                        }
+
+                        yield [
+                            'event' => 'done',
+                            'data' => $this->withTrackerProduct($truncatedPayload, $trackerProduct),
+                        ];
+
+                        return;
                     }
 
                     yield [
@@ -282,7 +322,7 @@ class ShowroomAssistantService
                         continue;
                     }
 
-                    if ($emittedChunk && trim($rawText) !== '') {
+                    if ($emittedChunk && ! $this->isIncompleteStreamFragment($rawText, true)) {
                         yield [
                             'event' => 'done',
                             'data' => $this->withTrackerProduct(
@@ -294,9 +334,15 @@ class ShowroomAssistantService
                         return;
                     }
 
+                    $fallbackPayload = $this->fallbackResponse($suggestions, $emittedChunk ? 'stream_truncated' : 'provider_error');
+                    if ($emittedChunk) {
+                        $fallbackPayload['replace_text'] = true;
+                        $fallbackPayload['used_fallback'] = true;
+                    }
+
                     yield [
                         'event' => 'done',
-                        'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, 'provider_error'), $trackerProduct),
+                        'data' => $this->withTrackerProduct($fallbackPayload, $trackerProduct),
                     ];
 
                     return;
@@ -307,13 +353,36 @@ class ShowroomAssistantService
             }
         }
 
-        $reason = ($totalAttempts > 0 && $totalRateLimited === $totalAttempts) ? 'rate_limited' : 'provider_error';
+        $reason = ($totalAttempts > 0 && $totalRateLimited === $totalAttempts) ? 'rate_limited' : ($anyChunkEmitted ? 'stream_truncated' : 'provider_error');
         $fallbackAnswer = $reason === 'rate_limited' ? $this->rateLimitFallbackMessage() : null;
+        $finalFallbackPayload = $this->fallbackResponse($suggestions, $reason, $fallbackAnswer);
+        if ($anyChunkEmitted) {
+            $finalFallbackPayload['replace_text'] = true;
+            $finalFallbackPayload['used_fallback'] = true;
+        }
 
         yield [
             'event' => 'done',
-            'data' => $this->withTrackerProduct($this->fallbackResponse($suggestions, $reason, $fallbackAnswer), $trackerProduct),
+            'data' => $this->withTrackerProduct($finalFallbackPayload, $trackerProduct),
         ];
+    }
+
+    private function isIncompleteStreamFragment(string $rawText, bool $threwException): bool
+    {
+        $trimmed = trim($rawText);
+
+        if ($trimmed === '') {
+            return true;
+        }
+
+        $length = mb_strlen($trimmed, 'UTF-8');
+        $hasTerminalPunctuation = preg_match('/[.!?…»"\')\]]\s*$/u', $trimmed) === 1;
+
+        if ($threwException) {
+            return $length < 40 || ! $hasTerminalPunctuation;
+        }
+
+        return $length < 40 && ! $hasTerminalPunctuation;
     }
 
     public function resetConversation(?string $visitorId): bool

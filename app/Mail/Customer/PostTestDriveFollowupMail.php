@@ -31,6 +31,7 @@ class PostTestDriveFollowupMail extends Mailable implements ShouldQueue
             subject: "[BMW Concierge] Cảm ơn Quý khách & Bảng dự toán tài chính {$vehicleLabel} — Mã {$refCode}",
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
             tags: ['post-test-drive-followup'],
+            using: [AppointmentConfirmationMail::deduplicateReplyToUsing()],
         );
     }
 

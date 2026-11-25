@@ -6,7 +6,7 @@
         description="Theo dõi hiệu suất lịch hẹn, khách hàng tiềm năng, dịch vụ chăm sóc xe và hội thoại AI."
     >
         <x-slot name="actions">
-            <a href="{{ route('admin.appointments.index') }}" class="inline-flex h-10 items-center justify-center rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white shadow-lg shadow-[#1C69D4]/25 transition-all hover:bg-[#1657B0]">
+            <a href="{{ route('admin.appointments.index') }}" class="inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white shadow-lg shadow-[#1C69D4]/25 transition-all hover:bg-[#1657B0]">
                 Mở danh sách lead
             </a>
         </x-slot>

@@ -278,7 +278,7 @@ class DashboardController extends Controller
             [
                 'key' => 'trade_in',
                 'title' => 'Trade-in',
-                'subtitle' => 'Khach co nhu cau doi xe cu len BMW',
+                'subtitle' => 'Khách có nhu cầu đổi xe cũ lên BMW',
                 'types' => [AppointmentType::TradeIn],
                 'count' => $tradeInCount,
                 'leads' => collect($tradeInIds)
@@ -289,7 +289,7 @@ class DashboardController extends Controller
             [
                 'key' => 'service',
                 'title' => 'Service',
-                'subtitle' => 'Bao duong va cham soc xe BMW',
+                'subtitle' => 'Bảo dưỡng và chăm sóc xe BMW',
                 'types' => [
                     AppointmentType::Maintenance,
                     AppointmentType::Detailing,

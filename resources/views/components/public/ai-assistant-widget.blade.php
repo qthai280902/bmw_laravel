@@ -7,6 +7,8 @@
         'Tìm BMW S1000RR',
         'So sánh BMW 330i và 530i',
     ];
+    $suppressGreetingBubble = request()->routeIs('appointments.create', 'appointments.guest.*', 'booking.*', 'appointments.manage*')
+        || request()->is('booking*', 'appointments/*/manage*');
 @endphp
 
 <div
@@ -22,7 +24,6 @@
         'ready' => 'Sẵn sàng tư vấn',
         'prompts' => $assistantPrompts,
     ]))"
-    x-init="init()"
     @keydown.escape.window="if (panelOpen) minimize()"
     x-cloak
     class="fixed text-white"
@@ -351,12 +352,14 @@
     </button>
 
     <div x-show="!panelOpen && !sideTabVisible" x-transition.opacity.duration.150ms class="flex items-end justify-end gap-3">
-        <div
-            class="hidden max-w-[12rem] border border-white/10 bg-black/90 px-4 py-3 text-sm font-semibold leading-5 text-zinc-200 shadow-2xl shadow-black/50 backdrop-blur-xl sm:block"
-            data-ai-greeting-bubble
-        >
-            Bạn cần hỗ trợ gì?
-        </div>
+        @unless($suppressGreetingBubble)
+            <div
+                class="hidden max-w-[12rem] border border-white/10 bg-black/90 px-4 py-3 text-sm font-semibold leading-5 text-zinc-200 shadow-2xl shadow-black/50 backdrop-blur-xl sm:block"
+                data-ai-greeting-bubble
+            >
+                Bạn cần hỗ trợ gì?
+            </div>
+        @endunless
 
         <button
             type="button"

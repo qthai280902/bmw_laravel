@@ -4,6 +4,7 @@ namespace App\Mail\Customer;
 
 use App\Models\Appointment;
 use App\Models\Product;
+use Closure;
 use Illuminate\Contracts\Mail\Attachable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -61,10 +62,16 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
 
         if ($this->isAdminConfirmed()) {
             $replyTo = [self::salesReplyToAddress()];
+            $using[] = self::deduplicateReplyToUsing();
         } else {
             $noreplyAddress = trim((string) config('mail.noreply_address', ''));
             if ($noreplyAddress !== '') {
-                $replyTo = [new Address($noreplyAddress, (string) config('mail.noreply_name', 'BMW Showroom (Không phản hồi)'))];
+                $noreplyName = (string) config('mail.noreply_name', 'BMW Showroom (Không phản hồi)');
+                $replyTo = [new Address($noreplyAddress, $noreplyName)];
+                $using[] = static function (Email $message) use ($noreplyAddress, $noreplyName): void {
+                    $message->getHeaders()->remove('Reply-To');
+                    $message->replyTo(new \Symfony\Component\Mime\Address($noreplyAddress, $noreplyName));
+                };
             } else {
                 $replyTo = [];
                 $using[] = static function (Email $message): void {
@@ -172,6 +179,32 @@ class AppointmentConfirmationMail extends Mailable implements ShouldQueue
         $name = (string) config('mail.reply_to.name', 'BMW Showroom Tư Vấn');
 
         return new Address($address, $name);
+    }
+
+    public static function deduplicateReplyToUsing(): Closure
+    {
+        return static function (Email $message): void {
+            $existing = $message->getReplyTo();
+            if ($existing === []) {
+                return;
+            }
+
+            $unique = [];
+            $seen = [];
+            foreach ($existing as $addr) {
+                $norm = mb_strtolower(trim($addr->getAddress()));
+                if ($norm === '' || isset($seen[$norm])) {
+                    continue;
+                }
+                $seen[$norm] = true;
+                $unique[] = $addr;
+            }
+
+            $message->getHeaders()->remove('Reply-To');
+            if ($unique !== []) {
+                $message->replyTo(...$unique);
+            }
+        };
     }
 
     public static function fallbackBadgePngBytes(): string

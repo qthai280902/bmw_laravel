@@ -49,6 +49,7 @@ class GuestAppointmentChangeMail extends Mailable implements ShouldQueue
             subject: $subject,
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
             tags: ['guest-appointment-change', $this->action],
+            using: [AppointmentConfirmationMail::deduplicateReplyToUsing()],
         );
     }
 

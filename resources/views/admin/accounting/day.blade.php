@@ -25,38 +25,38 @@
         </div>
     @endif
 
-    <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="min-w-0 rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5">
             <p class="text-[11px] font-semibold text-zinc-400">Tổng số chứng từ trong ngày</p>
-            <p class="mt-2 text-2xl font-bold tabular-nums text-white">{{ $summary['total_vouchers'] }}</p>
+            <p class="mt-2 text-xl font-bold tabular-nums text-white xl:text-2xl">{{ $summary['total_vouchers'] }}</p>
             <p class="mt-1 text-xs text-zinc-400">{{ $summary['vehicles_count'] }} xe · {{ $summary['services_count'] }} dịch vụ · {{ $summary['orders_count'] }} phụ kiện</p>
         </div>
-        <div class="rounded-2xl border border-emerald-500/25 bg-[#0D121C] p-5">
+        <div class="min-w-0 rounded-2xl border border-emerald-500/25 bg-[#0D121C] p-5">
             <p class="text-[11px] font-semibold text-emerald-400">Doanh thu hoàn tất trong ngày</p>
-            <p class="mt-2 text-2xl font-bold tabular-nums text-white">{{ number_format($summary['completed_revenue'], 0, ',', '.') }} ₫</p>
+            <p class="mt-2 truncate whitespace-nowrap text-lg font-bold tabular-nums text-white xl:text-xl" title="{{ number_format($summary['completed_revenue'], 0, ',', '.') }} ₫">{{ number_format($summary['completed_revenue'], 0, ',', '.') }}&nbsp;₫</p>
         </div>
-        <div class="rounded-2xl border border-[#1C69D4]/30 bg-[#0D121C] p-5">
+        <div class="min-w-0 rounded-2xl border border-[#1C69D4]/30 bg-[#0D121C] p-5">
             <p class="text-[11px] font-semibold text-[#70A7FF]">Đơn / Đặt cọc cam kết</p>
-            <p class="mt-2 text-2xl font-bold tabular-nums text-white">{{ number_format($summary['committed_value'], 0, ',', '.') }} ₫</p>
+            <p class="mt-2 truncate whitespace-nowrap text-lg font-bold tabular-nums text-white xl:text-xl" title="{{ number_format($summary['committed_value'], 0, ',', '.') }} ₫">{{ number_format($summary['committed_value'], 0, ',', '.') }}&nbsp;₫</p>
         </div>
-        <div class="rounded-2xl border border-rose-500/25 bg-[#0D121C] p-5">
+        <div class="min-w-0 rounded-2xl border border-rose-500/25 bg-[#0D121C] p-5">
             <p class="text-[11px] font-semibold text-rose-400">Giá trị hủy trong ngày</p>
-            <p class="mt-2 text-2xl font-bold tabular-nums text-white">{{ number_format($summary['cancelled_value'], 0, ',', '.') }} ₫</p>
+            <p class="mt-2 truncate whitespace-nowrap text-lg font-bold tabular-nums text-white xl:text-xl" title="{{ number_format($summary['cancelled_value'], 0, ',', '.') }} ₫">{{ number_format($summary['cancelled_value'], 0, ',', '.') }}&nbsp;₫</p>
         </div>
     </div>
 
     {{-- Khối Chốt sổ ngày --}}
     <x-admin.card class="mb-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-                <div class="flex items-center gap-2.5">
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2.5">
                     <h2 class="text-base font-bold text-white">Trạng thái chốt sổ ngày {{ $dateLabel }}</h2>
                     @if($closing)
-                        <span class="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-0.5 text-xs font-semibold text-emerald-300">
+                        <span class="shrink-0 whitespace-nowrap rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-0.5 text-xs font-semibold text-emerald-300">
                             Đã chốt sổ ngày
                         </span>
                     @else
-                        <span class="rounded-full border border-amber-500/30 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-300">
+                        <span class="shrink-0 whitespace-nowrap rounded-full border border-amber-500/30 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-300">
                             Đang mở
                         </span>
                     @endif

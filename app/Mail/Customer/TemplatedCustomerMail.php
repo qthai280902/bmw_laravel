@@ -39,6 +39,7 @@ class TemplatedCustomerMail extends Mailable implements ShouldQueue
         return new Envelope(
             subject: $rendered['subject'],
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
+            using: [AppointmentConfirmationMail::deduplicateReplyToUsing()],
         );
     }
 

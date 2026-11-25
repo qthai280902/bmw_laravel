@@ -49,8 +49,8 @@
             x-data="{ period: @js($period) }"
             class="space-y-4"
         >
-            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-12 md:items-end">
-                <div class="md:col-span-3">
+            <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+                <div class="min-w-0">
                     <x-admin.form-field name="period" label="Kỳ kế toán">
                         <select id="period" name="period" x-model="period" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                             @foreach($periodOptions as $val => $label)
@@ -60,7 +60,7 @@
                     </x-admin.form-field>
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="min-w-0">
                     <x-admin.form-field name="module" label="Phân hệ chứng từ">
                         <select id="module" name="module" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                             @foreach($moduleOptions as $val => $label)
@@ -70,7 +70,7 @@
                     </x-admin.form-field>
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="min-w-0">
                     <x-admin.form-field name="status" label="Trạng thái hạch toán">
                         <select id="status" name="status" class="h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-medium text-white focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]">
                             @foreach($statusOptions as $val => $label)
@@ -80,7 +80,7 @@
                     </x-admin.form-field>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 md:col-span-3">
+                <div class="flex shrink-0 items-center gap-2 sm:col-span-2 lg:col-span-1 lg:justify-end">
                     <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#1657B0] cursor-pointer">
                         Lọc sổ sách
                     </button>

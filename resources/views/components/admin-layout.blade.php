@@ -61,7 +61,7 @@
             <aside
                 data-admin-sidebar
                 :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-                class="admin-sidebar-panel fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col border-r border-white/[0.08] bg-[#0D121C]/95 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 lg:translate-x-0"
+                class="admin-sidebar-panel fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col border-r border-white/[0.08] bg-[#0D121C]/95 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300"
             >
                 <!-- Brand Header -->
                 <div class="shrink-0 border-b border-white/[0.08] bg-[#0D121C] px-4 py-4">

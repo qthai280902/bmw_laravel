@@ -78,9 +78,9 @@
             <p class="text-[11px] font-semibold text-zinc-400">Đơn phụ kiện</p>
             <p class="mt-1 text-2xl font-extrabold tabular-nums text-[#70A7FF]">{{ $kpis['orders'] }}</p>
         </div>
-        <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] px-4 py-3.5">
+        <div class="min-w-0 rounded-2xl border border-white/[0.08] bg-[#0D121C] px-4 py-3.5">
             <p class="text-[11px] font-semibold text-zinc-400">Chi tiêu phụ kiện</p>
-            <p class="mt-1 truncate text-lg font-extrabold tabular-nums text-emerald-300">{{ number_format($kpis['total_spend'], 0, ',', '.') }} đ</p>
+            <p class="mt-1 truncate whitespace-nowrap text-base font-extrabold tabular-nums text-emerald-300 sm:text-lg" title="{{ number_format($kpis['total_spend'], 0, ',', '.') }} đ">{{ number_format($kpis['total_spend'], 0, ',', '.') }}&nbsp;đ</p>
         </div>
         <div class="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3.5">
             <p class="text-[11px] font-semibold text-emerald-300">Hồ sơ trả góp mở</p>
@@ -106,18 +106,18 @@
             </a>
         </div>
 
-        <div class="mt-3.5 grid grid-cols-2 gap-3.5 md:grid-cols-4 text-xs">
-            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+        <div class="mt-3.5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+            <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
                 <p class="text-[11px] text-zinc-400">Dư nợ gốc còn lại</p>
-                <p class="mt-1 text-base font-extrabold tabular-nums text-white">{{ number_format($installmentOverview['remaining_principal'], 0, ',', '.') }} đ</p>
+                <p class="mt-1 truncate whitespace-nowrap text-sm font-extrabold tabular-nums text-white sm:text-base" title="{{ number_format($installmentOverview['remaining_principal'], 0, ',', '.') }} đ">{{ number_format($installmentOverview['remaining_principal'], 0, ',', '.') }}&nbsp;đ</p>
             </div>
-            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+            <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
                 <p class="text-[11px] text-zinc-400">Tổng tiền dự kiến còn lại</p>
-                <p class="mt-1 text-base font-extrabold tabular-nums text-sky-300">{{ number_format($installmentOverview['estimated_remaining_total'], 0, ',', '.') }} đ</p>
+                <p class="mt-1 truncate whitespace-nowrap text-sm font-extrabold tabular-nums text-sky-300 sm:text-base" title="{{ number_format($installmentOverview['estimated_remaining_total'], 0, ',', '.') }} đ">{{ number_format($installmentOverview['estimated_remaining_total'], 0, ',', '.') }}&nbsp;đ</p>
             </div>
-            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+            <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
                 <p class="text-[11px] text-zinc-400">Số kỳ còn lại</p>
-                <p class="mt-1 text-base font-extrabold tabular-nums text-[#70A7FF]">
+                <p class="mt-1 whitespace-nowrap text-sm font-extrabold tabular-nums text-[#70A7FF] sm:text-base">
                     @if($installmentOverview['term_months'] > 0)
                         Còn {{ $installmentOverview['remaining_installments'] }} / {{ $installmentOverview['term_months'] }} kỳ
                     @else
@@ -125,9 +125,9 @@
                     @endif
                 </p>
             </div>
-            <div class="rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
+            <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#070A10]/80 p-3.5">
                 <p class="text-[11px] text-zinc-400">Ngày đến hạn kỳ tới</p>
-                <p class="mt-1 text-base font-extrabold tabular-nums text-emerald-300">{{ $installmentOverview['next_due_date_label'] }}</p>
+                <p class="mt-1 whitespace-nowrap text-sm font-extrabold tabular-nums text-emerald-300 sm:text-base">{{ $installmentOverview['next_due_date_label'] }}</p>
             </div>
         </div>
     </div>

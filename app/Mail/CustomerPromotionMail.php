@@ -27,6 +27,7 @@ class CustomerPromotionMail extends Mailable
             subject: "[BMW Showroom] {$this->offerTitle}",
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
             tags: ['promotion-campaign'],
+            using: [AppointmentConfirmationMail::deduplicateReplyToUsing()],
         );
     }
 

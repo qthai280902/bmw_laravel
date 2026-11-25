@@ -26,6 +26,7 @@ class AppointmentReminderMail extends Mailable
         return new Envelope(
             subject: "[BMW Nhắc Lịch] Còn 24 giờ tới lịch hẹn tại Showroom — Mã {$refCode}",
             replyTo: [AppointmentConfirmationMail::salesReplyToAddress()],
+            using: [AppointmentConfirmationMail::deduplicateReplyToUsing()],
         );
     }
 

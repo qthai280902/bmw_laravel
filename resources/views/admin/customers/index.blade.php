@@ -30,6 +30,7 @@
         <!-- Khu vực 1: Danh sách & Bộ lọc Khách hàng -->
         <section class="space-y-5">
             @php
+                $isSalesAccount = Auth::user()?->isSales() ?? false;
                 $salesSelectOptions = [
                     '' => 'Tất cả Sales',
                     'mine' => 'Khách của tôi',
@@ -40,8 +41,12 @@
                 }
             @endphp
             <x-admin.card class="!p-5">
-                <form action="{{ route('admin.customers.index') }}" method="GET" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
-                    <div>
+                <form
+                    action="{{ route('admin.customers.index') }}"
+                    method="GET"
+                    class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 {{ $isSalesAccount ? 'xl:grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto]' : 'xl:grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr_auto]' }} xl:items-end"
+                >
+                    <div class="min-w-0">
                         <label for="customer-search-input" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Tìm kiếm khách hàng</label>
                         <div class="relative">
                             <input
@@ -61,7 +66,7 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="min-w-0">
                         <label for="customer-filter-status" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Trạng thái lịch hẹn</label>
                         <x-ui.custom-select
                             id="customer-filter-status"
@@ -72,7 +77,7 @@
                         />
                     </div>
 
-                    <div>
+                    <div class="min-w-0">
                         <label for="customer-filter-product" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Mẫu xe quan tâm</label>
                         <x-ui.custom-select
                             id="customer-filter-product"
@@ -83,18 +88,20 @@
                         />
                     </div>
 
-                    <div>
-                        <label for="customer-filter-sales" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Sales phụ trách</label>
-                        <x-ui.custom-select
-                            id="customer-filter-sales"
-                            name="sales_id"
-                            :value="(string) ($salesIdFilter ?? '')"
-                            :options="$salesSelectOptions"
-                            :auto-submit="true"
-                        />
-                    </div>
+                    @unless($isSalesAccount)
+                        <div class="min-w-0">
+                            <label for="customer-filter-sales" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Sales phụ trách</label>
+                            <x-ui.custom-select
+                                id="customer-filter-sales"
+                                name="sales_id"
+                                :value="(string) ($salesIdFilter ?? '')"
+                                :options="$salesSelectOptions"
+                                :auto-submit="true"
+                            />
+                        </div>
+                    @endunless
 
-                    <div>
+                    <div class="min-w-0">
                         <label for="customer-filter-priority" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Độ ưu tiên Lead</label>
                         <x-ui.custom-select
                             id="customer-filter-priority"
@@ -110,7 +117,7 @@
                         />
                     </div>
 
-                    <div>
+                    <div class="min-w-0">
                         <label for="customer-filter-recent" class="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Tương tác gần đây</label>
                         <x-ui.custom-select
                             id="customer-filter-recent"
@@ -126,7 +133,7 @@
                         />
                     </div>
 
-                    <div class="flex items-center gap-2 lg:justify-end">
+                    <div class="flex items-center gap-2 xl:justify-end">
                         <button type="submit" class="h-10 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-[10px] font-semibold uppercase tracking-widest text-white shadow-sm shadow-[#1C69D4]/25 transition-all hover:bg-[#2575e6] cursor-pointer">
                             Lọc
                         </button>
@@ -170,7 +177,7 @@
                                     <td class="px-4 py-4">
                                         <div class="flex items-center gap-3 min-w-0">
                                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-colors group-hover:border-[#1C69D4]">
-                                                <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
+                                                <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ mb_strtoupper(mb_substr(trim((string) $customer->name), 0, 1, 'UTF-8'), 'UTF-8') }}</span>
                                             </div>
                                             <div class="min-w-0 flex-1">
                                                 <a href="{{ $detailUrl }}" class="mb-1 block truncate text-sm font-black uppercase leading-none tracking-wider text-white transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]" title="{{ $customer->name }}">
@@ -429,18 +436,16 @@
                                                 <button
                                                     type="button"
                                                     @click="selectRecipientChip(item)"
-                                                    class="flex w-full items-start justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[#131A29] cursor-pointer"
+                                                    class="flex w-full flex-col items-start gap-1 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[#131A29] cursor-pointer"
                                                 >
-                                                    <div class="min-w-0 flex-1">
-                                                        <p class="truncate text-xs font-bold text-white" x-text="item.name"></p>
-                                                        <p class="truncate text-[11px] text-zinc-400">
-                                                            <span x-text="item.email"></span>
-                                                            <span class="text-zinc-600">·</span>
-                                                            <span class="tabular-nums" x-text="item.phone"></span>
-                                                        </p>
-                                                    </div>
+                                                    <span class="block w-full truncate text-xs font-bold text-white" x-text="item.name"></span>
+                                                    <span class="flex w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-zinc-300">
+                                                        <span class="max-w-full truncate" x-text="item.email"></span>
+                                                        <span class="text-zinc-500" x-show="item.phone">·</span>
+                                                        <span class="shrink-0 font-semibold tabular-nums text-[#70A7FF]" x-text="item.phone"></span>
+                                                    </span>
                                                     <span
-                                                        class="shrink-0 rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+                                                        class="mt-0.5 inline-block max-w-full truncate rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
                                                         x-text="item.purchase_badge"
                                                     ></span>
                                                 </button>

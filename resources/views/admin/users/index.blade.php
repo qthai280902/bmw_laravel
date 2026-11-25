@@ -6,14 +6,14 @@
         description="Quản lý tài khoản nội bộ Showroom và phân quyền 3 vai trò Quản Lý, Tư Vấn Bán Hàng (Sales), Marketing."
     >
         <x-slot name="metric">
-            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tổng nhân sự</p>
-            <p class="mt-1 text-2xl font-black text-white">{{ $users->total() }}</p>
+            <p class="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">Tổng nhân sự</p>
+            <p class="mt-1 text-2xl font-black tabular-nums text-white">{{ $users->total() }}</p>
         </x-slot>
 
         <x-slot name="actions">
             <a
                 href="{{ route('admin.users.create') }}"
-                class="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-xs font-bold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]"
+                class="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-[#1C69D4] px-4 text-xs font-bold text-white shadow-sm shadow-[#1C69D4]/25 transition-colors hover:bg-[#2575e6]"
             >
                 <span>+ Hồ sơ nhân sự đầy đủ</span>
             </a>
@@ -23,7 +23,7 @@
     <!-- Create Staff Card -->
     <x-admin.card class="mb-8 !p-6">
         <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#70A7FF]">Thêm nhân sự Showroom</p>
-        <form method="POST" action="{{ route('admin.users.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.2fr_1.3fr_1fr_1fr_auto] lg:items-end">
+        <form method="POST" action="{{ route('admin.users.store') }}" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.2fr_1.3fr_1fr_1fr_auto] xl:items-end">
             @csrf
             <x-admin.form-field name="name" label="Họ và tên">
                 <input
@@ -100,7 +100,7 @@
                             <td class="px-6 py-4.5">
                                 <div class="flex items-center gap-3.5">
                                     <a href="{{ route('admin.users.show', $user) }}" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#070A10] transition-all group-hover:border-[#1C69D4]">
-                                        <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                        <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ mb_strtoupper(mb_substr(trim((string) $user->name), 0, 1, 'UTF-8'), 'UTF-8') }}</span>
                                     </a>
                                     <div class="min-w-0">
                                         <div class="mb-1 flex flex-wrap items-center gap-2 text-sm font-black uppercase leading-none tracking-wider text-white">

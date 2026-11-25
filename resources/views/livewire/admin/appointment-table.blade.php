@@ -275,11 +275,12 @@
                                 </p>
                             </td>
 
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <span class="truncate text-xs font-semibold text-white">
-                                        {{ $appointment->product?->name ?? ($appointment->servicePackageLabel() ?: 'Tư vấn tại Showroom') }}
-                                    </span>
+                            <td class="px-4 py-4">
+                                <p class="truncate text-xs font-semibold text-white" title="{{ $appointment->product?->name ?? ($appointment->servicePackageLabel() ?: 'Tư vấn tại Showroom') }}">
+                                    {{ $appointment->product?->name ?? ($appointment->servicePackageLabel() ?: 'Tư vấn tại Showroom') }}
+                                </p>
+
+                                <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                     @if($isHotLead)
                                         <span class="shrink-0 whitespace-nowrap rounded-full border border-rose-500/25 bg-rose-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-rose-300">
                                             HOT LEAD
@@ -289,24 +290,23 @@
                                             {{ $appointment->type->label() }}
                                         </span>
                                     @endif
+
+                                    @if($hasAiChat)
+                                        <span class="shrink-0 whitespace-nowrap rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-sky-300">ĐÃ CHAT AI</span>
+                                    @endif
                                 </div>
 
-                                <div class="mt-1.5 flex items-center gap-2 text-[11px]">
-                                    @if($appointment->confirmation_email_sent_at)
-                                        <span class="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-emerald-300">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+                                    @if($appointment->confirmation_email_sent_at || filled($rowMeta['official_confirmation_sent_at'] ?? null))
+                                        <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-bold tracking-wider text-emerald-300">
+                                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"></span>
                                             <span>ĐÃ GỬI MAIL XÁC NHẬN</span>
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-zinc-500">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span>
+                                        <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-bold tracking-wider text-zinc-500">
+                                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-600"></span>
                                             <span>CHƯA GỬI MAIL</span>
                                         </span>
-                                    @endif
-
-                                    @if($hasAiChat)
-                                        <span class="text-zinc-700">·</span>
-                                        <span class="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-sky-300">ĐÃ CHAT AI</span>
                                     @endif
                                 </div>
 

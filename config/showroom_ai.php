@@ -9,7 +9,7 @@ return [
     'max_context_articles' => env('AI_ASSISTANT_MAX_CONTEXT_ARTICLES', 5),
     'max_history_messages' => (int) env('AI_ASSISTANT_MAX_HISTORY_MESSAGES', 14),
     'history_ttl_hours' => (int) env('AI_ASSISTANT_HISTORY_TTL_HOURS', 1440),
-    'timeout_seconds' => (int) env('AI_ASSISTANT_TIMEOUT_SECONDS', 20),
+    'timeout_seconds' => (int) env('AI_ASSISTANT_TIMEOUT_SECONDS', env('AI_ASSISTANT_TIMEOUT', 20)),
     'gemini_keys' => [
         'primary' => env('GEMINI_API_KEY'),
         'additional' => env('GEMINI_API_KEYS'),

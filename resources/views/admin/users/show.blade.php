@@ -10,10 +10,9 @@
     <x-admin.page-header
         :back-url="$backUrl"
         :back-label="$backLabel"
-        :eyebrow="'Hồ sơ nhân sự · #STF-' . str_pad((string) $staffUser->id, 4, '0', STR_PAD_LEFT)"
+        :eyebrow="'Hồ sơ nhân sự · #STF-' . str_pad((string) $staffUser->id, 4, '0', STR_PAD_LEFT) . ' · ' . $staffUser->roleLabel()"
         :title="$staffUser->name"
-        :accent="$staffUser->roleLabel()"
-        :description="'Email: ' . $staffUser->email . ' · Tham gia từ ' . ($staffUser->created_at?->format('d/m/Y') ?? '—')"
+        :description="'Vai trò: ' . $staffUser->roleLabel() . ' · Email: ' . $staffUser->email . ' · Tham gia từ ' . ($staffUser->created_at?->format('d/m/Y') ?? '—')"
     >
         <x-slot name="actions">
             <div class="flex flex-wrap items-center gap-2.5">
