@@ -60,17 +60,30 @@ class AdminActivitySubscriber
     {
         $actor = $event->actor ?? $this->resolveActor();
         $appointment = $event->appointment;
-        $isService = in_array(
-            $appointment->type,
-            [AppointmentType::Maintenance, AppointmentType::Detailing, AppointmentType::CarWash],
-            true
-        );
+        $isService = $appointment->type instanceof AppointmentType && $appointment->type->isServiceBooking();
         $categoryLabel = $isService ? 'lịch dịch vụ chăm sóc xe' : 'lịch hẹn';
+        $refCode = $appointment->publicReferenceCode();
+        $actorDisplay = $actor instanceof User
+            ? "Nhân sự {$actor->name} ({$actor->roleLabel()})"
+            : 'Hệ thống tự động';
+        $timestampVn = now('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
+
+        if ($event->newStatus === 'confirmed') {
+            $description = "{$actorDisplay} đã xác nhận tiếp nhận {$categoryLabel} #{$appointment->id} ({$refCode} · {$appointment->customer_name}) lúc {$timestampVn}.";
+        } elseif ($event->newStatus === 'completed') {
+            $outcomeLabel = $appointment->completionOutcomeLabel();
+            $outcomeSuffix = $outcomeLabel ? " [Kết quả: {$outcomeLabel}]" : '';
+            $description = "{$actorDisplay} đã xác nhận HOÀN TẤT {$categoryLabel} #{$appointment->id} ({$refCode} · {$appointment->customer_name}) lúc {$timestampVn}{$outcomeSuffix}.";
+        } elseif ($event->newStatus === 'cancelled') {
+            $description = "{$actorDisplay} đã HỦY {$categoryLabel} #{$appointment->id} ({$refCode} · {$appointment->customer_name}) lúc {$timestampVn}.";
+        } else {
+            $description = "{$actorDisplay} chuyển trạng thái {$categoryLabel} #{$appointment->id} ({$appointment->customer_name}) từ {$event->oldStatus} sang {$event->newStatus}.";
+        }
 
         $this->record(
             user: $actor,
             action: 'appointment.status_changed',
-            description: "Chuyển trạng thái {$categoryLabel} #{$appointment->id} ({$appointment->customer_name}) từ {$event->oldStatus} sang {$event->newStatus}.",
+            description: $description,
         );
     }
 

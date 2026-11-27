@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Enums\AppointmentStatus;
+use App\Events\AppointmentStatusChanged;
 use App\Exceptions\InvalidStatusTransitionException;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Services\Cache\ShowroomCacheService;
 use App\Services\Crm\InteractionTimelineRecorder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 
 trait HandlesCrmArchiveActions
@@ -121,6 +124,7 @@ trait HandlesCrmArchiveActions
     protected function acknowledgeAppointmentReschedule(Appointment $appointment, string $entityLabel): void
     {
         $this->authorizeCrm();
+        $this->resetErrorBag('statusTransition');
         $this->errorMessage = null;
 
         if ($appointment->isTerminalStatus()) {
@@ -130,28 +134,84 @@ trait HandlesCrmArchiveActions
             return;
         }
 
-        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
-        $meta['reschedule_pending_review'] = false;
-        $meta['reschedule_acknowledged_at'] = now()->toIso8601String();
-        $meta['reschedule_acknowledged_by'] = auth()->user()?->name ?? 'Chuyên viên Showroom';
-
         $actor = auth()->user();
-        $newSlot = $appointment->appointment_date?->format('H:i — d/m/Y') ?? 'khung giờ mới';
-        $meta = InteractionTimelineRecorder::appendToMeta(
-            meta: $meta,
-            actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
-            actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
-            title: 'Xác nhận đã tiếp nhận lịch hẹn mới',
-            detail: "Chuyên viên đã tiếp nhận thay đổi lịch sang {$newSlot} và phát hành liên kết quản lý phiên bản mới (v={$appointment->currentManageVersion()}).",
-            channel: 'CRM',
-        );
+        $actorAttribution = InteractionTimelineRecorder::staffFullAttribution($actor);
+        $timestampVn = now('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
 
-        $appointment->forceFill(['meta_data' => $meta])->saveQuietly();
+        $ackResult = DB::transaction(function () use ($appointment, $actor, $actorAttribution, $timestampVn): ?array {
+            /** @var Appointment $locked */
+            $locked = Appointment::query()
+                ->whereKey($appointment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->isTerminalStatus()) {
+                return null;
+            }
+
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
+            $wasPendingStatus = $locked->status === AppointmentStatus::Pending;
+            $oldStatusValue = $locked->status instanceof AppointmentStatus
+                ? $locked->status->value
+                : (string) $locked->status;
+
+            $meta['reschedule_pending_review'] = false;
+            $meta['reschedule_acknowledged_at'] = now()->toIso8601String();
+            $meta['reschedule_acknowledged_by'] = $actorAttribution;
+
+            if ($wasPendingStatus) {
+                $meta['confirmed_by_id'] = $actor?->id;
+                $meta['confirmed_by_name'] = $actor?->name ?? 'Showroom BMW';
+                $meta['confirmed_by_role'] = $actor?->roleLabel() ?? 'CRM';
+                $meta['confirmed_at_formatted'] = $timestampVn;
+            }
+
+            $newSlot = $locked->appointment_date?->format('H:i — d/m/Y') ?? 'khung giờ mới';
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
+                actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
+                title: "Nhân sự {$actorAttribution} đã xác nhận tiếp nhận lịch hẹn mới",
+                detail: "Nhân sự {$actorAttribution} đã tiếp nhận lịch mới ({$newSlot}) lúc {$timestampVn} và phát hành liên kết quản lý phiên bản mới (v={$locked->currentManageVersion()}).",
+                channel: 'CRM',
+            );
+
+            $locked->forceFill([
+                'status' => $wasPendingStatus ? AppointmentStatus::Confirmed->value : $oldStatusValue,
+                'meta_data' => $meta,
+            ])->saveQuietly();
+
+            $appointment->setRawAttributes($locked->getAttributes(), true);
+            $appointment->meta_data = $locked->meta_data;
+
+            return [
+                'wasPendingStatus' => $wasPendingStatus,
+                'oldStatusValue' => $oldStatusValue,
+                'fresh' => $locked->fresh(['product', 'user', 'assignedSales']) ?? $locked,
+            ];
+        });
+
+        if ($ackResult === null) {
+            $this->flashMessage = null;
+            $this->errorMessage = "Hồ sơ {$appointment->publicReferenceCode()} đã đóng ({$appointment->statusLabel()}), không thể tiếp nhận đổi lịch.";
+
+            return;
+        }
+
         $appointment->markRescheduleNotificationsAsRead();
 
-        $mailSent = $appointment->sendOfficialConfirmationEmail($actor);
+        if ($ackResult['wasPendingStatus']) {
+            event(new AppointmentStatusChanged(
+                appointment: $ackResult['fresh'],
+                oldStatus: $ackResult['oldStatusValue'],
+                newStatus: AppointmentStatus::Confirmed->value,
+                actor: $actor,
+            ));
+        }
+
+        $mailSent = $appointment->sendOfficialConfirmationEmail($actor, false);
         $this->flashMessage = $mailSent
-            ? "Đã xác nhận tiếp nhận lịch hẹn mới và gửi lại thư xác nhận chính thức (v={$appointment->currentManageVersion()}) cho {$entityLabel} {$appointment->publicReferenceCode()}."
+            ? "Đã xác nhận tiếp nhận lịch hẹn mới và gửi thư xác nhận chính thức (v={$appointment->currentManageVersion()}) cho {$entityLabel} {$appointment->publicReferenceCode()}."
             : "Đã xác nhận tiếp nhận lịch hẹn mới cho {$entityLabel} {$appointment->publicReferenceCode()}.";
     }
 }

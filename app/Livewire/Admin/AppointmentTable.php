@@ -59,7 +59,15 @@ class AppointmentTable extends Component
 
     public string $completionTargetReference = '';
 
+    public string $completionTargetCategory = 'sales';
+
     public string $completionOutcome = '';
+
+    public string $completionNote = '';
+
+    public string $completionActualCostInput = '';
+
+    public int $completionReminderMonths = 0;
 
     public ?string $flashMessage = null;
 
@@ -197,6 +205,15 @@ class AppointmentTable extends Component
 
         $appointment = Appointment::query()->findOrFail($appointmentId);
 
+        if ($appointment->hasPendingRescheduleReview()) {
+            $msg = 'Khách hàng vừa đổi lịch hẹn. Vui lòng bấm "Xác nhận đã tiếp nhận lịch mới" trước khi hoàn tất hồ sơ.';
+            $this->flashMessage = null;
+            $this->errorMessage = $msg;
+            $this->addError('statusTransition', $msg);
+
+            return;
+        }
+
         if ($appointment->status !== AppointmentStatus::Confirmed) {
             $this->updateStatus($appointmentId, AppointmentStatus::Completed->value);
 
@@ -205,14 +222,20 @@ class AppointmentTable extends Component
 
         $this->completionTargetId = $appointment->id;
         $this->completionTargetReference = $appointment->publicReferenceCode();
+        $this->completionTargetCategory = $appointment->type instanceof AppointmentType
+            ? $appointment->type->completionCategory()
+            : 'sales';
         $this->completionOutcome = '';
+        $this->completionNote = '';
+        $this->completionActualCostInput = '';
+        $this->completionReminderMonths = 0;
     }
 
     public function selectCompletionOutcome(string $outcome): void
     {
         $this->authorizeCrm();
 
-        if (! in_array($outcome, [Appointment::OUTCOME_PURCHASED, Appointment::OUTCOME_VISITED_NO_PURCHASE], true)) {
+        if (! in_array($outcome, Appointment::allCompletionOutcomes(), true)) {
             return;
         }
 
@@ -225,7 +248,11 @@ class AppointmentTable extends Component
     {
         $this->completionTargetId = null;
         $this->completionTargetReference = '';
+        $this->completionTargetCategory = 'sales';
         $this->completionOutcome = '';
+        $this->completionNote = '';
+        $this->completionActualCostInput = '';
+        $this->completionReminderMonths = 0;
         $this->resetErrorBag('completionOutcome');
     }
 
@@ -237,18 +264,29 @@ class AppointmentTable extends Component
             return;
         }
 
-        if (! in_array($this->completionOutcome, [Appointment::OUTCOME_PURCHASED, Appointment::OUTCOME_VISITED_NO_PURCHASE], true)) {
-            $this->errorMessage = 'Vui lòng chọn kết quả đón tiếp trước khi hoàn tất lịch hẹn.';
+        $appointment = Appointment::query()->findOrFail($this->completionTargetId);
+        $validOutcomes = $appointment->validCompletionOutcomes();
+
+        if (! in_array($this->completionOutcome, $validOutcomes, true)) {
+            $this->errorMessage = 'Vui lòng chọn kết quả thực tế trước khi hoàn tất hồ sơ.';
             $this->addError('completionOutcome', $this->errorMessage);
 
             return;
         }
 
+        $rawCostDigits = preg_replace('/[^\d]/', '', $this->completionActualCostInput) ?? '';
+        $payload = [
+            'service_completion_note' => $this->completionNote,
+            'service_actual_cost' => $rawCostDigits !== '' ? (int) $rawCostDigits : null,
+            'service_next_reminder_months' => in_array($this->completionReminderMonths, [3, 6, 12], true) ? $this->completionReminderMonths : 0,
+            'trade_in_note' => $this->completionNote,
+        ];
+
         $targetId = $this->completionTargetId;
         $outcome = $this->completionOutcome;
         $this->closeCompletionModal();
 
-        $this->updateStatus($targetId, AppointmentStatus::Completed->value, $outcome);
+        $this->updateStatus($targetId, AppointmentStatus::Completed->value, $outcome, $payload);
     }
 
     public function handleInlineStatusChange(int $appointmentId, string $status): void
@@ -264,8 +302,15 @@ class AppointmentTable extends Component
         $this->updateStatus($appointmentId, $status);
     }
 
-    public function updateStatus(int $appointmentId, string $status, ?string $completionOutcome = null): void
-    {
+    /**
+     * @param  array<string, mixed>  $completionPayload
+     */
+    public function updateStatus(
+        int $appointmentId,
+        string $status,
+        ?string $completionOutcome = null,
+        array $completionPayload = [],
+    ): void {
         $this->authorizeCrm();
         $this->resetErrorBag(['status', 'statusTransition']);
         $this->errorMessage = null;
@@ -290,7 +335,12 @@ class AppointmentTable extends Component
         $nextStatus = AppointmentStatus::from((string) $validator->validated()['status']);
 
         try {
-            $transitioned = $appointment->transitionStatusWithAutomation($nextStatus, auth()->user(), $completionOutcome);
+            $transitioned = $appointment->transitionStatusWithAutomation(
+                $nextStatus,
+                auth()->user(),
+                $completionOutcome,
+                $completionPayload,
+            );
             unset($this->inspectedAppointment);
 
             if (! $transitioned) {
@@ -307,6 +357,9 @@ class AppointmentTable extends Component
                 $this->flashMessage = "Đã hoàn tất lịch hẹn #{$appointment->id} (Khách đã mua xe · Mã BMW Care: {$voucher}).";
             } elseif ($nextStatus === AppointmentStatus::Completed && $completionOutcome === Appointment::OUTCOME_VISITED_NO_PURCHASE) {
                 $this->flashMessage = "Đã hoàn tất lịch hẹn #{$appointment->id} (Khách đã tham quan / chưa mua xe · Đã gửi thư cảm ơn).";
+            } elseif ($nextStatus === AppointmentStatus::Completed) {
+                $label = $appointment->completionOutcomeLabel() ?? 'Hoàn tất';
+                $this->flashMessage = "Đã hoàn tất lịch hẹn #{$appointment->id} ({$label} · Đã gửi thư xác nhận).";
             } else {
                 $this->flashMessage = "Đã cập nhật trạng thái lịch hẹn #{$appointment->id} thành công.";
             }
@@ -401,6 +454,22 @@ class AppointmentTable extends Component
             return;
         }
 
+        if ($appointment->hasPendingRescheduleReview()) {
+            $this->flashMessage = null;
+            $this->errorMessage = "Lịch hẹn #{$appointment->id} đang chờ duyệt đổi lịch mới. Vui lòng bấm \"Xác nhận đã tiếp nhận lịch mới\" thay vì gửi lại email cũ.";
+            $this->addError('statusTransition', $this->errorMessage);
+
+            return;
+        }
+
+        if ($appointment->status !== AppointmentStatus::Confirmed && $appointment->confirmation_email_sent_at !== null) {
+            $this->flashMessage = null;
+            $this->errorMessage = "Lịch hẹn #{$appointment->id} chưa được Duyệt & Xác nhận, không thể gửi lại thư xác nhận chính thức.";
+            $this->addError('statusTransition', $this->errorMessage);
+
+            return;
+        }
+
         $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
         if ($recipientEmail === '') {
@@ -409,10 +478,13 @@ class AppointmentTable extends Component
             return;
         }
 
-        if ($appointment->sendOfficialConfirmationEmail(auth()->user())) {
-            $this->flashMessage = "Đã gửi thư Xác nhận chính thức từ Showroom tới {$recipientEmail} cho lịch hẹn #{$appointment->id}.";
+        if ($appointment->sendOfficialConfirmationEmail(auth()->user(), true)) {
+            unset($this->inspectedAppointment);
+            $this->flashMessage = "Đã gửi lại thư Xác nhận chính thức từ Showroom tới {$recipientEmail} cho lịch hẹn #{$appointment->id}.";
         } else {
-            $this->flashMessage = "Không thể gửi thư xác nhận chính thức cho lịch hẹn #{$appointment->id}.";
+            $this->flashMessage = null;
+            $this->errorMessage = 'Thư xác nhận vừa được gửi cách đây chưa đầy 30 giây. Vui lòng đợi ít phút trước khi gửi lại.';
+            $this->addError('statusTransition', $this->errorMessage);
         }
     }
 

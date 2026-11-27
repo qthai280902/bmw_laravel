@@ -20,6 +20,7 @@ use App\Livewire\CatalogBrowser;
 use App\Mail\Admin\HotLeadAlertMail;
 use App\Mail\Admin\ShowroomDailySummaryMail;
 use App\Mail\AppointmentReminderMail;
+use App\Mail\Customer\AppointmentCompletedThankYouMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
 use App\Mail\Customer\PostTestDriveFollowupMail;
 use App\Mail\CustomerPromotionMail;
@@ -259,10 +260,11 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
         $this->artisan('appointments:cleanup-and-followup')->assertSuccessful();
         Mail::assertQueued(PostTestDriveFollowupMail::class, 1);
 
-        // Transitioning status to completed in Livewire AppointmentTable also queues followup once
+        // Transitioning status to completed in Livewire AppointmentTable goes through Completion Modal & sends thank-you once
         $livewireAppointment = Appointment::factory()->for($car, 'product')->guest()->create([
             'guest_name' => 'Le Livewire Complete',
             'guest_email' => 'livewire.complete@example.com',
+            'type' => AppointmentType::TestDrive->value,
             'status' => AppointmentStatus::Confirmed->value,
             'appointment_date' => now()->addDay(),
             'followup_email_sent_at' => null,
@@ -270,11 +272,13 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
 
         Livewire::actingAs($sales)
             ->test(AppointmentTable::class)
-            ->call('updateStatus', $livewireAppointment->id, AppointmentStatus::Completed->value)
+            ->call('openCompletionModal', $livewireAppointment->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_VISITED_NO_PURCHASE)
+            ->call('confirmCompletion')
             ->assertHasNoErrors();
 
         $this->assertNotNull($livewireAppointment->fresh()->followup_email_sent_at);
-        Mail::assertQueued(PostTestDriveFollowupMail::class, 2);
+        Mail::assertQueued(AppointmentCompletedThankYouMail::class, 1);
     }
 
     public function test_showroom_daily_summary_command_and_console_schedule_registry(): void
@@ -710,25 +714,24 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
 
         Livewire::actingAs($sales)
             ->test(AppointmentTable::class)
-            ->call('updateStatus', $consultAppointment->id, AppointmentStatus::Completed->value)
+            ->call('acknowledgeGuestReschedule', $consultAppointment->id)
+            ->call('openCompletionModal', $consultAppointment->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_VISITED_NO_PURCHASE)
+            ->call('confirmCompletion')
             ->call('updateStatus', $generalConsult->id, AppointmentStatus::Confirmed->value)
-            ->call('updateStatus', $generalConsult->id, AppointmentStatus::Completed->value)
+            ->call('openCompletionModal', $generalConsult->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_VISITED_NO_PURCHASE)
+            ->call('confirmCompletion')
             ->assertHasNoErrors();
 
-        Mail::assertQueued(PostTestDriveFollowupMail::class, 2);
-        Mail::assertQueued(PostTestDriveFollowupMail::class, function (PostTestDriveFollowupMail $mail): bool {
-            if (! $mail->hasTo('general.consult@example.com')) {
-                return false;
-            }
+        Mail::assertQueued(AppointmentCompletedThankYouMail::class, 2);
 
-            // Product-less consultation renders HTML & plain-text safely without installment table
-            $html = $mail->render();
-            $this->assertStringContainsString('Nguyễn Tư Vấn Chung', $html);
-            $this->assertStringNotContainsString('BẢNG ƯỚC TÍNH TÀI CHÍNH', $html);
-            $mail->assertSeeInText('Nguyễn Tư Vấn Chung');
-
-            return true;
-        });
+        // Product-less consultation also renders PostTestDriveFollowupMail HTML & plain-text safely without installment table
+        $productlessFollowup = new PostTestDriveFollowupMail($generalConsult->fresh());
+        $html = $productlessFollowup->render();
+        $this->assertStringContainsString('Nguyễn Tư Vấn Chung', $html);
+        $this->assertStringNotContainsString('BẢNG ƯỚC TÍNH TÀI CHÍNH', $html);
+        $productlessFollowup->assertSeeInText('Nguyễn Tư Vấn Chung');
 
         // System/null actor status transition on a fresh pending appointment still logs safely to admin_activity_logs
         $pendingCancelAppointment = Appointment::factory()->for($car, 'product')->guest()->create([

@@ -151,14 +151,31 @@
                     </button>
                 </div>
 
-                <!-- Create New Installment Plan Form -->
+                <!-- Create New Installment Plan Form (Phase 40 Live Calculator + Dot Formatting) -->
+                @php
+                    $createCalcConfig = [
+                        'mode' => 'create',
+                        'vehiclePrice' => old('vehicle_price'),
+                        'downPayment' => old('down_payment'),
+                        'loanAmount' => (int) old('loan_amount', 2000000000),
+                        'monthlyPayment' => (int) old('monthly_payment', 42000000),
+                        'hasOldMonthlyPayment' => old('monthly_payment') !== null,
+                        'interestRate' => (string) old('interest_rate', '7.9'),
+                        'interestMethod' => (string) old('interest_method', \App\Models\CustomerInstallmentPlan::METHOD_REDUCING_BALANCE),
+                        'termMonths' => (int) old('term_months', 60),
+                        'paidInstallments' => (int) old('paid_installments', 0),
+                    ];
+                @endphp
                 <form
                     x-show="showCreatePlan"
                     x-collapse
+                    x-data="bmwInstallmentCalculator($el)"
+                    data-installment-create-form
                     method="POST"
                     action="{{ route('admin.customers.installments.store', $showRouteParams) }}"
                     class="rounded-2xl border border-[#1C69D4]/30 bg-[#070A10]/90 p-5 space-y-4"
                 >
+                    <script type="application/json" data-installment-calc-config>@json($createCalcConfig)</script>
                     @csrf
                     <input type="hidden" name="route_email" value="{{ $routeEmail }}">
                     <p class="text-xs font-bold text-[#70A7FF]">Khởi tạo hợp đồng trả góp mới cho {{ $profile['name'] }}</p>
@@ -193,31 +210,106 @@
                         </x-admin.form-field>
 
                         <x-admin.form-field name="vehicle_price" label="Giá xe niêm yết (VNĐ)">
-                            <input type="number" name="vehicle_price" value="{{ old('vehicle_price') }}" min="0" step="1000000" placeholder="Ví dụ: 3500000000" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none">
+                            <input type="hidden" name="vehicle_price" :value="vehiclePrice !== null ? vehiclePrice : ''">
+                            <input
+                                type="text"
+                                inputmode="numeric"
+                                data-calc-vehicle-price
+                                :value="vehiclePriceDisplay"
+                                @input="onVehiclePriceInput($event.target.value)"
+                                placeholder="Ví dụ: 3.500.000.000"
+                                class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                            >
                         </x-admin.form-field>
 
-                        <x-admin.form-field name="down_payment" label="Trả trước đối ứng (VNĐ)">
-                            <input type="number" name="down_payment" value="{{ old('down_payment') }}" min="0" step="1000000" placeholder="Ví dụ: 1500000000" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none">
-                        </x-admin.form-field>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-zinc-300">Trả trước đối ứng (VNĐ &amp; Tỷ lệ %)</label>
+                            <input type="hidden" name="down_payment" :value="downPayment !== null ? downPayment : ''">
+                            <div class="grid grid-cols-[1fr_92px] gap-2">
+                                <input
+                                    type="text"
+                                    inputmode="numeric"
+                                    data-calc-down-payment
+                                    :value="downPaymentDisplay"
+                                    @input="onDownPaymentInput($event.target.value)"
+                                    placeholder="Ví dụ: 1.050.000.000"
+                                    class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                                >
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        inputmode="decimal"
+                                        data-calc-down-payment-percent
+                                        :value="downPaymentPercent"
+                                        @input="onDownPaymentPercentInput($event.target.value)"
+                                        placeholder="30"
+                                        aria-label="Tỷ lệ trả trước (%)"
+                                        class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] pl-3 pr-7 text-right text-xs font-bold tabular-nums text-[#70A7FF] placeholder:text-zinc-600 focus:border-[#1C69D4] focus:outline-none"
+                                    >
+                                    <span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-zinc-400">%</span>
+                                </div>
+                            </div>
+                        </div>
 
                         <x-admin.form-field name="loan_amount" label="Tổng khoản vay (VNĐ) *">
-                            <input type="number" name="loan_amount" value="{{ old('loan_amount', 2000000000) }}" min="1000000" step="1000000" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                            <input type="hidden" name="loan_amount" :value="loanAmount">
+                            <input
+                                type="text"
+                                inputmode="numeric"
+                                data-calc-loan-amount
+                                :value="loanAmountDisplay"
+                                @input="onLoanAmountInput($event.target.value)"
+                                required
+                                placeholder="Ví dụ: 2.450.000.000"
+                                class="h-10 w-full rounded-xl border border-[#1C69D4]/35 bg-[#0D121C] px-3.5 text-xs font-bold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                            >
                         </x-admin.form-field>
 
-                        <x-admin.form-field name="monthly_payment" label="Thanh toán / tháng (VNĐ) *">
-                            <input type="number" name="monthly_payment" value="{{ old('monthly_payment', 42000000) }}" min="100000" step="100000" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
-                        </x-admin.form-field>
+                        <div>
+                            <div class="mb-1.5 flex items-center justify-between gap-2">
+                                <label class="text-xs font-semibold text-zinc-300">Thanh toán / tháng (VNĐ) *</label>
+                                <button
+                                    type="button"
+                                    x-show="hasManualMonthlyOverride"
+                                    @click="syncRecommendedMonthlyPayment()"
+                                    class="text-[10px] font-bold text-[#70A7FF] hover:underline cursor-pointer"
+                                >
+                                    Đồng bộ theo kỳ đầu
+                                </button>
+                            </div>
+                            <input type="hidden" name="monthly_payment" :value="monthlyPayment">
+                            <input
+                                type="text"
+                                inputmode="numeric"
+                                data-calc-monthly-payment
+                                :value="monthlyPaymentDisplay"
+                                @input="onMonthlyPaymentInput($event.target.value)"
+                                required
+                                class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-bold tabular-nums text-emerald-300 focus:border-[#1C69D4] focus:outline-none"
+                            >
+                        </div>
 
                         <x-admin.form-field name="interest_rate" label="Lãi suất (%/năm) *">
-                            <input type="number" name="interest_rate" value="{{ old('interest_rate', '7.9') }}" min="0" max="50" step="0.01" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                            <input
+                                type="text"
+                                inputmode="decimal"
+                                name="interest_rate"
+                                data-calc-interest-rate
+                                x-model="interestRate"
+                                @input="onFormulaParamChange()"
+                                required
+                                class="no-number-spinner h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                            >
                         </x-admin.form-field>
 
                         <x-admin.form-field name="interest_method" label="Phương thức tính lãi">
-                            <x-ui.custom-select
-                                name="interest_method"
-                                :value="(string) old('interest_method', \App\Models\CustomerInstallmentPlan::METHOD_REDUCING_BALANCE)"
-                                :options="$interestMethodOptions"
-                            />
+                            <div @change="if ($event.detail?.value) onFormulaParamChange($event.detail.value)">
+                                <x-ui.custom-select
+                                    name="interest_method"
+                                    :value="(string) old('interest_method', \App\Models\CustomerInstallmentPlan::METHOD_REDUCING_BALANCE)"
+                                    :options="$interestMethodOptions"
+                                />
+                            </div>
                         </x-admin.form-field>
 
                         <x-admin.form-field name="start_date" label="Ngày bắt đầu hợp đồng">
@@ -229,12 +321,70 @@
                         </x-admin.form-field>
 
                         <x-admin.form-field name="term_months" label="Tổng số kỳ hạn (tháng) *">
-                            <input type="number" name="term_months" value="{{ old('term_months', 60) }}" min="1" max="240" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                            <input
+                                type="number"
+                                name="term_months"
+                                data-calc-term-months
+                                x-model.number="termMonths"
+                                @input="onFormulaParamChange()"
+                                min="1"
+                                max="240"
+                                required
+                                class="no-number-spinner h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                            >
                         </x-admin.form-field>
 
                         <x-admin.form-field name="paid_installments" label="Số kỳ đã thanh toán *">
-                            <input type="number" name="paid_installments" value="{{ old('paid_installments', 0) }}" min="0" max="240" required class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                            <input
+                                type="number"
+                                name="paid_installments"
+                                data-calc-paid-installments
+                                x-model.number="paidInstallments"
+                                min="0"
+                                max="240"
+                                required
+                                class="no-number-spinner h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                            >
                         </x-admin.form-field>
+                    </div>
+
+                    {{-- Realtime Amortization Preview Panel --}}
+                    <div
+                        data-installment-live-preview
+                        class="rounded-xl border border-[#1C69D4]/30 bg-[#0D121C]/95 p-4 space-y-2.5"
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-[#38BDF8]">
+                                Dự toán Realtime BMW Financial
+                            </p>
+                            <span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300" x-text="interestMethod === 'flat' ? 'Lãi cố định trên gốc ban đầu' : 'Dư nợ giảm dần chuẩn ngân hàng'"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6 text-xs">
+                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                                <p class="text-[10px] text-zinc-400">Gốc mỗi tháng</p>
+                                <p class="mt-1 font-bold tabular-nums text-white" x-text="formatCurrency(summary.monthlyPrincipal)"></p>
+                            </div>
+                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                                <p class="text-[10px] text-zinc-400">Lãi kỳ đầu</p>
+                                <p class="mt-1 font-bold tabular-nums text-amber-300" x-text="formatCurrency(summary.firstMonthInterest)"></p>
+                            </div>
+                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                                <p class="text-[10px] text-zinc-400">Lãi TB / tháng</p>
+                                <p class="mt-1 font-bold tabular-nums text-zinc-200" x-text="formatCurrency(summary.avgMonthlyInterest)"></p>
+                            </div>
+                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                                <p class="text-[10px] text-zinc-400">Tổng lãi toàn kỳ</p>
+                                <p class="mt-1 font-bold tabular-nums text-amber-300" x-text="formatCurrency(summary.totalInterest)"></p>
+                            </div>
+                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                                <p class="text-[10px] text-zinc-400">Tổng gốc + lãi</p>
+                                <p class="mt-1 font-bold tabular-nums text-sky-300" x-text="formatCurrency(summary.totalPayable)"></p>
+                            </div>
+                            <div class="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-2.5">
+                                <p class="text-[10px] text-emerald-300">Gốc còn lại</p>
+                                <p class="mt-1 font-bold tabular-nums text-emerald-200" x-text="formatCurrency(summary.remainingPrincipal)"></p>
+                            </div>
+                        </div>
                     </div>
 
                     <x-admin.form-field name="notes" label="Ghi chú hợp đồng / điều kiện lãi suất">
@@ -398,63 +548,94 @@
                                     </div>
                                 @endif
 
-                                <!-- Inline Edit Form -->
+                                <!-- Inline Edit Form (Phase 40 Live Calculator — Preserves Saved Monthly Payment on Mount) -->
+                                @php
+                                    $editCalcConfig = [
+                                        'mode' => 'edit',
+                                        'vehiclePrice' => $plan->vehicle_price,
+                                        'downPayment' => $plan->down_payment,
+                                        'loanAmount' => (int) $plan->loan_amount,
+                                        'monthlyPayment' => (int) $plan->monthly_payment,
+                                        'interestRate' => rtrim(rtrim(number_format((float) $plan->interest_rate, 2, '.', ''), '0'), '.'),
+                                        'interestMethod' => (string) ($plan->interest_method ?: 'reducing_balance'),
+                                        'termMonths' => (int) $plan->term_months,
+                                        'paidInstallments' => (int) $plan->paid_installments,
+                                    ];
+                                @endphp
                                 <form
                                     x-show="editing"
                                     x-collapse
+                                    x-data="bmwInstallmentCalculator($el)"
+                                    data-installment-edit-form="{{ $plan->id }}"
                                     method="POST"
                                     action="{{ route('admin.customers.installments.update', $updateParams) }}"
                                     class="border-t border-white/[0.08] pt-4 space-y-3"
                                 >
+                                    <script type="application/json" data-installment-calc-config>@json($editCalcConfig)</script>
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="route_email" value="{{ $routeEmail }}">
                                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Ngân hàng</label>
-                                            <input type="text" name="bank_name" value="{{ $plan->bank_name }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs text-white">
+                                            <input type="text" name="bank_name" value="{{ $plan->bank_name }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Giá xe (VNĐ)</label>
-                                            <input type="number" name="vehicle_price" value="{{ $plan->vehicle_price }}" min="0" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <input type="hidden" name="vehicle_price" :value="vehiclePrice !== null ? vehiclePrice : ''">
+                                            <input type="text" inputmode="numeric" :value="vehiclePriceDisplay" @input="onVehiclePriceInput($event.target.value)" placeholder="3.500.000.000" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Trả trước (VNĐ)</label>
-                                            <input type="number" name="down_payment" value="{{ $plan->down_payment }}" min="0" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Trả trước (VNĐ &amp; %)</label>
+                                            <input type="hidden" name="down_payment" :value="downPayment !== null ? downPayment : ''">
+                                            <div class="grid grid-cols-[1fr_72px] gap-1.5">
+                                                <input type="text" inputmode="numeric" :value="downPaymentDisplay" @input="onDownPaymentInput($event.target.value)" placeholder="1.050.000.000" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-2.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                                                <div class="relative">
+                                                    <input type="text" inputmode="decimal" :value="downPaymentPercent" @input="onDownPaymentPercentInput($event.target.value)" placeholder="%" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] pl-2 pr-5 text-right text-xs font-bold tabular-nums text-[#70A7FF] focus:border-[#1C69D4] focus:outline-none">
+                                                    <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400">%</span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Tổng vay (VNĐ)</label>
-                                            <input type="number" name="loan_amount" value="{{ $plan->loan_amount }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <input type="hidden" name="loan_amount" :value="loanAmount">
+                                            <input type="text" inputmode="numeric" :value="loanAmountDisplay" @input="onLoanAmountInput($event.target.value)" required class="h-9 w-full rounded-lg border border-[#1C69D4]/35 bg-[#0D121C] px-3 text-xs font-bold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Góp / tháng (VNĐ)</label>
-                                            <input type="number" name="monthly_payment" value="{{ $plan->monthly_payment }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <div class="mb-1 flex items-center justify-between gap-1">
+                                                <label class="text-[10px] font-semibold text-zinc-400">Góp / tháng (VNĐ)</label>
+                                                <button type="button" x-show="hasManualMonthlyOverride" @click="syncRecommendedMonthlyPayment()" class="text-[9px] font-bold text-[#70A7FF] hover:underline cursor-pointer">Tính lại</button>
+                                            </div>
+                                            <input type="hidden" name="monthly_payment" :value="monthlyPayment">
+                                            <input type="text" inputmode="numeric" data-edit-monthly-payment="{{ $plan->id }}" :value="monthlyPaymentDisplay" @input="onMonthlyPaymentInput($event.target.value)" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-bold tabular-nums text-emerald-300 focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Lãi suất (%/năm)</label>
-                                            <input type="number" step="0.01" name="interest_rate" value="{{ $plan->interest_rate }}" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <input type="text" inputmode="decimal" name="interest_rate" x-model="interestRate" @input="onFormulaParamChange()" required class="no-number-spinner h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Phương thức tính lãi</label>
-                                            <x-ui.custom-select compact name="interest_method" :value="$plan->interest_method ?: 'reducing_balance'" :options="$interestMethodOptions" />
+                                            <div @change="if ($event.detail?.value) onFormulaParamChange($event.detail.value)">
+                                                <x-ui.custom-select compact name="interest_method" :value="$plan->interest_method ?: 'reducing_balance'" :options="$interestMethodOptions" />
+                                            </div>
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Đã đóng / Tổng kỳ</label>
                                             <div class="flex items-center gap-1.5">
-                                                <input type="number" name="paid_installments" value="{{ $plan->paid_installments }}" min="0" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-2.5 text-xs tabular-nums text-white">
+                                                <input type="number" name="paid_installments" x-model.number="paidInstallments" min="0" required class="no-number-spinner h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-2.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                                 <span class="text-zinc-500">/</span>
-                                                <input type="number" name="term_months" value="{{ $plan->term_months }}" min="1" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-2.5 text-xs tabular-nums text-white">
+                                                <input type="number" name="term_months" x-model.number="termMonths" @input="onFormulaParamChange()" min="1" max="240" required class="no-number-spinner h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-2.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                             </div>
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Ngày đến hạn kế tiếp</label>
-                                            <input type="date" name="next_due_date" value="{{ $plan->next_due_date?->format('Y-m-d') }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <input type="date" name="next_due_date" value="{{ $plan->next_due_date?->format('Y-m-d') }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Ngày bắt đầu hợp đồng</label>
-                                            <input type="date" name="start_date" value="{{ $plan->start_date?->format('Y-m-d') }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white">
+                                            <input type="date" name="start_date" value="{{ $plan->start_date?->format('Y-m-d') }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Trạng thái</label>
@@ -462,9 +643,30 @@
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Ghi chú</label>
-                                            <input type="text" name="notes" value="{{ $plan->notes }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs text-white">
+                                            <input type="text" name="notes" value="{{ $plan->notes }}" class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                     </div>
+
+                                    {{-- Compact Live Summary on Edit --}}
+                                    <div class="grid grid-cols-2 gap-2 rounded-xl border border-white/[0.08] bg-[#0D121C]/80 p-3 text-[11px] sm:grid-cols-4">
+                                        <div>
+                                            <span class="text-zinc-400">Gốc/tháng:</span>
+                                            <strong class="ml-1 tabular-nums text-white" x-text="formatCurrency(summary.monthlyPrincipal)"></strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-zinc-400">Lãi kỳ đầu:</span>
+                                            <strong class="ml-1 tabular-nums text-amber-300" x-text="formatCurrency(summary.firstMonthInterest)"></strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-zinc-400">Tổng lãi:</span>
+                                            <strong class="ml-1 tabular-nums text-amber-300" x-text="formatCurrency(summary.totalInterest)"></strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-zinc-400">Gốc còn lại:</span>
+                                            <strong class="ml-1 tabular-nums text-emerald-300" x-text="formatCurrency(summary.remainingPrincipal)"></strong>
+                                        </div>
+                                    </div>
+
                                     <div class="flex justify-end">
                                         <button type="submit" class="h-9 rounded-lg bg-[#1C69D4] px-4 text-xs font-bold text-white hover:bg-[#1657B0] cursor-pointer">
                                             Cập nhật tiến độ

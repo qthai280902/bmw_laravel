@@ -475,21 +475,21 @@
             data-picker-popover="split"
             :class="openUpward ? 'bottom-full mb-2' : 'top-full mt-2'"
             style="{{ $isLight ? 'background-color: #ffffff;' : 'background-color: #090D14;' }}"
-            class="absolute left-0 right-0 z-[95] isolate {{ $popoverRadiusClass }} border p-4 shadow-[0_24px_60px_rgba(0,0,0,0.9)] {{ $isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/20 bg-[#090D14] text-white' }}"
+            class="absolute left-0 right-0 z-[95] isolate {{ $popoverRadiusClass }} border p-4 {{ $isLight ? 'border-slate-200/95 bg-white text-slate-900 shadow-[0_20px_50px_rgba(15,23,42,0.14)] ring-1 ring-slate-900/5' : 'border-white/20 bg-[#090D14] text-white shadow-[0_24px_60px_rgba(0,0,0,0.9)]' }}"
         >
             <div class="grid grid-cols-1 gap-4 md:grid-cols-[1.35fr_1fr]">
                 {{-- Cột trái: Lịch tháng Tiếng Việt --}}
-                <div class="{{ $isLight ? 'md:border-r md:border-slate-200 md:pr-4' : 'md:border-r md:border-white/10 md:pr-4' }}">
+                <div class="{{ $isLight ? 'md:border-r md:border-slate-200/90 md:pr-4' : 'md:border-r md:border-white/10 md:pr-4' }}">
                     <div class="mb-3 flex items-center justify-between">
                         <button
                             type="button"
                             @click="prevMonth()"
                             aria-label="Tháng trước"
-                            class="{{ $radiusClass }} border px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer {{ $isLight ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' : 'border-white/15 bg-zinc-900 text-zinc-300 hover:border-white hover:text-white' }}"
+                            class="{{ $radiusClass }} border px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer {{ $isLight ? 'border-slate-200 bg-slate-50 text-slate-700 hover:border-[#1C69D4]/50 hover:bg-[#EFF6FF] hover:text-[#1C69D4]' : 'border-white/15 bg-zinc-900 text-zinc-300 hover:border-white hover:text-white' }}"
                         >
                             ‹
                         </button>
-                        <div class="text-xs font-bold uppercase tracking-wider">
+                        <div class="text-xs font-bold uppercase tracking-wider {{ $isLight ? 'text-slate-900' : 'text-white' }}">
                             <span x-text="monthNames[viewMonth - 1]"></span>
                             <span x-text="viewYear"></span>
                         </div>
@@ -497,7 +497,7 @@
                             type="button"
                             @click="nextMonth()"
                             aria-label="Tháng sau"
-                            class="{{ $radiusClass }} border px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer {{ $isLight ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' : 'border-white/15 bg-zinc-900 text-zinc-300 hover:border-white hover:text-white' }}"
+                            class="{{ $radiusClass }} border px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer {{ $isLight ? 'border-slate-200 bg-slate-50 text-slate-700 hover:border-[#1C69D4]/50 hover:bg-[#EFF6FF] hover:text-[#1C69D4]' : 'border-white/15 bg-zinc-900 text-zinc-300 hover:border-white hover:text-white' }}"
                         >
                             ›
                         </button>
@@ -519,10 +519,10 @@
                                         @click="selectDate(cell.dateStr)"
                                         :class="[
                                             cell.isSelected
-                                                ? 'border-[#1C69D4] bg-[#1C69D4] text-white font-bold'
+                                                ? 'border-[#1C69D4] bg-[#1C69D4] text-white font-bold shadow-sm'
                                                 : (cell.disabled
-                                                    ? '{{ $isLight ? 'border-transparent text-slate-300 cursor-not-allowed' : 'border-transparent text-zinc-700 cursor-not-allowed' }}'
-                                                    : '{{ $isLight ? 'border-slate-100 bg-slate-50 text-slate-800 hover:border-[#1C69D4] hover:bg-blue-50 cursor-pointer' : 'border-white/10 bg-zinc-950 text-zinc-200 hover:border-[#1C69D4] hover:text-white cursor-pointer' }}'),
+                                                    ? '{{ $isLight ? 'border-transparent bg-slate-50/80 text-slate-300 line-through cursor-not-allowed' : 'border-transparent text-zinc-700 cursor-not-allowed' }}'
+                                                    : '{{ $isLight ? 'border-slate-200/80 bg-white text-slate-800 font-medium hover:border-[#1C69D4] hover:bg-[#EFF6FF] hover:text-[#1C69D4] cursor-pointer' : 'border-white/10 bg-zinc-950 text-zinc-200 hover:border-[#1C69D4] hover:text-white cursor-pointer' }}'),
                                             cell.isToday && !cell.isSelected ? 'ring-1 ring-[#1C69D4]' : ''
                                         ]"
                                         class="flex h-9 w-full items-center justify-center {{ $radiusClass }} border text-xs tabular-nums transition-colors"
@@ -535,15 +535,15 @@
                 </div>
 
                 {{-- Cột phải: Ô đồng hồ số gõ tay HH:MM + 2 cột cuộn độc lập Giờ | Phút --}}
-                <div class="flex flex-col">
+                <div class="flex flex-col {{ $isLight ? 'rounded-lg bg-slate-50/80 p-2.5 border border-slate-200/75' : '' }}">
                     <div class="mb-2 flex items-center justify-between">
-                        <span class="text-[11px] font-bold uppercase tracking-wider {{ $isLight ? 'text-slate-500' : 'text-zinc-400' }}">
+                        <span class="text-[11px] font-bold uppercase tracking-wider {{ $isLight ? 'text-slate-600' : 'text-zinc-400' }}">
                             Giờ đón tiếp (08:00 – 18:00)
                         </span>
                     </div>
 
                     {{-- Ô đồng hồ số HH : MM --}}
-                    <div class="mb-3 flex items-center justify-center gap-2 {{ $radiusClass }} border p-2 {{ $isLight ? 'border-slate-200 bg-slate-50' : 'border-white/15 bg-zinc-950' }}">
+                    <div class="mb-3 flex items-center justify-center gap-2 {{ $radiusClass }} border p-2 {{ $isLight ? 'border-slate-200/90 bg-white shadow-2xs' : 'border-white/15 bg-zinc-950' }}">
                         <input
                             type="text"
                             inputmode="numeric"
@@ -555,9 +555,9 @@
                             @input="onHourInput($event.target.value)"
                             @blur="normalizeDigitalBlur()"
                             @keydown.enter.prevent="applyAndClose()"
-                            class="h-10 w-14 {{ $radiusClass }} border text-center text-base font-extrabold tabular-nums focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] {{ $isLight ? 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400' : 'border-white/15 bg-[#0D1117] text-white placeholder:text-zinc-600' }}"
+                            class="h-10 w-14 {{ $radiusClass }} border text-center text-base font-extrabold tabular-nums focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] {{ $isLight ? 'border-slate-300 bg-slate-50/70 text-slate-900 placeholder:text-slate-400 focus:bg-white' : 'border-white/15 bg-[#0D1117] text-white placeholder:text-zinc-600' }}"
                         >
-                        <span class="text-base font-black {{ $isLight ? 'text-slate-500' : 'text-zinc-400' }}">:</span>
+                        <span class="text-base font-black {{ $isLight ? 'text-[#1C69D4]' : 'text-zinc-400' }}">:</span>
                         <input
                             type="text"
                             inputmode="numeric"
@@ -569,7 +569,7 @@
                             @input="onMinuteInput($event.target.value)"
                             @blur="normalizeDigitalBlur()"
                             @keydown.enter.prevent="applyAndClose()"
-                            class="h-10 w-14 {{ $radiusClass }} border text-center text-base font-extrabold tabular-nums focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] {{ $isLight ? 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400' : 'border-white/15 bg-[#0D1117] text-white placeholder:text-zinc-600' }}"
+                            class="h-10 w-14 {{ $radiusClass }} border text-center text-base font-extrabold tabular-nums focus:border-[#1C69D4] focus:outline-none focus:ring-1 focus:ring-[#1C69D4] {{ $isLight ? 'border-slate-300 bg-slate-50/70 text-slate-900 placeholder:text-slate-400 focus:bg-white' : 'border-white/15 bg-[#0D1117] text-white placeholder:text-zinc-600' }}"
                         >
                     </div>
 
@@ -589,7 +589,7 @@
                             </div>
                             <div
                                 data-wheel-hours
-                                class="sidebar-scroll max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200 bg-slate-50/70' : 'border-white/10 bg-zinc-950/80' }}"
+                                class="sidebar-scroll max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200/90 bg-white' : 'border-white/10 bg-zinc-950/80' }}"
                             >
                                 <template x-for="h in hoursList" :key="'h-' + h">
                                     <button
@@ -598,10 +598,10 @@
                                         :disabled="isHourDisabled(h)"
                                         @click="pickHour(h)"
                                         :class="hourInput === h
-                                            ? 'bg-[#1C69D4] text-white font-bold'
+                                            ? 'bg-[#1C69D4] text-white font-bold shadow-2xs'
                                             : (isHourDisabled(h)
-                                                ? '{{ $isLight ? 'text-slate-300 line-through cursor-not-allowed' : 'text-zinc-700 line-through cursor-not-allowed' }}'
-                                                : '{{ $isLight ? 'text-slate-700 hover:bg-blue-50 hover:text-[#1C69D4] cursor-pointer' : 'text-zinc-300 hover:bg-white/10 hover:text-white cursor-pointer' }}')"
+                                                ? '{{ $isLight ? 'bg-slate-50 text-slate-300 line-through cursor-not-allowed' : 'text-zinc-700 line-through cursor-not-allowed' }}'
+                                                : '{{ $isLight ? 'text-slate-700 hover:bg-[#EFF6FF] hover:text-[#1C69D4] cursor-pointer' : 'text-zinc-300 hover:bg-white/10 hover:text-white cursor-pointer' }}')"
                                         class="flex h-8 w-full items-center justify-center {{ $radiusClass }} text-xs font-semibold tabular-nums transition-colors"
                                         x-text="h"
                                     ></button>
@@ -615,7 +615,7 @@
                             </div>
                             <div
                                 data-wheel-minutes
-                                class="sidebar-scroll max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200 bg-slate-50/70' : 'border-white/10 bg-zinc-950/80' }}"
+                                class="sidebar-scroll max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200/90 bg-white' : 'border-white/10 bg-zinc-950/80' }}"
                             >
                                 <template x-for="m in minutesList" :key="'m-' + m">
                                     <button
@@ -624,10 +624,10 @@
                                         :disabled="isMinuteDisabled(m)"
                                         @click="pickMinute(m)"
                                         :class="minuteInput === m
-                                            ? 'bg-[#1C69D4] text-white font-bold'
+                                            ? 'bg-[#1C69D4] text-white font-bold shadow-2xs'
                                             : (isMinuteDisabled(m)
-                                                ? '{{ $isLight ? 'text-slate-300 line-through cursor-not-allowed' : 'text-zinc-700 line-through cursor-not-allowed' }}'
-                                                : '{{ $isLight ? 'text-slate-700 hover:bg-blue-50 hover:text-[#1C69D4] cursor-pointer' : 'text-zinc-300 hover:bg-white/10 hover:text-white cursor-pointer' }}')"
+                                                ? '{{ $isLight ? 'bg-slate-50 text-slate-300 line-through cursor-not-allowed' : 'text-zinc-700 line-through cursor-not-allowed' }}'
+                                                : '{{ $isLight ? 'text-slate-700 hover:bg-[#EFF6FF] hover:text-[#1C69D4] cursor-pointer' : 'text-zinc-300 hover:bg-white/10 hover:text-white cursor-pointer' }}')"
                                         class="flex h-8 w-full items-center justify-center {{ $radiusClass }} text-xs font-semibold tabular-nums transition-colors"
                                         x-text="m"
                                     ></button>

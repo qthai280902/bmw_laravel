@@ -9,12 +9,7 @@
     ];
     $suppressGreetingBubble = request()->routeIs('appointments.create', 'appointments.guest.*', 'booking.*', 'appointments.manage*')
         || request()->is('booking*', 'appointments/*/manage*');
-@endphp
-
-<div
-    id="ai-showroom-assistant"
-    data-ai-assistant-widget
-    x-data="aiAssistantWidget(@js([
+    $assistantWidgetConfig = [
         'endpoint' => route('ai.showroom-assistant.ask'),
         'streamEndpoint' => route('ai.showroom-assistant.stream'),
         'historyEndpoint' => route('ai.showroom-assistant.history'),
@@ -23,15 +18,20 @@
         'fallback' => config('showroom_ai.fallback_message'),
         'ready' => 'Sẵn sàng tư vấn',
         'prompts' => $assistantPrompts,
-    ]))"
-    @keydown.escape.window="if (panelOpen) minimize()"
+    ];
+@endphp
+
+<div
+    id="ai-showroom-assistant"
+    data-ai-assistant-widget
+    x-data="aiAssistantWidget($el)"
+    @keydown.escape.window="handleEscape()"
     x-cloak
-    class="fixed text-white"
-    :class="[
-        panelOpen ? 'z-[70]' : 'z-30',
-        sideTabVisible ? 'right-0 bottom-28 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2' : 'right-3 bottom-4 sm:right-5 sm:bottom-5'
-    ]"
+    class="text-white"
+    :class="isExpanded ? 'z-[75]' : (panelOpen ? 'z-[70]' : 'z-30')"
 >
+    <script type="application/json" data-ai-widget-config>@json($assistantWidgetConfig)</script>
+
     <div class="sr-only">
         <p>BMW AI Assistant sẵn sàng tư vấn</p>
         @foreach ($assistantPrompts as $assistantPrompt)
@@ -39,11 +39,24 @@
         @endforeach
     </div>
 
+    <div
+        x-show="panelOpen && isExpanded"
+        x-transition.opacity.duration.150ms
+        @click="isExpanded = false; persistLauncherPosition()"
+        class="fixed inset-0 z-[74] bg-black/60 backdrop-blur-[2px]"
+        aria-hidden="true"
+    ></div>
+
     <section
         x-show="panelOpen"
         x-transition.opacity.duration.150ms
+        x-ref="panel"
         data-ai-panel
-        class="ai-chat-panel flex h-[min(640px,calc(100vh-2rem))] w-[calc(100vw-1.5rem)] max-w-[420px] flex-col overflow-hidden border border-white/10 border-t-2 border-t-[#1C69D4] bg-zinc-950/95 shadow-2xl shadow-black/90 backdrop-blur-2xl sm:h-[min(640px,calc(100vh-5rem))] sm:w-[420px]"
+        :data-ai-expanded="isExpanded ? 'true' : 'false'"
+        :class="isExpanded
+            ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[75] h-[85dvh] w-[calc(100vw-1rem)] sm:h-[80vh] sm:w-[80vw] max-w-[1160px] max-h-[820px]'
+            : 'fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-[70] h-[min(600px,calc(100dvh-5.5rem))] w-[calc(100vw-1.5rem)] max-w-[420px] sm:w-[420px]'"
+        class="ai-chat-panel flex flex-col overflow-hidden border border-white/10 border-t-2 border-t-[#1C69D4] bg-zinc-950/95 shadow-2xl shadow-black/90 backdrop-blur-2xl"
         aria-label="BMW AI Assistant"
     >
         <header class="flex items-center gap-3 border-b border-white/10 bg-black/35 px-4 py-3">
@@ -64,7 +77,7 @@
                     type="button"
                     data-ai-clear-conversation
                     :disabled="!hasMessages && !loading"
-                    class="flex h-9 items-center gap-1.5 border border-zinc-800 px-2.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 transition-colors hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    class="flex h-9 items-center gap-1.5 border border-zinc-800 px-2.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 transition-colors hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                     @click="clearConversation()"
                     aria-label="Làm mới hội thoại"
                     title="Làm mới hội thoại"
@@ -76,24 +89,33 @@
                 </button>
                 <button
                     type="button"
+                    data-ai-expand
+                    class="flex h-9 w-9 items-center justify-center border border-zinc-800 text-zinc-400 transition-colors hover:border-[#1C69D4] hover:text-white cursor-pointer"
+                    @click="toggleExpand()"
+                    :aria-label="isExpanded ? 'Thu gọn khung chat' : 'Phóng to khung chat'"
+                    :title="isExpanded ? 'Thu gọn khung chat' : 'Phóng to khung chat (80% màn hình)'"
+                >
+                    <template x-if="!isExpanded">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                    </template>
+                    <template x-if="isExpanded">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
+                        </svg>
+                    </template>
+                </button>
+                <button
+                    type="button"
                     data-ai-minimize
-                    class="flex h-9 w-9 items-center justify-center border border-zinc-800 text-sm font-black text-zinc-400 transition-colors hover:border-white hover:text-white"
+                    class="flex h-9 w-9 items-center justify-center border border-zinc-800 text-sm font-black text-zinc-400 transition-colors hover:border-white hover:text-white cursor-pointer"
                     @click="minimize()"
                     aria-label="Thu nhỏ trợ lý"
                     title="Thu nhỏ"
                 >
                     –
                 </button>
-                <!-- <button
-                    type="button"
-                    data-ai-hide-side
-                    class="flex h-9 w-9 items-center justify-center border border-[#1C69D4]/50 text-sm font-black text-[#70A7FF] transition-colors hover:border-[#70A7FF] hover:text-white"
-                    @click="hideToSide()"
-                    aria-label="Ẩn trợ lý vào cạnh trình duyệt"
-                    title="Ẩn vào cạnh"
-                >
-                    ›
-                </button> -->
             </div>
         </header>
 
@@ -303,21 +325,24 @@
                 </button>
                 <textarea
                     id="ai-assistant-message"
+                    x-ref="messageInput"
                     data-ai-input
                     x-model="input"
                     maxlength="600"
                     rows="1"
-                    class="scrollbar-none max-h-28 min-h-11 min-w-0 flex-1 resize-none border border-zinc-800 bg-zinc-950/85 px-3 py-3 text-sm font-medium leading-5 text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:outline-none focus:ring-0"
+                    class="scrollbar-none max-h-32 min-h-11 min-w-0 flex-1 resize-none border border-zinc-800 bg-zinc-950/85 px-3 py-2.5 text-sm font-medium leading-5 text-white placeholder:text-zinc-600 focus:border-[#1C69D4] focus:outline-none focus:ring-0"
                     placeholder="Nhập câu hỏi về BMW..."
-                    @keydown.enter.exact.prevent="send()"
-                    @keydown.shift.enter.stop
+                    @compositionstart="isComposing = true"
+                    @compositionend="onCompositionEnd()"
+                    @keydown="handleInputKeydown($event)"
+                    @input="resizeInput($event.target)"
                 ></textarea>
                 <template x-if="streaming || loading">
                     <button
                         type="button"
                         data-ai-stop
                         @click="abortStreaming()"
-                        class="flex h-11 shrink-0 items-center justify-center border border-rose-500/50 bg-rose-950/50 px-3 text-[10px] font-black uppercase tracking-wider text-rose-300 transition-colors hover:bg-rose-600 hover:text-white"
+                        class="flex h-11 shrink-0 items-center justify-center border border-rose-500/50 bg-rose-950/50 px-3 text-[10px] font-black uppercase tracking-wider text-rose-300 transition-colors hover:bg-rose-600 hover:text-white cursor-pointer"
                         aria-label="Dừng phản hồi"
                     >
                         Dừng
@@ -327,7 +352,7 @@
                     <button
                         type="submit"
                         data-ai-send
-                        class="flex h-11 w-11 shrink-0 items-center justify-center bg-[#1C69D4] text-sm font-black text-white transition-colors hover:bg-[#1554AA] disabled:cursor-not-allowed disabled:opacity-50"
+                        class="flex h-11 w-11 shrink-0 items-center justify-center bg-[#1C69D4] text-sm font-black text-white transition-colors hover:bg-[#1554AA] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         :disabled="!input.trim() && !selectedImage"
                         aria-label="Gửi câu hỏi"
                     >
@@ -343,7 +368,7 @@
         x-show="sideTabVisible"
         x-transition.opacity.duration.150ms
         data-ai-side-tab
-        class="ai-assistant-side-tab flex items-center gap-2 border border-r-0 border-[#1C69D4]/45 bg-black/95 px-3 py-4 text-white shadow-2xl shadow-black/60 backdrop-blur-xl transition-colors hover:border-[#70A7FF]"
+        class="ai-assistant-side-tab fixed right-0 bottom-28 z-[65] flex items-center gap-2 border border-r-0 border-[#1C69D4]/45 bg-black/95 px-3 py-4 text-white shadow-2xl shadow-black/60 backdrop-blur-xl transition-colors hover:border-[#70A7FF] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2"
         @click="openPanel()"
         aria-label="Mở lại BMW AI Assistant"
     >
@@ -351,10 +376,23 @@
         <span class="text-[11px] font-black tracking-[0.18em] [writing-mode:vertical-rl]">AI</span>
     </button>
 
-    <div x-show="!panelOpen && !sideTabVisible" x-transition.opacity.duration.150ms class="flex items-end justify-end gap-3">
+    <div
+        x-show="!panelOpen && !sideTabVisible"
+        x-transition.opacity.duration.150ms
+        x-ref="launcherWrap"
+        data-ai-launcher-wrap
+        :style="launcherPositionStyle"
+        :class="[
+            launcherHasCustomPos ? '' : 'right-4 bottom-4 sm:right-6 sm:bottom-6',
+            isDraggingLauncher ? 'ai-assistant-dragging' : ''
+        ]"
+        class="fixed z-[65] w-max"
+    >
         @unless($suppressGreetingBubble)
             <div
-                class="hidden max-w-[12rem] border border-white/10 bg-black/90 px-4 py-3 text-sm font-semibold leading-5 text-zinc-200 shadow-2xl shadow-black/50 backdrop-blur-xl sm:block"
+                x-show="!isDraggingLauncher"
+                :class="isLauncherOnLeftHalf ? 'left-full ml-3' : 'right-full mr-3'"
+                class="pointer-events-none absolute bottom-0 hidden w-max max-w-[12rem] select-none border border-white/10 bg-black/90 px-4 py-3 text-sm font-semibold leading-5 text-zinc-200 shadow-2xl shadow-black/50 backdrop-blur-xl sm:block"
                 data-ai-greeting-bubble
             >
                 Bạn cần hỗ trợ gì?
@@ -363,13 +401,21 @@
 
         <button
             type="button"
+            x-ref="launcherBtn"
             data-ai-launcher
-            class="ai-assistant-launcher relative z-30 flex items-center gap-3 border border-white/10 bg-black/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-300 hover:border-[#1C69D4] hover:shadow-[0_0_25px_rgba(28,105,212,0.4)]"
-            @click="openPanel()"
-            aria-label="Mở BMW AI Assistant"
+            draggable="false"
+            @dragstart.prevent
+            :class="isDraggingLauncher ? 'ai-assistant-dragging cursor-grabbing border-[#1C69D4] transition-none' : 'cursor-grab hover:border-[#1C69D4] hover:shadow-[0_0_25px_rgba(28,105,212,0.4)] transition-[border-color,box-shadow] duration-200'"
+            class="ai-assistant-launcher relative z-[65] flex select-none items-center gap-3 border border-white/10 bg-black/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl [touch-action:none]"
+            @pointerdown="startLauncherDrag($event)"
+            @click="handleLauncherClick($event)"
+            aria-label="Mở BMW AI Assistant (có thể kéo để đổi vị trí)"
+            title="Nhấn để mở Trợ lý BMW · Giữ và kéo để di chuyển"
         >
-            <x-public.ai-assistant-avatar size="h-11 w-11" />
-            <span class="hidden text-left sm:block">
+            <span class="pointer-events-none shrink-0">
+                <x-public.ai-assistant-avatar size="h-11 w-11" />
+            </span>
+            <span class="pointer-events-none hidden text-left sm:block">
                 <span class="block text-sm font-extrabold text-white">Trợ lý BMW</span>
                 <span class="mt-0.5 block text-xs font-semibold text-[#70A7FF]">Sẵn sàng tư vấn</span>
             </span>

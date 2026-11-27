@@ -11,8 +11,8 @@ use App\Livewire\Admin\AppointmentTable;
 use App\Livewire\Admin\ServiceBookingTable;
 use App\Mail\Customer\AccessoryOrderConfirmationMail;
 use App\Mail\Customer\AccessoryOrderStatusMail;
+use App\Mail\Customer\AppointmentCompletedThankYouMail;
 use App\Mail\Customer\AppointmentConfirmationMail;
-use App\Mail\Customer\PostTestDriveFollowupMail;
 use App\Models\AccessoryOrder;
 use App\Models\Appointment;
 use App\Models\Category;
@@ -127,7 +127,9 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             ->assertDontSee('action-confirm-appointment-'.$appointment->id)
             ->assertSee('action-complete-appointment-'.$appointment->id)
             ->assertSee('action-cancel-appointment-'.$appointment->id)
-            ->call('updateStatus', $appointment->id, AppointmentStatus::Completed->value)
+            ->call('openCompletionModal', $appointment->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_VISITED_NO_PURCHASE)
+            ->call('confirmCompletion')
             ->assertHasNoErrors()
             ->assertDontSee('action-confirm-appointment-'.$appointment->id)
             ->assertDontSee('action-complete-appointment-'.$appointment->id)
@@ -171,7 +173,9 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             ->assertDontSee('Xem thư Hậu mãi trả góp')
             ->call('updateStatus', $serviceBooking->id, AppointmentStatus::Confirmed->value)
             ->assertSee('action-complete-service-booking-'.$serviceBooking->id)
-            ->call('updateStatus', $serviceBooking->id, AppointmentStatus::Completed->value)
+            ->call('openCompletionModal', $serviceBooking->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_SERVICE_DELIVERED)
+            ->call('confirmCompletion')
             ->assertSee('terminal-status-lock-service-booking-'.$serviceBooking->id);
 
         // 3. AccessoryOrderTable lifecycle + Read-Only Preview shows ONLY Accessory order templates
@@ -448,11 +452,13 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             ->assertSee('action-confirm-appointment-'.$secondPending->id)
             ->assertDontSee('action-complete-appointment-'.$testDrive->id);
 
-        // Staff A bấm Hoàn tất (confirmed -> completed) -> hẹn thư hậu mãi sau 2h, khóa cứng UI & chặn gửi lại mail
+        // Staff A bấm Hoàn tất qua Modal kết quả (confirmed -> completed) -> gửi thư cảm ơn đón tiếp, khóa cứng UI & chặn gửi lại mail
         Livewire::actingAs($staffA)
             ->test(AppointmentTable::class)
             ->call('inspectAppointment', $testDrive->id)
-            ->call('updateStatus', $testDrive->id, AppointmentStatus::Completed->value)
+            ->call('openCompletionModal', $testDrive->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_VISITED_NO_PURCHASE)
+            ->call('confirmCompletion')
             ->assertHasNoErrors()
             ->assertSee('terminal-status-lock-appointment-'.$testDrive->id)
             ->assertSee('Đã đóng · Hoàn tất')
@@ -462,7 +468,7 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
         $testDrive->refresh();
         $this->assertSame(AppointmentStatus::Completed, $testDrive->status);
         $this->assertNotNull($testDrive->followup_email_sent_at);
-        Mail::assertQueued(PostTestDriveFollowupMail::class, 1);
+        Mail::assertQueued(AppointmentCompletedThankYouMail::class, 1);
 
         // Cả Admin & Khách (Signed URL) đều bị chặn hủy/đổi lịch đã Completed
         $this->actingAs($staffA)
@@ -508,7 +514,9 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             ->assertDontSee('Xem thư Hậu mãi trả góp')
             ->call('updateStatus', $serviceBooking->id, AppointmentStatus::Confirmed->value)
             ->assertHasNoErrors()
-            ->call('updateStatus', $serviceBooking->id, AppointmentStatus::Completed->value)
+            ->call('openCompletionModal', $serviceBooking->id)
+            ->call('selectCompletionOutcome', Appointment::OUTCOME_SERVICE_DELIVERED)
+            ->call('confirmCompletion')
             ->assertHasNoErrors()
             ->assertSee('terminal-status-lock-service-booking-'.$serviceBooking->id)
             ->call('inspectBooking', $cancelledService->id)
@@ -600,7 +608,7 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             ->where('actor_type', 'customer')
             ->pluck('title')
             ->all();
-        $this->assertContains('Khách tự xác nhận tham dự lịch hẹn', $customerActors);
+        $this->assertContains('Khách hàng đã xác nhận sẽ đến lịch hẹn', $customerActors);
         $this->assertContains('Khách tự đổi ngày/giờ hẹn', $customerActors);
         $this->assertEmpty(
             collect($guestSelfServe->meta_data['timeline'] ?? [])->where('actor_type', 'admin')->all(),

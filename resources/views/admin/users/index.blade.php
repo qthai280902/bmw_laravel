@@ -103,8 +103,8 @@
                                         <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ mb_strtoupper(mb_substr(trim((string) $user->name), 0, 1, 'UTF-8'), 'UTF-8') }}</span>
                                     </a>
                                     <div class="min-w-0">
-                                        <div class="mb-1 flex flex-wrap items-center gap-2 text-sm font-black uppercase leading-none tracking-wider text-white">
-                                            <a href="{{ route('admin.users.show', $user) }}" class="truncate transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]">
+                                        <div class="mb-1 flex flex-wrap items-center gap-2 text-sm font-black uppercase leading-snug tracking-wider text-white">
+                                            <a href="{{ route('admin.users.show', $user) }}" class="truncate py-0.5 transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]">
                                                 {{ $user->name }}
                                             </a>
                                             @if($isCurrentAdmin)

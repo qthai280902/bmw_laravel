@@ -92,8 +92,12 @@ class GeminiAgentRunner
      * @param  Closure(string, ?string): T  $callback
      * @return array{ok: bool, result?: T, reason?: string, model?: ?string}
      */
-    public function run(Closure $callback, string $operation = 'agent_prompt'): array
-    {
+    public function run(
+        Closure $callback,
+        string $operation = 'agent_prompt',
+        ?int $maxCandidates = null,
+        bool $allowFallbackModel = true,
+    ): array {
         $provider = $this->configuredProvider();
         $model = $this->configuredModel();
 
@@ -135,12 +139,16 @@ class GeminiAgentRunner
             ];
         }
 
+        if ($maxCandidates !== null && $maxCandidates > 0) {
+            $candidates = array_slice($candidates, 0, $maxCandidates);
+        }
+
         $primaryOutcome = $this->executeAcrossCandidates($candidates, $callback, $model, $operation, markRateLimit: true);
         if ($primaryOutcome['ok']) {
             return $primaryOutcome;
         }
 
-        $fallbackModel = $this->fallbackModel($model);
+        $fallbackModel = $allowFallbackModel ? $this->fallbackModel($model) : null;
         if ($fallbackModel !== null && ($primaryOutcome['retryable'] ?? false)) {
             Context::push('ai_steps', "{$operation}:fallback_model:{$fallbackModel}");
             Log::warning('Primary Gemini model exhausted keys; switching to fallback model.', [

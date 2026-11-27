@@ -51,9 +51,23 @@ Livewire.hook('morph.updated', () => {
     });
 });
 
-window.aiAssistantWidget = (config) => ({
+window.aiAssistantWidget = (configOrEl) => {
+    let resolvedConfig = configOrEl || {};
+    if (typeof HTMLElement !== 'undefined' && configOrEl instanceof HTMLElement) {
+        try {
+            const rawScript = configOrEl.querySelector('[data-ai-widget-config]')?.textContent || '{}';
+            resolvedConfig = JSON.parse(rawScript);
+        } catch (error) {
+            resolvedConfig = {};
+        }
+    }
+    const config = resolvedConfig;
+
+    return {
     config,
     panelOpen: false,
+    isExpanded: false,
+    isComposing: false,
     sideTabVisible: false,
     messages: [],
     input: '',
@@ -74,6 +88,12 @@ window.aiAssistantWidget = (config) => ({
     },
     revealTimer: null,
     stateKey: 'bmw_ai_assistant_state_v4',
+    launcherPosKey: 'bmw_ai_launcher_pos_v1',
+    launcherX: null,
+    launcherY: null,
+    isDraggingLauncher: false,
+    dragMoved: false,
+    suppressLauncherClick: false,
     visitorKey: 'bmw_ai_visitor_id',
     syncChannelName: 'bmw_ai_assistant_sync',
     syncChannel: null,
@@ -89,6 +109,26 @@ window.aiAssistantWidget = (config) => ({
         return this.messages.length > 0;
     },
 
+    get launcherHasCustomPos() {
+        return Number.isFinite(this.launcherX) && Number.isFinite(this.launcherY);
+    },
+
+    get isLauncherOnLeftHalf() {
+        if (!this.launcherHasCustomPos) {
+            return false;
+        }
+        const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+        const btnW = this.$refs.launcherBtn?.offsetWidth || (vw >= 640 ? 190 : 70);
+        return (this.launcherX + (btnW / 2)) < (vw / 2);
+    },
+
+    get launcherPositionStyle() {
+        if (!this.launcherHasCustomPos) {
+            return '';
+        }
+        return `left: ${Math.round(this.launcherX)}px; top: ${Math.round(this.launcherY)}px; right: auto; bottom: auto;`;
+    },
+
     init() {
         if (this._initialized) {
             return;
@@ -99,6 +139,7 @@ window.aiAssistantWidget = (config) => ({
         this.visitorId = this.ensureVisitorId();
         this.activePageContext = this.detectPageContext();
         this.attachVisitorIdToForms();
+        this.restoreLauncherPosition();
         this.restoreState();
         this.setupCrossTabSync();
         if (!this.messages.some((item) => item?.role === 'user')) {
@@ -107,7 +148,8 @@ window.aiAssistantWidget = (config) => ({
         this.scrollMessages();
 
         window.addEventListener('resize', () => {
-            if (window.innerWidth < 640 && this.panelOpen) {
+            this.clampLauncherToViewport();
+            if (this.panelOpen) {
                 this.scrollMessages();
             }
         });
@@ -258,12 +300,221 @@ window.aiAssistantWidget = (config) => ({
         this.sideTabVisible = false;
         this.persistState();
         this.scrollMessages();
+        this.$nextTick(() => {
+            this.$refs.messageInput?.focus({ preventScroll: true });
+        });
+    },
+
+    toggleExpand() {
+        this.isExpanded = !this.isExpanded;
+        this.$nextTick(() => {
+            this.scrollMessages();
+        });
+    },
+
+    handleEscape() {
+        if (this.panelOpen && this.isExpanded) {
+            this.isExpanded = false;
+            return;
+        }
+        if (this.panelOpen) {
+            this.minimize();
+        }
     },
 
     minimize() {
         this.panelOpen = false;
+        this.isExpanded = false;
         this.sideTabVisible = false;
         this.persistState();
+    },
+
+    startLauncherDrag(event) {
+        if (event.pointerType === 'mouse' && event.button !== 0) {
+            return;
+        }
+
+        const btnEl = this.$refs.launcherBtn || event.currentTarget;
+        if (!btnEl) {
+            return;
+        }
+
+        // Measure strictly the launcher button BEFORE toggling dragging or custom position state
+        const rect = btnEl.getBoundingClientRect();
+        const originLeft = rect.left;
+        const originTop = rect.top;
+        const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+        const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+        const boxWidth = btnEl.offsetWidth || rect.width || (vw >= 640 ? 190 : 70);
+        const boxHeight = btnEl.offsetHeight || rect.height || 68;
+        const startClientX = event.clientX;
+        const startClientY = event.clientY;
+        const margin = 12;
+
+        this.dragMoved = false;
+        this.suppressLauncherClick = false;
+        let dragStarted = false;
+
+        const onMove = (moveEvent) => {
+            const dx = moveEvent.clientX - startClientX;
+            const dy = moveEvent.clientY - startClientY;
+
+            if (!dragStarted && Math.hypot(dx, dy) <= 5) {
+                return;
+            }
+
+            if (!dragStarted) {
+                dragStarted = true;
+                this.dragMoved = true;
+                this.isDraggingLauncher = true;
+            }
+
+            const curVw = window.innerWidth || document.documentElement.clientWidth || 1280;
+            const curVh = window.innerHeight || document.documentElement.clientHeight || 800;
+
+            this.launcherX = Math.min(Math.max(margin, originLeft + dx), Math.max(margin, curVw - boxWidth - margin));
+            this.launcherY = Math.min(Math.max(margin, originTop + dy), Math.max(margin, curVh - boxHeight - margin));
+        };
+
+        const endDrag = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', endDrag);
+            window.removeEventListener('pointercancel', endDrag);
+            window.removeEventListener('blur', endDrag);
+
+            this.isDraggingLauncher = false;
+
+            if (dragStarted) {
+                this.suppressLauncherClick = true;
+                this.clampLauncherToViewport();
+                this.persistLauncherPosition();
+                setTimeout(() => {
+                    this.suppressLauncherClick = false;
+                    this.dragMoved = false;
+                }, 80);
+            }
+        };
+
+        window.addEventListener('pointermove', onMove, { passive: true });
+        window.addEventListener('pointerup', endDrag);
+        window.addEventListener('pointercancel', endDrag);
+        window.addEventListener('blur', endDrag);
+    },
+
+    handleLauncherClick(event) {
+        if (this.suppressLauncherClick || this.dragMoved) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            this.suppressLauncherClick = false;
+            this.dragMoved = false;
+            return;
+        }
+
+        this.openPanel();
+    },
+
+    clampLauncherToViewport() {
+        if (!this.launcherHasCustomPos) {
+            return;
+        }
+
+        const margin = 12;
+        const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+        const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+        const btnEl = this.$refs.launcherBtn;
+        const fallbackW = vw >= 640 ? 190 : 70;
+        const boxWidth = btnEl?.offsetWidth || fallbackW;
+        const boxHeight = btnEl?.offsetHeight || 68;
+
+        this.launcherX = Math.min(Math.max(margin, this.launcherX), Math.max(margin, vw - boxWidth - margin));
+        this.launcherY = Math.min(Math.max(margin, this.launcherY), Math.max(margin, vh - boxHeight - margin));
+    },
+
+    persistLauncherPosition() {
+        if (!this.launcherHasCustomPos) {
+            return;
+        }
+
+        try {
+            localStorage.setItem(this.launcherPosKey, JSON.stringify({
+                x: Math.round(this.launcherX),
+                y: Math.round(this.launcherY),
+            }));
+        } catch (error) {
+            void error;
+        }
+    },
+
+    restoreLauncherPosition() {
+        try {
+            const raw = localStorage.getItem(this.launcherPosKey);
+            if (!raw) {
+                return;
+            }
+            const saved = JSON.parse(raw);
+            if (saved && typeof saved === 'object' && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+                this.launcherX = saved.x;
+                this.launcherY = saved.y;
+                this.clampLauncherToViewport();
+                this.$nextTick(() => this.clampLauncherToViewport());
+                return;
+            }
+            localStorage.removeItem(this.launcherPosKey);
+        } catch (error) {
+            try {
+                localStorage.removeItem(this.launcherPosKey);
+            } catch (removeErr) {
+                void removeErr;
+            }
+        }
+        this.launcherX = null;
+        this.launcherY = null;
+    },
+
+    onCompositionEnd() {
+        this.isComposing = false;
+    },
+
+    handleInputKeydown(event) {
+        if (!event || event.key !== 'Enter') {
+            return;
+        }
+
+        if (event.shiftKey) {
+            this.$nextTick(() => this.resizeInput(event.target));
+            return;
+        }
+
+        if (this.isComposing || event.isComposing || event.keyCode === 229) {
+            return;
+        }
+
+        event.preventDefault();
+        if (this.loading || this.streaming || this.inFlightStream) {
+            return;
+        }
+        this.send();
+    },
+
+    resizeInput(textarea) {
+        if (!textarea) {
+            return;
+        }
+        if (!String(textarea.value || '').trim()) {
+            textarea.style.height = '';
+            return;
+        }
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.min(128, Math.max(44, textarea.scrollHeight))}px`;
+    },
+
+    resetInputBox() {
+        this.input = '';
+        const inputEl = this.$refs.messageInput;
+        if (inputEl) {
+            inputEl.value = '';
+            inputEl.style.height = '';
+        }
     },
 
     hideToSide() {
@@ -488,7 +739,8 @@ window.aiAssistantWidget = (config) => ({
         this.imageError = null;
 
         this.messages.push(this.createUserMessage(displayMessage, previewUrl, imageName));
-        this.input = '';
+        this.resetInputBox();
+        this.$nextTick(() => this.resetInputBox());
         this.selectedImage = null;
         this.selectedImagePreview = null;
         this.selectedImageName = null;
@@ -941,7 +1193,7 @@ window.aiAssistantWidget = (config) => ({
 
     parseTextParts(text) {
         const parts = [];
-        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\[([^\]]{1,120})\]\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\))/g;
+        const pattern = /(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\[([^\]]{0,120})\]\s*\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\))/g;
         let cursor = 0;
         let match;
 
@@ -974,6 +1226,22 @@ window.aiAssistantWidget = (config) => ({
         return parts.length ? parts : [{ type: 'text', text }];
     },
 
+    normalizeActionLabelKey(label) {
+        return String(label || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    },
+
+    isMoreSpecificActionUrl(candidateUrl, existingUrl) {
+        const cand = String(candidateUrl || '');
+        const exist = String(existingUrl || '');
+        if (cand.includes('product_id=') && !exist.includes('product_id=')) {
+            return true;
+        }
+        if (cand.includes('?') && !exist.includes('?')) {
+            return true;
+        }
+        return false;
+    },
+
     extractActions(text, suggestions = [], restoredActions = []) {
         const actions = [];
         let cleanedText = String(text || '');
@@ -987,24 +1255,38 @@ window.aiAssistantWidget = (config) => ({
 
             const canon = this.canonicalActionUrl(url);
             const meta = this.actionMeta(url, fallbackLabel, overrides);
-            const existingIndex = actions.findIndex((action) => action.canon === canon);
+            const kindKey = String(meta.kind || 'link').trim().toLowerCase();
+            const typeUrlKey = `${kindKey}|${canon}`;
+            const labelKey = this.normalizeActionLabelKey(meta.label);
+
+            const existingIndex = actions.findIndex((action) => (
+                action.canon === canon
+                || action.typeUrlKey === typeUrlKey
+                || (labelKey && action.labelKey === labelKey)
+            ));
 
             if (existingIndex !== -1) {
-                if (preferOverrides) {
+                const existing = actions[existingIndex];
+                if (preferOverrides || this.isMoreSpecificActionUrl(url, existing.url)) {
                     actions[existingIndex] = {
                         canon,
+                        typeUrlKey,
+                        labelKey,
                         label: meta.label,
                         subtitle: meta.subtitle,
                         kind: meta.kind,
                         url,
                     };
+                    return url;
                 }
 
-                return url;
+                return existing.url || url;
             }
 
             actions.push({
                 canon,
+                typeUrlKey,
+                labelKey,
                 label: meta.label,
                 subtitle: meta.subtitle,
                 kind: meta.kind,
@@ -1020,16 +1302,31 @@ window.aiAssistantWidget = (config) => ({
             });
         }
 
-        cleanedText = cleanedText.replace(/\[([^\]]{1,120})\]\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\)/g, (match, rawLabel, rawHref) => {
+        cleanedText = cleanedText.replace(/\[([^\]]{0,120})\]\s*\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\)/g, (match, rawLabel, rawHref) => {
             const label = String(rawLabel || '').replace(/\*{1,2}/g, '').trim();
 
             if (!label) {
                 return '';
             }
 
-            const validUrl = addAction(rawHref, label);
+            const trimmedHref = String(rawHref || '').trim();
+            if (!trimmedHref) {
+                const lowerLabel = label.toLowerCase();
+                if (/bảo dưỡng|bao duong|detailing|ceramic|rửa xe|rua xe|chăm sóc|cham soc|ista|dịch vụ|dich vu/i.test(lowerLabel)) {
+                    const serviceUrl = addAction('/booking?type=maintenance', label);
+                    return serviceUrl ? `[${label}](${serviceUrl})` : `**${label}**`;
+                }
+                return `**${label}**`;
+            }
+
+            const validUrl = addAction(trimmedHref, label);
 
             return validUrl ? `[${label}](${validUrl})` : `**${label}**`;
+        });
+
+        cleanedText = cleanedText.replace(/\[([^\[\]\n]{1,120})\]\(\s*$/g, (match, rawLabel) => {
+            const label = String(rawLabel || '').replace(/\*{1,2}/g, '').trim();
+            return label ? `**${label}**` : '';
         });
 
         cleanedText = cleanedText.replace(/(^|[\s("'\[])(\/(?!\/)[^\s<>()]+)/g, (match, prefix, rawHref) => {
@@ -1099,7 +1396,19 @@ window.aiAssistantWidget = (config) => ({
                 return make('Tư vấn tài chính', 'quote');
             }
 
+            if (['service', 'maintenance', 'detailing', 'car_wash'].includes(type)) {
+                return make('Xưởng dịch vụ BMW', 'service');
+            }
+
+            if (type === 'trade_in') {
+                return make('BMW Certified Trade-In', 'booking');
+            }
+
             return make('Showroom BMW', 'booking');
+        }
+
+        if (value.startsWith('/tra-cuu')) {
+            return make('Cổng khách hàng BMW', 'portal');
         }
 
         if (value.startsWith('/compare')) {
@@ -1175,7 +1484,19 @@ window.aiAssistantWidget = (config) => ({
                 return 'Nhận báo giá';
             }
 
+            if (['service', 'maintenance', 'detailing', 'car_wash'].includes(type)) {
+                return 'Đặt lịch dịch vụ';
+            }
+
+            if (type === 'trade_in') {
+                return 'Đặt lịch thẩm định xe';
+            }
+
             return 'Đặt lịch tư vấn';
+        }
+
+        if (value.startsWith('/tra-cuu')) {
+            return 'Tra cứu hồ sơ & trả góp';
         }
 
         if (value.startsWith('/compare')) {
@@ -1314,13 +1635,25 @@ window.aiAssistantWidget = (config) => ({
         items.forEach((item) => {
             const url = this.internalLink(item?.url);
             const canon = url ? this.canonicalActionUrl(url) : null;
+            if (!url) {
+                return;
+            }
 
-            if (!url || unique.some((entry) => this.canonicalActionUrl(entry.url) === canon)) {
+            const resolvedLabel = String(item?.label || this.actionLabel(url)).trim();
+            const labelKey = this.normalizeActionLabelKey(resolvedLabel);
+            const kindKey = String(item?.kind || 'link').trim().toLowerCase();
+            const typeUrlKey = `${kindKey}|${canon}`;
+
+            if (unique.some((entry) => (
+                this.canonicalActionUrl(entry.url) === canon
+                || `${String(entry.kind || 'link').trim().toLowerCase()}|${this.canonicalActionUrl(entry.url)}` === typeUrlKey
+                || (labelKey && this.normalizeActionLabelKey(entry.label) === labelKey)
+            ))) {
                 return;
             }
 
             const normalized = {
-                label: String(item?.label || this.actionLabel(url)).trim(),
+                label: resolvedLabel,
                 url,
             };
 
@@ -1348,12 +1681,33 @@ window.aiAssistantWidget = (config) => ({
         items.forEach((item) => {
             const url = this.internalLink(item?.url);
             const canon = url ? this.canonicalActionUrl(url) : null;
-
-            if (!url || unique.some((entry) => this.canonicalActionUrl(entry.url) === canon)) {
+            if (!url) {
                 return;
             }
 
             const meta = this.actionMeta(url, item?.label || '', item);
+            const labelKey = this.normalizeActionLabelKey(meta.label);
+            const kindKey = String(item?.kind || meta.kind || 'link').trim().toLowerCase();
+            const typeUrlKey = `${kindKey}|${canon}`;
+
+            const existingIdx = unique.findIndex((entry) => (
+                this.canonicalActionUrl(entry.url) === canon
+                || `${String(entry.kind || 'link').trim().toLowerCase()}|${this.canonicalActionUrl(entry.url)}` === typeUrlKey
+                || (labelKey && this.normalizeActionLabelKey(entry.label) === labelKey)
+            ));
+
+            if (existingIdx !== -1) {
+                if (this.isMoreSpecificActionUrl(url, unique[existingIdx].url)) {
+                    unique[existingIdx] = {
+                        label: meta.label,
+                        subtitle: String(item?.subtitle || meta.subtitle || 'BMW Showroom').trim(),
+                        kind: String(item?.kind || meta.kind || 'link').trim(),
+                        url,
+                    };
+                }
+                return;
+            }
+
             unique.push({
                 label: meta.label,
                 subtitle: String(item?.subtitle || meta.subtitle || 'BMW Showroom').trim(),
@@ -1455,7 +1809,8 @@ window.aiAssistantWidget = (config) => ({
             .replace(/(?:\+?84|0)(?:[\s.-]?\d){8,10}/g, '[contact hidden]')
             .slice(0, 1400);
     },
-});
+    };
+};
 
 window.bmwPromotionCampaign = (configScriptId = 'bmw-promotion-campaign-config') => {
     let parsed = {};
@@ -2095,5 +2450,252 @@ window.bmwCustomSelect = (initialConfig = null) => ({
         });
     },
 });
+
+window.bmwInstallmentCalculator = (rootEl) => {
+    let parsed = {};
+    if (typeof HTMLElement !== 'undefined' && rootEl instanceof HTMLElement) {
+        const scriptEl = rootEl.querySelector('[data-installment-calc-config]');
+        if (scriptEl) {
+            try {
+                parsed = JSON.parse(scriptEl.textContent || '{}');
+            } catch {
+                parsed = {};
+            }
+        }
+    } else if (rootEl && typeof rootEl === 'object') {
+        parsed = rootEl;
+    }
+
+    const cleanInt = (val, fallback = 0) => {
+        if (val === null || val === undefined || val === '') {
+            return fallback;
+        }
+        const digits = String(val).replace(/[^\d]/g, '');
+        return digits ? parseInt(digits, 10) : fallback;
+    };
+
+    const formatDots = (num) => {
+        if (num === null || num === undefined || num === '') {
+            return '';
+        }
+        const n = Math.max(0, Math.round(Number(num) || 0));
+        if (!Number.isFinite(n)) {
+            return '';
+        }
+        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
+
+    const isEditMode = parsed.mode === 'edit';
+    const hasInitialVehiclePrice = parsed.vehiclePrice !== null && parsed.vehiclePrice !== undefined && parsed.vehiclePrice !== '';
+    const hasInitialDownPayment = parsed.downPayment !== null && parsed.downPayment !== undefined && parsed.downPayment !== '';
+
+    const initVehiclePrice = hasInitialVehiclePrice ? cleanInt(parsed.vehiclePrice, 0) : null;
+    const initDownPayment = hasInitialDownPayment ? cleanInt(parsed.downPayment, 0) : null;
+    const initLoanAmount = cleanInt(parsed.loanAmount, 2000000000);
+    const initMonthlyPayment = cleanInt(parsed.monthlyPayment, 42000000);
+    const initPercent = (initVehiclePrice && initVehiclePrice > 0 && initDownPayment !== null)
+        ? Math.round(((initDownPayment / initVehiclePrice) * 100) * 10) / 10
+        : '';
+
+    return {
+        mode: isEditMode ? 'edit' : 'create',
+        vehiclePrice: initVehiclePrice,
+        vehiclePriceDisplay: initVehiclePrice !== null ? formatDots(initVehiclePrice) : '',
+        downPayment: initDownPayment,
+        downPaymentDisplay: initDownPayment !== null ? formatDots(initDownPayment) : '',
+        downPaymentPercent: initPercent,
+        loanAmount: initLoanAmount,
+        loanAmountDisplay: formatDots(initLoanAmount),
+        monthlyPayment: initMonthlyPayment,
+        monthlyPaymentDisplay: formatDots(initMonthlyPayment),
+        interestRate: parsed.interestRate !== undefined && parsed.interestRate !== null ? String(parsed.interestRate) : '7.9',
+        interestMethod: parsed.interestMethod === 'flat' ? 'flat' : 'reducing_balance',
+        termMonths: Math.max(1, cleanInt(parsed.termMonths, 60)),
+        paidInstallments: Math.max(0, cleanInt(parsed.paidInstallments, 0)),
+        hasManualMonthlyOverride: isEditMode,
+
+        init() {
+            // Do NOT overwrite monthlyPayment on mount for edit forms (preserves bank-rounded DB value)
+            if (!isEditMode && parsed.hasOldMonthlyPayment !== true) {
+                this.syncRecommendedMonthlyPayment();
+            }
+        },
+
+        formatCurrency(num) {
+            return `${formatDots(Math.max(0, Math.round(Number(num) || 0)))} đ`;
+        },
+
+        onVehiclePriceInput(raw) {
+            const digits = String(raw ?? '').replace(/[^\d]/g, '');
+            if (digits === '') {
+                this.vehiclePrice = null;
+                this.vehiclePriceDisplay = '';
+                return;
+            }
+
+            this.vehiclePrice = parseInt(digits, 10);
+            this.vehiclePriceDisplay = formatDots(this.vehiclePrice);
+
+            if (this.downPaymentPercent !== '' && Number(this.downPaymentPercent) >= 0) {
+                const pct = Math.min(100, Math.max(0, Number(this.downPaymentPercent) || 0));
+                this.downPayment = Math.round((this.vehiclePrice * pct) / 100);
+                this.downPaymentDisplay = formatDots(this.downPayment);
+            } else if (this.downPayment !== null && this.vehiclePrice > 0) {
+                this.downPaymentPercent = Math.round(((this.downPayment / this.vehiclePrice) * 100) * 10) / 10;
+            }
+
+            if (this.downPayment !== null) {
+                this.loanAmount = Math.max(0, this.vehiclePrice - this.downPayment);
+                this.loanAmountDisplay = formatDots(this.loanAmount);
+            }
+
+            this.hasManualMonthlyOverride = false;
+            this.syncRecommendedMonthlyPayment();
+        },
+
+        onDownPaymentInput(raw) {
+            const digits = String(raw ?? '').replace(/[^\d]/g, '');
+            if (digits === '') {
+                this.downPayment = null;
+                this.downPaymentDisplay = '';
+                this.downPaymentPercent = '';
+                return;
+            }
+
+            let dp = parseInt(digits, 10);
+            if (this.vehiclePrice !== null && this.vehiclePrice > 0 && dp > this.vehiclePrice) {
+                dp = this.vehiclePrice;
+            }
+
+            this.downPayment = dp;
+            this.downPaymentDisplay = formatDots(dp);
+
+            if (this.vehiclePrice !== null && this.vehiclePrice > 0) {
+                this.downPaymentPercent = Math.round(((dp / this.vehiclePrice) * 100) * 10) / 10;
+                this.loanAmount = Math.max(0, this.vehiclePrice - dp);
+                this.loanAmountDisplay = formatDots(this.loanAmount);
+            }
+
+            this.hasManualMonthlyOverride = false;
+            this.syncRecommendedMonthlyPayment();
+        },
+
+        onDownPaymentPercentInput(raw) {
+            const cleaned = String(raw ?? '').replace(/[^0-9.]/g, '');
+            if (cleaned === '') {
+                this.downPaymentPercent = '';
+                return;
+            }
+
+            const pct = Math.min(100, Math.max(0, parseFloat(cleaned) || 0));
+            this.downPaymentPercent = pct;
+
+            if (this.vehiclePrice !== null && this.vehiclePrice > 0) {
+                this.downPayment = Math.round((this.vehiclePrice * pct) / 100);
+                this.downPaymentDisplay = formatDots(this.downPayment);
+                this.loanAmount = Math.max(0, this.vehiclePrice - this.downPayment);
+                this.loanAmountDisplay = formatDots(this.loanAmount);
+                this.hasManualMonthlyOverride = false;
+                this.syncRecommendedMonthlyPayment();
+            }
+        },
+
+        onLoanAmountInput(raw) {
+            const digits = String(raw ?? '').replace(/[^\d]/g, '');
+            const loan = digits === '' ? 0 : parseInt(digits, 10);
+            this.loanAmount = loan;
+            this.loanAmountDisplay = digits === '' ? '' : formatDots(loan);
+
+            if (this.vehiclePrice !== null && this.vehiclePrice > 0 && loan <= this.vehiclePrice) {
+                const derivedDp = Math.max(0, this.vehiclePrice - loan);
+                this.downPayment = derivedDp;
+                this.downPaymentDisplay = formatDots(derivedDp);
+                this.downPaymentPercent = Math.round(((derivedDp / this.vehiclePrice) * 100) * 10) / 10;
+            }
+
+            this.hasManualMonthlyOverride = false;
+            this.syncRecommendedMonthlyPayment();
+        },
+
+        onMonthlyPaymentInput(raw) {
+            const digits = String(raw ?? '').replace(/[^\d]/g, '');
+            const amount = digits === '' ? 0 : parseInt(digits, 10);
+            this.monthlyPayment = amount;
+            this.monthlyPaymentDisplay = digits === '' ? '' : formatDots(amount);
+            this.hasManualMonthlyOverride = true;
+        },
+
+        onFormulaParamChange(newMethod = null) {
+            if (newMethod !== null) {
+                this.interestMethod = newMethod === 'flat' ? 'flat' : 'reducing_balance';
+            }
+            const term = Math.max(1, parseInt(this.termMonths, 10) || 1);
+            this.termMonths = Math.min(240, term);
+            if ((parseInt(this.paidInstallments, 10) || 0) > this.termMonths) {
+                this.paidInstallments = this.termMonths;
+            }
+            this.hasManualMonthlyOverride = false;
+            this.syncRecommendedMonthlyPayment();
+        },
+
+        syncRecommendedMonthlyPayment() {
+            const calc = this.summary;
+            if (calc.firstMonthTotal > 0) {
+                this.monthlyPayment = calc.firstMonthTotal;
+                this.monthlyPaymentDisplay = formatDots(calc.firstMonthTotal);
+                this.hasManualMonthlyOverride = false;
+            }
+        },
+
+        get summary() {
+            const loan = Math.max(0, Number(this.loanAmount) || 0);
+            const term = Math.max(1, Math.min(240, parseInt(this.termMonths, 10) || 1));
+            const paid = Math.min(term, Math.max(0, parseInt(this.paidInstallments, 10) || 0));
+            const annualRate = Math.max(0, parseFloat(this.interestRate) || 0);
+            const monthlyRate = (annualRate / 100) / 12;
+            const isFlat = this.interestMethod === 'flat';
+
+            const basePrincipal = Math.floor(loan / term);
+            let opening = loan;
+            let totalInterest = 0;
+            let paidPrincipal = 0;
+            let firstMonthInterest = 0;
+            let firstMonthTotal = 0;
+
+            for (let period = 1; period <= term; period += 1) {
+                const principal = period === term ? opening : basePrincipal;
+                const interest = isFlat
+                    ? Math.round(loan * monthlyRate)
+                    : Math.round(opening * monthlyRate);
+                const total = principal + interest;
+
+                if (period === 1) {
+                    firstMonthInterest = interest;
+                    firstMonthTotal = total;
+                }
+                if (period <= paid) {
+                    paidPrincipal += principal;
+                }
+                totalInterest += interest;
+                opening = Math.max(0, opening - principal);
+            }
+
+            const avgMonthlyInterest = Math.round(totalInterest / term);
+            const totalPayable = loan + totalInterest;
+            const remainingPrincipal = Math.max(0, loan - paidPrincipal);
+
+            return {
+                monthlyPrincipal: basePrincipal,
+                firstMonthInterest,
+                firstMonthTotal,
+                avgMonthlyInterest,
+                totalInterest,
+                totalPayable,
+                remainingPrincipal,
+                remainingMonths: Math.max(0, term - paid),
+            };
+        },
+    };
+};
 
 Livewire.start();

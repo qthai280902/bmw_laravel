@@ -228,7 +228,15 @@
                                 @if($booking->customer_internal_code)
                                     <p class="mt-0.5 text-[10px] font-medium tabular-nums text-zinc-400">{{ $booking->customer_internal_code }}</p>
                                 @endif
-                                <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $booking->appointment_date->format('d/m/Y · H:i') }}</p>
+                                @php
+                                    $prevServiceDate = is_string($rowMeta['previous_appointment_date'] ?? null) ? trim($rowMeta['previous_appointment_date']) : '';
+                                @endphp
+                                @if($hasPendingReschedule && $prevServiceDate !== '')
+                                    <p class="mt-1 text-[11px] font-medium tabular-nums text-zinc-400 opacity-50 line-through" title="Lịch cũ trước khi khách dời">{{ $prevServiceDate }}</p>
+                                    <p class="mt-0.5 text-xs font-bold tabular-nums text-amber-300" title="Lịch mới khách đề xuất">{{ $booking->appointment_date->format('d/m/Y · H:i') }}</p>
+                                @else
+                                    <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $booking->appointment_date->format('d/m/Y · H:i') }}</p>
+                                @endif
                             </td>
 
                             <td class="px-5 py-4">
@@ -271,6 +279,16 @@
                                     <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $booking->status->color() }}">
                                         {{ $booking->status->label() }}
                                     </span>
+                                    @if($serviceOutcomeLabel = $booking->completionOutcomeLabel())
+                                        <span class="inline-flex max-w-full items-center rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                                            {{ $serviceOutcomeLabel }}
+                                        </span>
+                                    @endif
+                                    @if($serviceCompletedBy = $booking->completedAttributionLabel())
+                                        <p class="max-w-full break-words text-[10px] font-medium leading-snug text-emerald-300/90" title="{{ $serviceCompletedBy }}">
+                                            {{ $serviceCompletedBy }}
+                                        </p>
+                                    @endif
                                     @if($cancelAttribution)
                                         <p class="max-w-full break-words text-[10px] font-medium leading-snug text-rose-300" title="{{ $cancelAttribution }}">
                                             {{ $cancelAttribution }}
@@ -286,14 +304,15 @@
                                             {{ $booking->status === \App\Enums\AppointmentStatus::Completed ? 'Đã đóng · Hoàn tất' : 'Đã đóng · Đã hủy' }}
                                         </span>
                                     @else
-                                        <div class="w-32">
+                                        <div class="w-32 {{ $hasPendingReschedule ? 'opacity-50' : '' }}" title="{{ $hasPendingReschedule ? 'Mở hồ sơ để xác nhận lịch mới trước khi đổi trạng thái' : '' }}">
                                             <x-ui.custom-select
                                                 compact
                                                 aria-label="Cập nhật trạng thái lịch chăm sóc xe #{{ $booking->id }}"
                                                 :value="$booking->status->value"
                                                 :options="$booking->allowedStatusOptions()"
-                                                wire-action="updateStatus"
+                                                wire-action="handleInlineStatusChange"
                                                 :wire-record-id="$booking->id"
+                                                :disabled="$hasPendingReschedule"
                                             />
                                         </div>
                                     @endif
@@ -399,8 +418,19 @@
                                 <h3 class="mt-2.5 truncate text-lg font-bold text-white">
                                     {{ $booking->user?->name ?? $booking->guest_name ?? 'Khách vãng lai' }}
                                 </h3>
+                                @php
+                                    $bookingHasPendingReschedule = $booking->hasPendingRescheduleReview();
+                                    $bookingPrevDate = is_string($bookingMeta['previous_appointment_date'] ?? null) ? trim($bookingMeta['previous_appointment_date']) : '';
+                                @endphp
                                 <p class="mt-0.5 text-xs text-zinc-400">
-                                    {{ $bookingCar }} · {{ $booking->type->label() }} · {{ $booking->appointment_date?->format('H:i — d/m/Y') }}
+                                    {{ $bookingCar }} · {{ $booking->type->label() }} ·
+                                    @if($bookingHasPendingReschedule && $bookingPrevDate !== '')
+                                        <span class="opacity-50 line-through text-zinc-400 tabular-nums">{{ $bookingPrevDate }}</span>
+                                        <span class="mx-1 text-amber-300">→</span>
+                                        <strong class="text-amber-300 tabular-nums">{{ $booking->appointment_date?->format('H:i — d/m/Y') }}</strong>
+                                    @else
+                                        {{ $booking->appointment_date?->format('H:i — d/m/Y') }}
+                                    @endif
                                 </p>
                             </div>
 
@@ -520,12 +550,28 @@
                                 confirm-label="Duyệt & Xác nhận"
                                 confirm-hint="Xác nhận khoang xưởng & gửi thư"
                                 complete-label="Hoàn tất"
-                                complete-hint="Đã chăm sóc & bàn giao xe"
+                                complete-hint="Ghi nhận biên bản dịch vụ & bàn giao xe"
+                                :complete-action="'openCompletionModal(' . $booking->id . ')'"
                                 cancel-label="Hủy hồ sơ"
-                                completed-message="Lịch bảo dưỡng / chăm sóc xe đã hoàn tất bàn giao và khóa chuyển trạng thái."
+                                :completed-message="($booking->completedAttributionLabel() ? $booking->completedAttributionLabel() . ' — ' : '') . 'Lịch bảo dưỡng / chăm sóc xe đã hoàn tất bàn giao và khóa chuyển trạng thái.'"
                                 cancelled-message="Lịch dịch vụ đã bị hủy — Không thể khôi phục hoặc duyệt lại."
+                                :reschedule-locked="$bookingHasPendingReschedule"
                                 :error-message="$errorMessage"
-                            />
+                            >
+                                <x-slot name="extraLinks">
+                                    @if($booking->status === \App\Enums\AppointmentStatus::Confirmed && ! $bookingHasPendingReschedule && filled($bookingEmail))
+                                        <button
+                                            type="button"
+                                            wire:click="resendConfirmationEmail({{ $booking->id }})"
+                                            wire:loading.attr="disabled"
+                                            data-testid="resend-confirmation-service-booking-{{ $booking->id }}"
+                                            class="flex h-9 w-full items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/20 cursor-pointer disabled:opacity-50"
+                                        >
+                                            Gửi lại thư xác nhận dịch vụ (Khóa chống lặp 30s)
+                                        </button>
+                                    @endif
+                                </x-slot>
+                            </x-admin.crm-action-hub>
 
                             <x-admin.crm-drawer-archive-panel :record="$booking" />
 
@@ -569,6 +615,178 @@
                                 Đóng
                             </button>
                         </footer>
+                    </div>
+                </div>
+            </template>
+        </div>
+    @endif
+
+    {{-- Dedicated Service Completion Modal (Teleported to body, Z-120) --}}
+    @if($completionTargetId !== null)
+        @php
+            $hasValidServiceOutcome = in_array(
+                $completionOutcome,
+                [\App\Models\Appointment::OUTCOME_SERVICE_DELIVERED, \App\Models\Appointment::OUTCOME_SERVICE_INSPECTED_ADVISED],
+                true
+            );
+        @endphp
+        <div
+            wire:key="service-completion-modal-wrap-{{ $completionTargetId }}"
+            x-data
+            @keydown.escape.window="$wire.closeCompletionModal()"
+        >
+            <template x-teleport="body">
+                <div
+                    data-service-completion-modal="{{ $completionTargetId }}"
+                    class="fixed inset-0 z-[120] flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="service-completion-modal-title"
+                >
+                    <div
+                        wire:click="closeCompletionModal"
+                        class="absolute inset-0 z-0 bg-black/80 backdrop-blur-sm transition-opacity"
+                    ></div>
+
+                    <div class="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/15 bg-[#0B0F17] p-6 text-white shadow-2xl">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">
+                            Hoàn tất Lịch Dịch vụ BMW · {{ $completionTargetReference }}
+                        </p>
+                        <h3 id="service-completion-modal-title" class="mt-1.5 text-lg font-bold text-white">
+                            Biên bản hoàn tất Chăm sóc / Bảo dưỡng &amp; Bàn giao xe
+                        </h3>
+                        <p class="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                            Xác nhận tình trạng bàn giao thực tế và ghi chú kỹ thuật để hệ thống gửi <strong class="text-white">Thư cảm ơn Dịch vụ BMW</strong> (tuyệt đối không gửi nhầm kịch bản xe mới / voucher mua xe).
+                        </p>
+
+                        <div class="mt-5 space-y-3" role="radiogroup" aria-label="Kết quả bàn giao dịch vụ">
+                            <button
+                                type="button"
+                                wire:key="srv-option-delivered-{{ $completionTargetId }}"
+                                data-service-outcome-option="service_delivered"
+                                role="radio"
+                                aria-checked="{{ $completionOutcome === 'service_delivered' ? 'true' : 'false' }}"
+                                wire:click="selectCompletionOutcome('service_delivered')"
+                                class="flex w-full items-start gap-3.5 rounded-xl border p-4 text-left transition-all cursor-pointer {{ $completionOutcome === 'service_delivered' ? 'border-emerald-400 bg-emerald-500/15 ring-1 ring-emerald-400/50' : 'border-white/10 bg-[#0D121C] hover:border-white/25 hover:bg-[#111827]' }}"
+                            >
+                                <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ $completionOutcome === 'service_delivered' ? 'border-emerald-400 bg-emerald-500 text-slate-950' : 'border-zinc-500 bg-transparent' }}">
+                                    @if($completionOutcome === 'service_delivered')
+                                        <span class="h-2 w-2 rounded-full bg-slate-950"></span>
+                                    @endif
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="text-sm font-bold text-white">Đã hoàn tất dịch vụ &amp; bàn giao xe</p>
+                                        <span class="rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-200">
+                                            Biên bản nghiệm thu
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-xs leading-relaxed text-zinc-300">
+                                        Phương tiện đã hoàn thành đầy đủ hạng mục chăm sóc / bảo dưỡng và bàn giao trực tiếp cho khách hàng.
+                                    </p>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:key="srv-option-advised-{{ $completionTargetId }}"
+                                data-service-outcome-option="service_inspected_advised"
+                                role="radio"
+                                aria-checked="{{ $completionOutcome === 'service_inspected_advised' ? 'true' : 'false' }}"
+                                wire:click="selectCompletionOutcome('service_inspected_advised')"
+                                class="flex w-full items-start gap-3.5 rounded-xl border p-4 text-left transition-all cursor-pointer {{ $completionOutcome === 'service_inspected_advised' ? 'border-[#38BDF8] bg-[#1C69D4]/20 ring-1 ring-[#38BDF8]/50' : 'border-white/10 bg-[#0D121C] hover:border-white/25 hover:bg-[#111827]' }}"
+                            >
+                                <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ $completionOutcome === 'service_inspected_advised' ? 'border-[#70A7FF] bg-[#1C69D4] text-white' : 'border-zinc-500 bg-transparent' }}">
+                                    @if($completionOutcome === 'service_inspected_advised')
+                                        <span class="h-2 w-2 rounded-full bg-white"></span>
+                                    @endif
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="text-sm font-bold text-white">Đã kiểm tra &amp; tư vấn kỹ thuật thêm</p>
+                                        <span class="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                            Khuyến nghị kỹ thuật
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-xs leading-relaxed text-zinc-300">
+                                        Đã hoàn tất chẩn đoán tiêu chuẩn BMW ISTA và gửi khuyến nghị hạng mục cần bảo dưỡng ở kỳ tiếp theo.
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <div class="mt-4 space-y-3 rounded-xl border border-white/10 bg-[#0D121C]/80 p-4">
+                            <div>
+                                <label for="service-completion-note" class="block text-xs font-semibold text-zinc-300">Ghi chú hạng mục thực hiện (tùy chọn)</label>
+                                <textarea
+                                    id="service-completion-note"
+                                    data-service-completion-note
+                                    wire:model="serviceCompletionNote"
+                                    rows="2"
+                                    maxlength="1000"
+                                    placeholder="Ví dụ: Đã thay nhớt động cơ chính hãng, vệ sinh khoang máy & phủ bảo vệ sơn..."
+                                    class="mt-1.5 w-full rounded-xl border border-white/10 bg-[#070A10] px-3 py-2 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                                ></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="service-actual-cost" class="block text-xs font-semibold text-zinc-300">Chi phí thực tế (VNĐ, tùy chọn)</label>
+                                    <input
+                                        id="service-actual-cost"
+                                        data-service-actual-cost
+                                        type="text"
+                                        inputmode="numeric"
+                                        wire:model="serviceActualCostInput"
+                                        placeholder="Ví dụ: 3.800.000"
+                                        class="mt-1.5 h-9 w-full rounded-xl border border-white/10 bg-[#070A10] px-3 text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label for="service-reminder-months" class="block text-xs font-semibold text-zinc-300">Nhắc bảo dưỡng kỳ tới</label>
+                                    <select
+                                        id="service-reminder-months"
+                                        data-service-reminder-months
+                                        wire:model="serviceReminderMonths"
+                                        class="mt-1.5 h-9 w-full rounded-xl border border-white/10 bg-[#070A10] px-3 text-xs text-white focus:border-[#1C69D4] focus:outline-none"
+                                    >
+                                        <option value="0">Không đặt lịch nhắc</option>
+                                        <option value="3">Sau 3 tháng</option>
+                                        <option value="6">Sau 6 tháng</option>
+                                        <option value="12">Sau 12 tháng</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        @error('completionOutcome')
+                            <p class="mt-2 text-xs font-semibold text-rose-400">{{ $message }}</p>
+                        @enderror
+
+                        <div class="mt-5 flex items-center justify-end gap-2.5 border-t border-white/10 pt-4">
+                            <button
+                                type="button"
+                                data-service-modal-cancel
+                                wire:click="closeCompletionModal"
+                                wire:loading.attr="disabled"
+                                class="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-semibold text-zinc-300 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white cursor-pointer"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                type="button"
+                                data-service-modal-confirm
+                                wire:click="confirmCompletion"
+                                wire:loading.attr="disabled"
+                                wire:target="confirmCompletion"
+                                @disabled(! $hasValidServiceOutcome)
+                                class="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-xs font-bold text-white transition-colors {{ $hasValidServiceOutcome ? 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer' : 'bg-zinc-700/70 text-zinc-400 opacity-60 cursor-not-allowed' }}"
+                            >
+                                <span wire:loading.remove wire:target="confirmCompletion">Hoàn tất dịch vụ &amp; gửi thư</span>
+                                <span wire:loading wire:target="confirmCompletion">Đang xử lý...</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </template>

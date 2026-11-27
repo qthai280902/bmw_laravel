@@ -48,6 +48,14 @@ class Appointment extends Model implements Attachable
 
     public const OUTCOME_VISITED_NO_PURCHASE = 'visited_no_purchase';
 
+    public const OUTCOME_SERVICE_DELIVERED = 'service_delivered';
+
+    public const OUTCOME_SERVICE_INSPECTED_ADVISED = 'service_inspected_advised';
+
+    public const OUTCOME_TRADE_IN_CLOSED = 'trade_in_closed';
+
+    public const OUTCOME_TRADE_IN_APPRAISED_ONLY = 'trade_in_appraised_only';
+
     /**
      * Sensitive internal attributes hidden from JSON/array serialization.
      *
@@ -391,12 +399,54 @@ class Appointment extends Model implements Attachable
         return (bool) ($meta['reschedule_pending_review'] ?? false);
     }
 
+    /**
+     * Valid completion outcomes for this appointment's category.
+     *
+     * @return list<string>
+     */
+    public function validCompletionOutcomes(): array
+    {
+        if ($this->isServiceBooking()) {
+            return [
+                self::OUTCOME_SERVICE_DELIVERED,
+                self::OUTCOME_SERVICE_INSPECTED_ADVISED,
+            ];
+        }
+
+        if ($this->type === AppointmentType::TradeIn) {
+            return [
+                self::OUTCOME_TRADE_IN_CLOSED,
+                self::OUTCOME_TRADE_IN_APPRAISED_ONLY,
+            ];
+        }
+
+        return [
+            self::OUTCOME_PURCHASED,
+            self::OUTCOME_VISITED_NO_PURCHASE,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function allCompletionOutcomes(): array
+    {
+        return [
+            self::OUTCOME_PURCHASED,
+            self::OUTCOME_VISITED_NO_PURCHASE,
+            self::OUTCOME_SERVICE_DELIVERED,
+            self::OUTCOME_SERVICE_INSPECTED_ADVISED,
+            self::OUTCOME_TRADE_IN_CLOSED,
+            self::OUTCOME_TRADE_IN_APPRAISED_ONLY,
+        ];
+    }
+
     public function completionOutcome(): ?string
     {
         $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
         $outcome = $meta['completion_outcome'] ?? null;
 
-        return in_array($outcome, [self::OUTCOME_PURCHASED, self::OUTCOME_VISITED_NO_PURCHASE], true)
+        return is_string($outcome) && in_array($outcome, self::allCompletionOutcomes(), true)
             ? $outcome
             : null;
     }
@@ -406,8 +456,29 @@ class Appointment extends Model implements Attachable
         return match ($this->completionOutcome()) {
             self::OUTCOME_PURCHASED => 'Đã mua xe',
             self::OUTCOME_VISITED_NO_PURCHASE => 'Chưa mua xe',
+            self::OUTCOME_SERVICE_DELIVERED => 'Đã hoàn tất & bàn giao xe',
+            self::OUTCOME_SERVICE_INSPECTED_ADVISED => 'Đã kiểm tra & tư vấn kỹ thuật',
+            self::OUTCOME_TRADE_IN_CLOSED => 'Đã thẩm định & chốt thu mua',
+            self::OUTCOME_TRADE_IN_APPRAISED_ONLY => 'Đã thẩm định — Khách cân nhắc',
             default => null,
         };
+    }
+
+    public function completedAttributionLabel(): ?string
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $byName = trim((string) ($meta['completed_by_name'] ?? ''));
+        if ($byName === '') {
+            return null;
+        }
+
+        $byRole = trim((string) ($meta['completed_by_role'] ?? ''));
+        $atLabel = trim((string) ($meta['completed_at_formatted'] ?? ''));
+        $who = ($byRole !== '' && mb_stripos($byName, $byRole, 0, 'UTF-8') === false)
+            ? "{$byName} ({$byRole})"
+            : $byName;
+
+        return $atLabel !== '' ? "Hoàn tất bởi {$who} · {$atLabel}" : "Hoàn tất bởi {$who}";
     }
 
     public function careVoucherCode(): ?string
@@ -579,9 +650,9 @@ class Appointment extends Model implements Attachable
         }
     }
 
-    public function sendOfficialConfirmationEmail(?User $actor = null): bool
+    public function sendOfficialConfirmationEmail(?User $actor = null, bool $isManualResend = false): bool
     {
-        if ($this->isTerminalStatus()) {
+        if ($this->isTerminalStatus() || $this->hasPendingRescheduleReview()) {
             return false;
         }
 
@@ -594,6 +665,78 @@ class Appointment extends Model implements Attachable
         }
 
         $advisor = AppointmentConfirmationMail::resolveAdvisorDisplay($this, $actor?->name, $actor?->roleLabel());
+        $nowIso = now()->toIso8601String();
+
+        $canDispatch = DB::transaction(function () use ($actor, $isManualResend, $recipientEmail, $nowIso): bool {
+            /** @var self $locked */
+            $locked = static::query()
+                ->whereKey($this->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->isTerminalStatus() || $locked->hasPendingRescheduleReview()) {
+                return false;
+            }
+
+            if ($isManualResend && $locked->status !== AppointmentStatus::Confirmed && $locked->confirmation_email_sent_at !== null) {
+                return false;
+            }
+
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
+            $currentVersion = $locked->currentManageVersion();
+            $alreadySentVersion = (int) ($meta['official_confirmation_sent_version'] ?? 0);
+
+            if (! $isManualResend && $alreadySentVersion === $currentVersion && ! empty($meta['official_confirmation_sent_at'])) {
+                return false;
+            }
+
+            if ($isManualResend && ! empty($meta['official_confirmation_last_manual_at'])) {
+                try {
+                    $lastManual = Carbon::parse((string) $meta['official_confirmation_last_manual_at']);
+                    if ($lastManual->diffInSeconds(now()) < 30) {
+                        return false;
+                    }
+                } catch (Throwable) {
+                    // Ignore malformed timestamp
+                }
+            }
+
+            $meta['official_confirmation_sent_at'] = $nowIso;
+            $meta['official_confirmation_sent_version'] = $currentVersion;
+            if ($isManualResend) {
+                $meta['official_confirmation_last_manual_at'] = $nowIso;
+            }
+            if ($actor) {
+                $meta['confirmed_by_name'] = $actor->name;
+                $meta['confirmed_by_role'] = $actor->roleLabel();
+            }
+
+            $title = $isManualResend
+                ? 'Gửi lại Thư Xác Nhận Chính Thức (Thủ công)'
+                : ($locked->isServiceBooking() ? 'Gửi Thư Xác Nhận Lịch Dịch Vụ Chính Thức' : 'Gửi Thư Xác Nhận Chính Thức (Thẻ VIP Pass)');
+
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
+                actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
+                title: $title,
+                detail: "Đã gửi email xác nhận chính thức tới {$recipientEmail} (Phiên bản link v={$currentVersion}).",
+                channel: 'Email',
+            );
+
+            $locked->forceFill([
+                'meta_data' => $meta,
+            ])->saveQuietly();
+
+            $this->setRawAttributes($locked->getAttributes(), true);
+            $this->meta_data = $locked->meta_data;
+
+            return true;
+        });
+
+        if (! $canDispatch) {
+            return false;
+        }
 
         try {
             Mail::to($recipientEmail)->send(new AppointmentConfirmationMail(
@@ -602,23 +745,6 @@ class Appointment extends Model implements Attachable
                 confirmedByName: $advisor['name'],
                 confirmedByRole: $advisor['role'],
             ));
-
-            $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
-            $meta['official_confirmation_sent_at'] = now()->toIso8601String();
-            if ($actor) {
-                $meta['confirmed_by_name'] = $actor->name;
-            }
-            $meta = InteractionTimelineRecorder::appendToMeta(
-                meta: $meta,
-                actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
-                actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
-                title: 'Gửi Thư Xác Nhận Chính Thức (Thẻ VIP Pass)',
-                detail: "Đã phát hành Thẻ đón tiếp VIP và gửi email xác nhận chính thức tới {$recipientEmail} (Phiên bản link v={$this->currentManageVersion()}).",
-                channel: 'Email',
-            );
-            $this->forceFill([
-                'meta_data' => $meta,
-            ])->saveQuietly();
 
             return true;
         } catch (Throwable $exception) {
@@ -648,6 +774,62 @@ class Appointment extends Model implements Attachable
             return false;
         }
 
+        $claimed = DB::transaction(function () use ($outcome, $voucherCode, $voucherExpiresLabel, $recipientEmail): bool {
+            /** @var self $locked */
+            $locked = static::query()
+                ->whereKey($this->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
+            if (! empty($meta['completed_thank_you_sent_at'])) {
+                return false;
+            }
+
+            $meta['completed_thank_you_sent_at'] = now()->toIso8601String();
+            [$title, $detail] = match ($outcome) {
+                self::OUTCOME_PURCHASED => [
+                    'Gửi thư chúc mừng sở hữu xe & Voucher BMW Care 1 tháng',
+                    "Đã gửi email chúc mừng tới {$recipientEmail} kèm mã đặc quyền {$voucherCode} (hiệu lực đến {$voucherExpiresLabel}).",
+                ],
+                self::OUTCOME_SERVICE_DELIVERED, self::OUTCOME_SERVICE_INSPECTED_ADVISED => [
+                    'Gửi thư cảm ơn & biên bản bàn giao Dịch vụ BMW',
+                    "Đã gửi email xác nhận hoàn tất chăm sóc/bảo dưỡng xe từ Xưởng dịch vụ BMW tới {$recipientEmail}.",
+                ],
+                self::OUTCOME_TRADE_IN_CLOSED, self::OUTCOME_TRADE_IN_APPRAISED_ONLY => [
+                    'Gửi thư cảm ơn thẩm định BMW Certified Trade-In',
+                    "Đã gửi email tổng kết buổi thẩm định thu cũ đổi mới tới {$recipientEmail}.",
+                ],
+                default => [
+                    'Gửi thư cảm ơn khách hàng đã tham quan & trải nghiệm',
+                    "Đã gửi email tri ân khách hàng đã ghé Showroom trải nghiệm tới {$recipientEmail} (không kèm voucher khuyến mãi).",
+                ],
+            };
+
+            $meta = InteractionTimelineRecorder::appendToMeta(
+                meta: $meta,
+                actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                actorLabel: 'Hệ thống tự động',
+                title: $title,
+                detail: $detail,
+                channel: 'Email',
+            );
+
+            $locked->forceFill([
+                'followup_email_sent_at' => now(),
+                'meta_data' => $meta,
+            ])->saveQuietly();
+
+            $this->setRawAttributes($locked->getAttributes(), true);
+            $this->meta_data = $locked->meta_data;
+
+            return true;
+        });
+
+        if (! $claimed) {
+            return false;
+        }
+
         try {
             $quotaGuard = app(GmailQuotaGuard::class);
             if (! $quotaGuard->canSendMarketingEmail()) {
@@ -666,29 +848,6 @@ class Appointment extends Model implements Attachable
                 voucherExpiresLabel: $voucherExpiresLabel,
             ));
 
-            $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
-            $meta['completed_thank_you_sent_at'] = now()->toIso8601String();
-            $title = $outcome === self::OUTCOME_PURCHASED
-                ? 'Gửi thư chúc mừng sở hữu xe & Voucher BMW Care 1 tháng'
-                : 'Gửi thư cảm ơn khách hàng đã tham quan & trải nghiệm';
-            $detail = $outcome === self::OUTCOME_PURCHASED
-                ? "Đã gửi email chúc mừng tới {$recipientEmail} kèm mã đặc quyền {$voucherCode} (hiệu lực đến {$voucherExpiresLabel})."
-                : "Đã gửi email tri ân khách hàng đã ghé Showroom trải nghiệm tới {$recipientEmail} (không kèm voucher khuyến mãi).";
-
-            $meta = InteractionTimelineRecorder::appendToMeta(
-                meta: $meta,
-                actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
-                actorLabel: 'Hệ thống tự động',
-                title: $title,
-                detail: $detail,
-                channel: 'Email',
-            );
-
-            $this->forceFill([
-                'followup_email_sent_at' => now(),
-                'meta_data' => $meta,
-            ])->saveQuietly();
-
             return true;
         } catch (Throwable $exception) {
             Log::error('Failed sending post-visit completed thank-you email.', [
@@ -705,16 +864,16 @@ class Appointment extends Model implements Attachable
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $completionPayload
+     */
     public function transitionStatusWithAutomation(
         AppointmentStatus $newStatus,
         ?User $actor = null,
         ?string $completionOutcome = null,
+        array $completionPayload = [],
     ): bool {
-        $normalizedOutcome = in_array($completionOutcome, [self::OUTCOME_PURCHASED, self::OUTCOME_VISITED_NO_PURCHASE], true)
-            ? $completionOutcome
-            : null;
-
-        $transitionResult = DB::transaction(function () use ($newStatus, $actor, $normalizedOutcome): ?array {
+        $transitionResult = DB::transaction(function () use ($newStatus, $actor, $completionOutcome, $completionPayload): ?array {
             /** @var self $locked */
             $locked = static::query()
                 ->whereKey($this->id)
@@ -746,49 +905,129 @@ class Appointment extends Model implements Attachable
                 );
             }
 
+            if ($locked->hasPendingRescheduleReview() && $newStatus !== AppointmentStatus::Cancelled) {
+                throw InvalidStatusTransitionException::forTransition(
+                    $oldLabel,
+                    $newStatus->label(),
+                    'Khách hàng vừa yêu cầu đổi lịch. Vui lòng bấm "Xác nhận đã tiếp nhận lịch mới" trước khi chuyển trạng thái.'
+                );
+            }
+
+            $allowedOutcomes = $locked->validCompletionOutcomes();
+            $normalizedOutcome = is_string($completionOutcome) && in_array($completionOutcome, $allowedOutcomes, true)
+                ? $completionOutcome
+                : null;
+
+            if ($newStatus === AppointmentStatus::Completed && $normalizedOutcome === null) {
+                throw InvalidStatusTransitionException::forTransition(
+                    $oldLabel,
+                    $newStatus->label(),
+                    'Vui lòng xác nhận kết quả thực tế trong hộp thoại Hoàn tất trước khi đóng hồ sơ.'
+                );
+            }
+
             $meta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
             $voucherCode = null;
             $voucherExpiresLabel = null;
+            $actorAttribution = InteractionTimelineRecorder::staffFullAttribution($actor);
+            $timestampVn = now('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
 
             if ($newStatus === AppointmentStatus::Cancelled) {
                 $meta['reschedule_pending_review'] = false;
                 $meta = InteractionTimelineRecorder::withCancellationFromActor($meta, $actor);
             }
 
-            if ($newStatus === AppointmentStatus::Completed) {
+            if ($newStatus === AppointmentStatus::Confirmed) {
+                $meta['confirmed_by_id'] = $actor?->id;
+                $meta['confirmed_by_name'] = $actor?->name ?? 'Showroom BMW';
+                $meta['confirmed_by_role'] = $actor?->roleLabel() ?? 'CRM';
+                $meta['confirmed_at_formatted'] = $timestampVn;
+            }
+
+            if ($newStatus === AppointmentStatus::Completed && $normalizedOutcome !== null) {
                 $meta['reschedule_pending_review'] = false;
+                $meta['completion_outcome'] = $normalizedOutcome;
+                $meta['completed_by_id'] = $actor?->id;
+                $meta['completed_by_name'] = $actor?->name ?? 'Showroom BMW';
+                $meta['completed_by_role'] = $actor?->roleLabel() ?? 'CRM';
+                $meta['completed_at_formatted'] = $timestampVn;
 
-                if ($normalizedOutcome !== null && ! $locked->isServiceBooking()) {
-                    $meta['completion_outcome'] = $normalizedOutcome;
+                if ($locked->isServiceBooking()) {
+                    $serviceNote = isset($completionPayload['service_completion_note'])
+                        ? trim((string) $completionPayload['service_completion_note'])
+                        : '';
+                    $actualCost = isset($completionPayload['service_actual_cost']) && $completionPayload['service_actual_cost'] !== null && $completionPayload['service_actual_cost'] !== ''
+                        ? max(0, (int) $completionPayload['service_actual_cost'])
+                        : null;
+                    $reminderMonths = isset($completionPayload['service_next_reminder_months'])
+                        ? max(0, (int) $completionPayload['service_next_reminder_months'])
+                        : 0;
 
-                    if ($normalizedOutcome === self::OUTCOME_PURCHASED) {
-                        $voucherCode = 'BMW-CARE-'.strtoupper(Str::random(6));
-                        $expiresAt = now('Asia/Ho_Chi_Minh')->addMonth();
-                        $voucherExpiresLabel = $expiresAt->format('d/m/Y');
+                    $meta['service_completion_note'] = $serviceNote !== '' ? $serviceNote : null;
+                    $meta['service_actual_cost'] = $actualCost;
+                    $meta['service_next_reminder_months'] = in_array($reminderMonths, [3, 6, 12], true) ? $reminderMonths : 0;
+                    $meta['service_next_reminder_label'] = in_array($reminderMonths, [3, 6, 12], true)
+                        ? 'Sau '.$reminderMonths.' tháng (dự kiến tháng '.now('Asia/Ho_Chi_Minh')->addMonthsNoOverflow($reminderMonths)->format('m/Y').')'
+                        : null;
+                } elseif ($locked->type === AppointmentType::TradeIn) {
+                    $tradeInNote = isset($completionPayload['trade_in_note'])
+                        ? trim((string) $completionPayload['trade_in_note'])
+                        : '';
+                    $meta['trade_in_note'] = $tradeInNote !== '' ? $tradeInNote : null;
+                } elseif ($normalizedOutcome === self::OUTCOME_PURCHASED) {
+                    $voucherCode = 'BMW-CARE-'.strtoupper(Str::random(6));
+                    $expiresAt = now('Asia/Ho_Chi_Minh')->addMonth();
+                    $voucherExpiresLabel = $expiresAt->format('d/m/Y');
 
-                        $meta['purchased_at'] = now()->toIso8601String();
-                        $meta['care_voucher_code'] = $voucherCode;
-                        $meta['care_voucher_expires_at'] = $expiresAt->toIso8601String();
-                    } else {
-                        $meta['visited_at'] = now()->toIso8601String();
-                        $meta['care_voucher_code'] = null;
-                        $meta['care_voucher_expires_at'] = null;
-                    }
+                    $meta['purchased_at'] = now()->toIso8601String();
+                    $meta['care_voucher_code'] = $voucherCode;
+                    $meta['care_voucher_expires_at'] = $expiresAt->toIso8601String();
+                } else {
+                    $meta['visited_at'] = now()->toIso8601String();
+                    $meta['care_voucher_code'] = null;
+                    $meta['care_voucher_expires_at'] = null;
                 }
             }
 
-            $timelineDetail = match (true) {
-                $newStatus === AppointmentStatus::Confirmed => 'Chuyên viên Showroom đã duyệt lịch hẹn và kích hoạt quy trình gửi Thẻ đón tiếp VIP.',
-                $newStatus === AppointmentStatus::Completed && $normalizedOutcome === self::OUTCOME_PURCHASED => "Khách hàng đã ký hợp đồng mua xe tại Showroom. Cấp đặc quyền BMW Care 1 tháng ({$voucherCode}, hạn {$voucherExpiresLabel}).",
-                $newStatus === AppointmentStatus::Completed && $normalizedOutcome === self::OUTCOME_VISITED_NO_PURCHASE => 'Khách hàng đã hoàn tất buổi tham quan / lái thử tại Showroom (chưa phát sinh giao dịch mua xe).',
-                default => "Cập nhật trạng thái xử lý trên bảng điều phối CRM sang {$newStatus->label()}.",
+            [$timelineTitle, $timelineDetail] = match (true) {
+                $newStatus === AppointmentStatus::Confirmed => [
+                    "Nhân sự {$actorAttribution} đã xác nhận tiếp nhận lịch hẹn",
+                    "Nhân sự {$actorAttribution} đã duyệt tiếp nhận lịch hẹn lúc {$timestampVn} và kích hoạt gửi thư xác nhận chính thức.",
+                ],
+                $newStatus === AppointmentStatus::Completed && $normalizedOutcome === self::OUTCOME_PURCHASED => [
+                    "Hoàn tất hồ sơ bởi {$actorAttribution}",
+                    "Nhân sự {$actorAttribution} đã xác nhận HOÀN TẤT lúc {$timestampVn} — Kết quả: Khách đã mua xe. Cấp đặc quyền BMW Care 1 tháng ({$voucherCode}, hạn {$voucherExpiresLabel}).",
+                ],
+                $newStatus === AppointmentStatus::Completed && $normalizedOutcome === self::OUTCOME_VISITED_NO_PURCHASE => [
+                    "Hoàn tất hồ sơ bởi {$actorAttribution}",
+                    "Nhân sự {$actorAttribution} đã xác nhận HOÀN TẤT lúc {$timestampVn} — Kết quả: Khách đã tham quan / lái thử (chưa mua xe).",
+                ],
+                $newStatus === AppointmentStatus::Completed && in_array($normalizedOutcome, [self::OUTCOME_SERVICE_DELIVERED, self::OUTCOME_SERVICE_INSPECTED_ADVISED], true) => [
+                    "Hoàn tất dịch vụ bởi {$actorAttribution}",
+                    "Nhân sự {$actorAttribution} đã xác nhận HOÀN TẤT lịch dịch vụ lúc {$timestampVn} — Kết quả: "
+                        .($normalizedOutcome === self::OUTCOME_SERVICE_DELIVERED ? 'Đã hoàn tất dịch vụ & bàn giao xe.' : 'Đã kiểm tra & tư vấn kỹ thuật thêm.')
+                        .(! empty($meta['service_actual_cost']) ? ' Chi phí thực tế: '.number_format((int) $meta['service_actual_cost'], 0, ',', '.').' VNĐ.' : ''),
+                ],
+                $newStatus === AppointmentStatus::Completed && in_array($normalizedOutcome, [self::OUTCOME_TRADE_IN_CLOSED, self::OUTCOME_TRADE_IN_APPRAISED_ONLY], true) => [
+                    "Hoàn tất thẩm định bởi {$actorAttribution}",
+                    "Nhân sự {$actorAttribution} đã xác nhận HOÀN TẤT lịch thu cũ đổi mới lúc {$timestampVn} — Kết quả: "
+                        .($normalizedOutcome === self::OUTCOME_TRADE_IN_CLOSED ? 'Đã thẩm định & chốt phương án thu mua.' : 'Đã thẩm định giá — Khách cân nhắc thêm.'),
+                ],
+                $newStatus === AppointmentStatus::Cancelled => [
+                    "Hủy hồ sơ bởi {$actorAttribution}",
+                    "Nhân sự {$actorAttribution} đã đóng hủy hồ sơ lúc {$timestampVn}.",
+                ],
+                default => [
+                    "Chuyển trạng thái: {$oldLabel} → {$newStatus->label()}",
+                    "Nhân sự {$actorAttribution} cập nhật trạng thái xử lý lúc {$timestampVn}.",
+                ],
             };
 
             $meta = InteractionTimelineRecorder::appendToMeta(
                 meta: $meta,
                 actorType: InteractionTimelineRecorder::ACTOR_ADMIN,
                 actorLabel: InteractionTimelineRecorder::adminActorLabel($actor),
-                title: "Chuyển trạng thái: {$oldLabel} → {$newStatus->label()}",
+                title: $timelineTitle,
                 detail: $timelineDetail,
                 channel: 'CRM',
             );
@@ -806,7 +1045,7 @@ class Appointment extends Model implements Attachable
                 'fresh' => $locked->fresh(['product', 'user', 'assignedSales']) ?? $locked,
                 'voucherCode' => $voucherCode,
                 'voucherExpiresLabel' => $voucherExpiresLabel,
-                'isService' => $locked->isServiceBooking(),
+                'normalizedOutcome' => $normalizedOutcome,
             ];
         });
 
@@ -826,19 +1065,15 @@ class Appointment extends Model implements Attachable
         ));
 
         if ($newStatus === AppointmentStatus::Confirmed && $transitionResult['oldStatus'] !== AppointmentStatus::Confirmed->value && $actor !== null) {
-            $this->sendOfficialConfirmationEmail($actor);
+            $this->sendOfficialConfirmationEmail($actor, false);
         }
 
-        if ($newStatus === AppointmentStatus::Completed) {
-            if ($normalizedOutcome !== null && ! $transitionResult['isService']) {
-                $this->sendCompletedThankYouEmail(
-                    outcome: $normalizedOutcome,
-                    voucherCode: $transitionResult['voucherCode'],
-                    voucherExpiresLabel: $transitionResult['voucherExpiresLabel'],
-                );
-            } else {
-                $this->schedulePostTestDriveFollowup();
-            }
+        if ($newStatus === AppointmentStatus::Completed && $transitionResult['normalizedOutcome'] !== null) {
+            $this->sendCompletedThankYouEmail(
+                outcome: $transitionResult['normalizedOutcome'],
+                voucherCode: $transitionResult['voucherCode'],
+                voucherExpiresLabel: $transitionResult['voucherExpiresLabel'],
+            );
         }
 
         return true;

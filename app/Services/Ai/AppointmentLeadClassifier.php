@@ -58,13 +58,15 @@ class AppointmentLeadClassifier
                 }
 
                 $run = $this->runner->run(
-                    fn (string $provider, ?string $model): mixed => AppointmentLeadClassifierAgent::make()->prompt(
+                    callback: fn (string $provider, ?string $model): mixed => AppointmentLeadClassifierAgent::make()->prompt(
                         prompt: $prompt,
                         provider: $provider,
                         model: $model,
-                        timeout: max(6, (int) config('showroom_ai.timeout_seconds', 20)),
+                        timeout: min(5, max(3, (int) config('showroom_ai.lead_classification_timeout_seconds', 5))),
                     ),
                     operation: 'appointment_lead_classification',
+                    maxCandidates: 1,
+                    allowFallbackModel: false,
                 );
 
                 if (($run['ok'] ?? false) === true && ($run['result'] ?? null) instanceof StructuredAgentResponse) {

@@ -9,6 +9,7 @@ use App\Mail\Customer\GuestAppointmentChangeMail;
 use App\Models\Appointment;
 use App\Services\Admin\AdminNotificationDispatcher;
 use App\Services\Crm\InteractionTimelineRecorder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -25,18 +26,30 @@ class GuestAppointmentManageController extends Controller
     public function show(Request $request, Appointment $appointment): View
     {
         $appointment->loadMissing(['product.category', 'user', 'assignedSales']);
+        $isOutdated = $this->isLinkOutdated($request, $appointment);
 
         return view('appointments.guest-manage', [
             'appointment' => $appointment,
-            'updateUrl' => $appointment->temporaryManageUpdateUrl(),
-            'isOutdatedLink' => $this->isLinkOutdated($request, $appointment),
+            'updateUrl' => $isOutdated ? '#' : $appointment->temporaryManageUpdateUrl(),
+            'isOutdatedLink' => $isOutdated,
         ]);
     }
 
-    public function update(Request $request, Appointment $appointment): RedirectResponse
+    public function update(Request $request, Appointment $appointment): RedirectResponse|JsonResponse
     {
         if ($this->isLinkOutdated($request, $appointment)) {
-            return back()->with('error', 'Liên kết quản lý lịch hẹn này là phiên bản cũ đã hết hiệu lực. Quý khách vui lòng mở email xác nhận mới nhất từ BMW Showroom.');
+            $outdatedMessage = 'Liên kết quản lý lịch hẹn phiên bản cũ đã hết hiệu lực và bị khóa thao tác. Quý khách vui lòng mở email xác nhận mới nhất từ BMW Showroom để tiếp tục.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $outdatedMessage,
+                    'errors' => [
+                        'link' => [$outdatedMessage],
+                    ],
+                ], 422);
+            }
+
+            abort(403, $outdatedMessage);
         }
 
         $validated = $request->validate([
@@ -78,8 +91,8 @@ class GuestAppointmentManageController extends Controller
                     meta: $meta,
                     actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
                     actorLabel: 'Khách hàng · '.$appointment->customer_name,
-                    title: 'Khách tự xác nhận tham dự lịch hẹn',
-                    detail: 'Khách hàng đã bấm nút xác nhận tham dự trực tiếp qua đường dẫn Signed URL.',
+                    title: 'Khách hàng đã xác nhận sẽ đến lịch hẹn',
+                    detail: "Khách hàng ({$appointment->customer_name}) đã chủ động bấm xác nhận sẽ đến lịch hẹn ({$previousDateLabel}) qua liên kết cá nhân.",
                     channel: 'Signed Link',
                 );
 

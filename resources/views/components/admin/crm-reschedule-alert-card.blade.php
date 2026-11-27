@@ -34,7 +34,7 @@
             <p class="text-zinc-300">
                 <span class="font-semibold text-zinc-400">Thời gian:</span>
                 @if($previousDateLabel !== '')
-                    <span class="line-through text-zinc-400 tabular-nums">{{ $previousDateLabel }}</span>
+                    <span class="opacity-50 line-through text-zinc-400 tabular-nums">{{ $previousDateLabel }}</span>
                     <span class="mx-1.5 text-amber-300">→</span>
                 @endif
                 <strong class="text-amber-200 tabular-nums">{{ $newDateLabel }}</strong>

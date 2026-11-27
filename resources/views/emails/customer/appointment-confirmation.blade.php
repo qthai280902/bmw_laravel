@@ -24,13 +24,17 @@
     $resolvedInlinePath = $inlineImagePath ?? $car?->localImagePath();
     $resolvedFallbackPng = $fallbackBadgePng ?? \App\Mail\Customer\AppointmentConfirmationMail::fallbackBadgePngBytes();
     $inlineSrc = null;
+    $emblemDotSrc = null;
     if (isset($message) && method_exists($message, 'embed') && method_exists($message, 'embedData')) {
-        if (is_string($resolvedInlinePath) && $resolvedInlinePath !== '' && is_file($resolvedInlinePath)) {
+        if ($car && is_string($resolvedInlinePath) && $resolvedInlinePath !== '' && is_file($resolvedInlinePath)) {
             $inlineSrc = $message->embed($resolvedInlinePath);
         } else {
-            $inlineSrc = $message->embedData($resolvedFallbackPng, 'bmw-showroom-badge.png', 'image/png');
+            $emblemDotSrc = $message->embedData($resolvedFallbackPng, 'bmw-emblem-dot.png', 'image/png');
         }
     }
+    $isServiceAppointment = $appointment->isServiceBooking();
+    $servicePackageName = $appointment->servicePackageLabel();
+    $customerCarModel = $appointment->meta_data['customer_car_model'] ?? null;
     $customerOrderCode = $appointment->publicReferenceCode();
 @endphp
 
@@ -96,9 +100,63 @@
     @endif
 
     @if($inlineSrc)
-        <div style="margin: 0 0 22px 0; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background-color: #F8FAFC;">
+        <div style="margin: 0 0 22px 0; border: 1px solid #1E293B; border-radius: 12px; overflow: hidden; background-color: #0B1220;">
             <img src="{{ $inlineSrc }}" alt="{{ $car ? $car->name : 'BMW Showroom Vietnam' }}" style="display: block; width: 100%; max-height: 220px; object-fit: cover; border: 0;" />
         </div>
+    @else
+        {{-- BMW Dark Luxury Hero Card (Service / Aftersales & Consultation without Vehicle Photo — Gmail Light & Dark Safe) --}}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" data-bmw-dark-luxury-hero="1" style="margin: 0 0 22px 0; background-color: #0B1220; border: 1px solid #1E293B; border-radius: 14px; overflow: hidden;">
+            <tr>
+                <td style="height: 4px; background-color: {{ $officialMode ? '#10B981' : '#1C69D4' }}; font-size: 0; line-height: 0;">&nbsp;</td>
+            </tr>
+            <tr>
+                <td style="padding: 22px 24px; background-color: #0B1220; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td align="left" valign="middle">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #131D31; border: 1px solid #2A3B59; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #70A7FF;">
+                                    @if($emblemDotSrc)
+                                        <img src="{{ $emblemDotSrc }}" width="6" height="6" alt="" style="display: inline-block; width: 6px; height: 6px; border-radius: 2px; vertical-align: middle; margin-right: 5px; border: 0;" />
+                                    @endif
+                                    {{ $isServiceAppointment ? 'BMW SERVICE EXCELLENCE' : 'BMW SHOWROOM CONCIERGE' }}
+                                </span>
+                            </td>
+                            <td align="right" valign="middle" style="font-size: 12px; font-weight: 700; color: #94A3B8; letter-spacing: 0.5px;">
+                                {{ $customerOrderCode }}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="margin: 14px 0 6px 0; font-size: 19px; font-weight: 700; color: #F8FAFC; line-height: 1.35;">
+                        {{ $servicePackageName ?: $appointment->typeLabel() }}
+                    </div>
+                    <div style="margin: 0 0 16px 0; font-size: 13px; color: #CBD5E1; line-height: 1.55;">
+                        @if(filled($customerCarModel))
+                            Phương tiện tiếp nhận: <strong style="color: #FFFFFF;">{{ $customerCarModel }}</strong>
+                        @elseif($isServiceAppointment)
+                            Xưởng dịch vụ chính hãng BMW &bull; Trang thiết bị chẩn đoán tiêu chuẩn Đức
+                        @else
+                            Không gian trưng bày &amp; tư vấn cá nhân hóa BMW Việt Nam
+                        @endif
+                    </div>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #1E293B; padding-top: 12px;">
+                        <tr>
+                            <td style="padding-top: 12px; font-size: 12px; color: #94A3B8; width: 50%;">
+                                Khung giờ đón tiếp<br>
+                                <strong style="display: inline-block; margin-top: 3px; font-size: 14px; color: #F8FAFC;">{{ $appointment->appointment_date?->format('H:i — d/m/Y') }}</strong>
+                            </td>
+                            <td style="padding-top: 12px; font-size: 12px; color: #94A3B8; width: 50%;">
+                                Trạng thái khoang / lịch hẹn<br>
+                                <strong style="display: inline-block; margin-top: 3px; font-size: 13px; color: {{ $officialMode ? '#34D399' : '#70A7FF' }};">
+                                    {{ $officialMode ? 'Đã xác nhận giữ chỗ' : 'Đang chờ điều phối' }}
+                                </strong>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
     @endif
 
     {{-- Summary Card (38% / 62%) --}}

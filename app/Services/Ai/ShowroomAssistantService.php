@@ -1384,6 +1384,15 @@ PROMPT;
             ];
         }
 
+        if (Str::contains($loweredMessage, ['bảo dưỡng', 'bao duong', 'detailing', 'rửa xe', 'rua xe', 'ceramic', 'chăm sóc xe', 'cham soc xe', 'xưởng dịch vụ', 'xuong dich vu', 'ista'])) {
+            $suggestions[] = [
+                'subtitle' => 'Xưởng dịch vụ BMW',
+                'label' => 'Đặt lịch dịch vụ',
+                'url' => route('appointments.create', ['type' => 'maintenance'], false),
+                'kind' => 'service',
+            ];
+        }
+
         if ($extractedEntities !== [] && (! $currentProduct || ! $includeCurrentProduct)) {
             $suggestions[] = [
                 'label' => 'Đặt lịch lái thử',
@@ -1395,16 +1404,44 @@ PROMPT;
         $suggestions[] = ['label' => 'Đặt lịch tư vấn', 'url' => route('appointments.create', ['type' => 'consult'], false)];
         $suggestions[] = ['label' => 'Đọc ưu đãi & tin tức', 'url' => route('articles.index', [], false)];
 
-        return collect($suggestions)
-            ->map(function (array $suggestion): array {
-                unset($suggestion['product_id']);
+        $seenUrls = [];
+        $seenLabels = [];
+        $seenTypeUrls = [];
+        $deduped = [];
 
-                return $suggestion;
-            })
-            ->unique(fn (array $suggestion): string => $this->canonicalSuggestionUrl((string) $suggestion['url']))
-            ->take(4)
-            ->values()
-            ->all();
+        foreach ($suggestions as $suggestion) {
+            unset($suggestion['product_id']);
+            $rawUrl = trim((string) ($suggestion['url'] ?? ''));
+            if ($rawUrl === '') {
+                continue;
+            }
+
+            $canonUrl = $this->canonicalSuggestionUrl($rawUrl);
+            $kind = mb_strtolower(trim((string) ($suggestion['kind'] ?? 'link')));
+            $labelNorm = mb_strtolower((string) preg_replace('/\s+/u', ' ', trim((string) ($suggestion['label'] ?? ''))));
+            $typeUrlKey = $kind.'|'.$canonUrl;
+
+            if (
+                isset($seenUrls[$canonUrl])
+                || isset($seenTypeUrls[$typeUrlKey])
+                || ($labelNorm !== '' && isset($seenLabels[$labelNorm]))
+            ) {
+                continue;
+            }
+
+            $seenUrls[$canonUrl] = true;
+            $seenTypeUrls[$typeUrlKey] = true;
+            if ($labelNorm !== '') {
+                $seenLabels[$labelNorm] = true;
+            }
+
+            $deduped[] = $suggestion;
+            if (count($deduped) >= 4) {
+                break;
+            }
+        }
+
+        return $deduped;
     }
 
     /**
@@ -1771,7 +1808,7 @@ PROMPT;
      */
     public function sanitizeAndRepairMarkdownLinks(string $answer, array $context = []): string
     {
-        if (! str_contains($answer, '[') || ! str_contains($answer, '](')) {
+        if (! str_contains($answer, '[')) {
             return $answer;
         }
 
@@ -1787,7 +1824,7 @@ PROMPT;
             ->get();
 
         $repaired = preg_replace_callback(
-            '/\[([^\[\]\n]{1,120})\]\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\)/u',
+            '/\[([^\[\]\n]{1,120})\]\s*\(\s*((?:[^()\n]|\([^()\n]*\))*)\s*\)/u',
             function (array $matches) use ($context, $activeProducts, $publishedArticles): string {
                 $rawLabel = trim($matches[1]);
                 $rawHref = trim($matches[2]);
@@ -1814,7 +1851,12 @@ PROMPT;
             $answer
         );
 
-        return is_string($repaired) ? trim($repaired) : $answer;
+        $cleaned = is_string($repaired) ? $repaired : $answer;
+        // Strip any dangling empty []() or unclosed [Label]( artifacts
+        $cleaned = preg_replace('/\[\s*\]\s*\(\s*\)/u', '', $cleaned) ?? $cleaned;
+        $cleaned = preg_replace('/\[([^\[\]\n]{1,120})\]\(\s*$/u', '**$1**', $cleaned) ?? $cleaned;
+
+        return trim($cleaned);
     }
 
     /**
@@ -1925,6 +1967,7 @@ PROMPT;
             '/tim-hieu-them',
             '/offers',
             '/booking',
+            '/tra-cuu',
             '/contact',
             '/privacy-policy',
         ], true);
@@ -2005,8 +2048,11 @@ PROMPT;
 
         $intentRoutes = [
             ['keywords' => ['lai thu', 'test drive', 'dat lich lai'], 'url' => route('appointments.create', ['type' => 'test_drive'], false)],
-            ['keywords' => ['bao gia', 'quote', 'lan banh', 'tra gop'], 'url' => route('appointments.create', ['type' => 'quote'], false)],
-            ['keywords' => ['tu van', 'bao duong', 'dat lich', 'consult', 'lien he'], 'url' => route('appointments.create', ['type' => 'consult'], false)],
+            ['keywords' => ['bao gia', 'quote', 'lan banh'], 'url' => route('appointments.create', ['type' => 'quote'], false)],
+            ['keywords' => ['bao duong', 'detailing', 'ceramic', 'rua xe', 'cham soc', 'ista', 'xuong dich vu', 'dich vu'], 'url' => route('appointments.create', ['type' => 'maintenance'], false)],
+            ['keywords' => ['thu cu', 'doi moi', 'trade-in', 'trade in', 'tham dinh'], 'url' => route('appointments.create', ['type' => 'trade_in'], false)],
+            ['keywords' => ['tra cuu', 'lich tra gop', 'ho so tra gop'], 'url' => '/tra-cuu'],
+            ['keywords' => ['tu van', 'dat lich', 'consult', 'lien he', 'tra gop'], 'url' => route('appointments.create', ['type' => 'consult'], false)],
             ['keywords' => ['phu kien', 'accessory', 'do choi'], 'url' => route('accessories.index', [], false)],
             ['keywords' => ['so sanh', 'compare'], 'url' => route('products.compare', [], false)],
             ['keywords' => ['uu dai', 'khuyen mai', 'exclusive'], 'url' => route('offers.exclusive', [], false)],

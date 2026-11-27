@@ -52,6 +52,18 @@ class ServiceBookingTable extends Component
 
     public ?int $inspectedBookingId = null;
 
+    public ?int $completionTargetId = null;
+
+    public string $completionTargetReference = '';
+
+    public string $completionOutcome = '';
+
+    public string $serviceCompletionNote = '';
+
+    public string $serviceActualCostInput = '';
+
+    public int $serviceReminderMonths = 0;
+
     public ?string $flashMessage = null;
 
     public ?string $errorMessage = null;
@@ -174,8 +186,114 @@ class ServiceBookingTable extends Component
         $this->resetPage();
     }
 
-    public function updateStatus(int $appointmentId, string $status): void
+    public function openCompletionModal(int $bookingId): void
     {
+        $this->authorizeCrm();
+        $this->resetErrorBag(['status', 'statusTransition', 'completionOutcome']);
+        $this->errorMessage = null;
+
+        $booking = Appointment::query()
+            ->whereIn('type', $this->allowedServiceTypeValues())
+            ->findOrFail($bookingId);
+
+        if ($booking->hasPendingRescheduleReview()) {
+            $msg = 'Khách hàng vừa đổi lịch dịch vụ. Vui lòng bấm "Xác nhận đã tiếp nhận lịch mới" trước khi hoàn tất.';
+            $this->flashMessage = null;
+            $this->errorMessage = $msg;
+            $this->addError('statusTransition', $msg);
+
+            return;
+        }
+
+        if ($booking->status !== AppointmentStatus::Confirmed) {
+            $this->updateStatus($bookingId, AppointmentStatus::Completed->value);
+
+            return;
+        }
+
+        $this->completionTargetId = $booking->id;
+        $this->completionTargetReference = $booking->publicReferenceCode();
+        $this->completionOutcome = '';
+        $this->serviceCompletionNote = '';
+        $this->serviceActualCostInput = '';
+        $this->serviceReminderMonths = 0;
+    }
+
+    public function selectCompletionOutcome(string $outcome): void
+    {
+        $this->authorizeCrm();
+
+        if (! in_array($outcome, [Appointment::OUTCOME_SERVICE_DELIVERED, Appointment::OUTCOME_SERVICE_INSPECTED_ADVISED], true)) {
+            return;
+        }
+
+        $this->completionOutcome = $outcome;
+        $this->resetErrorBag('completionOutcome');
+        $this->errorMessage = null;
+    }
+
+    public function closeCompletionModal(): void
+    {
+        $this->completionTargetId = null;
+        $this->completionTargetReference = '';
+        $this->completionOutcome = '';
+        $this->serviceCompletionNote = '';
+        $this->serviceActualCostInput = '';
+        $this->serviceReminderMonths = 0;
+        $this->resetErrorBag('completionOutcome');
+    }
+
+    public function confirmCompletion(): void
+    {
+        $this->authorizeCrm();
+
+        if ($this->completionTargetId === null) {
+            return;
+        }
+
+        if (! in_array($this->completionOutcome, [Appointment::OUTCOME_SERVICE_DELIVERED, Appointment::OUTCOME_SERVICE_INSPECTED_ADVISED], true)) {
+            $this->errorMessage = 'Vui lòng chọn kết quả bàn giao dịch vụ trước khi xác nhận hoàn tất.';
+            $this->addError('completionOutcome', $this->errorMessage);
+
+            return;
+        }
+
+        $rawCostDigits = preg_replace('/[^\d]/', '', $this->serviceActualCostInput) ?? '';
+        $payload = [
+            'service_completion_note' => $this->serviceCompletionNote,
+            'service_actual_cost' => $rawCostDigits !== '' ? (int) $rawCostDigits : null,
+            'service_next_reminder_months' => in_array($this->serviceReminderMonths, [3, 6, 12], true) ? $this->serviceReminderMonths : 0,
+        ];
+
+        $targetId = $this->completionTargetId;
+        $outcome = $this->completionOutcome;
+        $this->closeCompletionModal();
+
+        $this->updateStatus($targetId, AppointmentStatus::Completed->value, $outcome, $payload);
+    }
+
+    public function handleInlineStatusChange(int $appointmentId, string $status): void
+    {
+        $this->authorizeCrm();
+
+        if ($status === AppointmentStatus::Completed->value) {
+            $this->openCompletionModal($appointmentId);
+
+            return;
+        }
+
+        $this->updateStatus($appointmentId, $status);
+    }
+
+    /**
+     * @param  array<string, mixed>  $completionPayload
+     */
+    public function updateStatus(
+        int $appointmentId,
+        string $status,
+        ?string $completionOutcome = null,
+        array $completionPayload = [],
+    ): void {
         $this->authorizeCrm();
         $this->resetErrorBag(['status', 'statusTransition']);
         $this->errorMessage = null;
@@ -203,7 +321,13 @@ class ServiceBookingTable extends Component
         $nextStatus = AppointmentStatus::from((string) $validator->validated()['status']);
 
         try {
-            $transitioned = $appointment->transitionStatusWithAutomation($nextStatus, auth()->user());
+            $transitioned = $appointment->transitionStatusWithAutomation(
+                $nextStatus,
+                auth()->user(),
+                $completionOutcome,
+                $completionPayload,
+            );
+            unset($this->inspectedBooking);
 
             if (! $transitioned) {
                 $staleMessage = "Lịch chăm sóc xe #{$appointment->id} hiện đã ở trạng thái '{$nextStatus->label()}' trước đó (có thể đã được nhân sự khác xử lý).";
@@ -214,7 +338,12 @@ class ServiceBookingTable extends Component
                 return;
             }
 
-            $this->flashMessage = "Đã cập nhật trạng thái lịch chăm sóc xe #{$appointment->id} thành công.";
+            if ($nextStatus === AppointmentStatus::Completed) {
+                $outcomeText = $appointment->completionOutcomeLabel() ?? 'Đã hoàn tất dịch vụ';
+                $this->flashMessage = "Đã hoàn tất lịch chăm sóc xe #{$appointment->id} ({$outcomeText} · Đã gửi thư bàn giao dịch vụ).";
+            } else {
+                $this->flashMessage = "Đã cập nhật trạng thái lịch chăm sóc xe #{$appointment->id} thành công.";
+            }
         } catch (InvalidStatusTransitionException $exception) {
             $this->flashMessage = null;
             $this->errorMessage = $exception->getMessage();
@@ -316,6 +445,22 @@ class ServiceBookingTable extends Component
             return;
         }
 
+        if ($appointment->hasPendingRescheduleReview()) {
+            $this->flashMessage = null;
+            $this->errorMessage = "Lịch chăm sóc xe #{$appointment->id} đang chờ duyệt đổi lịch mới. Vui lòng bấm \"Xác nhận đã tiếp nhận lịch mới\" trước.";
+            $this->addError('statusTransition', $this->errorMessage);
+
+            return;
+        }
+
+        if ($appointment->status !== AppointmentStatus::Confirmed) {
+            $this->flashMessage = null;
+            $this->errorMessage = "Lịch chăm sóc xe #{$appointment->id} chưa được Duyệt & Xác nhận, không thể gửi lại thư xác nhận.";
+            $this->addError('statusTransition', $this->errorMessage);
+
+            return;
+        }
+
         $recipientEmail = trim((string) ($appointment->user?->email ?? $appointment->guest_email ?? ''));
 
         if ($recipientEmail === '') {
@@ -324,10 +469,13 @@ class ServiceBookingTable extends Component
             return;
         }
 
-        if ($appointment->sendOfficialConfirmationEmail(auth()->user())) {
-            $this->flashMessage = "Đã gửi thư Xác nhận chính thức tới {$recipientEmail} cho lịch chăm sóc xe #{$appointment->id}.";
+        if ($appointment->sendOfficialConfirmationEmail(auth()->user(), true)) {
+            unset($this->inspectedBooking);
+            $this->flashMessage = "Đã gửi lại thư Xác nhận chính thức tới {$recipientEmail} cho lịch chăm sóc xe #{$appointment->id}.";
         } else {
-            $this->flashMessage = "Không thể gửi thư xác nhận chính thức cho lịch chăm sóc xe #{$appointment->id}.";
+            $this->flashMessage = null;
+            $this->errorMessage = 'Thư xác nhận vừa được gửi cách đây chưa đầy 30 giây. Vui lòng đợi ít phút trước khi gửi lại.';
+            $this->addError('statusTransition', $this->errorMessage);
         }
     }
 

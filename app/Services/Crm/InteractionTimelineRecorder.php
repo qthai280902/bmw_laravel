@@ -147,6 +147,15 @@ class InteractionTimelineRecorder
         return "{$actor->roleLabel()} · {$actor->name}";
     }
 
+    public static function staffFullAttribution(?User $actor): string
+    {
+        if (! $actor instanceof User) {
+            return 'Hệ thống BMW Showroom';
+        }
+
+        return "{$actor->name} ({$actor->roleLabel()})";
+    }
+
     /**
      * Return full normalized 2-way timeline for an Appointment (auto-reconstructing fallback events for legacy records).
      *

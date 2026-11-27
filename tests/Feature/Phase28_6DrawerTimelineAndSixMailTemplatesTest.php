@@ -83,10 +83,10 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
             'reason' => 'Bận họp đột xuất buổi sáng.',
         ])->assertRedirect();
 
-        // 3. Admin duyệt lịch sang Confirmed -> tự gửi VIP Pass + ghi Timeline
+        // 3. Admin tiếp nhận lịch khách vừa đổi -> tự chuyển sang Confirmed, gửi VIP Pass + ghi Timeline
         Livewire::actingAs($admin)
             ->test(AppointmentTable::class)
-            ->call('updateStatus', $appointment->id, AppointmentStatus::Confirmed->value)
+            ->call('acknowledgeGuestReschedule', $appointment->id)
             ->call('inspectAppointment', $appointment->id)
             ->assertSee('x-teleport="body"', false)
             ->assertSee('z-[100]', false)

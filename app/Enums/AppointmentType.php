@@ -28,4 +28,32 @@ enum AppointmentType: string
             self::TradeIn => 'Đổi xe cũ',
         };
     }
+
+    public function isServiceBooking(): bool
+    {
+        return in_array($this, [self::Maintenance, self::Detailing, self::CarWash], true);
+    }
+
+    public function isTradeIn(): bool
+    {
+        return $this === self::TradeIn;
+    }
+
+    public function isSalesLead(): bool
+    {
+        return ! $this->isServiceBooking() && ! $this->isTradeIn();
+    }
+
+    public function completionCategory(): string
+    {
+        if ($this->isServiceBooking()) {
+            return 'service';
+        }
+
+        if ($this->isTradeIn()) {
+            return 'trade_in';
+        }
+
+        return 'sales';
+    }
 }

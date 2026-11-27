@@ -180,7 +180,7 @@
                                                 <span class="text-xs font-black text-zinc-400 transition-colors group-hover:text-[#70A7FF]">{{ mb_strtoupper(mb_substr(trim((string) $customer->name), 0, 1, 'UTF-8'), 'UTF-8') }}</span>
                                             </div>
                                             <div class="min-w-0 flex-1">
-                                                <a href="{{ $detailUrl }}" class="mb-1 block truncate text-sm font-black uppercase leading-none tracking-wider text-white transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]" title="{{ $customer->name }}">
+                                                <a href="{{ $detailUrl }}" class="mb-1 block truncate py-0.5 text-sm font-black uppercase leading-snug tracking-wider text-white transition-colors hover:text-[#70A7FF] group-hover:text-[#70A7FF]" title="{{ $customer->name }}">
                                                     {{ $customer->name }}
                                                 </a>
                                                 <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-zinc-400">

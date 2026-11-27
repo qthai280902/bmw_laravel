@@ -255,9 +255,11 @@ class Phase36SmartPickerVersionedRescheduleCancelledLockAndPostVisitMailsTest ex
         $this->post($v2UpdateUrl, ['action' => 'confirm'])->assertSessionHas('error');
         $this->post($v2UpdateUrl, ['action' => 'cancel'])->assertSessionHas('error');
 
-        // Visiting outdated v=1 URL shows outdated link banner and rejects POST actions
-        $this->get($v1ManageUrl)->assertOk()->assertSee('data-outdated-link-banner', false);
-        $this->post($v1UpdateUrl, ['action' => 'confirm'])->assertSessionHas('error');
+        // Visiting outdated v=1 URL shows outdated link banner and rejects POST actions with HTTP 403 (web) / 422 (JSON) without leaking v=2 URL
+        $outdatedHtml = $this->get($v1ManageUrl)->assertOk()->assertSee('data-outdated-link-banner', false)->getContent();
+        $this->assertStringNotContainsString('v=2', $outdatedHtml);
+        $this->post($v1UpdateUrl, ['action' => 'confirm'])->assertForbidden();
+        $this->postJson($v1UpdateUrl, ['action' => 'confirm'])->assertStatus(422);
 
         // Staff clicks "Xác nhận đã tiếp nhận lịch mới" -> clears pending review, marks notification read, and sends fresh confirmation email with v=2 link
         Livewire::actingAs($sales)

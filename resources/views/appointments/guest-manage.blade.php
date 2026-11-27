@@ -97,7 +97,23 @@
                 @endif
 
                 {{-- Structured Summary Table --}}
-                <div class="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/70">
+                @php
+                    $previousAppointmentDateLabel = is_string($meta['previous_appointment_date'] ?? null) && trim($meta['previous_appointment_date']) !== ''
+                        ? trim($meta['previous_appointment_date'])
+                        : null;
+                    $frozenCardClass = $isOutdatedLink
+                        ? 'opacity-50 pointer-events-none select-none'
+                        : ($reschedulePendingReview ? 'opacity-60 pointer-events-none select-none' : '');
+                @endphp
+                <div
+                    data-guest-summary-card
+                    class="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/70 transition-opacity {{ $isOutdatedLink ? 'opacity-50 select-none' : '' }}"
+                >
+                    @if($isOutdatedLink)
+                        <div class="border-b border-amber-200 bg-amber-50/90 px-4 py-2 text-xs font-bold text-amber-800">
+                            Thông tin tại thời điểm liên kết cũ &mdash; Đã có phiên bản cập nhật mới hơn
+                        </div>
+                    @endif
                     <dl class="divide-y divide-slate-200 text-sm">
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
                             <dt class="font-medium text-slate-500">Mã tham chiếu</dt>
@@ -121,7 +137,12 @@
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
                             <dt class="font-medium text-slate-500">Thời gian hẹn</dt>
                             <dd class="font-bold text-slate-900 tabular-nums">
-                                {{ $appointment->appointment_date?->format('H:i — d/m/Y') ?? 'Chưa ấn định' }}
+                                @if($isOutdatedLink && $previousAppointmentDateLabel)
+                                    <span class="line-through text-slate-500">{{ $previousAppointmentDateLabel }}</span>
+                                    <span class="ml-2 text-xs font-semibold text-amber-700">(Đã dời sang khung giờ mới)</span>
+                                @else
+                                    {{ $appointment->appointment_date?->format('H:i — d/m/Y') ?? 'Chưa ấn định' }}
+                                @endif
                             </dd>
                         </div>
                         <div class="grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[38%_1fr] sm:items-center">
@@ -151,7 +172,7 @@
                 @if(! $isLocked)
                     <div
                         data-guest-confirm-section
-                        class="mt-6 space-y-3 {{ ($isOutdatedLink || $reschedulePendingReview) ? 'opacity-60 pointer-events-none select-none' : '' }}"
+                        class="mt-6 space-y-3 {{ $frozenCardClass }}"
                     >
                         @if($guestConfirmedAtFormatted)
                             <div class="inline-flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
@@ -191,7 +212,7 @@
             {{-- Reschedule Card --}}
             <div
                 data-guest-reschedule-card
-                class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 {{ (! $isLocked && ($isOutdatedLink || $reschedulePendingReview)) ? 'opacity-60 pointer-events-none select-none' : '' }}"
+                class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 {{ ! $isLocked ? $frozenCardClass : '' }}"
             >
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1C69D4]">Đề xuất thời gian khác</p>
                 <h2 class="mt-1.5 text-lg font-bold text-slate-900">Yêu cầu đổi giờ hẹn</h2>
@@ -289,7 +310,7 @@
             @if(! $isLocked)
                 <div
                     data-guest-cancel-card
-                    class="rounded-xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8 {{ ($isOutdatedLink || $reschedulePendingReview) ? 'opacity-60 pointer-events-none select-none' : '' }}"
+                    class="rounded-xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8 {{ $frozenCardClass }}"
                 >
                     <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-rose-600">Thay đổi kế hoạch</p>
                     <h2 class="mt-1.5 text-lg font-bold text-slate-900">Hủy lịch hẹn</h2>
