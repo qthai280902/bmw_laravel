@@ -39,7 +39,10 @@
     ];
 @endphp
 
-<div @keydown.escape.window="$wire.closeAiConversationModal()">
+<div
+    x-data="bmwSafeCrmPoll($wire, () => Boolean($wire.inspectedAppointmentId || $wire.completionTargetId || $wire.pendingArchiveAction))"
+    @keydown.escape.window="$wire.closeAiConversationModal()"
+>
     <x-admin.page-header
         eyebrow="CRM pipeline"
         title="Lịch hẹn"
@@ -231,15 +234,19 @@
                             $customerEmail = $appointment->user?->email ?? $appointment->guest_email;
                             $rowMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
                             $hasPendingReschedule = $appointment->hasPendingRescheduleReview();
+                            $rescheduleCount = $appointment->rescheduleCount();
+                            $prevStatusLabel = $appointment->previousRescheduleStatusLabel();
+                            $guestAttendanceConfirmed = $appointment->hasGuestAttendanceConfirmed();
                             $cancelAttribution = $appointment->cancellationAttributionLabel();
                             $rowCompletionOutcome = $appointment->completionOutcome();
                             $careVoucherCode = $appointment->careVoucherCode();
-                            $isCancelledRow = $appointment->status === \App\Enums\AppointmentStatus::Cancelled;
+                            $isTerminalRow = $appointment->isTerminalStatus();
+                            $terminalCellDim = $isTerminalRow ? 'opacity-55 transition-opacity group-hover:opacity-75' : '';
                             $hasAiChat = (bool) ($appointment->ai_conversation_id || filled($appointment->ai_visitor_id) || filled($appointment->ai_chat_summary));
                             $isHotLead = $appointment->lead_priority === \App\Models\Appointment::LEAD_PRIORITY_HOT;
                         @endphp
-                        <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group align-middle transition-colors hover:bg-white/[0.03] {{ $isCancelledRow ? 'opacity-60 hover:opacity-85' : '' }}">
-                            <td class="whitespace-nowrap px-4 py-4">
+                        <tr wire:key="admin-appointment-{{ $appointment->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]" data-terminal-row="{{ $isTerminalRow ? 'true' : 'false' }}">
+                            <td class="whitespace-nowrap px-4 py-4 {{ $terminalCellDim }}">
                                 @if($appointment->customer_order_code)
                                     <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $appointment->customer_order_code }}</p>
                                 @endif
@@ -260,7 +267,7 @@
                                 @endif
                             </td>
 
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 {{ $terminalCellDim }}">
                                 <p class="truncate text-sm font-bold text-white">{{ $customerName }}</p>
                                 <p class="mt-0.5 truncate text-xs tabular-nums text-zinc-300">{{ $appointment->guest_phone ?: ($customerEmail ?: 'Chưa có liên hệ') }}</p>
                                 @if(filled($appointment->guest_phone) && filled($customerEmail))
@@ -272,7 +279,12 @@
                                     </span>
                                     @if($hasPendingReschedule)
                                         <span class="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
-                                            Khách vừa đổi lịch
+                                            {{ $rescheduleCount >= 2 ? "Chờ duyệt dời lịch lần {$rescheduleCount}" : 'Khách vừa đổi lịch' }}
+                                        </span>
+                                    @endif
+                                    @if($guestAttendanceConfirmed && ! $isTerminalRow)
+                                        <span class="inline-flex items-center rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                                            Khách đã xác nhận tham dự
                                         </span>
                                     @endif
                                     @if($appointment->isArchived())
@@ -283,7 +295,7 @@
                                 </p>
                             </td>
 
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 {{ $terminalCellDim }}">
                                 <p class="truncate text-xs font-semibold text-white" title="{{ $appointment->product?->name ?? ($appointment->servicePackageLabel() ?: 'Tư vấn tại Showroom') }}">
                                     {{ $appointment->product?->name ?? ($appointment->servicePackageLabel() ?: 'Tư vấn tại Showroom') }}
                                 </p>
@@ -325,8 +337,13 @@
                                 @endif
                             </td>
 
-                            <td class="px-4 py-4 align-middle">
+                            <td class="px-4 py-4 align-middle {{ $terminalCellDim }}">
                                 <div class="mx-auto flex min-w-[140px] max-w-[180px] flex-col items-center gap-1.5 text-center">
+                                    @if($hasPendingReschedule && filled($prevStatusLabel) && $prevStatusLabel !== $appointment->status->label())
+                                        <span class="text-[10px] font-medium text-zinc-400 opacity-50 line-through" title="Trạng thái trước khi dời lịch">
+                                            {{ $prevStatusLabel }}
+                                        </span>
+                                    @endif
                                     <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $appointment->status->color() }}">
                                         {{ $appointment->status->label() }}
                                     </span>
@@ -649,8 +666,27 @@
                             </section>
 
                             <!-- Khối 3: Lịch sử Tương tác 2 chiều Khách hàng <-> Hệ thống (Gom nhóm theo chu kỳ) -->
+                            @php
+                                $leadMetaDebug = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($lead->meta_data);
+                                $leadDebugPayload = [
+                                    'reference_code' => $lead->publicReferenceCode(),
+                                    'internal_voucher_code' => $lead->internalVoucherCode(),
+                                    'status' => $lead->status->value,
+                                    'status_label' => $lead->status->label(),
+                                    'manage_version' => $lead->currentManageVersion(),
+                                    'guest_confirmed_at' => $leadMetaDebug['guest_confirmed_at'] ?? null,
+                                    'reschedule_pending_review' => (bool) ($leadMetaDebug['reschedule_pending_review'] ?? false),
+                                    'reschedule_count' => $lead->rescheduleCount(),
+                                    'previous_status' => $leadMetaDebug['previous_status'] ?? null,
+                                    'completion_outcome' => $leadMetaDebug['completion_outcome'] ?? null,
+                                    'payment_method' => $leadMetaDebug['payment_method'] ?? null,
+                                    'final_vehicle_price' => $leadMetaDebug['final_vehicle_price'] ?? null,
+                                    'timeline' => $timelineEvents,
+                                ];
+                            @endphp
                             <x-admin.crm-interaction-timeline
                                 :events="$timelineEvents"
+                                :debug-payload="$leadDebugPayload"
                                 heading="3. Lịch sử tương tác Khách hàng ↔ Hệ thống"
                             />
 
@@ -1045,6 +1081,104 @@
                                     <span class="font-bold">Chưa chọn kết quả:</span> Vui lòng bấm chọn 1 trong 2 kịch bản ở trên để kích hoạt nút xác nhận.
                                 @endif
                             </div>
+
+                            @if($completionOutcome === 'purchased')
+                                <div class="mt-4 space-y-4 rounded-xl border border-white/10 bg-[#0D121C] p-4" data-purchased-payment-panel>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-zinc-300">Giá bán chốt thực tế (VNĐ) *</label>
+                                        <input
+                                            type="text"
+                                            inputmode="numeric"
+                                            wire:model.live="completionFinalPriceInput"
+                                            x-on:input="$event.target.value = window.bmwFormatDots($event.target.value)"
+                                            placeholder="Ví dụ: 2.750.000.000"
+                                            class="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-[#070A10] px-3.5 text-xs font-bold tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                                        >
+                                        <p class="mt-1 text-[11px] text-zinc-400">Dùng chung để Kế toán hạch toán doanh thu thực thu (điền sẵn từ giá niêm yết, có thể điều chỉnh theo giá chốt).</p>
+                                    </div>
+
+                                    <div>
+                                        <p class="mb-2 text-xs font-semibold text-zinc-300">Hình thức thanh toán của khách hàng</p>
+                                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                            <button
+                                                type="button"
+                                                data-payment-method-option="cash"
+                                                wire:click="$set('completionPaymentMethod', 'cash')"
+                                                class="rounded-xl border px-3.5 py-2.5 text-left text-xs font-semibold transition-colors cursor-pointer {{ $completionPaymentMethod !== 'installment' ? 'border-[#1C69D4] bg-[#1C69D4]/20 text-white' : 'border-white/10 bg-[#070A10] text-zinc-300 hover:border-white/25' }}"
+                                            >
+                                                <span class="block font-bold">Thanh toán 100% (Trả thẳng)</span>
+                                                <span class="mt-0.5 block text-[10px] text-zinc-400">Không phát sinh hợp đồng trả góp</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                data-payment-method-option="installment"
+                                                wire:click="$set('completionPaymentMethod', 'installment')"
+                                                class="rounded-xl border px-3.5 py-2.5 text-left text-xs font-semibold transition-colors cursor-pointer {{ $completionPaymentMethod === 'installment' ? 'border-[#1C69D4] bg-[#1C69D4]/20 text-white' : 'border-white/10 bg-[#070A10] text-zinc-300 hover:border-white/25' }}"
+                                            >
+                                                <span class="block font-bold">Mua xe trả góp qua ngân hàng</span>
+                                                <span class="mt-0.5 block text-[10px] text-zinc-400">Tự động tạo hồ sơ nháp BMW Financial</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    @if($completionPaymentMethod === 'installment')
+                                        @php
+                                            $previewFinalInt = (int) (preg_replace('/[^\d]/', '', $completionFinalPriceInput) ?? 0);
+                                            $previewDownInt = (int) (preg_replace('/[^\d]/', '', $completionDownPaymentInput) ?? 0);
+                                            $previewLoanInt = max(0, $previewFinalInt - $previewDownInt);
+                                        @endphp
+                                        <div class="space-y-3 border-t border-white/10 pt-3.5" data-installment-modal-fields>
+                                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                <div>
+                                                    <label class="block text-[11px] font-semibold text-zinc-300">Trả trước đối ứng (VNĐ)</label>
+                                                    <input
+                                                        type="text"
+                                                        inputmode="numeric"
+                                                        wire:model.live="completionDownPaymentInput"
+                                                        x-on:input="$event.target.value = window.bmwFormatDots($event.target.value)"
+                                                        placeholder="Ví dụ: 800.000.000"
+                                                        class="mt-1 h-9 w-full rounded-xl border border-white/10 bg-[#070A10] px-3 text-xs font-semibold tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                                                    >
+                                                    <p class="mt-1 text-[10px] text-[#70A7FF] tabular-nums">
+                                                        Khoản vay dự kiến: <strong>{{ number_format($previewLoanInt, 0, ',', '.') }} đ</strong>
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[11px] font-semibold text-zinc-300">Kỳ hạn vay (tháng)</label>
+                                                    <input
+                                                        type="number"
+                                                        wire:model="completionTermMonths"
+                                                        min="6"
+                                                        max="120"
+                                                        class="no-number-spinner mt-1 h-9 w-full rounded-xl border border-white/10 bg-[#070A10] px-3 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                                                    >
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-[11px] font-semibold text-zinc-300">Ngân hàng giải ngân *</label>
+                                                <input
+                                                    type="text"
+                                                    wire:model="completionBankName"
+                                                    placeholder="Chọn nhanh bên dưới hoặc nhập tên ngân hàng..."
+                                                    class="mt-1 h-9 w-full rounded-xl border border-white/10 bg-[#070A10] px-3 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                                                >
+                                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                                    @foreach(['Techcombank BMW Financial', 'VPBank', 'TPBank', 'VIB', 'Shinhan Bank', 'Vietcombank'] as $bankPreset)
+                                                        <button
+                                                            type="button"
+                                                            wire:click="$set('completionBankName', '{{ $bankPreset }}')"
+                                                            class="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-white cursor-pointer"
+                                                        >
+                                                            {{ $bankPreset }}
+                                                        </button>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         @endif
 
                         @error('completionOutcome')

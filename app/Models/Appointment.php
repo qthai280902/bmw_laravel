@@ -399,6 +399,53 @@ class Appointment extends Model implements Attachable
         return (bool) ($meta['reschedule_pending_review'] ?? false);
     }
 
+    public function hasGuestAttendanceConfirmed(): bool
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+
+        return ! empty($meta['guest_confirmed_at']);
+    }
+
+    public function guestConfirmedAtLabel(): ?string
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $raw = $meta['guest_confirmed_at'] ?? null;
+
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($raw)->timezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public function rescheduleCount(): int
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+
+        return max(0, (int) ($meta['reschedule_count'] ?? 0));
+    }
+
+    public function previousRescheduleStatusLabel(): ?string
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $label = $meta['previous_status_label'] ?? null;
+
+        return is_string($label) && trim($label) !== '' ? trim($label) : null;
+    }
+
+    public function hasSentOfficialConfirmationForCurrentVersion(): bool
+    {
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($this->meta_data);
+        $currentVersion = $this->currentManageVersion();
+        $sentVersion = (int) ($meta['official_confirmation_sent_version'] ?? 0);
+
+        return $sentVersion === $currentVersion && ! empty($meta['official_confirmation_sent_at']);
+    }
+
     /**
      * Valid completion outcomes for this appointment's category.
      *
@@ -979,14 +1026,99 @@ class Appointment extends Model implements Attachable
                     $expiresAt = now('Asia/Ho_Chi_Minh')->addMonth();
                     $voucherExpiresLabel = $expiresAt->format('d/m/Y');
 
+                    $paymentMethod = ($completionPayload['payment_method'] ?? 'cash') === 'installment'
+                        ? 'installment'
+                        : 'cash';
+                    $listPrice = max(0, (int) ($locked->product?->price ?? 0));
+                    $finalPrice = isset($completionPayload['final_vehicle_price']) && (int) $completionPayload['final_vehicle_price'] > 0
+                        ? (int) $completionPayload['final_vehicle_price']
+                        : $listPrice;
+
                     $meta['purchased_at'] = now()->toIso8601String();
                     $meta['care_voucher_code'] = $voucherCode;
                     $meta['care_voucher_expires_at'] = $expiresAt->toIso8601String();
+                    $meta['payment_method'] = $paymentMethod;
+                    $meta['final_vehicle_price'] = $finalPrice > 0 ? $finalPrice : null;
+
+                    if ($paymentMethod === 'installment') {
+                        $downPayment = isset($completionPayload['down_payment_amount']) && $completionPayload['down_payment_amount'] !== null
+                            ? max(0, (int) $completionPayload['down_payment_amount'])
+                            : 0;
+                        if ($finalPrice > 0 && $downPayment > $finalPrice) {
+                            $downPayment = $finalPrice;
+                        }
+                        $financedLoan = max(1000000, $finalPrice > 0 ? max(0, $finalPrice - $downPayment) : (int) ($completionPayload['financed_loan_amount'] ?? 0));
+                        $bankName = trim((string) ($completionPayload['installment_bank_name'] ?? 'Ngân hàng đối tác BMW Financial'));
+                        if ($bankName === '') {
+                            $bankName = 'Ngân hàng đối tác BMW Financial';
+                        }
+                        $termMonths = max(6, min(120, (int) ($completionPayload['installment_term_months'] ?? 60)));
+
+                        $meta['down_payment_amount'] = $downPayment;
+                        $meta['financed_loan_amount'] = $financedLoan;
+                        $meta['installment_bank_name'] = $bankName;
+                        $meta['installment_term_months'] = $termMonths;
+                    }
                 } else {
                     $meta['visited_at'] = now()->toIso8601String();
                     $meta['care_voucher_code'] = null;
                     $meta['care_voucher_expires_at'] = null;
                 }
+            }
+
+            $autoDraftPlanInfo = null;
+            if ($newStatus === AppointmentStatus::Completed
+                && $normalizedOutcome === self::OUTCOME_PURCHASED
+                && ($meta['payment_method'] ?? 'cash') === 'installment') {
+                $planVehiclePrice = (int) ($meta['final_vehicle_price'] ?? 0);
+                $planDownPayment = (int) ($meta['down_payment_amount'] ?? 0);
+                $planLoanAmount = (int) ($meta['financed_loan_amount'] ?? max(1000000, $planVehiclePrice - $planDownPayment));
+                $planBankName = (string) ($meta['installment_bank_name'] ?? 'Ngân hàng đối tác BMW Financial');
+                $planTermMonths = (int) ($meta['installment_term_months'] ?? 60);
+                $defaultAnnualRate = 7.9;
+                $monthlyRate = ($defaultAnnualRate / 100.0) / 12.0;
+                $estimatedFirstMonth = (int) (intdiv($planLoanAmount, max(1, $planTermMonths)) + round($planLoanAmount * $monthlyRate));
+
+                $normalizedCustomerPhone = CustomerInstallmentPlan::normalizePhoneDigits($locked->guest_phone ?: $locked->user?->phone);
+                $customerPhoneValue = $normalizedCustomerPhone !== '' ? $normalizedCustomerPhone : (string) ($locked->guest_phone ?: '0000000000');
+                $customerEmailValue = trim((string) ($locked->guest_email ?? $locked->user?->email ?? ''));
+                $customerNameValue = trim((string) ($locked->guest_name ?? $locked->user?->name ?? 'Khách hàng BMW'));
+                $startVn = now('Asia/Ho_Chi_Minh');
+
+                $draftPlan = CustomerInstallmentPlan::query()->firstOrCreate(
+                    ['appointment_id' => $locked->id],
+                    [
+                        'customer_phone' => $customerPhoneValue,
+                        'customer_email' => $customerEmailValue !== '' ? $customerEmailValue : null,
+                        'customer_name' => $customerNameValue !== '' ? $customerNameValue : 'Khách hàng BMW',
+                        'product_id' => $locked->product_id,
+                        'bank_name' => $planBankName,
+                        'vehicle_price' => $planVehiclePrice > 0 ? $planVehiclePrice : null,
+                        'down_payment' => $planDownPayment > 0 ? $planDownPayment : 0,
+                        'loan_amount' => $planLoanAmount,
+                        'monthly_payment' => max(100000, $estimatedFirstMonth),
+                        'interest_rate' => $defaultAnnualRate,
+                        'fixed_rate_months' => 12,
+                        'floating_rate_adjustment_months' => 3,
+                        'floating_interest_rate' => null,
+                        'early_settlement_fee_note' => null,
+                        'interest_method' => CustomerInstallmentPlan::METHOD_REDUCING_BALANCE,
+                        'term_months' => $planTermMonths,
+                        'paid_installments' => 0,
+                        'start_date' => $startVn->toDateString(),
+                        'next_due_date' => $startVn->addMonthNoOverflow()->toDateString(),
+                        'status' => CustomerInstallmentPlan::STATUS_DRAFT,
+                        'notes' => 'Hồ sơ nháp khởi tạo tự động khi chốt mua xe. Sales vui lòng hoàn thiện lãi suất ưu đãi/thả nổi và chuyển trạng thái Đang trả góp.',
+                        'created_by' => $actor?->id,
+                    ]
+                );
+
+                $autoDraftPlanInfo = [
+                    'id' => $draftPlan->id,
+                    'bank_name' => $draftPlan->bank_name,
+                    'loan_amount' => $draftPlan->loan_amount,
+                    'term_months' => $draftPlan->term_months,
+                ];
             }
 
             [$timelineTitle, $timelineDetail] = match (true) {
@@ -1031,6 +1163,17 @@ class Appointment extends Model implements Attachable
                 detail: $timelineDetail,
                 channel: 'CRM',
             );
+
+            if ($autoDraftPlanInfo !== null) {
+                $meta = InteractionTimelineRecorder::appendToMeta(
+                    meta: $meta,
+                    actorType: InteractionTimelineRecorder::ACTOR_SYSTEM,
+                    actorLabel: 'BMW Financial Automation',
+                    title: "Khởi tạo hồ sơ trả góp nháp ({$autoDraftPlanInfo['bank_name']})",
+                    detail: 'Khoản vay dự kiến '.number_format($autoDraftPlanInfo['loan_amount'], 0, ',', '.')." VNĐ · {$autoDraftPlanInfo['term_months']} tháng (Trạng thái: Chờ bổ sung thông tin).",
+                    channel: 'BMW Financial',
+                );
+            }
 
             $locked->update([
                 'status' => $newStatus->value,

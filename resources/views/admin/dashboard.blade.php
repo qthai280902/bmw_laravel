@@ -1,4 +1,5 @@
 <x-admin-layout>
+    <div data-dashboard-live-region x-init="if (typeof window.bmwDashboardAutoRefresh === 'function') window.bmwDashboardAutoRefresh(60000)">
     <x-admin.page-header
         eyebrow="BMW Showroom CRM · Lead Analytics"
         title="Tổng Quan Vận Hành"
@@ -318,5 +319,6 @@
                 </tbody>
             </table>
         </div>
+    </div>
     </div>
 </x-admin-layout>

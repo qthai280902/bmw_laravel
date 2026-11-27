@@ -321,6 +321,12 @@ class Phase34EloquentContextAiFallbackAndPromptsTest extends TestCase
             'type' => AppointmentType::TestDrive,
             'status' => AppointmentStatus::Confirmed,
         ]);
+        $depositedAppt = Appointment::factory()->assignedTo($sales)->create([
+            'product_id' => $car->id,
+            'type' => AppointmentType::Consult,
+            'status' => AppointmentStatus::Confirmed,
+            'meta_data' => ['actual_deposit_amount' => 100000000],
+        ]);
         $orderDone = AccessoryOrder::factory()->completed()->assignedTo($sales)->create([
             'product_id' => Product::factory()->create([
                 'category_id' => $category->id,
@@ -345,6 +351,7 @@ class Phase34EloquentContextAiFallbackAndPromptsTest extends TestCase
 
         $this->assertInstanceOf(AppointmentCollection::class, $appts);
         $this->assertInstanceOf(AccessoryOrderCollection::class, $orders);
+        $this->assertSame(0, AppointmentCollection::resolveDepositAmount($assignedAppt));
         $this->assertSame(100000000, $appts->committedDepositValue());
         $this->assertSame(9000000, $orders->completedRevenue());
         $this->assertSame(4500000, $orders->cancelledValue());

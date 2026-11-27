@@ -179,6 +179,7 @@ Route::middleware('auth')->group(function () {
 
         // Customer 360° Detail, Installment Plans, Quick 1-to-1 Email & Staff Self/Admin Profile
         Route::middleware('role:admin,sales,marketing')->group(function () {
+            Route::get('api/products/{product}/pricing', [CustomerController::class, 'productPricing'])->name('api.products.pricing');
             Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
             Route::get('staff-profile/{user}', [UserController::class, 'show'])->name('staff.profile');
             Route::get('customers/{phone}', [CustomerController::class, 'show'])->name('customers.show');

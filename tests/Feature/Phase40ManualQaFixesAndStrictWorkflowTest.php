@@ -302,6 +302,7 @@ class Phase40ManualQaFixesAndStrictWorkflowTest extends TestCase
             ->assertRedirect();
 
         $selfConfirmAppt->refresh();
+        $this->assertSame(AppointmentStatus::Pending, $selfConfirmAppt->status);
         $timelineAfterSelfConfirm = InteractionTimelineRecorder::timelineForAppointment($selfConfirmAppt);
         $titles = array_column($timelineAfterSelfConfirm, 'title');
         $this->assertContains('Khách hàng đã xác nhận sẽ đến lịch hẹn', $titles);
@@ -309,7 +310,8 @@ class Phase40ManualQaFixesAndStrictWorkflowTest extends TestCase
             $this->assertStringNotContainsString('Hoàn tất', $t);
         }
 
-        // Direct updateStatus(..., 'completed') without modal outcome is strictly rejected!
+        // Staff approves attendance -> Confirmed; then direct updateStatus(..., 'completed') without modal outcome is strictly rejected!
+        $selfConfirmAppt->transitionStatusWithAutomation(AppointmentStatus::Confirmed, $sales);
         Livewire::actingAs($sales)
             ->test(AppointmentTable::class)
             ->call('updateStatus', $selfConfirmAppt->id, AppointmentStatus::Completed->value)
@@ -410,8 +412,9 @@ class Phase40ManualQaFixesAndStrictWorkflowTest extends TestCase
             'guest_email' => 'huy.dang40@customer.vn',
             'product_id' => $car->id,
             'type' => AppointmentType::TestDrive,
-            'appointment_date' => now()->addDay(),
-            'status' => AppointmentStatus::Confirmed,
+            'appointment_date' => now()->subDays(2),
+            'status' => AppointmentStatus::Completed,
+            'meta_data' => ['completion_outcome' => Appointment::OUTCOME_PURCHASED],
         ]);
 
         Appointment::create([

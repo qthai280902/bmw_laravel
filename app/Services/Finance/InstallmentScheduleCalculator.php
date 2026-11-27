@@ -15,6 +15,11 @@ class InstallmentScheduleCalculator
      *     down_payment: int|null,
      *     loan_amount: int,
      *     interest_rate: float,
+     *     fixed_rate_months: int,
+     *     floating_rate_adjustment_months: int,
+     *     floating_rate_adjustment_label: string,
+     *     floating_interest_rate: float|null,
+     *     early_settlement_fee_note: string|null,
      *     interest_method: string,
      *     interest_method_label: string,
      *     term_months: int,
@@ -33,6 +38,8 @@ class InstallmentScheduleCalculator
      *         opening_balance: int,
      *         principal_amount: int,
      *         interest_amount: int,
+     *         interest_rate_applied: float,
+     *         rate_phase: string,
      *         total_payment: int,
      *         closing_balance: int,
      *         status: string
@@ -50,7 +57,16 @@ class InstallmentScheduleCalculator
         $remainingInstallments = max(0, $termMonths - $paidInstallments);
 
         $annualRate = max(0.0, (float) $plan->interest_rate);
-        $monthlyRate = ($annualRate / 100.0) / 12.0;
+        $fixedRateMonths = max(0, min($termMonths, (int) ($plan->fixed_rate_months ?? 12)));
+        $adjustmentMonths = in_array((int) ($plan->floating_rate_adjustment_months ?? 3), [0, 3, 6], true)
+            ? (int) ($plan->floating_rate_adjustment_months ?? 3)
+            : 3;
+        $floatingRate = $plan->floating_interest_rate !== null
+            ? max(0.0, (float) $plan->floating_interest_rate)
+            : null;
+        $effectiveFloatingRate = ($adjustmentMonths > 0 && $floatingRate !== null)
+            ? $floatingRate
+            : $annualRate;
 
         $interestMethod = $plan->interest_method === CustomerInstallmentPlan::METHOD_FLAT
             ? CustomerInstallmentPlan::METHOD_FLAT
@@ -71,10 +87,13 @@ class InstallmentScheduleCalculator
         for ($period = 1; $period <= $termMonths; $period++) {
             $dueDate = $firstDueDate->addMonthsNoOverflow($period - 1);
             $principalAmount = $period === $termMonths ? $openingBalance : $basePrincipal;
+            $isFixedPhase = $fixedRateMonths === 0 ? false : $period <= $fixedRateMonths;
+            $periodAnnualRate = $isFixedPhase ? $annualRate : $effectiveFloatingRate;
+            $periodMonthlyRate = ($periodAnnualRate / 100.0) / 12.0;
 
             $interestAmount = $interestMethod === CustomerInstallmentPlan::METHOD_FLAT
-                ? (int) round($loanAmount * $monthlyRate)
-                : (int) round($openingBalance * $monthlyRate);
+                ? (int) round($loanAmount * $periodMonthlyRate)
+                : (int) round($openingBalance * $periodMonthlyRate);
 
             $totalPayment = $principalAmount + $interestAmount;
             $closingBalance = max(0, $openingBalance - $principalAmount);
@@ -101,6 +120,8 @@ class InstallmentScheduleCalculator
                 'opening_balance' => $openingBalance,
                 'principal_amount' => $principalAmount,
                 'interest_amount' => $interestAmount,
+                'interest_rate_applied' => $periodAnnualRate,
+                'rate_phase' => $isFixedPhase || $adjustmentMonths === 0 || $floatingRate === null ? 'fixed' : 'floating',
                 'total_payment' => $totalPayment,
                 'closing_balance' => $closingBalance,
                 'status' => $status,
@@ -125,6 +146,11 @@ class InstallmentScheduleCalculator
             'down_payment' => $plan->down_payment !== null ? (int) $plan->down_payment : null,
             'loan_amount' => $loanAmount,
             'interest_rate' => $annualRate,
+            'fixed_rate_months' => $fixedRateMonths,
+            'floating_rate_adjustment_months' => $adjustmentMonths,
+            'floating_rate_adjustment_label' => $plan->adjustmentFrequencyLabel(),
+            'floating_interest_rate' => $floatingRate,
+            'early_settlement_fee_note' => filled($plan->early_settlement_fee_note) ? (string) $plan->early_settlement_fee_note : null,
             'interest_method' => $interestMethod,
             'interest_method_label' => $plan->interestMethodLabel(),
             'term_months' => $termMonths,

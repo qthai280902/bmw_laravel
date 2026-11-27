@@ -669,11 +669,6 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
             ->assertSee('id="new_date"', false)
             ->assertSee('id="new_time"', false);
 
-        $this->post($consultAppointment->temporaryManageUpdateUrl(), [
-            'action' => 'confirm',
-        ])->assertRedirect();
-        $this->assertSame(AppointmentStatus::Confirmed, $consultAppointment->fresh()->status);
-
         $newDateStr = now()->addDays(5)->format('Y-m-d');
         $this->post($consultAppointment->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
@@ -681,7 +676,23 @@ class Phase28MailResilienceSchedulingAndEventsTest extends TestCase
             'new_time' => '15:30',
             'reason' => 'Đổi sang chiều cuối tuần để tiện trao đổi báo giá.',
         ])->assertRedirect();
-        $this->assertSame($newDateStr.' 15:30', $consultAppointment->fresh()->appointment_date->format('Y-m-d H:i'));
+        $consultAppointment->refresh();
+        $this->assertSame($newDateStr.' 15:30', $consultAppointment->appointment_date->format('Y-m-d H:i'));
+
+        Livewire::actingAs($admin)
+            ->test(AppointmentTable::class)
+            ->call('acknowledgeGuestReschedule', $consultAppointment->id)
+            ->assertHasNoErrors();
+
+        $consultAppointment->refresh();
+        $this->assertSame(AppointmentStatus::Confirmed, $consultAppointment->status);
+
+        $this->post($consultAppointment->temporaryManageUpdateUrl(), [
+            'action' => 'confirm',
+        ])->assertRedirect();
+        $this->assertNotEmpty($consultAppointment->fresh()->meta_data['guest_confirmed_at'] ?? null);
+
+        auth()->guard('web')->logout();
 
         // Product-less consultation (no product_id) -> confirm cancel & also verify followup renders cleanly without price
         $this->post(route('appointments.store'), [

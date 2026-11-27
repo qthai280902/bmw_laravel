@@ -148,7 +148,13 @@
                                     </div>
                                     <div class="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
                                         <p class="text-xs font-medium text-slate-500">Lãi suất áp dụng</p>
-                                        <p class="mt-1 text-sm font-bold tabular-nums text-amber-700">{{ rtrim(rtrim(number_format((float) $calc['interest_rate'], 2, '.', ''), '0'), '.') }}%/năm</p>
+                                        <p class="mt-1 text-sm font-bold tabular-nums text-[#1C69D4]">
+                                            {{ rtrim(rtrim(number_format((float) $calc['interest_rate'], 2, '.', ''), '0'), '.') }}%/năm
+                                            <span class="block text-[11px] font-medium text-slate-500">Ưu đãi {{ $calc['fixed_rate_months'] }} tháng đầu</span>
+                                            @if($calc['floating_interest_rate'] !== null && $calc['floating_rate_adjustment_months'] > 0)
+                                                <span class="block text-[11px] font-semibold text-slate-700">Sau ưu đãi: {{ rtrim(rtrim(number_format((float) $calc['floating_interest_rate'], 2, '.', ''), '0'), '.') }}%/năm ({{ $calc['floating_rate_adjustment_label'] }})</span>
+                                            @endif
+                                        </p>
                                     </div>
                                     <div class="rounded-lg border border-blue-200 bg-blue-50/70 p-3.5">
                                         <p class="text-xs font-semibold text-[#1C69D4]">Dư nợ gốc còn lại</p>
@@ -190,6 +196,11 @@
                                         </h4>
                                         <span class="text-xs text-slate-500">Các kỳ đã đóng được gạch ngang để Quý khách dễ đối chiếu</span>
                                     </div>
+                                    @if(! empty($calc['early_settlement_fee_note']))
+                                        <p class="rounded-lg border border-blue-200 bg-blue-50/70 px-3.5 py-2 text-xs text-slate-700">
+                                            <strong class="text-[#1C69D4]">Phí tất toán trước hạn theo hợp đồng:</strong> {{ $calc['early_settlement_fee_note'] }}
+                                        </p>
+                                    @endif
 
                                     <div class="overflow-x-auto rounded-lg border border-slate-200">
                                         <table class="w-full min-w-[760px] border-collapse text-left text-xs">

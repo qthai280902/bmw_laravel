@@ -193,6 +193,10 @@ class CustomerPortalLookupController extends Controller
 
         $matchedPlans = $allPlans
             ->filter(static function (CustomerInstallmentPlan $plan) use ($knownEmails, $knownPhones): bool {
+                if ($plan->status === CustomerInstallmentPlan::STATUS_DRAFT) {
+                    return false;
+                }
+
                 $email = mb_strtolower(trim((string) ($plan->customer_email ?? '')));
                 $phone = CustomerInstallmentPlan::normalizePhoneDigits($plan->customer_phone);
 

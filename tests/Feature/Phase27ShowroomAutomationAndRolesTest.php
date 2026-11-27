@@ -369,76 +369,93 @@ class Phase27ShowroomAutomationAndRolesTest extends TestCase
             ->assertSee('#F1F5F9', false)
             ->assertSee('name="new_appointment_date"', false);
 
-        // Confirm action
+        // Confirm action records guest attendance WITHOUT changing Pending -> Confirmed, and locks reschedule/cancel
         $this->post($appointment->temporaryManageUpdateUrl(), [
             'action' => 'confirm',
         ])->assertRedirect()->assertSessionHas('success');
 
         $appointment->refresh();
-        $this->assertSame(AppointmentStatus::Confirmed, $appointment->status);
+        $this->assertSame(AppointmentStatus::Pending, $appointment->status);
         $this->assertNotEmpty($appointment->meta_data['guest_confirmed_at'] ?? null);
 
-        // Reschedule form remains open when Confirmed and accepts direct new_appointment_date
-        $this->get($appointment->temporaryManageUrl())
+        // Hard-blocks reschedule & cancel once guest has confirmed attendance
+        $this->post($appointment->temporaryManageUpdateUrl(), [
+            'action' => 'reschedule',
+            'new_date' => now()->addDays(5)->format('Y-m-d'),
+            'new_time' => '15:00',
+        ])->assertForbidden();
+        $this->post($appointment->temporaryManageUpdateUrl(), [
+            'action' => 'cancel',
+        ])->assertForbidden();
+
+        // Separate Pending appointment NOT yet confirmed by guest allows reschedule + split new_date/new_time + cancel
+        $reschedulable = Appointment::factory()->for($car, 'product')->guest()->create([
+            'guest_name' => 'Nguyen Khach Doi Lich',
+            'guest_email' => 'khach.doilich@example.com',
+            'status' => AppointmentStatus::Pending->value,
+            'appointment_date' => now()->addDays(4)->setTime(10, 0),
+        ]);
+
+        $this->get($reschedulable->temporaryManageUrl())
             ->assertOk()
             ->assertSee('id="new_date"', false);
 
         $newDate = now()->addDays(5)->setTime(15, 0);
-        $this->post($appointment->temporaryManageUpdateUrl(), [
+        $this->post($reschedulable->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
             'new_appointment_date' => $newDate->format('Y-m-d H:i'),
             'reason' => 'Bận công tác đột xuất',
         ])->assertRedirect()->assertSessionHas('success');
 
-        $appointment->refresh();
-        $this->assertNull($appointment->reminder_sent_at);
-        $this->assertSame($newDate->format('Y-m-d H:i'), $appointment->appointment_date->format('Y-m-d H:i'));
-        $this->assertSame('Bận công tác đột xuất', $appointment->meta_data['reschedule_reason'] ?? null);
+        $reschedulable->refresh();
+        $this->assertNull($reschedulable->reminder_sent_at);
+        $this->assertSame($newDate->format('Y-m-d H:i'), $reschedulable->appointment_date->format('Y-m-d H:i'));
+        $this->assertSame('Bận công tác đột xuất', $reschedulable->meta_data['reschedule_reason'] ?? null);
 
         // Advisor acknowledges first reschedule before guest submits another change
-        $ackMeta1 = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        $ackMeta1 = InteractionTimelineRecorder::normalizeMetaArray($reschedulable->meta_data);
         $ackMeta1['reschedule_pending_review'] = false;
-        $appointment->forceFill(['meta_data' => $ackMeta1])->saveQuietly();
+        $reschedulable->forceFill(['meta_data' => $ackMeta1])->saveQuietly();
 
         // Reschedule also accepts split new_date + new_time pair directly (fallback without JS)
         $splitDate = now()->addDays(6);
-        $this->post($appointment->temporaryManageUpdateUrl(), [
+        $this->post($reschedulable->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
             'new_date' => $splitDate->format('Y-m-d'),
             'new_time' => '16:30',
             'reason' => 'Đổi sang khung 16:30',
         ])->assertRedirect()->assertSessionHas('success');
 
-        $appointment->refresh();
-        $this->assertSame($splitDate->format('Y-m-d').' 16:30', $appointment->appointment_date->format('Y-m-d H:i'));
-        $this->assertSame('Đổi sang khung 16:30', $appointment->meta_data['reschedule_reason'] ?? null);
+        $reschedulable->refresh();
+        $this->assertSame($splitDate->format('Y-m-d').' 16:30', $reschedulable->appointment_date->format('Y-m-d H:i'));
+        $this->assertSame('Đổi sang khung 16:30', $reschedulable->meta_data['reschedule_reason'] ?? null);
 
         // Advisor acknowledges second reschedule before guest cancels
-        $ackMeta2 = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        $ackMeta2 = InteractionTimelineRecorder::normalizeMetaArray($reschedulable->meta_data);
         $ackMeta2['reschedule_pending_review'] = false;
-        $appointment->forceFill(['meta_data' => $ackMeta2])->saveQuietly();
+        $reschedulable->forceFill(['meta_data' => $ackMeta2])->saveQuietly();
 
         // Cancel action
-        $this->post($appointment->temporaryManageUpdateUrl(), [
+        $this->post($reschedulable->temporaryManageUpdateUrl(), [
             'action' => 'cancel',
             'reason' => 'Đổi kế hoạch tuần sau',
         ])->assertRedirect()->assertSessionHas('success');
 
-        $appointment->refresh();
-        $this->assertSame(AppointmentStatus::Cancelled, $appointment->status);
-        $this->assertSame('Đổi kế hoạch tuần sau', $appointment->meta_data['cancel_reason'] ?? null);
+        $reschedulable->refresh();
+        $this->assertSame(AppointmentStatus::Cancelled, $reschedulable->status);
+        $this->assertSame('Đổi kế hoạch tuần sau', $reschedulable->meta_data['cancel_reason'] ?? null);
 
         // Reschedule is locked once appointment is Cancelled (both UI and Controller)
-        $this->get($appointment->temporaryManageUrl())
+        $this->get($reschedulable->temporaryManageUrl())
             ->assertOk()
             ->assertDontSee('id="new_date"', false);
 
-        $this->post($appointment->temporaryManageUpdateUrl(), [
+        $this->post($reschedulable->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
             'new_date' => now()->addDays(7)->format('Y-m-d'),
             'new_time' => '10:00',
         ])->assertRedirect()->assertSessionHas('error');
-        $this->assertSame(AppointmentStatus::Cancelled, $appointment->fresh()->status);
+        $this->assertSame(AppointmentStatus::Cancelled, $reschedulable->fresh()->status);
 
         // Reschedule is also locked once appointment is Completed
         $completedAppointment = Appointment::factory()->for($car, 'product')->guest()->create([

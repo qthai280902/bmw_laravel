@@ -2451,6 +2451,158 @@ window.bmwCustomSelect = (initialConfig = null) => ({
     },
 });
 
+window.bmwCopyDebugLog = async (triggerEl) => {
+    const scope = triggerEl?.closest?.('[data-debug-log-scope]') || document;
+    const payloadScript = scope.querySelector('[data-debug-log-payload]');
+    if (!payloadScript) {
+        return false;
+    }
+
+    let textToCopy = payloadScript.textContent || '';
+    try {
+        const parsed = JSON.parse(textToCopy);
+        textToCopy = JSON.stringify(parsed, null, 2);
+    } catch {
+        // Keep raw payload text
+    }
+
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(textToCopy);
+            return true;
+        }
+    } catch {
+        // Fallback below
+    }
+
+    const temp = document.createElement('textarea');
+    temp.value = textToCopy;
+    temp.setAttribute('readonly', '');
+    temp.style.position = 'fixed';
+    temp.style.opacity = '0';
+    document.body.appendChild(temp);
+    temp.select();
+    let ok = false;
+    try {
+        ok = document.execCommand('copy');
+    } catch {
+        ok = false;
+    }
+    document.body.removeChild(temp);
+    return ok;
+};
+
+window.bmwSafeCrmPoll = ($wire, hasBlockingState) => {
+    let timerId = null;
+
+    const shouldSkipPoll = () => {
+        if (document.visibilityState !== 'visible') {
+            return true;
+        }
+
+        if (typeof hasBlockingState === 'function' && hasBlockingState()) {
+            return true;
+        }
+
+        const active = document.activeElement;
+        if (active && (
+            active.tagName === 'INPUT'
+            || active.tagName === 'TEXTAREA'
+            || active.tagName === 'SELECT'
+            || active.isContentEditable
+        )) {
+            return true;
+        }
+
+        const openDropdown = document.querySelector('[data-custom-select-panel]:not([style*="display: none"])');
+        if (openDropdown && openDropdown.offsetParent !== null) {
+            return true;
+        }
+
+        return false;
+    };
+
+    const start = () => {
+        if (timerId) {
+            clearInterval(timerId);
+        }
+        timerId = window.setInterval(() => {
+            if (!$wire || shouldSkipPoll()) {
+                return;
+            }
+            $wire.$refresh();
+        }, 60000);
+    };
+
+    const stop = () => {
+        if (timerId) {
+            clearInterval(timerId);
+            timerId = null;
+        }
+    };
+
+    start();
+
+    return {
+        destroy: stop,
+    };
+};
+
+window.bmwDashboardAutoRefresh = (intervalMs = 60000) => {
+    if (window.__bmwDashboardAutoRefreshTimer) {
+        clearInterval(window.__bmwDashboardAutoRefreshTimer);
+    }
+
+    window.__bmwDashboardAutoRefreshTimer = window.setInterval(async () => {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
+
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+            return;
+        }
+
+        if (document.querySelector('[role="dialog"]')) {
+            return;
+        }
+
+        const currentContainer = document.querySelector('[data-dashboard-live-region]');
+        if (!currentContainer) {
+            return;
+        }
+
+        try {
+            const response = await fetch(window.location.href, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    Accept: 'text/html',
+                },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) {
+                return;
+            }
+            const html = await response.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const freshContainer = doc.querySelector('[data-dashboard-live-region]');
+            if (freshContainer && currentContainer.parentNode) {
+                currentContainer.innerHTML = freshContainer.innerHTML;
+            }
+        } catch {
+            // Silently ignore transient poll failure
+        }
+    }, intervalMs);
+};
+
+window.bmwFormatDots = (raw) => {
+    const digits = String(raw ?? '').replace(/[^\d]/g, '');
+    if (!digits) {
+        return '';
+    }
+    return parseInt(digits, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
 window.bmwInstallmentCalculator = (rootEl) => {
     let parsed = {};
     if (typeof HTMLElement !== 'undefined' && rootEl instanceof HTMLElement) {
@@ -2499,6 +2651,8 @@ window.bmwInstallmentCalculator = (rootEl) => {
 
     return {
         mode: isEditMode ? 'edit' : 'create',
+        pricingEndpointTemplate: typeof parsed.pricingEndpointTemplate === 'string' ? parsed.pricingEndpointTemplate : '',
+        productPrices: parsed.productPrices && typeof parsed.productPrices === 'object' ? parsed.productPrices : {},
         vehiclePrice: initVehiclePrice,
         vehiclePriceDisplay: initVehiclePrice !== null ? formatDots(initVehiclePrice) : '',
         downPayment: initDownPayment,
@@ -2509,15 +2663,63 @@ window.bmwInstallmentCalculator = (rootEl) => {
         monthlyPayment: initMonthlyPayment,
         monthlyPaymentDisplay: formatDots(initMonthlyPayment),
         interestRate: parsed.interestRate !== undefined && parsed.interestRate !== null ? String(parsed.interestRate) : '7.9',
+        fixedRateMonths: parsed.fixedRateMonths !== undefined && parsed.fixedRateMonths !== null ? cleanInt(parsed.fixedRateMonths, 12) : 12,
+        floatingAdjustmentMonths: parsed.floatingAdjustmentMonths !== undefined && parsed.floatingAdjustmentMonths !== null
+            ? String(parsed.floatingAdjustmentMonths)
+            : '3',
+        floatingInterestRate: parsed.floatingInterestRate !== undefined && parsed.floatingInterestRate !== null
+            ? String(parsed.floatingInterestRate)
+            : '',
         interestMethod: parsed.interestMethod === 'flat' ? 'flat' : 'reducing_balance',
         termMonths: Math.max(1, cleanInt(parsed.termMonths, 60)),
         paidInstallments: Math.max(0, cleanInt(parsed.paidInstallments, 0)),
         hasManualMonthlyOverride: isEditMode,
+        pricingStatus: '',
 
         init() {
             // Do NOT overwrite monthlyPayment on mount for edit forms (preserves bank-rounded DB value)
             if (!isEditMode && parsed.hasOldMonthlyPayment !== true) {
                 this.syncRecommendedMonthlyPayment();
+            }
+        },
+
+        async onProductSelectChange(productId) {
+            const idStr = String(productId ?? '').trim();
+            if (!idStr) {
+                this.pricingStatus = '';
+                return;
+            }
+
+            if (this.pricingEndpointTemplate) {
+                try {
+                    const url = this.pricingEndpointTemplate.replace('__ID__', encodeURIComponent(idStr));
+                    const response = await fetch(url, {
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        credentials: 'same-origin',
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const price = cleanInt(data.price, 0);
+                        if (price > 0) {
+                            this.onVehiclePriceInput(String(price));
+                            this.pricingStatus = `Đã lấy giá niêm yết ${data.name}: ${formatDots(price)} VNĐ`;
+                            return;
+                        }
+                    }
+                } catch {
+                    // Fallback to preloaded productPrices map below
+                }
+            }
+
+            if (Object.prototype.hasOwnProperty.call(this.productPrices, idStr)) {
+                const cachedPrice = cleanInt(this.productPrices[idStr], 0);
+                if (cachedPrice > 0) {
+                    this.onVehiclePriceInput(String(cachedPrice));
+                    this.pricingStatus = `Đã điền giá niêm yết: ${formatDots(cachedPrice)} VNĐ`;
+                }
             }
         },
 
@@ -2625,12 +2827,16 @@ window.bmwInstallmentCalculator = (rootEl) => {
             this.hasManualMonthlyOverride = true;
         },
 
-        onFormulaParamChange(newMethod = null) {
+        onFormulaParamChange(newMethod = null, newAdjustmentMonths = null) {
             if (newMethod !== null) {
                 this.interestMethod = newMethod === 'flat' ? 'flat' : 'reducing_balance';
             }
+            if (newAdjustmentMonths !== null) {
+                this.floatingAdjustmentMonths = String(newAdjustmentMonths);
+            }
             const term = Math.max(1, parseInt(this.termMonths, 10) || 1);
             this.termMonths = Math.min(240, term);
+            this.fixedRateMonths = Math.max(0, Math.min(this.termMonths, parseInt(this.fixedRateMonths, 10) || 0));
             if ((parseInt(this.paidInstallments, 10) || 0) > this.termMonths) {
                 this.paidInstallments = this.termMonths;
             }
@@ -2652,7 +2858,14 @@ window.bmwInstallmentCalculator = (rootEl) => {
             const term = Math.max(1, Math.min(240, parseInt(this.termMonths, 10) || 1));
             const paid = Math.min(term, Math.max(0, parseInt(this.paidInstallments, 10) || 0));
             const annualRate = Math.max(0, parseFloat(this.interestRate) || 0);
-            const monthlyRate = (annualRate / 100) / 12;
+            const fixedMonths = Math.max(0, Math.min(term, parseInt(this.fixedRateMonths, 10) || 0));
+            const adjMonths = parseInt(this.floatingAdjustmentMonths, 10);
+            const parsedFloating = this.floatingInterestRate !== '' && this.floatingInterestRate !== null
+                ? parseFloat(this.floatingInterestRate)
+                : NaN;
+            const effectiveFloating = (!Number.isNaN(parsedFloating) && parsedFloating >= 0 && adjMonths > 0)
+                ? parsedFloating
+                : annualRate;
             const isFlat = this.interestMethod === 'flat';
 
             const basePrincipal = Math.floor(loan / term);
@@ -2664,6 +2877,9 @@ window.bmwInstallmentCalculator = (rootEl) => {
 
             for (let period = 1; period <= term; period += 1) {
                 const principal = period === term ? opening : basePrincipal;
+                const isFixedPhase = fixedMonths === 0 ? false : period <= fixedMonths;
+                const periodRate = isFixedPhase ? annualRate : effectiveFloating;
+                const monthlyRate = (periodRate / 100) / 12;
                 const interest = isFlat
                     ? Math.round(loan * monthlyRate)
                     : Math.round(opening * monthlyRate);

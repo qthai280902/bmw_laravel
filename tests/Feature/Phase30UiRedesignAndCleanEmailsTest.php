@@ -122,10 +122,10 @@ class Phase30UiRedesignAndCleanEmailsTest extends TestCase
 
         $previewModes = [
             AppointmentConfirmationMail::MODE_SYSTEM_RECEIVED => '#1C69D4',
-            AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED => '#059669',
-            'guest_rescheduled' => '#D97706',
+            AppointmentConfirmationMail::MODE_ADMIN_CONFIRMED => '#1C69D4',
+            'guest_rescheduled' => '#1C69D4',
             'reminder' => '#4F46E5',
-            'followup' => '#B45309',
+            'followup' => '#1C69D4',
         ];
 
         foreach ($previewModes as $mode => $accentColor) {

@@ -325,7 +325,8 @@ class Phase36SmartPickerVersionedRescheduleCancelledLockAndPostVisitMailsTest ex
             ->assertHasNoErrors()
             ->assertDontSee('Khách vừa đổi lịch')
             ->assertDontSee('data-reschedule-alert-card="'.$appointment->id.'"', false)
-            ->assertSee('opacity-60 hover:opacity-85', false)
+            ->assertSee('data-terminal-row="true"', false)
+            ->assertSee('opacity-55', false)
             ->call('assignToSales', $appointment->id, $salesB->id)
             ->assertSet('errorMessage', 'Hồ sơ đã bị hủy và bị khóa thao tác nghiệp vụ, không thể thay đổi phân công chuyên viên Sales.');
 

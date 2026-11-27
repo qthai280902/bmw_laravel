@@ -1,3 +1,6 @@
+@if(request()->routeIs('customer.lookup.*') || request()->is('tra-cuu*'))
+    @return
+@endif
 @php
     $assistantPrompts = [
         'Báo giá BMW 330i',

@@ -2,6 +2,7 @@
     'events' => [],
     'heading' => '3. Lịch sử tương tác Khách hàng ↔ Hệ thống',
     'emptyText' => 'Chưa ghi nhận mốc tương tác nào cho hồ sơ này.',
+    'debugPayload' => null,
 ])
 
 @php
@@ -19,10 +20,12 @@
 
 <section
     data-crm-interaction-timeline
+    data-debug-log-scope
     data-total-events="{{ $totalEvents }}"
     data-total-cycles="{{ $totalCycles }}"
     x-data="{
         sectionOpen: true,
+        copiedDebugLog: false,
         openCycles: @js($initialOpenCycles),
         cycleKeys: @js($allCycleKeys),
         allExpanded() {
@@ -37,10 +40,19 @@
         },
         toggleCycle(key) {
             this.openCycles[key] = !Boolean(this.openCycles[key]);
+        },
+        async copyLog(btn) {
+            if (typeof window.bmwCopyDebugLog === 'function' && await window.bmwCopyDebugLog(btn)) {
+                this.copiedDebugLog = true;
+                setTimeout(() => { this.copiedDebugLog = false; }, 2000);
+            }
         }
     }"
     class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3"
 >
+    @if(is_array($debugPayload))
+        <script type="application/json" data-debug-log-payload>@json($debugPayload)</script>
+    @endif
     <div class="flex flex-wrap items-center justify-between gap-2">
         <button
             type="button"
@@ -66,6 +78,20 @@
             <span class="rounded-full border border-white/10 bg-[#0D121C] px-2.5 py-0.5 text-[10px] font-semibold tabular-nums text-zinc-300">
                 {{ $totalEvents }} sự kiện · {{ $totalCycles }} chu kỳ
             </span>
+
+            @if(is_array($debugPayload))
+                <button
+                    type="button"
+                    data-copy-debug-log-btn
+                    @click="copyLog($el)"
+                    class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#131A29] px-2.5 py-1 text-[10px] font-semibold text-zinc-200 transition-colors hover:border-[#1C69D4] hover:text-white cursor-pointer"
+                >
+                    <svg class="h-3 w-3 shrink-0 text-[#38BDF8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span x-text="copiedDebugLog ? 'Đã sao chép' : 'Sao chép Log'"></span>
+                </button>
+            @endif
 
             @if($totalCycles > 1)
                 <button

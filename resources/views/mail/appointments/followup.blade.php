@@ -1,11 +1,11 @@
 @extends('emails.layouts.bmw-concierge')
 
 @section('title', 'Cảm Ơn & Dự Toán Tài Chính | BMW Showroom Vietnam')
-@section('accent_color', '#B45309')
+@section('accent_color', '#1C69D4')
 @section('header_subtitle', 'Chăm sóc hậu mãi & Dự toán tài chính')
 
 @section('badge')
-    <span style="display: inline-block; padding: 6px 14px; background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 9999px; color: #B45309; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
+    <span style="display: inline-block; padding: 6px 14px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 9999px; color: #1C69D4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
         Chăm sóc hậu mãi
     </span>
 @endsection
@@ -28,7 +28,7 @@
             <td style="padding: 11px 18px; font-size: 13px; font-weight: 500; color: #64748B; width: 46%;">
                 Mã tham chiếu
             </td>
-            <td align="right" style="padding: 11px 18px; font-size: 14px; font-weight: 700; color: #B45309; width: 54%;">
+            <td align="right" style="padding: 11px 18px; font-size: 14px; font-weight: 700; color: #1C69D4; width: 54%;">
                 {{ $appointment->publicReferenceCode() }}
             </td>
         </tr>
@@ -73,10 +73,10 @@
                 </td>
             </tr>
             <tr>
-                <td style="padding: 15px 18px; background-color: #FEF3C7; font-size: 13px; font-weight: 700; color: #92400E;">
+                <td style="padding: 15px 18px; background-color: #EFF6FF; font-size: 13px; font-weight: 700; color: #1E3A8A;">
                     Ước tính góp mỗi tháng
                 </td>
-                <td align="right" style="padding: 15px 18px; background-color: #FEF3C7; font-size: 16px; font-weight: 700; color: #B45309;">
+                <td align="right" style="padding: 15px 18px; background-color: #EFF6FF; font-size: 16px; font-weight: 700; color: #1C69D4;">
                     {{ number_format((float) $estimate['monthly_payment'], 0, ',', '.') }} VNĐ/tháng
                 </td>
             </tr>
@@ -91,7 +91,7 @@
         <tr>
             <td align="left">
                 <a href="{{ $car ? route('products.show', $car->slug) : route('appointments.create') }}"
-                   style="display: inline-block; background-color: #B45309; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 600; border-radius: 10px;">
+                   style="display: inline-block; background-color: #1C69D4; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 600; border-radius: 10px;">
                     {{ $car ? 'Xem lại ' . $car->name : 'Đặt lịch tư vấn chuyên sâu' }}
                 </a>
             </td>

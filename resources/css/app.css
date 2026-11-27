@@ -687,6 +687,58 @@ select:-webkit-autofill:focus {
     --radius-lg: 0.5rem;
     --radius-md: 0.375rem;
     --radius-sm: 0.25rem;
+    color-scheme: light;
+}
+
+.guest-luxury *,
+[data-picker-theme="light"] *,
+.bmw-light-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 #F8FAFC;
+}
+
+.guest-luxury ::-webkit-scrollbar,
+[data-picker-theme="light"] ::-webkit-scrollbar,
+.bmw-light-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.guest-luxury ::-webkit-scrollbar-track,
+[data-picker-theme="light"] ::-webkit-scrollbar-track,
+.bmw-light-scroll::-webkit-scrollbar-track {
+    background: #F8FAFC;
+}
+
+.guest-luxury ::-webkit-scrollbar-thumb,
+[data-picker-theme="light"] ::-webkit-scrollbar-thumb,
+.bmw-light-scroll::-webkit-scrollbar-thumb {
+    background-color: #CBD5E1;
+    border-radius: 9999px;
+}
+
+.guest-luxury ::-webkit-scrollbar-thumb:hover,
+[data-picker-theme="light"] ::-webkit-scrollbar-thumb:hover,
+.bmw-light-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #1C69D4;
+}
+
+.guest-luxury input:-webkit-autofill,
+.guest-luxury input:-webkit-autofill:hover,
+.guest-luxury input:-webkit-autofill:focus,
+.guest-luxury input:-webkit-autofill:active,
+.guest-luxury textarea:-webkit-autofill,
+.guest-luxury select:-webkit-autofill {
+    -webkit-text-fill-color: #0F172A !important;
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+    box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+    caret-color: #0F172A;
+}
+
+.guest-luxury input,
+.guest-luxury textarea,
+.guest-luxury select {
+    color-scheme: light;
 }
 
 /* Phase 37: Collapsible & Resizable Admin Sidebar (Desktop >= lg, Zero FOUC) */

@@ -131,10 +131,15 @@
                             <td class="px-4 py-3.5">
                                 <p class="font-semibold text-white">{{ $v['item_name'] }}</p>
                                 <p class="mt-0.5 text-[11px] text-zinc-400">SL: {{ $v['quantity'] }}</p>
+                                @if(! empty($v['payment_breakdown']))
+                                    <p class="mt-0.5 text-[11px] font-medium text-[#70A7FF]">{{ $v['payment_breakdown'] }}</p>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
                                 <p class="font-bold text-white">{{ number_format($v['amount'], 0, ',', '.') }} ₫</p>
-                                @if($v['reference_price'] > $v['amount'])
+                                @if(($v['realized_revenue'] ?? 0) > 0)
+                                    <p class="mt-0.5 text-[11px] font-semibold text-emerald-400">Thực thu: {{ number_format($v['realized_revenue'], 0, ',', '.') }} ₫</p>
+                                @elseif($v['reference_price'] > $v['amount'] && ($v['completion_outcome'] ?? null) !== \App\Models\Appointment::OUTCOME_VISITED_NO_PURCHASE)
                                     <p class="mt-0.5 text-[11px] text-zinc-400">Niêm yết: {{ number_format($v['reference_price'], 0, ',', '.') }} ₫</p>
                                 @endif
                             </td>

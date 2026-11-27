@@ -33,7 +33,7 @@
         $purchasedMode => 'Chúc Mừng Sở Hữu Xe BMW & Đặc Quyền Chăm Sóc 1 Tháng',
         default => 'Thư Cảm Ơn Quý Khách Đã Tham Quan & Trải Nghiệm Tại BMW Showroom',
     };
-    $accentHex = ($purchasedMode || $isServiceMode) ? '#059669' : '#1C69D4';
+    $accentHex = '#1C69D4';
     $headerSubtitle = match (true) {
         $isServiceMode => 'BMW SERVICE EXCELLENCE · HOÀN TẤT BÀN GIAO',
         $isTradeInMode => 'BMW CERTIFIED TRADE-IN · THẨM ĐỊNH CHÍNH HÃNG',
@@ -48,7 +48,7 @@
 
 @section('badge')
     @if($isServiceMode)
-        <span style="display: inline-block; padding: 6px 14px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 9999px; color: #059669; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
+        <span style="display: inline-block; padding: 6px 14px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 9999px; color: #1C69D4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
             Hoàn tất dịch vụ &bull; Đã bàn giao
         </span>
     @elseif($isTradeInMode)
@@ -56,7 +56,7 @@
             Đã hoàn tất thẩm định
         </span>
     @elseif($purchasedMode)
-        <span style="display: inline-block; padding: 6px 14px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 9999px; color: #059669; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
+        <span style="display: inline-block; padding: 6px 14px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 9999px; color: #1C69D4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
             Đã ký hợp đồng &bull; Đặc quyền chủ xe
         </span>
     @else
@@ -72,17 +72,17 @@
             Cảm ơn Quý khách đã tin tưởng Xưởng Dịch vụ Chính hãng BMW
         </h1>
         <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
-            Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, đội ngũ Kỹ thuật viên chứng chỉ BMW toàn cầu cùng Cố vấn dịch vụ <strong style="color: #059669;">{{ $advisorFormatted }}</strong> trân trọng thông báo quy trình chăm sóc / bảo dưỡng cho phương tiện <strong style="color: #0F172A;">{{ $customerCarModel ?: 'BMW của Quý khách' }}</strong> đã hoàn tất theo tiêu chuẩn kỹ thuật chính hãng.
+            Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, đội ngũ Kỹ thuật viên chứng chỉ BMW toàn cầu cùng Cố vấn dịch vụ <strong style="color: #1C69D4;">{{ $advisorFormatted }}</strong> trân trọng thông báo quy trình chăm sóc / bảo dưỡng cho phương tiện <strong style="color: #0F172A;">{{ $customerCarModel ?: 'BMW của Quý khách' }}</strong> đã hoàn tất theo tiêu chuẩn kỹ thuật chính hãng.
         </p>
 
         {{-- BMW Dark Luxury Service Completion Card --}}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 24px 0; background-color: #0B1220; border: 1px solid #1E293B; border-radius: 14px; overflow: hidden;">
             <tr>
-                <td style="height: 4px; background-color: #10B981; font-size: 0; line-height: 0;">&nbsp;</td>
+                <td style="height: 4px; background-color: #1C69D4; font-size: 0; line-height: 0;">&nbsp;</td>
             </tr>
             <tr>
                 <td style="padding: 20px 22px; background-color: #0B1220; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                    <div style="font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #34D399; margin-bottom: 8px;">
+                    <div style="font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #70A7FF; margin-bottom: 8px;">
                         BIÊN BẢN TÓM TẮT DỊCH VỤ &bull; {{ $outcome === 'service_inspected_advised' ? 'ĐÃ KIỂM TRA & TƯ VẤN KỸ THUẬT' : 'ĐÃ HOÀN TẤT & BÀN GIAO XE' }}
                     </div>
                     <div style="font-size: 18px; font-weight: 700; color: #F8FAFC; line-height: 1.35; margin-bottom: 10px;">
@@ -98,7 +98,7 @@
                         @if($resolvedServiceCost !== null && $resolvedServiceCost > 0)
                             <tr>
                                 <td style="padding: 4px 0; font-size: 13px; color: #94A3B8; width: 44%;">Chi phí dịch vụ quyết toán</td>
-                                <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #34D399; width: 56%;">{{ number_format($resolvedServiceCost, 0, ',', '.') }} VNĐ</td>
+                                <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #70A7FF; width: 56%;">{{ number_format($resolvedServiceCost, 0, ',', '.') }} VNĐ</td>
                             </tr>
                         @endif
                         @if(filled($resolvedNextReminder))
@@ -128,26 +128,29 @@
             Chúc mừng Quý khách chính thức gia nhập cộng đồng chủ nhân BMW
         </h1>
         <p style="margin: 0 0 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
-            Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, BMW Showroom Vietnam cùng chuyên viên <strong style="color: #059669;">{{ $advisorFormatted }}</strong> trân trọng cảm ơn Quý khách đã tin tưởng lựa chọn <strong style="color: #0F172A;">{{ $car?->name ?? 'dòng xe BMW chính hãng' }}</strong> trong buổi đón tiếp vừa qua.
+            Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, BMW Showroom Vietnam cùng chuyên viên <strong style="color: #1C69D4;">{{ $advisorFormatted }}</strong> trân trọng cảm ơn Quý khách đã tin tưởng lựa chọn <strong style="color: #0F172A;">{{ $car?->name ?? 'dòng xe BMW chính hãng' }}</strong> trong buổi đón tiếp vừa qua.
         </p>
 
         {{-- Khối Quà Tặng Đặc Quyền Rửa Xe & Chăm Sóc Xe 1 Tháng --}}
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; margin-bottom: 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0B1220; border: 1px solid #1E293B; border-radius: 12px; margin-bottom: 24px; overflow: hidden;">
+            <tr>
+                <td style="height: 3px; background-color: #1C69D4; font-size: 0; line-height: 0;">&nbsp;</td>
+            </tr>
             <tr>
                 <td style="padding: 20px 22px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                    <div style="font-size: 11px; font-weight: 700; color: #059669; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #70A7FF; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
                         ĐẶC QUYỀN CHỦ XE MỚI &bull; GÓI CHĂM SÓC &amp; RỬA XE MIỄN PHÍ 01 THÁNG
                     </div>
-                    <p style="margin: 0 0 14px 0; font-size: 14px; color: #065F46; line-height: 1.55;">
-                        Nhằm tri ân quyết định sở hữu xe của Quý khách, BMW Showroom gửi tặng đặc quyền <strong>Rửa xe tiêu chuẩn Detailing &amp; Chăm sóc bề mặt sơn/nội thất miễn phí trong 01 tháng đầu tiên</strong> tại xưởng dịch vụ chính hãng:
+                    <p style="margin: 0 0 14px 0; font-size: 14px; color: #CBD5E1; line-height: 1.55;">
+                        Nhằm tri ân quyết định sở hữu xe của Quý khách, BMW Showroom gửi tặng đặc quyền <strong style="color: #FFFFFF;">Rửa xe tiêu chuẩn Detailing &amp; Chăm sóc bề mặt sơn/nội thất miễn phí trong 01 tháng đầu tiên</strong> tại xưởng dịch vụ chính hãng:
                     </p>
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FFFFFF; border: 1px dashed #10B981; border-radius: 8px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FFFFFF; border: 1px dashed #1C69D4; border-radius: 8px;">
                         <tr>
                             <td style="padding: 14px 16px;">
                                 <div style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase;">Mã đặc quyền BMW Care</div>
-                                <div style="font-size: 20px; font-weight: 800; color: #059669; letter-spacing: 1px; margin-top: 4px;">{{ $voucherCode }}</div>
+                                <div style="font-size: 20px; font-weight: 800; color: #1C69D4; letter-spacing: 1px; margin-top: 4px;">{{ $voucherCode }}</div>
                                 <div style="font-size: 12px; font-weight: 600; color: #0F172A; margin-top: 6px;">
-                                    Hiệu lực sử dụng đến hết ngày: <span style="color: #059669;">{{ $voucherExpiresLabel }}</span> (01 tháng)
+                                    Hiệu lực sử dụng đến hết ngày: <span style="color: #1C69D4;">{{ $voucherExpiresLabel }}</span> (01 tháng)
                                 </div>
                             </td>
                         </tr>

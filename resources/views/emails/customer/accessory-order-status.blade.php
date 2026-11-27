@@ -2,10 +2,8 @@
 
 @php
     [$accent, $pillBg, $pillBorder] = match ($order->status) {
-        \App\Models\AccessoryOrder::STATUS_COMPLETED => ['#059669', '#ECFDF5', '#A7F3D0'],
         \App\Models\AccessoryOrder::STATUS_CANCELLED => ['#DC2626', '#FEF2F2', '#FECACA'],
-        \App\Models\AccessoryOrder::STATUS_CONFIRMED => ['#1C69D4', '#EFF6FF', '#BFDBFE'],
-        default => ['#D97706', '#FFFBEB', '#FDE68A'],
+        default => ['#1C69D4', '#EFF6FF', '#BFDBFE'],
     };
     $refCode = $order->publicReferenceCode();
 @endphp

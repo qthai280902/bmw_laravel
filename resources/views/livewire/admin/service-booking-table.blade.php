@@ -32,7 +32,10 @@
     ];
 @endphp
 
-<div @keydown.escape.window="$wire.closeInspector()">
+<div
+    x-data="bmwSafeCrmPoll($wire, () => Boolean($wire.inspectedBookingId || $wire.completionTargetId || $wire.pendingArchiveAction))"
+    @keydown.escape.window="$wire.closeInspector()"
+>
     <x-admin.page-header
         eyebrow="Aftersales operations"
         title="Dịch vụ"
@@ -214,11 +217,15 @@
                             $customerEmail = $booking->user?->email ?? $booking->guest_email;
                             $rowMeta = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($booking->meta_data);
                             $hasPendingReschedule = $booking->hasPendingRescheduleReview();
+                            $rescheduleCount = $booking->rescheduleCount();
+                            $prevStatusLabel = $booking->previousRescheduleStatusLabel();
+                            $guestAttendanceConfirmed = $booking->hasGuestAttendanceConfirmed();
                             $cancelAttribution = $booking->cancellationAttributionLabel();
-                            $isCancelledServiceRow = $booking->status === \App\Enums\AppointmentStatus::Cancelled;
+                            $isTerminalServiceRow = $booking->isTerminalStatus();
+                            $terminalServiceCellDim = $isTerminalServiceRow ? 'opacity-55 transition-opacity group-hover:opacity-75' : '';
                         @endphp
-                        <tr wire:key="admin-service-booking-{{ $booking->id }}" class="group align-middle transition-colors hover:bg-white/[0.03] {{ $isCancelledServiceRow ? 'opacity-60 hover:opacity-85' : '' }}">
-                            <td class="whitespace-nowrap px-5 py-4">
+                        <tr wire:key="admin-service-booking-{{ $booking->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]" data-terminal-row="{{ $isTerminalServiceRow ? 'true' : 'false' }}">
+                            <td class="whitespace-nowrap px-5 py-4 {{ $terminalServiceCellDim }}">
                                 @if($booking->customer_order_code)
                                     <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $booking->customer_order_code }}</p>
                                 @endif
@@ -239,7 +246,7 @@
                                 @endif
                             </td>
 
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 {{ $terminalServiceCellDim }}">
                                 <p class="truncate text-sm font-bold text-white">{{ $booking->user?->name ?? $booking->guest_name ?? 'Khách vãng lai' }}</p>
                                 <p class="mt-0.5 truncate text-xs tabular-nums text-zinc-300">{{ $booking->guest_phone ?: ($customerEmail ?: 'Chưa có liên hệ') }}</p>
                                 @if(filled($booking->guest_phone) && filled($customerEmail))
@@ -251,7 +258,12 @@
                                     </span>
                                     @if($hasPendingReschedule)
                                         <span class="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
-                                            Khách vừa đổi lịch
+                                            {{ $rescheduleCount >= 2 ? "Chờ duyệt dời lịch lần {$rescheduleCount}" : 'Khách vừa đổi lịch' }}
+                                        </span>
+                                    @endif
+                                    @if($guestAttendanceConfirmed && ! $isTerminalServiceRow)
+                                        <span class="inline-flex items-center rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                                            Khách đã xác nhận tham dự
                                         </span>
                                     @endif
                                     @if($booking->isArchived())
@@ -262,7 +274,7 @@
                                 </p>
                             </td>
 
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 {{ $terminalServiceCellDim }}">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="truncate text-xs font-semibold text-white">{{ $carModel }}</span>
                                     <span class="shrink-0 whitespace-nowrap rounded-full border border-[#1C69D4]/25 bg-[#1C69D4]/15 px-2.5 py-0.5 text-[10px] font-semibold text-[#70A7FF]">
@@ -274,8 +286,13 @@
                                 @endif
                             </td>
 
-                            <td class="px-4 py-4 align-middle">
+                            <td class="px-4 py-4 align-middle {{ $terminalServiceCellDim }}">
                                 <div class="mx-auto flex min-w-[140px] max-w-[180px] flex-col items-center gap-1.5 text-center">
+                                    @if($hasPendingReschedule && filled($prevStatusLabel) && $prevStatusLabel !== $booking->status->label())
+                                        <span class="text-[10px] font-medium text-zinc-400 opacity-50 line-through" title="Trạng thái trước khi dời lịch">
+                                            {{ $prevStatusLabel }}
+                                        </span>
+                                    @endif
                                     <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $booking->status->color() }}">
                                         {{ $booking->status->label() }}
                                     </span>
@@ -537,8 +554,26 @@
                                 @endif
                             </section>
 
+                            @php
+                                $bookingMetaDebug = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($booking->meta_data);
+                                $bookingDebugPayload = [
+                                    'reference_code' => $booking->publicReferenceCode(),
+                                    'internal_voucher_code' => $booking->internalVoucherCode(),
+                                    'status' => $booking->status->value,
+                                    'status_label' => $booking->status->label(),
+                                    'manage_version' => $booking->currentManageVersion(),
+                                    'guest_confirmed_at' => $bookingMetaDebug['guest_confirmed_at'] ?? null,
+                                    'reschedule_pending_review' => (bool) ($bookingMetaDebug['reschedule_pending_review'] ?? false),
+                                    'reschedule_count' => $booking->rescheduleCount(),
+                                    'previous_status' => $bookingMetaDebug['previous_status'] ?? null,
+                                    'completion_outcome' => $bookingMetaDebug['completion_outcome'] ?? null,
+                                    'service_actual_cost' => $bookingMetaDebug['service_actual_cost'] ?? null,
+                                    'timeline' => $timelineEvents,
+                                ];
+                            @endphp
                             <x-admin.crm-interaction-timeline
                                 :events="$timelineEvents"
+                                :debug-payload="$bookingDebugPayload"
                                 heading="3. Lịch sử tương tác Khách hàng ↔ Hệ thống"
                             />
 

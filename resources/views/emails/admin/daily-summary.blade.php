@@ -47,7 +47,7 @@
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B;">
                 Lịch đã xác nhận / hoàn thành
             </td>
-            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #059669;">
+            <td align="right" style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 15px; font-weight: 700; color: #1C69D4;">
                 {{ $summary['confirmed_or_completed'] ?? 0 }}
             </td>
         </tr>

@@ -132,11 +132,11 @@ class Phase33UxRefinementSecureCodesAccountingAndProductEditorTest extends TestC
         $manageUrl = URL::signedRoute('appointments.guest.manage', ['appointment' => $appointment->id]);
         $updateUrl = URL::signedRoute('appointments.guest.update', ['appointment' => $appointment->id]);
 
-        // 1. Guest confirms attendance
+        // 1. Guest confirms attendance -> preserves Pending status, records timestamp & locks change cards
         $this->post($updateUrl, ['action' => 'confirm'])->assertRedirect();
         $appointment->refresh();
 
-        $this->assertSame(AppointmentStatus::Confirmed, $appointment->status);
+        $this->assertSame(AppointmentStatus::Pending, $appointment->status);
         $this->assertNotEmpty($appointment->meta_data['guest_confirmed_at'] ?? null);
 
         $expectedAppointmentTime = $appointment->appointment_date->format('H:i d/m/Y');
@@ -147,43 +147,58 @@ class Phase33UxRefinementSecureCodesAccountingAndProductEditorTest extends TestC
         $this->get($manageUrl)
             ->assertOk()
             ->assertSee("Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {$expectedAppointmentTime} (xác nhận lúc {$confirmedAtLabel}).")
+            ->assertSee('data-guest-confirmed-change-lock', false)
             ->assertSee($appointment->publicReferenceCode())
             ->assertDontSee($appointment->internalVoucherCode())
             ->assertDontSee('#BMW-');
 
-        // 2. Guest reschedules to a new date/time -> old confirmation must be invalidated!
+        // Confirm-locked appointment blocks guest reschedule & cancel POST with 403
         $newDateStr = now('Asia/Ho_Chi_Minh')->addDays(4)->format('Y-m-d');
         $this->post($updateUrl, [
+            'action' => 'reschedule',
+            'new_date' => $newDateStr,
+            'new_time' => '15:30',
+        ])->assertForbidden();
+
+        // 2. Unconfirmed appointment can reschedule -> creates v=2 link and sets reschedule_pending_review
+        $rescheduleAppt = Appointment::create([
+            'guest_name' => 'Nguyễn Hoàng Nam 2',
+            'guest_phone' => '0901234742',
+            'guest_email' => 'nam.nguyen2@customer.vn',
+            'product_id' => $car->id,
+            'type' => AppointmentType::TestDrive,
+            'appointment_date' => now('Asia/Ho_Chi_Minh')->addDays(2)->setTime(9, 30),
+            'status' => AppointmentStatus::Pending,
+        ]);
+
+        $this->post($rescheduleAppt->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
             'new_date' => $newDateStr,
             'new_time' => '15:30',
             'reason' => 'Bận họp buổi sáng, xin dời sang chiều.',
         ])->assertRedirect();
 
-        $appointment->refresh();
-        $this->assertNull($appointment->meta_data['guest_confirmed_at'] ?? null);
-        $this->assertNotEmpty($appointment->meta_data['invalidated_guest_confirmed_at'] ?? null);
-        $this->assertTrue((bool) ($appointment->meta_data['reschedule_pending_review'] ?? false));
+        $rescheduleAppt->refresh();
+        $this->assertNull($rescheduleAppt->meta_data['guest_confirmed_at'] ?? null);
+        $this->assertTrue((bool) ($rescheduleAppt->meta_data['reschedule_pending_review'] ?? false));
 
-        $newAppointmentLabel = $appointment->appointment_date->format('H:i — d/m/Y');
-        $v2ManageUrl = $appointment->temporaryManageUrl();
+        $newAppointmentLabel = $rescheduleAppt->appointment_date->format('H:i — d/m/Y');
+        $v2ManageUrl = $rescheduleAppt->temporaryManageUrl();
 
         $this->get($v2ManageUrl)
             ->assertOk()
-            ->assertSee('line-through opacity-60', false)
-            ->assertSee('Đã hết hiệu lực do thay đổi lịch hẹn')
             ->assertSee("Yêu cầu đổi lịch sang {$newAppointmentLabel} đã được ghi nhận. Chuyên viên BMW Showroom sẽ kiểm tra và xác nhận lại lịch hẹn mới cho Quý khách.")
             ->assertSee('Xác nhận chắc chắn đến Showroom');
 
-        // 3. After showroom advisor acknowledges the reschedule, guest can re-confirm for the new schedule on the latest v=2 link
-        $ackMeta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        // 3. After showroom advisor acknowledges the reschedule, guest can confirm for the new schedule on the latest v=2 link
+        $ackMeta = InteractionTimelineRecorder::normalizeMetaArray($rescheduleAppt->meta_data);
         $ackMeta['reschedule_pending_review'] = false;
-        $appointment->forceFill(['meta_data' => $ackMeta])->saveQuietly();
+        $rescheduleAppt->forceFill(['meta_data' => $ackMeta])->saveQuietly();
 
-        $this->post($appointment->temporaryManageUpdateUrl(), ['action' => 'confirm'])->assertRedirect();
-        $appointment->refresh();
-        $this->assertNotEmpty($appointment->meta_data['guest_confirmed_at'] ?? null);
-        $this->assertFalse((bool) ($appointment->meta_data['reschedule_pending_review'] ?? false));
+        $this->post($rescheduleAppt->temporaryManageUpdateUrl(), ['action' => 'confirm'])->assertRedirect();
+        $rescheduleAppt->refresh();
+        $this->assertNotEmpty($rescheduleAppt->meta_data['guest_confirmed_at'] ?? null);
+        $this->assertFalse((bool) ($rescheduleAppt->meta_data['reschedule_pending_review'] ?? false));
     }
 
     public function test_part2_secure_reference_codes_internal_accounting_codes_and_clean_email_subjects(): void

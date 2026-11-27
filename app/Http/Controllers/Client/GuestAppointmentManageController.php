@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
@@ -80,40 +81,61 @@ class GuestAppointmentManageController extends Controller
                 return back()->with('error', 'Lịch hẹn này đã hoàn thành.');
             }
 
-            if ($appointment->status === AppointmentStatus::Pending || empty($meta['guest_confirmed_at'])) {
-                $meta['guest_confirmed_at'] = now()->toIso8601String();
-                $meta['guest_confirmed_for_date'] = $appointment->appointment_date?->format('H:i d/m/Y');
-                $meta['reschedule_pending_review'] = false;
-                $meta['invalidated_guest_confirmed_at'] = null;
-                $meta['invalidated_guest_confirmed_for_date'] = null;
+            $confirmedState = DB::transaction(function () use ($appointment, $previousDateLabel): array {
+                /** @var Appointment $locked */
+                $locked = Appointment::query()
+                    ->whereKey($appointment->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                $meta = InteractionTimelineRecorder::appendToMeta(
-                    meta: $meta,
-                    actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
-                    actorLabel: 'Khách hàng · '.$appointment->customer_name,
-                    title: 'Khách hàng đã xác nhận sẽ đến lịch hẹn',
-                    detail: "Khách hàng ({$appointment->customer_name}) đã chủ động bấm xác nhận sẽ đến lịch hẹn ({$previousDateLabel}) qua liên kết cá nhân.",
-                    channel: 'Signed Link',
-                );
+                if ($locked->isTerminalStatus()) {
+                    return ['status' => $locked->status, 'recordedNow' => false];
+                }
 
-                $appointment->forceFill([
-                    'status' => AppointmentStatus::Confirmed->value,
-                    'meta_data' => $meta,
-                ])->save();
+                $lockedMeta = InteractionTimelineRecorder::normalizeMetaArray($locked->meta_data);
+                $recordedNow = empty($lockedMeta['guest_confirmed_at']);
 
-                $this->dispatchGuestChangeMail(
-                    appointment: $appointment,
-                    action: GuestAppointmentChangeMail::ACTION_CONFIRM,
-                    previousDateLabel: $previousDateLabel,
-                    newDateLabel: $previousDateLabel,
-                    previousStatusLabel: $previousStatusLabel,
-                    newStatusLabel: AppointmentStatus::Confirmed->label(),
-                    reason: $cleanReason !== '' ? $cleanReason : null,
-                );
+                if ($recordedNow) {
+                    $lockedMeta['guest_confirmed_at'] = now()->toIso8601String();
+                    $lockedMeta['guest_confirmed_for_date'] = $locked->appointment_date?->format('H:i d/m/Y');
+                    $lockedMeta['guest_attendance_confirmed'] = true;
+                    $lockedMeta['invalidated_guest_confirmed_at'] = null;
+                    $lockedMeta['invalidated_guest_confirmed_for_date'] = null;
+
+                    $lockedMeta = InteractionTimelineRecorder::appendToMeta(
+                        meta: $lockedMeta,
+                        actorType: InteractionTimelineRecorder::ACTOR_CUSTOMER,
+                        actorLabel: 'Khách hàng · '.$locked->customer_name,
+                        title: 'Khách hàng đã xác nhận sẽ đến lịch hẹn',
+                        detail: "Khách hàng ({$locked->customer_name}) đã chủ động bấm xác nhận tham dự lịch hẹn ({$previousDateLabel}) qua liên kết cá nhân.",
+                        channel: 'Signed Link',
+                    );
+
+                    $locked->forceFill([
+                        'meta_data' => $lockedMeta,
+                    ])->save();
+                }
+
+                $appointment->setRawAttributes($locked->getAttributes(), true);
+                $appointment->meta_data = $locked->meta_data;
+
+                return [
+                    'status' => $locked->status,
+                    'recordedNow' => $recordedNow,
+                ];
+            });
+
+            if ($confirmedState['status'] === AppointmentStatus::Confirmed
+                && ! $appointment->hasSentOfficialConfirmationForCurrentVersion()) {
+                $appointment->sendOfficialConfirmationEmail(null, false);
             }
 
             $timeLabel = $appointment->appointment_date?->format('H:i d/m/Y');
-            $confirmedAtLabel = now('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
+            $confirmedAtLabel = $appointment->guestConfirmedAtLabel() ?? now('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
+
+            if ($confirmedState['status'] === AppointmentStatus::Pending) {
+                return back()->with('success', "Đã ghi nhận xác nhận tham dự cho lịch hẹn {$timeLabel} (xác nhận lúc {$confirmedAtLabel}) — Mã {$refCode}. Chuyên viên BMW sẽ kiểm tra và gửi Thẻ đón tiếp VIP chính thức tới Quý khách trong giây lát.");
+            }
 
             return back()->with('success', "Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {$timeLabel} (xác nhận lúc {$confirmedAtLabel}) — Mã {$refCode}.");
         }
@@ -121,6 +143,21 @@ class GuestAppointmentManageController extends Controller
         if ($action === 'reschedule') {
             if (in_array($appointment->status, [AppointmentStatus::Cancelled, AppointmentStatus::Completed], true)) {
                 return back()->with('error', 'Lịch hẹn đã hoàn thành hoặc đã hủy nên không thể đổi giờ trực tuyến. Quý khách vui lòng đặt lịch hẹn mới.');
+            }
+
+            if (! empty($meta['guest_confirmed_at'])) {
+                $lockedConfirmMessage = 'Lịch hẹn này đã được Quý khách xác nhận chắc chắn tham dự nên không thể đổi giờ trực tuyến. Vui lòng liên hệ trực tiếp Hotline 1900 123 456 hoặc Chuyên viên phụ trách để được hỗ trợ.';
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => $lockedConfirmMessage,
+                        'errors' => [
+                            'appointment' => [$lockedConfirmMessage],
+                        ],
+                    ], 422);
+                }
+
+                abort(403, $lockedConfirmMessage);
             }
 
             $rawDateTime = trim((string) ($validated['new_appointment_date'] ?? ''));
@@ -165,26 +202,28 @@ class GuestAppointmentManageController extends Controller
 
             $newDateLabel = $newDate->format('H:i — d/m/Y');
 
-            if (! empty($meta['guest_confirmed_at'])) {
-                $meta['invalidated_guest_confirmed_at'] = $meta['guest_confirmed_at'];
-                $meta['invalidated_guest_confirmed_for_date'] = $meta['guest_confirmed_for_date']
-                    ?? ($appointment->appointment_date?->format('H:i d/m/Y'));
-                $meta['guest_confirmed_at'] = null;
-                $meta['guest_confirmed_for_date'] = null;
-            }
+            $previousStatusEnum = $appointment->status instanceof AppointmentStatus
+                ? $appointment->status
+                : AppointmentStatus::from((string) $appointment->status);
+            $previousStatusValue = $previousStatusEnum->value;
+            $previousStatusLabel = $previousStatusEnum->label();
+            $nextRescheduleCount = max(0, (int) ($meta['reschedule_count'] ?? 0)) + 1;
 
             $nextVersion = $appointment->currentManageVersion() + 1;
             $meta['manage_version'] = $nextVersion;
             $meta['rescheduled_at'] = now()->toIso8601String();
             $meta['guest_rescheduled_at'] = $meta['rescheduled_at'];
             $meta['reschedule_pending_review'] = true;
+            $meta['reschedule_count'] = $nextRescheduleCount;
+            $meta['previous_status'] = $previousStatusValue;
+            $meta['previous_status_label'] = $previousStatusLabel;
             $meta['previous_appointment_date'] = $previousDateLabel;
             if ($cleanReason !== '') {
                 $meta['reschedule_reason'] = $cleanReason;
             }
 
             $timelineDetail = $previousDateLabel
-                ? "Đổi lịch hẹn: {$previousDateLabel} → {$newDateLabel} (v={$nextVersion})."
+                ? "Đổi lịch hẹn lần {$nextRescheduleCount}: {$previousDateLabel} → {$newDateLabel} ({$previousStatusLabel} → Chờ xác nhận, v={$nextVersion})."
                 : "Đổi sang khung giờ mới: {$newDateLabel} (v={$nextVersion}).";
             if ($cleanReason !== '') {
                 $timelineDetail .= " Ghi chú: {$cleanReason}";
@@ -200,6 +239,7 @@ class GuestAppointmentManageController extends Controller
             );
 
             $appointment->forceFill([
+                'status' => AppointmentStatus::Pending->value,
                 'appointment_date' => $newDate,
                 'reminder_sent_at' => null,
                 'meta_data' => $meta,
@@ -218,7 +258,7 @@ class GuestAppointmentManageController extends Controller
                 previousDateLabel: $previousDateLabel,
                 newDateLabel: $newDateLabel,
                 previousStatusLabel: $previousStatusLabel,
-                newStatusLabel: $appointment->statusLabel(),
+                newStatusLabel: AppointmentStatus::Pending->label(),
                 reason: $cleanReason !== '' ? $cleanReason : null,
             );
 
@@ -231,6 +271,21 @@ class GuestAppointmentManageController extends Controller
             return back()->with('error', $appointment->status === AppointmentStatus::Completed
                 ? 'Lịch hẹn đã hoàn thành nên không thể hủy.'
                 : 'Lịch hẹn này đã được hủy trước đó.');
+        }
+
+        if (! empty($meta['guest_confirmed_at'])) {
+            $lockedCancelMessage = 'Lịch hẹn này đã được Quý khách xác nhận chắc chắn tham dự nên không thể hủy trực tuyến. Vui lòng liên hệ trực tiếp Hotline 1900 123 456 hoặc Chuyên viên phụ trách để được hỗ trợ.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $lockedCancelMessage,
+                    'errors' => [
+                        'appointment' => [$lockedCancelMessage],
+                    ],
+                ], 422);
+            }
+
+            abort(403, $lockedCancelMessage);
         }
 
         $meta['reschedule_pending_review'] = false;

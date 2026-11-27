@@ -420,6 +420,7 @@ class Phase37SidebarTimelineModalFixCustomerDetailAndEmailTemplatesTest extends 
             'type' => AppointmentType::TestDrive->value,
             'status' => AppointmentStatus::Completed->value,
             'appointment_date' => now()->subDays(2)->setTime(10, 0),
+            'meta_data' => ['completion_outcome' => Appointment::OUTCOME_PURCHASED],
         ]);
 
         // Unassigned Sales receives 403 Forbidden (cross-sales isolation)

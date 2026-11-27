@@ -113,7 +113,9 @@
             </footer>
         </div>
 
-        <x-public.ai-assistant-widget />
+        @unless(request()->routeIs('customer.lookup.*') || request()->is('tra-cuu*'))
+            <x-public.ai-assistant-widget />
+        @endunless
 
         {{-- Floating Comparison Bar --}}
         <div id="comparison-bar" x-data="{ 

@@ -39,7 +39,7 @@
 @endphp
 
 @section('title', $officialMode ? 'Xác Nhận Chính Thức Lịch Hẹn | BMW Concierge' : 'Đã Tiếp Nhận Yêu Cầu Đặt Lịch | BMW Showroom Vietnam')
-@section('accent_color', $officialMode ? '#059669' : '#1C69D4')
+@section('accent_color', '#1C69D4')
 @section('header_subtitle', $officialMode ? 'VIP Concierge Pass · Thẻ đón tiếp' : 'ĐÃ TIẾP NHẬN YÊU CẦU ĐẶT LỊCH')
 @if(! $officialMode)
     @section('hide_reply_hint', '1')
@@ -47,7 +47,7 @@
 
 @section('badge')
     @if($officialMode)
-        <span style="display: inline-block; padding: 6px 14px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 9999px; color: #059669; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
+        <span style="display: inline-block; padding: 6px 14px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 9999px; color: #1C69D4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 700;">
             Chuyên viên xác nhận
         </span>
     @else
@@ -63,28 +63,31 @@
             Lịch hẹn của Quý khách đã được Chuyên viên BMW xác nhận
         </h1>
         <p style="margin: 0 0 24px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #475569; line-height: 1.6;">
-            Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, chuyên viên <strong style="color: #059669;">{{ $advisorName }}</strong> đã xác nhận giữ suất <strong style="color: #0F172A;">{{ $appointment->typeLabel() }}</strong> và chuẩn bị đón tiếp Quý khách tại Showroom.
+            Kính chào Quý khách <strong style="color: #0F172A;">{{ $appointment->customer_name }}</strong>, chuyên viên <strong style="color: #1C69D4;">{{ $advisorName }}</strong> đã xác nhận giữ suất <strong style="color: #0F172A;">{{ $appointment->typeLabel() }}</strong> và chuẩn bị đón tiếp Quý khách tại Showroom.
         </p>
 
-        {{-- VIP Concierge Pass (Boarding Pass Style) --}}
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; margin-bottom: 22px;">
+        {{-- VIP Concierge Pass (BMW Navy Luxury Boarding Pass Style) --}}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0B1220; border: 1px solid #1E293B; border-radius: 12px; margin-bottom: 22px; overflow: hidden;">
+            <tr>
+                <td style="height: 3px; background-color: #1C69D4; font-size: 0; line-height: 0;">&nbsp;</td>
+            </tr>
             <tr>
                 <td style="padding: 18px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                    <div style="font-size: 11px; font-weight: 700; color: #059669; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #70A7FF; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px;">
                         VIP CONCIERGE PASS &bull; ĐÃ XÁC NHẬN CHÍNH THỨC
                     </div>
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                            <td style="padding: 4px 0; font-size: 13px; color: #065F46; width: 38%;">Mã tham chiếu</td>
-                            <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #0F172A; width: 62%;">{{ $customerOrderCode }}</td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #94A3B8; width: 38%;">Mã tham chiếu</td>
+                            <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #F8FAFC; width: 62%;">{{ $customerOrderCode }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 4px 0; font-size: 13px; color: #065F46;">Chuyên viên phụ trách</td>
-                            <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #0F172A;">{{ $advisorFormatted }}</td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #94A3B8;">Chuyên viên phụ trách</td>
+                            <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #F8FAFC;">{{ $advisorFormatted }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 4px 0; font-size: 13px; color: #065F46;">Đặc quyền đón tiếp</td>
-                            <td style="padding: 4px 0; font-size: 13px; color: #065F46;">Khu đỗ xe VIP ưu tiên &amp; phòng tiếp khách BMW Lounge</td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #94A3B8;">Đặc quyền đón tiếp</td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #CBD5E1;">Khu đỗ xe VIP ưu tiên &amp; phòng tiếp khách BMW Lounge</td>
                         </tr>
                     </table>
                 </td>
@@ -107,7 +110,7 @@
         {{-- BMW Dark Luxury Hero Card (Service / Aftersales & Consultation without Vehicle Photo — Gmail Light & Dark Safe) --}}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" data-bmw-dark-luxury-hero="1" style="margin: 0 0 22px 0; background-color: #0B1220; border: 1px solid #1E293B; border-radius: 14px; overflow: hidden;">
             <tr>
-                <td style="height: 4px; background-color: {{ $officialMode ? '#10B981' : '#1C69D4' }}; font-size: 0; line-height: 0;">&nbsp;</td>
+                <td style="height: 4px; background-color: #1C69D4; font-size: 0; line-height: 0;">&nbsp;</td>
             </tr>
             <tr>
                 <td style="padding: 22px 24px; background-color: #0B1220; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
@@ -148,7 +151,7 @@
                             </td>
                             <td style="padding-top: 12px; font-size: 12px; color: #94A3B8; width: 50%;">
                                 Trạng thái khoang / lịch hẹn<br>
-                                <strong style="display: inline-block; margin-top: 3px; font-size: 13px; color: {{ $officialMode ? '#34D399' : '#70A7FF' }};">
+                                <strong style="display: inline-block; margin-top: 3px; font-size: 13px; color: #70A7FF;">
                                     {{ $officialMode ? 'Đã xác nhận giữ chỗ' : 'Đang chờ điều phối' }}
                                 </strong>
                             </td>
@@ -165,7 +168,7 @@
             <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 500; color: #64748B; width: 38%;">
                 Mã tham chiếu
             </td>
-            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: {{ $officialMode ? '#059669' : '#1C69D4' }}; width: 62%;">
+            <td style="padding: 13px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; font-weight: 700; color: #1C69D4; width: 62%;">
                 {{ $customerOrderCode }}
             </td>
         </tr>
@@ -241,7 +244,7 @@
         <tr>
             <td align="left">
                 <a href="{{ $appointment->temporaryManageUrl() }}"
-                   style="display: inline-block; background-color: {{ $officialMode ? '#059669' : '#1C69D4' }}; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.4px; border-radius: 10px;">
+                   style="display: inline-block; background-color: #1C69D4; color: #FFFFFF; text-decoration: none; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.4px; border-radius: 10px;">
                     XÁC NHẬN / QUẢN LÝ LỊCH HẸN
                 </a>
             </td>

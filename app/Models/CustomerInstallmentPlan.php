@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerInstallmentPlan extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_COMPLETED = 'completed';
@@ -30,6 +32,10 @@ class CustomerInstallmentPlan extends Model
         'loan_amount',
         'monthly_payment',
         'interest_rate',
+        'fixed_rate_months',
+        'floating_rate_adjustment_months',
+        'floating_interest_rate',
+        'early_settlement_fee_note',
         'interest_method',
         'term_months',
         'paid_installments',
@@ -48,6 +54,9 @@ class CustomerInstallmentPlan extends Model
             'loan_amount' => 'integer',
             'monthly_payment' => 'integer',
             'interest_rate' => 'float',
+            'fixed_rate_months' => 'integer',
+            'floating_rate_adjustment_months' => 'integer',
+            'floating_interest_rate' => 'float',
             'term_months' => 'integer',
             'paid_installments' => 'integer',
             'start_date' => 'date',
@@ -75,12 +84,18 @@ class CustomerInstallmentPlan extends Model
         return $query->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_OVERDUE]);
     }
 
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
     /**
      * @return array<string, string>
      */
     public static function statusOptions(): array
     {
         return [
+            self::STATUS_DRAFT => 'Chờ bổ sung thông tin',
             self::STATUS_ACTIVE => 'Đang trả góp',
             self::STATUS_OVERDUE => 'Sắp / Quá hạn kỳ',
             self::STATUS_COMPLETED => 'Đã tất toán',
@@ -95,10 +110,30 @@ class CustomerInstallmentPlan extends Model
     public function statusColorClass(): string
     {
         return match ($this->status) {
+            self::STATUS_DRAFT => 'border-amber-500/35 bg-amber-500/15 text-amber-300',
             self::STATUS_COMPLETED => 'border-emerald-500/35 bg-emerald-500/15 text-emerald-300',
             self::STATUS_OVERDUE => 'border-rose-500/35 bg-rose-500/15 text-rose-300',
             default => 'border-sky-500/35 bg-sky-500/15 text-sky-300',
         };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function adjustmentFrequencyOptions(): array
+    {
+        return [
+            0 => 'Cố định toàn kỳ (Không thả nổi)',
+            3 => 'Điều chỉnh mỗi 3 tháng / lần',
+            6 => 'Điều chỉnh mỗi 6 tháng / lần',
+        ];
+    }
+
+    public function adjustmentFrequencyLabel(): string
+    {
+        $freq = (int) ($this->floating_rate_adjustment_months ?? 3);
+
+        return self::adjustmentFrequencyOptions()[$freq] ?? "Điều chỉnh mỗi {$freq} tháng / lần";
     }
 
     public function progressPercent(): int

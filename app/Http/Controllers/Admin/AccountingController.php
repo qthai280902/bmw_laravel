@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccessoryOrder;
 use App\Models\AccountingDailyClosing;
 use App\Models\Appointment;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -45,8 +46,11 @@ class AccountingController extends Controller
         $ordersCollection = $accountingData['orders'];
         $appointmentsCollection = $accountingData['appointments'];
 
-        // 5 Financial KPIs computed via custom Eloquent Collections
+        // Financial KPIs computed via custom Eloquent Collections (strictly 0 fake deposits)
         $completedAccessoryRevenue = $ordersCollection->completedRevenue();
+        $completedVehicleRevenue = $appointmentsCollection->realizedVehicleRevenue();
+        $completedServiceRevenue = $appointmentsCollection->realizedServiceRevenue();
+        $totalCompletedRevenue = $completedAccessoryRevenue + $completedVehicleRevenue + $completedServiceRevenue;
         $processingAccessoryValue = $ordersCollection->processingValue();
         $vehicleCommittedDeposit = $appointmentsCollection->committedDepositValue();
         $vehicleReferenceValue = $appointmentsCollection->referenceVehicleValue();
@@ -91,12 +95,17 @@ class AccountingController extends Controller
                 }
             } elseif ($v['module_key'] === 'services') {
                 $groupedByDate[$d]['services_count']++;
+                if ($v['status'] === 'completed') {
+                    $groupedByDate[$d]['completed_revenue'] += (int) ($v['realized_revenue'] ?? 0);
+                }
             } else {
                 $groupedByDate[$d]['vehicles_count']++;
-                if (in_array($v['status'], ['confirmed', 'completed'], true)) {
-                    $groupedByDate[$d]['committed_value'] += $v['deposit_amount'];
+                if ($v['status'] === 'completed') {
+                    $groupedByDate[$d]['completed_revenue'] += (int) ($v['realized_revenue'] ?? 0);
+                } elseif ($v['status'] === 'confirmed') {
+                    $groupedByDate[$d]['committed_value'] += (int) ($v['deposit_amount'] ?? 0);
                 } elseif ($v['status'] === 'cancelled') {
-                    $groupedByDate[$d]['cancelled_value'] += $v['deposit_amount'];
+                    $groupedByDate[$d]['cancelled_value'] += (int) ($v['deposit_amount'] ?? 0);
                 }
             }
         }
@@ -160,6 +169,9 @@ class AccountingController extends Controller
             'dateTo' => $dateToInput !== '' ? $dateToInput : $endVn->toDateString(),
             'periodLabel' => $startVn->format('d/m/Y').' — '.$endVn->format('d/m/Y'),
             'kpis' => [
+                'total_completed_revenue' => $totalCompletedRevenue,
+                'completed_vehicle_revenue' => $completedVehicleRevenue,
+                'completed_service_revenue' => $completedServiceRevenue,
                 'completed_accessory_revenue' => $completedAccessoryRevenue,
                 'processing_accessory_value' => $processingAccessoryValue,
                 'vehicle_committed_deposit' => $vehicleCommittedDeposit,
@@ -475,6 +487,26 @@ class AccountingController extends Controller
                     : (string) $appointment->status;
                 $refPrice = (int) ($appointment->product?->price ?? 0);
                 $depositAmount = AppointmentCollection::resolveDepositAmount($appointment);
+                $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+
+                $realizedRevenue = 0;
+                $paymentBreakdown = null;
+                if ($statusVal === AppointmentStatus::Completed->value) {
+                    if ($isService) {
+                        $realizedRevenue = AppointmentCollection::resolveServiceRevenue($appointment);
+                    } else {
+                        $realizedRevenue = AppointmentCollection::resolveVehicleSaleRevenue($appointment);
+                        if ($realizedRevenue > 0 && ($meta['payment_method'] ?? 'cash') === 'installment') {
+                            $downPay = (int) ($meta['down_payment_amount'] ?? 0);
+                            $loanPay = (int) ($meta['financed_loan_amount'] ?? max(0, $realizedRevenue - $downPay));
+                            $paymentBreakdown = 'Trả góp · Đối ứng '.number_format($downPay, 0, ',', '.').' ₫ · Vay NH '.number_format($loanPay, 0, ',', '.').' ₫';
+                        } elseif ($realizedRevenue > 0) {
+                            $paymentBreakdown = 'Thanh toán 100% (Trả thẳng)';
+                        }
+                    }
+                }
+
+                $displayAmount = $realizedRevenue > 0 ? $realizedRevenue : $depositAmount;
 
                 $itemName = $isService
                     ? ($appointment->servicePackageLabel() ?? $appointment->typeLabel())
@@ -495,10 +527,11 @@ class AccountingController extends Controller
                     'customer_phone' => $appointment->customer_phone,
                     'item_name' => $itemName,
                     'quantity' => 1,
-                    'amount' => $depositAmount,
+                    'amount' => $displayAmount,
                     'deposit_amount' => $depositAmount,
-                    'unit_or_deposit_amount' => $depositAmount,
-                    'realized_revenue' => 0,
+                    'unit_or_deposit_amount' => $realizedRevenue > 0 ? $realizedRevenue : $depositAmount,
+                    'realized_revenue' => $realizedRevenue,
+                    'payment_breakdown' => $paymentBreakdown,
                     'reference_price' => $refPrice,
                     'sales_name' => $appointment->assignedSales?->exists ? $appointment->assignedSales->name : 'Chưa gán',
                     'status' => $statusVal,
@@ -555,12 +588,17 @@ class AccountingController extends Controller
                 }
             } elseif ($v['module_key'] === 'services') {
                 $servicesCount++;
+                if ($v['status'] === 'completed') {
+                    $completedRevenue += (int) ($v['realized_revenue'] ?? 0);
+                }
             } else {
                 $vehiclesCount++;
-                if (in_array($v['status'], ['confirmed', 'completed'], true)) {
-                    $committedValue += $v['deposit_amount'];
+                if ($v['status'] === 'completed') {
+                    $completedRevenue += (int) ($v['realized_revenue'] ?? 0);
+                } elseif ($v['status'] === 'confirmed') {
+                    $committedValue += (int) ($v['deposit_amount'] ?? 0);
                 } elseif ($v['status'] === 'cancelled') {
-                    $cancelledValue += $v['deposit_amount'];
+                    $cancelledValue += (int) ($v['deposit_amount'] ?? 0);
                 }
             }
         }

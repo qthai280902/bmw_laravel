@@ -20,7 +20,10 @@
     ];
 @endphp
 
-<div @keydown.escape.window="$wire.closeInspector()">
+<div
+    x-data="bmwSafeCrmPoll($wire, () => Boolean($wire.inspectedOrderId || $wire.pendingArchiveAction))"
+    @keydown.escape.window="$wire.closeInspector()"
+>
     <x-admin.page-header
         eyebrow="Parts operations"
         title="Đơn phụ kiện"
@@ -186,10 +189,11 @@
                 <tbody class="divide-y divide-white/[0.06]">
                     @forelse($orders as $order)
                         @php
-                            $isCancelledOrderRow = (string) $order->status === \App\Models\AccessoryOrder::STATUS_CANCELLED;
+                            $isTerminalOrderRow = $order->isTerminalStatus();
+                            $terminalOrderCellDim = $isTerminalOrderRow ? 'opacity-55 transition-opacity group-hover:opacity-75' : '';
                         @endphp
-                        <tr wire:key="admin-accessory-order-{{ $order->id }}" class="group align-middle transition-colors hover:bg-white/[0.03] {{ $isCancelledOrderRow ? 'opacity-60 hover:opacity-85' : '' }}">
-                            <td class="whitespace-nowrap px-5 py-4">
+                        <tr wire:key="admin-accessory-order-{{ $order->id }}" class="group align-middle transition-colors hover:bg-white/[0.03]" data-terminal-row="{{ $isTerminalOrderRow ? 'true' : 'false' }}">
+                            <td class="whitespace-nowrap px-5 py-4 {{ $terminalOrderCellDim }}">
                                 @if($order->customer_order_code)
                                     <p class="text-xs font-bold tabular-nums text-[#70A7FF]">{{ $order->customer_order_code }}</p>
                                 @endif
@@ -202,7 +206,7 @@
                                 <p class="mt-1 text-xs font-semibold tabular-nums text-white">{{ $order->created_at->format('d/m/Y H:i') }}</p>
                             </td>
 
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 {{ $terminalOrderCellDim }}">
                                 <p class="truncate text-sm font-bold text-white">{{ $order->customer_name }}</p>
                                 <p class="mt-0.5 truncate text-xs tabular-nums text-zinc-300">{{ $order->customer_phone }}</p>
                                 <p class="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -217,7 +221,7 @@
                                 </p>
                             </td>
 
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 {{ $terminalOrderCellDim }}">
                                 <p class="truncate text-xs font-semibold text-[#70A7FF]">{{ $order->product?->name ?? 'Sản phẩm đã xóa' }}</p>
                                 <p class="mt-1 text-xs font-bold tabular-nums text-white">
                                     {{ number_format($order->total_amount) }} VNĐ
@@ -225,7 +229,7 @@
                                 </p>
                             </td>
 
-                            <td class="px-4 py-4 align-middle">
+                            <td class="px-4 py-4 align-middle {{ $terminalOrderCellDim }}">
                                 <div class="mx-auto flex min-w-[140px] max-w-[180px] flex-col items-center gap-1.5 text-center">
                                     <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold {{ $order->statusColorClass() }}">
                                         {{ $order->statusLabel() }}
@@ -431,8 +435,22 @@
                                 </div>
                             </section>
 
+                            @php
+                                $orderMetaDebug = \App\Services\Crm\InteractionTimelineRecorder::normalizeMetaArray($order->meta_data);
+                                $orderDebugPayload = [
+                                    'reference_code' => $order->publicReferenceCode(),
+                                    'internal_voucher_code' => $order->internalVoucherCode(),
+                                    'status' => (string) $order->status,
+                                    'status_label' => $order->statusLabel(),
+                                    'total_amount' => (int) $order->total_amount,
+                                    'quantity' => (int) $order->quantity,
+                                    'cancel_reason' => $orderMetaDebug['cancel_reason'] ?? null,
+                                    'timeline' => $timelineEvents,
+                                ];
+                            @endphp
                             <x-admin.crm-interaction-timeline
                                 :events="$timelineEvents"
+                                :debug-payload="$orderDebugPayload"
                                 heading="3. Lịch sử tương tác Khách hàng ↔ Hệ thống"
                             />
 

@@ -594,7 +594,6 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             'status' => AppointmentStatus::Pending,
         ]);
 
-        $this->post($guestSelfServe->temporaryManageUpdateUrl(), ['action' => 'confirm'])->assertRedirect();
         $newGuestDate = now()->addDays(6)->setTime(10, 0)->format('Y-m-d H:i');
         $this->post($guestSelfServe->temporaryManageUpdateUrl(), [
             'action' => 'reschedule',
@@ -603,6 +602,19 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
         ])->assertRedirect();
 
         $guestSelfServe->refresh();
+        $this->assertEmpty(
+            collect($guestSelfServe->meta_data['timeline'] ?? [])->where('actor_type', 'admin')->all(),
+            'Guest Signed URL flow must never record admin actor.'
+        );
+
+        Livewire::actingAs($staffA)
+            ->test(AppointmentTable::class)
+            ->call('acknowledgeGuestReschedule', $guestSelfServe->id)
+            ->assertHasNoErrors();
+
+        $guestSelfServe->refresh();
+        $this->post($guestSelfServe->temporaryManageUpdateUrl(), ['action' => 'confirm'])->assertRedirect();
+        $guestSelfServe->refresh();
         $this->assertSame(AppointmentStatus::Confirmed, $guestSelfServe->status);
         $customerActors = collect($guestSelfServe->meta_data['timeline'] ?? [])
             ->where('actor_type', 'customer')
@@ -610,10 +622,6 @@ class Phase31CrmStateMachineAndActionHubTest extends TestCase
             ->all();
         $this->assertContains('Khách hàng đã xác nhận sẽ đến lịch hẹn', $customerActors);
         $this->assertContains('Khách tự đổi ngày/giờ hẹn', $customerActors);
-        $this->assertEmpty(
-            collect($guestSelfServe->meta_data['timeline'] ?? [])->where('actor_type', 'admin')->all(),
-            'Guest Signed URL flow must never record admin actor.'
-        );
 
         // Cron job: tự hủy pending quá hạn (>24h), bỏ qua lịch confirmed/completed
         $overduePending = Appointment::create([

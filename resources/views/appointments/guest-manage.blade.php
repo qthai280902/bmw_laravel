@@ -21,7 +21,9 @@
             : null;
         $invalidatedForDateLabel = $meta['invalidated_guest_confirmed_for_date'] ?? ($meta['previous_appointment_date'] ?? $appointmentTimeFormatted);
         $reschedulePendingReview = ! $isLocked && (bool) ($meta['reschedule_pending_review'] ?? false);
+        $hasGuestConfirmed = filled($guestConfirmedAtFormatted);
         $isActionFrozen = $isLocked || $isOutdatedLink || $reschedulePendingReview;
+        $isChangeCardLocked = $isActionFrozen || $hasGuestConfirmed;
 
         $cancellationAttribution = $appointment->cancellationAttributionLabel();
         $cancelReasonText = is_string($meta['cancel_reason'] ?? null) && trim($meta['cancel_reason']) !== ''
@@ -175,11 +177,16 @@
                         class="mt-6 space-y-3 {{ $frozenCardClass }}"
                     >
                         @if($guestConfirmedAtFormatted)
-                            <div class="inline-flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
-                                <svg class="h-4 w-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {{ $appointmentTimeFormatted }} (xác nhận lúc {{ $guestConfirmedAtFormatted }}).</span>
+                            <div class="space-y-2.5">
+                                <div class="inline-flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-bold text-[#1C69D4]">
+                                    <svg class="h-4 w-4 shrink-0 text-[#1C69D4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Đã ghi nhận xác nhận đến Showroom cho lịch hẹn {{ $appointmentTimeFormatted }} (xác nhận lúc {{ $guestConfirmedAtFormatted }}).</span>
+                                </div>
+                                <div data-guest-confirmed-change-lock class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs leading-relaxed text-slate-600">
+                                    Quý khách đã xác nhận tham dự cố định khung giờ này nên tính năng đổi giờ và hủy lịch trực tuyến đã được khóa. Nếu có thay đổi đột xuất, vui lòng liên hệ trực tiếp Hotline <a href="tel:1900123456" class="font-bold text-[#1C69D4] hover:underline">1900 123 456</a> hoặc Chuyên viên phụ trách để được hỗ trợ.
+                                </div>
                             </div>
                         @else
                             @if($invalidatedConfirmedAtFormatted)
@@ -210,9 +217,12 @@
             </div>
 
             {{-- Reschedule Card --}}
+            @php
+                $changeCardLockClass = $isChangeCardLocked ? 'opacity-50 pointer-events-none select-none' : '';
+            @endphp
             <div
                 data-guest-reschedule-card
-                class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 {{ ! $isLocked ? $frozenCardClass : '' }}"
+                class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 {{ ! $isLocked ? $changeCardLockClass : '' }}"
             >
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1C69D4]">Đề xuất thời gian khác</p>
                 <h2 class="mt-1.5 text-lg font-bold text-slate-900">Yêu cầu đổi giờ hẹn</h2>
@@ -231,7 +241,7 @@
                             proposedDateStr: @js($initialDate),
                             proposedDate: @js($initialFullDateLabel),
                             proposedTime: @js($initialTime),
-                            isFrozen: @js($isActionFrozen),
+                            isFrozen: @js($isChangeCardLocked),
                             hasChanged() {
                                 if (!this.proposedDateStr || !this.proposedTime) {
                                     return false;
@@ -251,7 +261,7 @@
                                 id="new_appointment_date"
                                 theme="light"
                                 mode="reschedule"
-                                :disabled="$isActionFrozen"
+                                :disabled="$isChangeCardLocked"
                                 :anchor-date="$initialDate"
                                 date-input-name="new_date"
                                 time-input-name="new_time"
@@ -271,9 +281,10 @@
                                 type="text"
                                 name="reason"
                                 value="{{ old('reason') }}"
-                                @disabled($isActionFrozen)
+                                @disabled($isChangeCardLocked)
                                 placeholder="Ví dụ: Dời sang buổi chiều cuối tuần..."
-                                class="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4]"
+                                style="background-color: #FFFFFF; color: #0F172A; color-scheme: light;"
+                                class="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1C69D4] focus:ring-1 focus:ring-[#1C69D4] disabled:bg-slate-50 disabled:text-slate-400"
                             >
                         </div>
 
@@ -310,7 +321,7 @@
             @if(! $isLocked)
                 <div
                     data-guest-cancel-card
-                    class="rounded-xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8 {{ $frozenCardClass }}"
+                    class="rounded-xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8 {{ $changeCardLockClass }}"
                 >
                     <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-rose-600">Thay đổi kế hoạch</p>
                     <h2 class="mt-1.5 text-lg font-bold text-slate-900">Hủy lịch hẹn</h2>
@@ -324,15 +335,16 @@
                                 id="cancel_reason"
                                 type="text"
                                 name="reason"
-                                @disabled($isActionFrozen)
+                                @disabled($isChangeCardLocked)
                                 placeholder="Vui lòng chia sẻ nếu có thay đổi lịch trình..."
-                                class="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                                style="background-color: #FFFFFF; color: #0F172A; color-scheme: light;"
+                                class="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 disabled:bg-slate-50 disabled:text-slate-400"
                             >
                         </div>
                         <button
                             type="submit"
-                            @disabled($isActionFrozen)
-                            class="h-11 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-6 text-xs font-bold uppercase tracking-[0.12em] text-rose-700 transition-colors {{ $isActionFrozen ? 'opacity-60 cursor-not-allowed' : 'hover:bg-rose-600 hover:text-white cursor-pointer' }}"
+                            @disabled($isChangeCardLocked)
+                            class="h-11 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-6 text-xs font-bold uppercase tracking-[0.12em] text-rose-700 transition-colors {{ $isChangeCardLocked ? 'opacity-60 cursor-not-allowed' : 'hover:bg-rose-600 hover:text-white cursor-pointer' }}"
                         >
                             Hủy lịch hẹn
                         </button>

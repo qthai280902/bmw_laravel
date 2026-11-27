@@ -47,6 +47,8 @@
 <div
     data-bmw-datetime-picker="{{ $id }}"
     data-picker-mode="{{ $normalizedMode }}"
+    data-picker-theme="{{ $isLight ? 'light' : 'dark' }}"
+    @if($isLight) style="color-scheme: light;" @endif
     x-data="{
         todayStr: @js($todayStr),
         tomorrowStr: @js($tomorrowStr),
@@ -589,7 +591,7 @@
                             </div>
                             <div
                                 data-wheel-hours
-                                class="sidebar-scroll max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200/90 bg-white' : 'border-white/10 bg-zinc-950/80' }}"
+                                class="{{ $isLight ? 'bmw-light-scroll' : 'sidebar-scroll' }} max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200/90 bg-white' : 'border-white/10 bg-zinc-950/80' }}"
                             >
                                 <template x-for="h in hoursList" :key="'h-' + h">
                                     <button
@@ -615,7 +617,7 @@
                             </div>
                             <div
                                 data-wheel-minutes
-                                class="sidebar-scroll max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200/90 bg-white' : 'border-white/10 bg-zinc-950/80' }}"
+                                class="{{ $isLight ? 'bmw-light-scroll' : 'sidebar-scroll' }} max-h-44 space-y-1 overflow-y-auto overscroll-contain {{ $radiusClass }} border p-1 {{ $isLight ? 'border-slate-200/90 bg-white' : 'border-white/10 bg-zinc-950/80' }}"
                             >
                                 <template x-for="m in minutesList" :key="'m-' + m">
                                     <button

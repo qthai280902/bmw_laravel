@@ -34,11 +34,17 @@
         ];
     }
 
-    $productSelectOptions = ['' => '-- Không gắn mẫu xe cụ thể --'] + $vehicleProducts->pluck('name', 'id')->all();
-    $appointmentSelectOptions = ['' => '-- Không gắn lịch hẹn cụ thể --'];
-    foreach ($vehicleAppointments as $appt) {
-        $appointmentSelectOptions[(string) $appt->id] = $appt->publicReferenceCode() . ' · ' . ($appt->product?->name ?? 'Tư vấn') . ' (' . $appt->appointment_date?->format('d/m/Y') . ')';
-    }
+    $productSelectOptions = $vehicleProducts->isNotEmpty()
+        ? (['' => '-- Chọn mẫu xe BMW khách đã mua --'] + $vehicleProducts->pluck('name', 'id')->all())
+        : ['' => '-- Chưa có xe nào hoàn tất mua (purchased) --'];
+    $productPricesMap = $vehicleProducts->mapWithKeys(static fn ($prod): array => [
+        (string) $prod->id => (int) ($prod->price ?? 0),
+    ])->all();
+    $appointmentSelectOptions = $purchasedAppointments->isNotEmpty()
+        ? (['' => '-- Chọn giao dịch mua xe liên kết --'] + $purchasedAppointments->mapWithKeys(static fn ($appt): array => [
+            (string) $appt->id => $appt->publicReferenceCode() . ' · ' . ($appt->product?->name ?? 'Xe BMW') . ' (' . $appt->appointment_date?->format('d/m/Y') . ')',
+        ])->all())
+        : ['' => '-- Chưa có giao dịch mua xe hoàn tất --'];
 @endphp
 
 <x-admin-layout>
@@ -151,16 +157,26 @@
                     </button>
                 </div>
 
-                <!-- Create New Installment Plan Form (Phase 40 Live Calculator + Dot Formatting) -->
+                <!-- Create New Installment Plan Form (Phase 41 VN Banking + Purchased-Only + Pricing API) -->
                 @php
+                    $defaultPurchasedProductId = old('product_id', $vehicleProducts->count() === 1 ? (string) $vehicleProducts->first()->id : '');
+                    $defaultPurchasedPrice = old('vehicle_price');
+                    if ($defaultPurchasedPrice === null && $defaultPurchasedProductId !== '' && isset($productPricesMap[(string) $defaultPurchasedProductId]) && $productPricesMap[(string) $defaultPurchasedProductId] > 0) {
+                        $defaultPurchasedPrice = $productPricesMap[(string) $defaultPurchasedProductId];
+                    }
                     $createCalcConfig = [
                         'mode' => 'create',
-                        'vehiclePrice' => old('vehicle_price'),
+                        'pricingEndpointTemplate' => route('admin.api.products.pricing', ['product' => '__ID__']),
+                        'productPrices' => $productPricesMap,
+                        'vehiclePrice' => $defaultPurchasedPrice,
                         'downPayment' => old('down_payment'),
                         'loanAmount' => (int) old('loan_amount', 2000000000),
                         'monthlyPayment' => (int) old('monthly_payment', 42000000),
                         'hasOldMonthlyPayment' => old('monthly_payment') !== null,
                         'interestRate' => (string) old('interest_rate', '7.9'),
+                        'fixedRateMonths' => (int) old('fixed_rate_months', 12),
+                        'floatingAdjustmentMonths' => (string) old('floating_rate_adjustment_months', '3'),
+                        'floatingInterestRate' => old('floating_interest_rate') !== null ? (string) old('floating_interest_rate') : '',
                         'interestMethod' => (string) old('interest_method', \App\Models\CustomerInstallmentPlan::METHOD_REDUCING_BALANCE),
                         'termMonths' => (int) old('term_months', 60),
                         'paidInstallments' => (int) old('paid_installments', 0),
@@ -180,31 +196,44 @@
                     <input type="hidden" name="route_email" value="{{ $routeEmail }}">
                     <p class="text-xs font-bold text-[#70A7FF]">Khởi tạo hợp đồng trả góp mới cho {{ $profile['name'] }}</p>
 
+                    @if(! $hasPurchasedVehicles)
+                        <div data-no-purchased-vehicle-banner class="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-200">
+                            <strong class="font-bold text-amber-300">Chưa có giao dịch mua xe hoàn tất:</strong>
+                            Khách hàng này chưa có lịch hẹn trạng thái <strong>Hoàn thành — Đã mua xe (purchased)</strong>. Vui lòng hoàn tất hồ sơ mua xe trước khi tạo hợp đồng trả góp.
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                         <x-admin.form-field name="bank_name" label="Ngân hàng / Tổ chức tài chính *">
-                            <input type="text" name="bank_name" value="{{ old('bank_name') }}" required placeholder="Ví dụ: Techcombank BMW Financial" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:outline-none">
+                            <input type="text" name="bank_name" value="{{ old('bank_name') }}" @disabled(! $hasPurchasedVehicles) required placeholder="Ví dụ: Techcombank BMW Financial" class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs text-white focus:border-[#1C69D4] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
                         </x-admin.form-field>
 
                         <x-admin.form-field name="status" label="Trạng thái hợp đồng *">
                             <x-ui.custom-select
                                 name="status"
+                                :disabled="! $hasPurchasedVehicles"
                                 :value="old('status', \App\Models\CustomerInstallmentPlan::STATUS_ACTIVE)"
                                 :options="$installmentStatusOptions"
                             />
                         </x-admin.form-field>
 
-                        <x-admin.form-field name="product_id" label="Mẫu xe BMW liên kết">
-                            <x-ui.custom-select
-                                name="product_id"
-                                :value="(string) old('product_id', '')"
-                                :options="$productSelectOptions"
-                            />
+                        <x-admin.form-field name="product_id" label="Mẫu xe BMW liên kết (Chỉ xe đã mua)">
+                            <div @change="onProductSelectChange($event.detail?.value ?? '')">
+                                <x-ui.custom-select
+                                    name="product_id"
+                                    :disabled="! $hasPurchasedVehicles"
+                                    :value="(string) $defaultPurchasedProductId"
+                                    :options="$productSelectOptions"
+                                />
+                            </div>
+                            <p x-show="pricingStatus !== ''" x-cloak class="mt-1 text-[10px] font-semibold text-emerald-300" x-text="pricingStatus"></p>
                         </x-admin.form-field>
 
-                        <x-admin.form-field name="appointment_id" label="Lịch hẹn Showroom liên kết">
+                        <x-admin.form-field name="appointment_id" label="Giao dịch mua xe liên kết">
                             <x-ui.custom-select
                                 name="appointment_id"
-                                :value="(string) old('appointment_id', '')"
+                                :disabled="! $hasPurchasedVehicles"
+                                :value="(string) old('appointment_id', $purchasedAppointments->count() === 1 ? (string) $purchasedAppointments->first()->id : '')"
                                 :options="$appointmentSelectOptions"
                             />
                         </x-admin.form-field>
@@ -289,7 +318,7 @@
                             >
                         </div>
 
-                        <x-admin.form-field name="interest_rate" label="Lãi suất (%/năm) *">
+                        <x-admin.form-field name="interest_rate" label="Lãi suất ưu đãi ban đầu (%/năm) *">
                             <input
                                 type="text"
                                 inputmode="decimal"
@@ -299,6 +328,52 @@
                                 @input="onFormulaParamChange()"
                                 required
                                 class="no-number-spinner h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                            >
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="fixed_rate_months" label="Thời gian cố định ưu đãi (tháng)">
+                            <input
+                                type="number"
+                                name="fixed_rate_months"
+                                data-calc-fixed-months
+                                x-model.number="fixedRateMonths"
+                                @input="onFormulaParamChange()"
+                                min="0"
+                                max="240"
+                                class="no-number-spinner h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none"
+                            >
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="floating_rate_adjustment_months" label="Chu kỳ điều chỉnh thả nổi">
+                            <div @change="if ($event.detail?.value !== undefined) onFormulaParamChange(null, $event.detail.value)">
+                                <x-ui.custom-select
+                                    name="floating_rate_adjustment_months"
+                                    :value="(string) old('floating_rate_adjustment_months', '3')"
+                                    :options="$adjustmentFrequencyOptions"
+                                />
+                            </div>
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="floating_interest_rate" label="Lãi suất thả nổi dự kiến sau ưu đãi (%/năm)">
+                            <input
+                                type="text"
+                                inputmode="decimal"
+                                name="floating_interest_rate"
+                                data-calc-floating-rate
+                                x-model="floatingInterestRate"
+                                @input="onFormulaParamChange()"
+                                placeholder="Ví dụ: 10.5 (để trống = giữ nguyên lãi ban đầu)"
+                                class="no-number-spinner h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs font-semibold tabular-nums text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
+                            >
+                        </x-admin.form-field>
+
+                        <x-admin.form-field name="early_settlement_fee_note" label="Phí tất toán trước hạn (Ghi chú hợp đồng)">
+                            <input
+                                type="text"
+                                name="early_settlement_fee_note"
+                                value="{{ old('early_settlement_fee_note') }}"
+                                placeholder="Ví dụ: Năm 1: 2% · Năm 2-3: 1% · Từ năm 4: Miễn phí"
+                                class="h-10 w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#1C69D4] focus:outline-none"
                             >
                         </x-admin.form-field>
 
@@ -359,41 +434,45 @@
                             </p>
                             <span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300" x-text="interestMethod === 'flat' ? 'Lãi cố định trên gốc ban đầu' : 'Dư nợ giảm dần chuẩn ngân hàng'"></span>
                         </div>
-                        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6 text-xs">
-                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                        <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 text-xs">
+                            <div class="min-w-0 rounded-lg border border-white/[0.06] bg-[#070A10] p-3">
                                 <p class="text-[10px] text-zinc-400">Gốc mỗi tháng</p>
-                                <p class="mt-1 font-bold tabular-nums text-white" x-text="formatCurrency(summary.monthlyPrincipal)"></p>
+                                <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-white" x-text="formatCurrency(summary.monthlyPrincipal)"></p>
                             </div>
-                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                            <div class="min-w-0 rounded-lg border border-white/[0.06] bg-[#070A10] p-3">
                                 <p class="text-[10px] text-zinc-400">Lãi kỳ đầu</p>
-                                <p class="mt-1 font-bold tabular-nums text-amber-300" x-text="formatCurrency(summary.firstMonthInterest)"></p>
+                                <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-amber-300" x-text="formatCurrency(summary.firstMonthInterest)"></p>
                             </div>
-                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                            <div class="min-w-0 rounded-lg border border-white/[0.06] bg-[#070A10] p-3">
                                 <p class="text-[10px] text-zinc-400">Lãi TB / tháng</p>
-                                <p class="mt-1 font-bold tabular-nums text-zinc-200" x-text="formatCurrency(summary.avgMonthlyInterest)"></p>
+                                <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-zinc-200" x-text="formatCurrency(summary.avgMonthlyInterest)"></p>
                             </div>
-                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                            <div class="min-w-0 rounded-lg border border-white/[0.06] bg-[#070A10] p-3">
                                 <p class="text-[10px] text-zinc-400">Tổng lãi toàn kỳ</p>
-                                <p class="mt-1 font-bold tabular-nums text-amber-300" x-text="formatCurrency(summary.totalInterest)"></p>
+                                <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-amber-300" x-text="formatCurrency(summary.totalInterest)"></p>
                             </div>
-                            <div class="rounded-lg border border-white/[0.06] bg-[#070A10] p-2.5">
+                            <div class="min-w-0 rounded-lg border border-white/[0.06] bg-[#070A10] p-3">
                                 <p class="text-[10px] text-zinc-400">Tổng gốc + lãi</p>
-                                <p class="mt-1 font-bold tabular-nums text-sky-300" x-text="formatCurrency(summary.totalPayable)"></p>
+                                <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-sky-300" x-text="formatCurrency(summary.totalPayable)"></p>
                             </div>
-                            <div class="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-2.5">
+                            <div class="min-w-0 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3">
                                 <p class="text-[10px] text-emerald-300">Gốc còn lại</p>
-                                <p class="mt-1 font-bold tabular-nums text-emerald-200" x-text="formatCurrency(summary.remainingPrincipal)"></p>
+                                <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-emerald-200" x-text="formatCurrency(summary.remainingPrincipal)"></p>
                             </div>
                         </div>
                     </div>
 
                     <x-admin.form-field name="notes" label="Ghi chú hợp đồng / điều kiện lãi suất">
-                        <textarea name="notes" rows="2" placeholder="Ví dụ: Cố định 12 tháng đầu, sau đó thả nổi biên độ 3.2%..." class="w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 py-2.5 text-xs text-white focus:border-[#1C69D4] focus:outline-none">{{ old('notes') }}</textarea>
+                        <textarea name="notes" rows="2" @disabled(! $hasPurchasedVehicles) placeholder="Ví dụ: Cố định 12 tháng đầu, sau đó thả nổi biên độ 3.2%..." class="w-full rounded-xl border border-white/10 bg-[#0D121C] px-3.5 py-2.5 text-xs text-white focus:border-[#1C69D4] focus:outline-none disabled:opacity-50"></textarea>
                     </x-admin.form-field>
 
                     <div class="flex justify-end gap-2">
                         <button type="button" @click="showCreatePlan = false" class="h-9 rounded-xl border border-white/10 bg-[#131A29] px-4 text-xs font-semibold text-zinc-300 cursor-pointer">Hủy</button>
-                        <button type="submit" class="h-9 rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-500 cursor-pointer">Lưu hồ sơ trả góp</button>
+                        <button
+                            type="submit"
+                            @disabled(! $hasPurchasedVehicles)
+                            class="h-9 rounded-xl px-5 text-xs font-bold text-white transition-colors {{ $hasPurchasedVehicles ? 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer' : 'bg-zinc-700 text-zinc-400 opacity-50 cursor-not-allowed' }}"
+                        >Lưu hồ sơ trả góp</button>
                     </div>
                 </form>
 
@@ -450,32 +529,50 @@
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 text-xs">
-                                    <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
+                                @if($plan->isDraft())
+                                    <div class="rounded-xl border border-amber-500/35 bg-amber-500/10 px-3.5 py-2.5 text-xs leading-relaxed text-amber-200">
+                                        <strong class="font-bold text-amber-300">Hồ sơ nháp chờ bổ sung:</strong>
+                                        Sales vui lòng rà soát lãi suất ưu đãi / thả nổi ở nút <strong>"Cập nhật kỳ / lãi suất"</strong> và chuyển trạng thái sang <strong>Đang trả góp</strong> để kích hoạt tra cứu chính thức trên <code>/tra-cuu</code>.
+                                    </div>
+                                @endif
+
+                                <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 text-xs">
+                                    <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
                                         <p class="text-[10px] text-zinc-400">Tổng khoản vay</p>
-                                        <p class="mt-1 font-bold tabular-nums text-white">{{ number_format($plan->loan_amount, 0, ',', '.') }} đ</p>
+                                        <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-white">{{ number_format($plan->loan_amount, 0, ',', '.') }} đ</p>
                                     </div>
-                                    <div class="rounded-xl border border-[#1C69D4]/30 bg-[#1C69D4]/10 p-3">
+                                    <div class="min-w-0 rounded-xl border border-[#1C69D4]/30 bg-[#1C69D4]/10 p-3">
                                         <p class="text-[10px] text-[#70A7FF]">Dư nợ gốc còn lại</p>
-                                        <p class="mt-1 font-bold tabular-nums text-white">{{ number_format($planCalc['remaining_principal'] ?? 0, 0, ',', '.') }} đ</p>
+                                        <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-white">{{ number_format($planCalc['remaining_principal'] ?? 0, 0, ',', '.') }} đ</p>
                                     </div>
-                                    <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
+                                    <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
                                         <p class="text-[10px] text-zinc-400">Dự kiến còn đóng</p>
-                                        <p class="mt-1 font-bold tabular-nums text-sky-300">{{ number_format($planCalc['estimated_remaining_total'] ?? 0, 0, ',', '.') }} đ</p>
+                                        <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-sky-300">{{ number_format($planCalc['estimated_remaining_total'] ?? 0, 0, ',', '.') }} đ</p>
                                     </div>
-                                    <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
+                                    <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
                                         <p class="text-[10px] text-zinc-400">Trả tham chiếu / tháng</p>
-                                        <p class="mt-1 font-bold tabular-nums text-zinc-200">{{ number_format($plan->monthly_payment, 0, ',', '.') }} đ</p>
+                                        <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-zinc-200">{{ number_format($plan->monthly_payment, 0, ',', '.') }} đ</p>
                                     </div>
-                                    <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
-                                        <p class="text-[10px] text-zinc-400">Lãi suất áp dụng</p>
-                                        <p class="mt-1 font-bold tabular-nums text-amber-300">{{ rtrim(rtrim(number_format($plan->interest_rate, 2, '.', ''), '0'), '.') }}%/năm</p>
+                                    <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
+                                        <p class="text-[10px] text-zinc-400">Lãi ưu đãi / Thả nổi</p>
+                                        <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-amber-300">
+                                            {{ rtrim(rtrim(number_format($plan->interest_rate, 2, '.', ''), '0'), '.') }}%/năm ({{ (int) ($plan->fixed_rate_months ?? 12) }}T)
+                                            @if($plan->floating_interest_rate !== null)
+                                                <span class="block text-[10px] font-medium text-zinc-400">Sau ưu đãi: {{ rtrim(rtrim(number_format((float) $plan->floating_interest_rate, 2, '.', ''), '0'), '.') }}%/năm</span>
+                                            @endif
+                                        </p>
                                     </div>
-                                    <div class="rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
+                                    <div class="min-w-0 rounded-xl border border-white/[0.06] bg-[#0D121C] p-3">
                                         <p class="text-[10px] text-zinc-400">Kỳ đến hạn kế tiếp</p>
-                                        <p class="mt-1 font-bold tabular-nums text-emerald-300">{{ $planCalc['next_due_date_label'] ?? ($plan->next_due_date?->format('d/m/Y') ?? 'Đã tất toán') }}</p>
+                                        <p class="mt-1 whitespace-nowrap font-bold tabular-nums text-emerald-300">{{ $planCalc['next_due_date_label'] ?? ($plan->next_due_date?->format('d/m/Y') ?? 'Đã tất toán') }}</p>
                                     </div>
                                 </div>
+                                <p class="text-[11px] text-zinc-400">
+                                    <strong class="text-zinc-300">Chu kỳ điều chỉnh lãi:</strong> {{ $plan->adjustmentFrequencyLabel() }}
+                                    @if(filled($plan->early_settlement_fee_note))
+                                        · <strong class="text-zinc-300">Phí tất toán trước hạn:</strong> {{ $plan->early_settlement_fee_note }}
+                                    @endif
+                                </p>
 
                                 <div>
                                     <div class="mb-1.5 flex items-center justify-between text-[11px]">
@@ -557,6 +654,9 @@
                                         'loanAmount' => (int) $plan->loan_amount,
                                         'monthlyPayment' => (int) $plan->monthly_payment,
                                         'interestRate' => rtrim(rtrim(number_format((float) $plan->interest_rate, 2, '.', ''), '0'), '.'),
+                                        'fixedRateMonths' => (int) ($plan->fixed_rate_months ?? 12),
+                                        'floatingAdjustmentMonths' => (string) ($plan->floating_rate_adjustment_months ?? 3),
+                                        'floatingInterestRate' => $plan->floating_interest_rate !== null ? rtrim(rtrim(number_format((float) $plan->floating_interest_rate, 2, '.', ''), '0'), '.') : '',
                                         'interestMethod' => (string) ($plan->interest_method ?: 'reducing_balance'),
                                         'termMonths' => (int) $plan->term_months,
                                         'paidInstallments' => (int) $plan->paid_installments,
@@ -610,8 +710,26 @@
                                             <input type="text" inputmode="numeric" data-edit-monthly-payment="{{ $plan->id }}" :value="monthlyPaymentDisplay" @input="onMonthlyPaymentInput($event.target.value)" required class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-bold tabular-nums text-emerald-300 focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Lãi suất (%/năm)</label>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Lãi ưu đãi (%/năm)</label>
                                             <input type="text" inputmode="decimal" name="interest_rate" x-model="interestRate" @input="onFormulaParamChange()" required class="no-number-spinner h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Số tháng cố định</label>
+                                            <input type="number" name="fixed_rate_months" x-model.number="fixedRateMonths" @input="onFormulaParamChange()" min="0" max="240" class="no-number-spinner h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Chu kỳ điều chỉnh</label>
+                                            <div @change="if ($event.detail?.value !== undefined) onFormulaParamChange(null, $event.detail.value)">
+                                                <x-ui.custom-select compact name="floating_rate_adjustment_months" :value="(string) ($plan->floating_rate_adjustment_months ?? 3)" :options="$adjustmentFrequencyOptions" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Lãi thả nổi sau ưu đãi (%)</label>
+                                            <input type="text" inputmode="decimal" name="floating_interest_rate" x-model="floatingInterestRate" @input="onFormulaParamChange()" placeholder="VD: 10.5" class="no-number-spinner h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs font-semibold tabular-nums text-white focus:border-[#1C69D4] focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Phí tất toán trước hạn</label>
+                                            <input type="text" name="early_settlement_fee_note" value="{{ $plan->early_settlement_fee_note }}" placeholder="VD: Năm 1: 2%..." class="h-9 w-full rounded-lg border border-white/10 bg-[#0D121C] px-3 text-xs text-white focus:border-[#1C69D4] focus:outline-none">
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] font-semibold text-zinc-400">Phương thức tính lãi</label>

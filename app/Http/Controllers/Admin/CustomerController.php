@@ -158,6 +158,17 @@ class CustomerController extends Controller
         ));
     }
 
+    public function productPricing(Product $product): JsonResponse
+    {
+        return response()->json([
+            'id' => $product->id,
+            'name' => $product->name,
+            'type' => $product->type?->value ?? (string) $product->type,
+            'price' => (int) ($product->price ?? 0),
+            'deposit_amount' => (int) ($product->deposit_amount ?? 0),
+        ]);
+    }
+
     public function show(
         Request $request,
         string $phone,
@@ -175,10 +186,25 @@ class CustomerController extends Controller
             ->orderBy('name')
             ->get();
 
-        $vehicleProducts = Product::query()
-            ->active()
-            ->orderBy('name')
-            ->get(['id', 'name', 'type']);
+        $purchasedAppointments = $bundle['vehicleAppointments']
+            ->filter(static fn (Appointment $appt): bool => $appt->status === AppointmentStatus::Completed
+                && $appt->completionOutcome() === Appointment::OUTCOME_PURCHASED)
+            ->values();
+
+        $purchasedProductIds = $purchasedAppointments
+            ->pluck('product_id')
+            ->filter()
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $vehicleProducts = $purchasedProductIds !== []
+            ? Product::query()
+                ->whereIn('id', $purchasedProductIds)
+                ->orderBy('name')
+                ->get(['id', 'name', 'type', 'price'])
+            : collect();
 
         $primaryInstallment = $bundle['installmentPlans']
             ->first(static fn (CustomerInstallmentPlan $p): bool => in_array($p->status, [CustomerInstallmentPlan::STATUS_ACTIVE, CustomerInstallmentPlan::STATUS_OVERDUE], true))
@@ -221,7 +247,10 @@ class CustomerController extends Controller
             'kpis' => $bundle['kpis'],
             'activeEmailTemplates' => $activeEmailTemplates,
             'vehicleProducts' => $vehicleProducts,
+            'purchasedAppointments' => $purchasedAppointments,
+            'hasPurchasedVehicles' => $purchasedAppointments->isNotEmpty(),
             'installmentStatusOptions' => CustomerInstallmentPlan::statusOptions(),
+            'adjustmentFrequencyOptions' => CustomerInstallmentPlan::adjustmentFrequencyOptions(),
             'interestMethodOptions' => CustomerInstallmentPlan::interestMethodOptions(),
             'previewVariables' => $previewVariables,
         ]);
@@ -233,6 +262,28 @@ class CustomerController extends Controller
         $bundle = $this->resolveCustomerBundle($phone, $emailQuery);
         $this->assertSalesCanAccessCustomer($bundle['appointments'], $bundle['accessoryOrders'], $bundle['installmentPlans']);
 
+        $purchasedAppointments = $bundle['vehicleAppointments']
+            ->filter(static fn (Appointment $appt): bool => $appt->status === AppointmentStatus::Completed
+                && $appt->completionOutcome() === Appointment::OUTCOME_PURCHASED)
+            ->values();
+        $purchasedProductIds = $purchasedAppointments
+            ->pluck('product_id')
+            ->filter()
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+        $purchasedAppointmentIds = $purchasedAppointments
+            ->pluck('id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+
+        if ($purchasedAppointments->isEmpty()) {
+            return back()
+                ->withInput()
+                ->withErrors(['product_id' => 'Khách hàng này chưa có lịch hẹn mua xe hoàn tất (purchased) nên không thể khởi tạo hồ sơ trả góp.']);
+        }
+
         $validated = $request->validate([
             'bank_name' => ['required', 'string', 'max:150'],
             'product_id' => ['nullable', 'integer', Rule::exists('products', 'id')],
@@ -242,6 +293,10 @@ class CustomerController extends Controller
             'loan_amount' => ['required', 'integer', 'min:1000000'],
             'monthly_payment' => ['required', 'integer', 'min:100000'],
             'interest_rate' => ['required', 'numeric', 'min:0', 'max:50'],
+            'fixed_rate_months' => ['nullable', 'integer', 'min:0', 'max:240'],
+            'floating_rate_adjustment_months' => ['nullable', 'integer', Rule::in([0, 3, 6])],
+            'floating_interest_rate' => ['nullable', 'numeric', 'min:0', 'max:50'],
+            'early_settlement_fee_note' => ['nullable', 'string', 'max:255'],
             'interest_method' => ['nullable', 'string', Rule::in(array_keys(CustomerInstallmentPlan::interestMethodOptions()))],
             'term_months' => ['required', 'integer', 'min:1', 'max:240'],
             'paid_installments' => ['required', 'integer', 'min:0', 'lte:term_months'],
@@ -256,9 +311,27 @@ class CustomerController extends Controller
             'paid_installments.lte' => 'Số kỳ đã thanh toán không được vượt quá tổng số kỳ hạn.',
         ]);
 
+        if (! empty($validated['product_id']) && ! in_array((int) $validated['product_id'], $purchasedProductIds, true)) {
+            return back()
+                ->withInput()
+                ->withErrors(['product_id' => 'Mẫu xe được chọn không thuộc danh sách xe khách hàng đã chốt mua tại Showroom.']);
+        }
+
+        if (! empty($validated['appointment_id']) && ! in_array((int) $validated['appointment_id'], $purchasedAppointmentIds, true)) {
+            return back()
+                ->withInput()
+                ->withErrors(['appointment_id' => 'Lịch hẹn liên kết không phải giao dịch mua xe hoàn tất của khách hàng này.']);
+        }
+
         $normalizedPhone = $bundle['profile']['phone_digits'] !== ''
             ? $bundle['profile']['phone_digits']
             : ($bundle['profile']['phone'] !== 'N/A' ? $bundle['profile']['phone'] : $phone);
+
+        $termMonths = (int) $validated['term_months'];
+        $fixedRateMonths = min($termMonths, max(0, (int) ($validated['fixed_rate_months'] ?? 12)));
+        $adjustmentMonths = in_array((int) ($validated['floating_rate_adjustment_months'] ?? 3), [0, 3, 6], true)
+            ? (int) ($validated['floating_rate_adjustment_months'] ?? 3)
+            : 3;
 
         $plan = CustomerInstallmentPlan::query()->create([
             'customer_phone' => $normalizedPhone,
@@ -272,8 +345,12 @@ class CustomerController extends Controller
             'loan_amount' => (int) $validated['loan_amount'],
             'monthly_payment' => (int) $validated['monthly_payment'],
             'interest_rate' => (float) $validated['interest_rate'],
+            'fixed_rate_months' => $fixedRateMonths,
+            'floating_rate_adjustment_months' => $adjustmentMonths,
+            'floating_interest_rate' => isset($validated['floating_interest_rate']) && $validated['floating_interest_rate'] !== '' ? (float) $validated['floating_interest_rate'] : null,
+            'early_settlement_fee_note' => isset($validated['early_settlement_fee_note']) && trim((string) $validated['early_settlement_fee_note']) !== '' ? trim((string) $validated['early_settlement_fee_note']) : null,
             'interest_method' => $validated['interest_method'] ?? CustomerInstallmentPlan::METHOD_REDUCING_BALANCE,
-            'term_months' => (int) $validated['term_months'],
+            'term_months' => $termMonths,
             'paid_installments' => (int) $validated['paid_installments'],
             'start_date' => $validated['start_date'] ?? null,
             'next_due_date' => $validated['next_due_date'] ?? null,
@@ -316,6 +393,10 @@ class CustomerController extends Controller
             'loan_amount' => ['required', 'integer', 'min:1000000'],
             'monthly_payment' => ['required', 'integer', 'min:100000'],
             'interest_rate' => ['required', 'numeric', 'min:0', 'max:50'],
+            'fixed_rate_months' => ['nullable', 'integer', 'min:0', 'max:240'],
+            'floating_rate_adjustment_months' => ['nullable', 'integer', Rule::in([0, 3, 6])],
+            'floating_interest_rate' => ['nullable', 'numeric', 'min:0', 'max:50'],
+            'early_settlement_fee_note' => ['nullable', 'string', 'max:255'],
             'interest_method' => ['nullable', 'string', Rule::in(array_keys(CustomerInstallmentPlan::interestMethodOptions()))],
             'term_months' => ['required', 'integer', 'min:1', 'max:240'],
             'paid_installments' => ['required', 'integer', 'min:0', 'lte:term_months'],
@@ -327,17 +408,35 @@ class CustomerController extends Controller
             'paid_installments.lte' => 'Số kỳ đã thanh toán không được vượt quá tổng số kỳ hạn.',
         ]);
 
+        $termMonths = (int) $validated['term_months'];
         $updatePayload = [
             'bank_name' => trim((string) $validated['bank_name']),
             'loan_amount' => (int) $validated['loan_amount'],
             'monthly_payment' => (int) $validated['monthly_payment'],
             'interest_rate' => (float) $validated['interest_rate'],
-            'term_months' => (int) $validated['term_months'],
+            'term_months' => $termMonths,
             'paid_installments' => (int) $validated['paid_installments'],
             'next_due_date' => $validated['next_due_date'] ?? null,
             'status' => (string) $validated['status'],
             'notes' => isset($validated['notes']) ? trim((string) $validated['notes']) : null,
         ];
+
+        if ($request->has('fixed_rate_months')) {
+            $updatePayload['fixed_rate_months'] = min($termMonths, max(0, (int) ($validated['fixed_rate_months'] ?? 12)));
+        }
+        if ($request->has('floating_rate_adjustment_months')) {
+            $adj = (int) ($validated['floating_rate_adjustment_months'] ?? 3);
+            $updatePayload['floating_rate_adjustment_months'] = in_array($adj, [0, 3, 6], true) ? $adj : 3;
+        }
+        if ($request->has('floating_interest_rate')) {
+            $updatePayload['floating_interest_rate'] = $validated['floating_interest_rate'] !== null && $validated['floating_interest_rate'] !== ''
+                ? (float) $validated['floating_interest_rate']
+                : null;
+        }
+        if ($request->has('early_settlement_fee_note')) {
+            $noteVal = trim((string) ($validated['early_settlement_fee_note'] ?? ''));
+            $updatePayload['early_settlement_fee_note'] = $noteVal !== '' ? $noteVal : null;
+        }
 
         if ($request->has('vehicle_price')) {
             $updatePayload['vehicle_price'] = $validated['vehicle_price'] !== null ? (int) $validated['vehicle_price'] : null;

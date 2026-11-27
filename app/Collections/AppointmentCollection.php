@@ -4,6 +4,7 @@ namespace App\Collections;
 
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
+use App\Services\Crm\InteractionTimelineRecorder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -58,7 +59,7 @@ class AppointmentCollection extends Collection
                 ? $appointment->status
                 : AppointmentStatus::tryFrom((string) $appointment->status);
 
-            if (! in_array($status, [AppointmentStatus::Confirmed, AppointmentStatus::Completed], true)) {
+            if ($status !== AppointmentStatus::Confirmed) {
                 return 0;
             }
 
@@ -85,6 +86,44 @@ class AppointmentCollection extends Collection
         });
     }
 
+    public function realizedVehicleRevenue(): int
+    {
+        return (int) $this->sum(static function (Appointment $appointment): int {
+            if ($appointment->isServiceBooking()) {
+                return 0;
+            }
+
+            $status = $appointment->status instanceof AppointmentStatus
+                ? $appointment->status
+                : AppointmentStatus::tryFrom((string) $appointment->status);
+
+            if ($status !== AppointmentStatus::Completed) {
+                return 0;
+            }
+
+            return self::resolveVehicleSaleRevenue($appointment);
+        });
+    }
+
+    public function realizedServiceRevenue(): int
+    {
+        return (int) $this->sum(static function (Appointment $appointment): int {
+            if (! $appointment->isServiceBooking()) {
+                return 0;
+            }
+
+            $status = $appointment->status instanceof AppointmentStatus
+                ? $appointment->status
+                : AppointmentStatus::tryFrom((string) $appointment->status);
+
+            if ($status !== AppointmentStatus::Completed) {
+                return 0;
+            }
+
+            return self::resolveServiceRevenue($appointment);
+        });
+    }
+
     public function referenceVehicleValue(): int
     {
         return (int) $this->sum(static function (Appointment $appointment): int {
@@ -96,11 +135,15 @@ class AppointmentCollection extends Collection
                 ? $appointment->status
                 : AppointmentStatus::tryFrom((string) $appointment->status);
 
-            if (! in_array($status, [AppointmentStatus::Confirmed, AppointmentStatus::Completed], true)) {
-                return 0;
+            if ($status === AppointmentStatus::Completed) {
+                return self::resolveVehicleSaleRevenue($appointment);
             }
 
-            return (int) ($appointment->product?->price ?? 0);
+            if ($status === AppointmentStatus::Confirmed && self::resolveDepositAmount($appointment) > 0) {
+                return (int) ($appointment->product?->price ?? 0);
+            }
+
+            return 0;
         });
     }
 
@@ -115,13 +158,35 @@ class AppointmentCollection extends Collection
 
     public static function resolveDepositAmount(Appointment $appointment): int
     {
-        $refPrice = (int) ($appointment->product?->price ?? 0);
-        $deposit = (int) ($appointment->product?->deposit_amount ?? 0);
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
 
-        if ($deposit <= 0 && $refPrice > 0) {
-            return 50000000;
+        return max(0, (int) ($meta['actual_deposit_amount'] ?? 0));
+    }
+
+    public static function resolveVehicleSaleRevenue(Appointment $appointment): int
+    {
+        if ($appointment->isServiceBooking() || $appointment->completionOutcome() !== Appointment::OUTCOME_PURCHASED) {
+            return 0;
         }
 
-        return $deposit;
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+        $finalPrice = (int) ($meta['final_vehicle_price'] ?? 0);
+
+        if ($finalPrice > 0) {
+            return $finalPrice;
+        }
+
+        return max(0, (int) ($appointment->product?->price ?? 0));
+    }
+
+    public static function resolveServiceRevenue(Appointment $appointment): int
+    {
+        if (! $appointment->isServiceBooking()) {
+            return 0;
+        }
+
+        $meta = InteractionTimelineRecorder::normalizeMetaArray($appointment->meta_data);
+
+        return max(0, (int) ($meta['service_actual_cost'] ?? 0));
     }
 }

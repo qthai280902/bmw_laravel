@@ -105,33 +105,37 @@
         </form>
     </x-admin.card>
 
-    {{-- 5 Chỉ số KPI Tài chính (Clean Executive Cards) --}}
+    {{-- 5 Chỉ số KPI Tài chính (Clean Executive Cards — Chuẩn doanh thu thực tế, 0 cọc ảo) --}}
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
             <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
                 <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-                <span>Doanh thu phụ kiện thực thu</span>
+                <span>Tổng doanh thu thực thu</span>
             </p>
-            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['completed_accessory_revenue'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-500">Đơn phụ kiện đã hoàn thành</p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['total_completed_revenue'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">
+                Xe: {{ number_format($kpis['completed_vehicle_revenue'], 0, ',', '.') }} · DV: {{ number_format($kpis['completed_service_revenue'], 0, ',', '.') }} · PK: {{ number_format($kpis['completed_accessory_revenue'], 0, ',', '.') }}
+            </p>
         </div>
 
         <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
             <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
-                <span class="h-2 w-2 rounded-full bg-sky-400"></span>
-                <span>Giá trị phụ kiện đang xử lý</span>
+                <span class="h-2 w-2 rounded-full bg-teal-400"></span>
+                <span>Doanh thu phụ kiện thực thu</span>
             </p>
-            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['processing_accessory_value'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-500">Chờ duyệt &amp; Đã xác nhận</p>
+            <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['completed_accessory_revenue'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">
+                Đơn PK đang xử lý: {{ number_format($kpis['processing_accessory_value'], 0, ',', '.') }} ₫
+            </p>
         </div>
 
         <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">
             <p class="flex items-center gap-2 text-xs font-semibold text-zinc-400">
                 <span class="h-2 w-2 rounded-full bg-[#1C69D4]"></span>
-                <span>Giá trị đặt cọc xe tiềm năng</span>
+                <span>Cọc xe thực tế đã thu</span>
             </p>
             <p class="mt-2.5 text-xl font-bold tabular-nums text-white">{{ number_format($kpis['vehicle_committed_deposit'], 0, ',', '.') }} ₫</p>
-            <p class="mt-1 text-[11px] text-zinc-500">Giá xe tham chiếu: {{ number_format($kpis['vehicle_reference_value'], 0, ',', '.') }} ₫</p>
+            <p class="mt-1 text-[11px] text-zinc-500">Giá trị xe đã chốt / có cọc: {{ number_format($kpis['vehicle_reference_value'], 0, ',', '.') }} ₫</p>
         </div>
 
         <div class="rounded-2xl border border-white/[0.08] bg-[#0D121C] p-5 shadow-lg">

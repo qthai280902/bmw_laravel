@@ -215,20 +215,42 @@
     @endif
 
     <!-- Recent Staff Activity Audit Log -->
-    <div class="mt-10">
-        <div class="mb-4 flex items-end justify-between gap-4">
+    @php
+        $activityLogsDebugPayload = ($activityLogs ?? collect())->map(static fn ($item): array => [
+            'id' => $item->id,
+            'timestamp' => $item->created_at?->toIso8601String(),
+            'user_email' => $item->user_email,
+            'user_role' => $item->user_role,
+            'action' => $item->action,
+            'description' => $item->description,
+            'ip_address' => $item->ip_address,
+        ])->values()->all();
+    @endphp
+    <div class="mt-10" data-debug-log-scope>
+        <script type="application/json" data-debug-log-payload>@json($activityLogsDebugPayload)</script>
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
             <div>
                 <p class="text-[10px] font-bold uppercase tracking-[0.26em] text-[#70A7FF]">Audit Trail &middot; 3 Vai Trò Nội Bộ</p>
                 <h3 class="mt-1 text-lg font-black uppercase tracking-wider text-white">Nhật Ký Hoạt Động Nhân Sự Gần Đây</h3>
             </div>
-            <span class="whitespace-nowrap rounded-full border border-white/10 bg-[#0D121C] px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                15 bản ghi mới nhất
-            </span>
+            <div class="flex flex-wrap items-center gap-2" x-data="{ copiedAll: false }">
+                <button
+                    type="button"
+                    data-copy-all-activity-logs
+                    @click="if (typeof window.bmwCopyDebugLog === 'function') { window.bmwCopyDebugLog($el).then((ok) => { if (ok) { copiedAll = true; setTimeout(() => copiedAll = false, 2000); } }); }"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-[#1C69D4]/40 bg-[#1C69D4]/15 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#70A7FF] transition-colors hover:bg-[#1C69D4] hover:text-white cursor-pointer"
+                >
+                    <span x-text="copiedAll ? 'Đã sao chép toàn bộ' : 'Sao chép toàn bộ Log hiển thị'"></span>
+                </button>
+                <span class="whitespace-nowrap rounded-full border border-white/10 bg-[#0D121C] px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
+                    15 bản ghi mới nhất
+                </span>
+            </div>
         </div>
 
         <x-admin.card class="!p-0 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[920px] border-collapse text-left">
+                <table class="w-full min-w-[960px] border-collapse text-left">
                     <thead>
                         <tr class="border-b border-white/[0.08] bg-[#070A10]/70">
                             <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Thời gian</th>
@@ -236,11 +258,23 @@
                             <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Vai trò</th>
                             <th class="whitespace-nowrap px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Hành động</th>
                             <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Mô tả chi tiết</th>
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Debug</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/[0.06]">
                         @forelse(($activityLogs ?? collect()) as $log)
-                            <tr class="transition-colors hover:bg-[#131A29]/60">
+                            @php
+                                $rowLogPayload = [
+                                    'id' => $log->id,
+                                    'timestamp' => $log->created_at?->toIso8601String(),
+                                    'user_email' => $log->user_email,
+                                    'user_role' => $log->user_role,
+                                    'action' => $log->action,
+                                    'description' => $log->description,
+                                    'ip_address' => $log->ip_address,
+                                ];
+                            @endphp
+                            <tr class="transition-colors hover:bg-[#131A29]/60" data-debug-log-scope>
                                 <td class="whitespace-nowrap px-6 py-4 text-[11px] font-semibold tabular-nums text-zinc-400">
                                     {{ $log->created_at?->format('H:i:s · d/m/Y') }}
                                 </td>
@@ -263,10 +297,20 @@
                                 <td class="px-6 py-4 text-xs leading-relaxed text-zinc-300">
                                     {{ $log->description }}
                                 </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-right" x-data="{ copiedRow: false }">
+                                    <script type="application/json" data-debug-log-payload>@json($rowLogPayload)</script>
+                                    <button
+                                        type="button"
+                                        data-copy-activity-log-row="{{ $log->id }}"
+                                        @click="if (typeof window.bmwCopyDebugLog === 'function') { window.bmwCopyDebugLog($el).then((ok) => { if (ok) { copiedRow = true; setTimeout(() => copiedRow = false, 2000); } }); }"
+                                        class="rounded-lg border border-white/10 bg-[#131A29] px-2.5 py-1 text-[10px] font-semibold text-zinc-300 transition-colors hover:border-[#1C69D4] hover:text-white cursor-pointer"
+                                        x-text="copiedRow ? 'Đã sao chép' : 'Sao chép Log'"
+                                    ></button>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                                <td colspan="6" class="px-6 py-12 text-center text-xs font-semibold uppercase tracking-widest text-zinc-500">
                                     Chưa có nhật ký hoạt động nào được ghi nhận.
                                 </td>
                             </tr>

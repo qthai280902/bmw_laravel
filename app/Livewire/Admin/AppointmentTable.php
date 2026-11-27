@@ -69,6 +69,16 @@ class AppointmentTable extends Component
 
     public int $completionReminderMonths = 0;
 
+    public string $completionPaymentMethod = 'cash';
+
+    public string $completionFinalPriceInput = '';
+
+    public string $completionDownPaymentInput = '';
+
+    public string $completionBankName = '';
+
+    public int $completionTermMonths = 60;
+
     public ?string $flashMessage = null;
 
     public ?string $errorMessage = null;
@@ -203,7 +213,7 @@ class AppointmentTable extends Component
         $this->resetErrorBag(['status', 'statusTransition', 'completionOutcome']);
         $this->errorMessage = null;
 
-        $appointment = Appointment::query()->findOrFail($appointmentId);
+        $appointment = Appointment::query()->with('product:id,price')->findOrFail($appointmentId);
 
         if ($appointment->hasPendingRescheduleReview()) {
             $msg = 'Khách hàng vừa đổi lịch hẹn. Vui lòng bấm "Xác nhận đã tiếp nhận lịch mới" trước khi hoàn tất hồ sơ.';
@@ -229,6 +239,12 @@ class AppointmentTable extends Component
         $this->completionNote = '';
         $this->completionActualCostInput = '';
         $this->completionReminderMonths = 0;
+        $this->completionPaymentMethod = 'cash';
+        $listPrice = (int) ($appointment->product?->price ?? 0);
+        $this->completionFinalPriceInput = $listPrice > 0 ? number_format($listPrice, 0, ',', '.') : '';
+        $this->completionDownPaymentInput = '';
+        $this->completionBankName = '';
+        $this->completionTermMonths = 60;
     }
 
     public function selectCompletionOutcome(string $outcome): void
@@ -253,6 +269,11 @@ class AppointmentTable extends Component
         $this->completionNote = '';
         $this->completionActualCostInput = '';
         $this->completionReminderMonths = 0;
+        $this->completionPaymentMethod = 'cash';
+        $this->completionFinalPriceInput = '';
+        $this->completionDownPaymentInput = '';
+        $this->completionBankName = '';
+        $this->completionTermMonths = 60;
         $this->resetErrorBag('completionOutcome');
     }
 
@@ -264,7 +285,7 @@ class AppointmentTable extends Component
             return;
         }
 
-        $appointment = Appointment::query()->findOrFail($this->completionTargetId);
+        $appointment = Appointment::query()->with('product:id,price')->findOrFail($this->completionTargetId);
         $validOutcomes = $appointment->validCompletionOutcomes();
 
         if (! in_array($this->completionOutcome, $validOutcomes, true)) {
@@ -275,11 +296,51 @@ class AppointmentTable extends Component
         }
 
         $rawCostDigits = preg_replace('/[^\d]/', '', $this->completionActualCostInput) ?? '';
+        $rawFinalPriceDigits = preg_replace('/[^\d]/', '', $this->completionFinalPriceInput) ?? '';
+        $rawDownPaymentDigits = preg_replace('/[^\d]/', '', $this->completionDownPaymentInput) ?? '';
+
+        $finalVehiclePrice = $rawFinalPriceDigits !== ''
+            ? (int) $rawFinalPriceDigits
+            : (int) ($appointment->product?->price ?? 0);
+        $paymentMethod = ($this->completionOutcome === Appointment::OUTCOME_PURCHASED && $this->completionPaymentMethod === 'installment')
+            ? 'installment'
+            : 'cash';
+        $downPaymentAmount = $rawDownPaymentDigits !== '' ? (int) $rawDownPaymentDigits : 0;
+
+        if ($paymentMethod === 'installment') {
+            if ($finalVehiclePrice < 1000000) {
+                $this->errorMessage = 'Vui lòng nhập Giá bán chốt thực tế hợp lệ để tính khoản vay trả góp.';
+                $this->addError('completionOutcome', $this->errorMessage);
+
+                return;
+            }
+
+            if ($downPaymentAmount >= $finalVehiclePrice) {
+                $this->errorMessage = 'Số tiền trả trước phải nhỏ hơn giá bán xe thực tế.';
+                $this->addError('completionOutcome', $this->errorMessage);
+
+                return;
+            }
+
+            if (trim($this->completionBankName) === '') {
+                $this->errorMessage = 'Vui lòng nhập hoặc chọn Ngân hàng tài trợ trả góp.';
+                $this->addError('completionOutcome', $this->errorMessage);
+
+                return;
+            }
+        }
+
         $payload = [
             'service_completion_note' => $this->completionNote,
             'service_actual_cost' => $rawCostDigits !== '' ? (int) $rawCostDigits : null,
             'service_next_reminder_months' => in_array($this->completionReminderMonths, [3, 6, 12], true) ? $this->completionReminderMonths : 0,
             'trade_in_note' => $this->completionNote,
+            'payment_method' => $paymentMethod,
+            'final_vehicle_price' => $finalVehiclePrice > 0 ? $finalVehiclePrice : null,
+            'down_payment_amount' => $paymentMethod === 'installment' ? $downPaymentAmount : null,
+            'financed_loan_amount' => $paymentMethod === 'installment' ? max(0, $finalVehiclePrice - $downPaymentAmount) : null,
+            'installment_bank_name' => $paymentMethod === 'installment' ? trim($this->completionBankName) : null,
+            'installment_term_months' => $paymentMethod === 'installment' ? max(6, min(120, $this->completionTermMonths)) : null,
         ];
 
         $targetId = $this->completionTargetId;

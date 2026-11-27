@@ -149,7 +149,7 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
                 "[BMW Showroom] Khách hàng điều chỉnh giờ hẹn — Mã {$appointment->publicReferenceCode()}",
                 $mail->envelope()->subject
             );
-            $this->assertStringContainsString('#D97706', $html);
+            $this->assertStringContainsString('#1C69D4', $html);
             $this->assertStringContainsString('Khách hàng cập nhật', $html);
             $this->assertStringContainsString($originalDate->format('H:i — d/m/Y'), $html);
             $this->assertStringContainsString($newDate->format('H:i — d/m/Y'), $html);
@@ -187,12 +187,12 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
                 'mustContain' => 'Yêu cầu của Quý khách đã được Hệ thống ghi nhận',
             ],
             'admin_confirmed' => [
-                'accent' => '#059669',
+                'accent' => '#1C69D4',
                 'badge' => 'Chuyên viên xác nhận',
                 'mustContain' => 'VIP CONCIERGE PASS',
             ],
             'guest_rescheduled' => [
-                'accent' => '#D97706',
+                'accent' => '#1C69D4',
                 'badge' => 'Khách hàng cập nhật',
                 'mustContain' => 'BẢNG ĐỐI CHIẾU THÔNG TIN TRƯỚC',
             ],
@@ -202,7 +202,7 @@ class Phase28_6DrawerTimelineAndSixMailTemplatesTest extends TestCase
                 'mustContain' => 'Bằng lái xe hạng B',
             ],
             'followup' => [
-                'accent' => '#B45309',
+                'accent' => '#1C69D4',
                 'badge' => 'Chăm sóc hậu mãi',
                 'mustContain' => 'BẢNG ƯỚC TÍNH TÀI CHÍNH',
             ],
